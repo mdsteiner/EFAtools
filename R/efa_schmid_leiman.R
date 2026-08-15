@@ -320,17 +320,44 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
   } else {
 
-    # perform a factor analysis on the intercorrelation matrix of the first order
-    # factors (N is only specified to avoid a warning)
-    EFA_phi <- suppressWarnings(do.call(efa_fit, c(
-      list(Phi, n_factors = 1, N = 100, estimator = estimator, rotation = "none",
-           estimate_control = estimate_control),
-      list(...))))
+    # The transformation regresses the first-order factors on a single second-order
+    # factor, so it needs at least two of them; with one there is nothing to
+    # orthogonalize. Both conditions are reported before the second-order fit runs, so
+    # the diagnostic describes the solution the user supplied rather than the internal
+    # one-factor fit on a 1 x 1 matrix of intercorrelations.
+    if (n_first_fac < 2) {
+      cli::cli_abort(
+        c("A Schmid-Leiman transformation needs at least two first-order factors.",
+          "x" = "{.arg x} has {n_first_fac} first-order factor{?s}."),
+        class = "efa_sl_too_few_factors"
+      )
+    }
 
-    if (ncol(Phi) <= 2) {
+    if (n_first_fac == 2) {
       cli::cli_warn("The second-order EFA is underidentified.",
                     class = "efa_sl_underidentified")
     }
+
+    # perform a factor analysis on the intercorrelation matrix of the first order
+    # factors (N is only specified to avoid a warning).
+    #
+    # What that fit reports about the user's solution stays visible: a Heywood case or
+    # a failure to converge there makes the residualized first-order loadings, and
+    # every coefficient computed from them, questionable. Only the two identification
+    # warnings are muffled, because they say nothing about the data: fitting one factor
+    # to the k by k matrix of factor intercorrelations is just identified at k = 3 and
+    # underidentified at k = 2 by construction, for every input, and the k = 2 case is
+    # already reported above in this function's own terms.
+    EFA_phi <- withCallingHandlers(
+      do.call(efa_fit, c(
+        list(Phi, n_factors = 1, N = 100, estimator = estimator, rotation = "none",
+             estimate_control = estimate_control),
+        list(...))),
+      warning = function(w) {
+        if (inherits(w, c("efa_just_identified", "efa_underidentified"))) {
+          invokeRestart("muffleWarning")
+        }
+      })
 
     iter <- EFA_phi$iter
     convergence <- EFA_phi$convergence

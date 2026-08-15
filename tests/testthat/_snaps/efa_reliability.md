@@ -44,8 +44,10 @@
       
       Total variance from the correlation matrix.
       
-      Correlated-factors solution: with no general factor, each factor's subscale
-      omega equals its total omega.
+      Correlated-factors solution: a factor's total omega counts the true score
+      variance its composite receives from every factor, through its cross-loadings
+      and any factor correlations; its subscale omega counts only that factor's own
+      contribution.
       
       -- Reliability coefficients ----------------------------------------------------
       

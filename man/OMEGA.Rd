@@ -165,9 +165,9 @@ from a Schmid-Leiman (SL) solution or lavaan single factor, second-order (see be
 or bifactor solution. The SL-based omegas can either be found from a
 \code{\link[psych:schmid]{psych::schmid()}}, \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}, or,
 in a more flexible way, by leaving
-\code{model = NULL} and specifying additional arguments. By setting the
-\code{type} argument, results from \code{\link[psych:omega]{psych::omega()}}
-can be reproduced.
+\code{model = NULL} and specifying additional arguments. The \code{type} argument selects
+how variables are assigned to group factors, and can reproduce the assignment
+\code{\link[psych:omega]{psych::omega()}} makes.
 }
 \details{
 \subsection{What this function does}{
@@ -228,7 +228,11 @@ In this case, \code{g_name} is not needed. Finally, if a solution from a
 each group. For \code{lavaan} input the composite variances entering the omegas are
 model-implied (computed from the fitted loadings and residual variances), so the
 coefficients coincide with the observed-score versions when the model fits
-perfectly.
+perfectly. The omegas split a composite's variance into a general part and one part
+per group factor, which needs uncorrelated latent variables: fit a bifactor model
+with \code{orthogonal = TRUE} (not \code{lavaan}'s default) and leave the covariances between
+a second-order model's first-order factors at zero. A fit whose factors correlate is
+rejected rather than scored as though they did not.
 The type argument is not evaluated if \code{model} is of class
 \code{lavaan}.
 
@@ -253,19 +257,20 @@ the \code{\link[psych:factor.model]{psych::factor.model()}} function.
 
 The only difference between \code{type = "EFAtools"} and \code{type = "psych"}
 is the determination of variable-to-factor correspondences. \code{type = "psych"}
-reproduces the \code{\link[psych:omega]{psych::omega()}} results, where
-variable-to-factor correspondences are found by taking the highest
+derives them as \code{\link[psych:omega]{psych::omega()}} does, by
+taking the highest
 group factor loading for each variable as the relevant group factor loading.
 To do this, \code{factor_corres} must be left \code{NULL}.
 
-\code{variance = "correlation"} gives the observed-variance form of omega, which
-reproduces \code{\link[psych:omega]{psych::omega()}}; \code{"sums_load"} gives McDonald's model-implied
-total, which partitions exactly into omega hierarchical plus omega
-subscale. The two settings agree on the whole-scale omega total and omega
-hierarchical up to model misfit, and differ mainly in the whole-scale omega
-subscale, which counts all group-factor variance under \code{"sums_load"} but only the
-assigned subscale composites under \code{"correlation"}. On the subscale rows the
-two conventions agree when simple structure is well-achieved.
+Both settings score a composite by the true score variance the model attributes
+to it, counting every factor its variables load on; they differ only in the
+variance that is divided into. \code{variance = "correlation"} uses the composite's
+observed variance, giving the observed-score form of omega; \code{"sums_load"} uses its
+model-implied variance, which partitions exactly into omega hierarchical plus omega
+subscale on the whole-scale row. The two settings agree up to model misfit, and
+differ mainly in the whole-scale omega subscale, which counts all group-factor
+variance under \code{"sums_load"} but only the assigned subscale composites under
+\code{"correlation"}.
 }
 }
 \examples{

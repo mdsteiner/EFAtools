@@ -5,8 +5,8 @@ test_that(".reliability_core reproduces the OMEGA coefficient menu (regression)"
   # modes), pinned to a tight tolerance. A regression in the lifted math would move
   # these numbers far beyond it; the comparison is not bit-exact because the last bits
   # differ across BLAS/platforms.
-  ref_corr <- structure(c(0.8828685009816174, 0.76916616970747365,
-    0.76340460593899595, 0.74403137565562616, 0.73987835131636559,
+  ref_corr <- structure(c(0.882807712291674, 0.769347951077085,
+    0.764969230283489, 0.74510159916687, 0.73987835131636559,
     0.49973769215022423, 0.4935927140365538, 0.51896424927096363,
     0.12494360637362421, 0.26942847755724941, 0.26981189190244209,
     0.22506712638466256, 0.8423884892261212, 0.4630872563777037,
@@ -14,11 +14,11 @@ test_that(".reliability_core reproduces the OMEGA coefficient menu (regression)"
     NA, 0.70588235294117641, NA, NA, NA), dim = c(4L, 6L),
     dimnames = list(c("g", "1", "2", "3"),
                     c("tot", "hier", "sub", "H", "ECV", "PUC")), class = "OMEGA")
-  ref_sums <- structure(c(0.88286138027838279, 0.7694136764855295,
-    0.76539916799807128, 0.74540130311749742, 0.73992333028627189,
-    0.49989850066069758, 0.49488233331890324, 0.51991977802965228,
-    0.14293804999211088, 0.26951517582483187, 0.27051683467916798,
-    0.22548152508784508, 0.8423884892261212, 0.4630872563777037,
+  ref_sums <- structure(c(0.88286138027838279, 0.769455598648182,
+    0.765766612786389, 0.745673989947422, 0.73992333028627189,
+    0.49980761571169, 0.49410722125874, 0.519362920206647,
+    0.14293804999211088, 0.269466176131935, 0.270093136262557,
+    0.225240024078469, 0.8423884892261212, 0.4630872563777037,
     0.47192399221710424, 0.40799477228556474, 0.65197317077447814, NA, NA,
     NA, 0.70588235294117641, NA, NA, NA), dim = c(4L, 6L),
     dimnames = list(c("g", "1", "2", "3"),
@@ -51,6 +51,137 @@ test_that(".reliability_core reproduces the OMEGA coefficient menu (regression)"
   # same numbers through the core.
   expect_equal(.OMEGA_FLEX(sl_mod, type = "EFAtools", factor_corres = fc,
                            variance = "correlation"), ref_sl, tolerance = 1e-6)
+})
+
+test_that("a correlated-factors spec scores the group omega total from the full Phi-aware common variance", {
+  # An exactly fitting correlated-factors model: two factors, two cross-loadings, and
+  # a factor correlation of .5. Each subscale composite therefore also carries true
+  # score variance from the other factor, both through the cross-loadings and through
+  # Phi. R is the model-implied correlation matrix, so the coefficients are exact.
+  L <- matrix(c(0.70, 0.60, 0.50, 0.00, 0.00, 0.25,
+                0.00, 0.00, 0.30, 0.70, 0.60, 0.50), nrow = 6)
+  Phi <- matrix(c(1, 0.5, 0.5, 1), 2)
+  common <- L %*% Phi %*% t(L)
+  u2 <- 1 - diag(common)
+  R <- common + diag(u2)
+  map <- matrix(0, 6, 2); map[1:3, 1] <- 1; map[4:6, 2] <- 1
+
+  spec <- list(g_load = rep(0, 6), s_load = L, u2 = u2, map = map, Phi = Phi,
+               cormat = R, var_names = paste0("V", 1:6), fac_names = c("F1", "F2"))
+  om <- .reliability_core(spec, "correlation", add_ind = TRUE)
+
+  # Independent reference: the common variance of the composite, 1' L Phi L' 1 read
+  # off the model-implied common-variance matrix, over the composite's total variance.
+  for (j in 1:2) {
+    mem <- which(map[, j] == 1)
+    expect_equal(unname(om[c("F1", "F2")[j], "tot"]),
+                 sum(common[mem, mem]) / sum(R[mem, mem]))
+    # omega subscale stays that factor's own contribution, which on this fixture is
+    # less (it need not be: the total is the quadratic form cs' Phi cs and its cross
+    # terms carry the sign of the other columns' sums times their correlations).
+    expect_equal(unname(om[c("F1", "F2")[j], "sub"]),
+                 sum(L[mem, j])^2 / sum(R[mem, mem]))
+    expect_gt(om[c("F1", "F2")[j], "tot"], om[c("F1", "F2")[j], "sub"])
+  }
+
+  # Without Phi the spec is an orthogonal (bifactor / Schmid-Leiman) one. Its composites
+  # still receive true score variance from the other factor through the cross-loadings,
+  # just not the part carried by the factor correlation, so every omega total is read off
+  # L L' instead of L Phi L' and stays above the factor's own congeneric omega. Only the
+  # totals depend on Phi; the other coefficients do not.
+  spec_orth <- spec
+  spec_orth$Phi <- NULL
+  om_orth <- .reliability_core(spec_orth, "correlation", add_ind = TRUE)
+  common_orth <- L %*% t(L)
+  for (j in 1:2) {
+    mem <- which(map[, j] == 1)
+    expect_equal(unname(om_orth[c("F1", "F2")[j], "tot"]),
+                 sum(common_orth[mem, mem]) / sum(R[mem, mem]))
+    expect_gt(om_orth[c("F1", "F2")[j], "tot"], om[c("F1", "F2")[j], "sub"])
+  }
+  expect_equal(unname(om_orth["g", "tot"]), sum(common_orth) / sum(R))
+  expect_equal(om[, c("hier", "sub", "H", "ECV", "PUC")],
+               om_orth[, c("hier", "sub", "H", "ECV", "PUC")])
+
+  # Control: with exact simple structure a composite receives nothing from the other
+  # factor, so its total reduces to the own-column congeneric omega whether or not the
+  # spec carries Phi. The whole-scale composite spans both factors either way, so its
+  # total does keep the factor correlation and is higher with Phi than without.
+  L0 <- L; L0[3, 2] <- 0; L0[6, 1] <- 0
+  common0 <- L0 %*% Phi %*% t(L0)
+  spec0 <- spec
+  spec0$s_load <- L0
+  spec0$u2 <- 1 - diag(common0)
+  spec0$cormat <- common0 + diag(spec0$u2)
+  om0 <- .reliability_core(spec0, "correlation", add_ind = TRUE)
+  spec0_orth <- spec0
+  spec0_orth$Phi <- NULL
+  om0_orth <- .reliability_core(spec0_orth, "correlation", add_ind = TRUE)
+  expect_equal(om0[c("F1", "F2"), ], om0_orth[c("F1", "F2"), ])
+  expect_equal(unname(om0[c("F1", "F2"), "tot"]), unname(om0[c("F1", "F2"), "sub"]))
+  expect_gt(om0["g", "tot"], om0_orth["g", "tot"])
+})
+
+test_that("a bifactor spec scores the group omega total from every factor's contribution", {
+  # An exactly fitting orthogonal bifactor solution with two cross-loadings. Each
+  # subscale composite therefore carries true score variance from the general factor,
+  # from its own group factor, and from the other group factor through the
+  # cross-loading. An estimated Schmid-Leiman solution always has such cross-loadings;
+  # only a confirmatory bifactor model has the structural zeros that make them vanish.
+  g <- c(0.60, 0.55, 0.50, 0.60, 0.55, 0.50)
+  S <- matrix(c(0.45, 0.40, 0.35, 0.00, 0.00, 0.20,
+                0.00, 0.00, 0.25, 0.45, 0.40, 0.35), nrow = 6)
+  common <- tcrossprod(g) + tcrossprod(S)
+  u2 <- 1 - diag(common)
+  R <- common + diag(u2)
+  map <- matrix(0, 6, 2); map[1:3, 1] <- 1; map[4:6, 2] <- 1
+  facs <- c("F1", "F2")
+
+  spec <- list(g_load = g, s_load = S, u2 = u2, map = map, cormat = R,
+               var_names = paste0("V", 1:6), fac_names = facs)
+  om <- .reliability_core(spec, "correlation", add_ind = TRUE)
+
+  for (j in 1:2) {
+    mem <- which(map[, j] == 1)
+    Vgr <- sum(R[mem, mem])
+    expect_equal(unname(om[facs[j], "tot"]), sum(common[mem, mem]) / Vgr)
+    # The general and own-column terms alone -- what omega hierarchical and omega
+    # subscale report -- leave out the other factor's contribution, so together they
+    # fall short of the total by exactly that mass.
+    own <- sum(g[mem])^2 + sum(S[mem, j])^2
+    expect_equal(unname(om[facs[j], "hier"] + om[facs[j], "sub"]), own / Vgr)
+    expect_gt(om[facs[j], "tot"], own / Vgr)
+  }
+
+  # Whole scale: every loading contributes, so the total is the whole of the
+  # model-implied common variance over the observed total variance. Under exact fit
+  # that is also the observed total variance less the unique variances.
+  expect_equal(unname(om["g", "tot"]), sum(common) / sum(R))
+  expect_equal(unname(om["g", "tot"]), 1 - sum(u2) / sum(R))
+
+  # With exact simple structure nothing crosses, and the three coefficients add up on
+  # the group rows again.
+  S0 <- S; S0[3, 2] <- 0; S0[6, 1] <- 0
+  common0 <- tcrossprod(g) + tcrossprod(S0)
+  spec0 <- spec
+  spec0$s_load <- S0
+  spec0$u2 <- 1 - diag(common0)
+  spec0$cormat <- common0 + diag(spec0$u2)
+  om0 <- .reliability_core(spec0, "correlation", add_ind = TRUE)
+  expect_equal(unname(om0[facs, "tot"]),
+               unname(om0[facs, "hier"] + om0[facs, "sub"]))
+
+  # The same contract holds under variance = "sums_load", where the composite's
+  # model-implied variance replaces its observed one in the denominator.
+  spec_s <- spec
+  spec_s$cormat <- NULL
+  om_s <- .reliability_core(spec_s, "sums_load", add_ind = TRUE)
+  for (j in 1:2) {
+    mem <- which(map[, j] == 1)
+    V <- sum(common[mem, mem]) + sum(u2[mem])
+    expect_equal(unname(om_s[facs[j], "tot"]), sum(common[mem, mem]) / V)
+    expect_gt(om_s[facs[j], "tot"], om_s[facs[j], "hier"] + om_s[facs[j], "sub"])
+  }
 })
 
 test_that("a loading of absolute value >= 1 returns that construct's H index as NA and notes it", {
@@ -307,6 +438,30 @@ test_that("CR equals the lavaan single-factor omega for the k = 1 case", {
                fac_names = "F1")
   om <- .reliability_core(spec, "sums_load", add_ind = FALSE, add_rel = TRUE)
   expect_equal(unname(om["F1", "CR"]), unname(ref[["Omega"]]), tolerance = 1e-8)
+})
+
+test_that("the coefficients a single factor does not define are degenerate, not merely absent", {
+  # The grounds for reporting only omega total, alpha, and the H index for one factor. The
+  # core computes the other four for such a spec, and each comes out saying something about
+  # the number of factors rather than about the solution: omega hierarchical is omega total
+  # again, the one factor accounting for all of the common variance; omega subscale is 0,
+  # there being no group factors; and the ECV and the PUC are exactly 1, there being nothing
+  # for the general factor to share the common variance with and no pair of variables
+  # sharing a group factor.
+  fit <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 1, estimator = "PAF")
+  spec <- .rel_single_factor_spec(.rel_adapt_efa(fit))
+  expect_identical(ncol(spec$s_load), 0L)
+
+  for (v in c("correlation", "sums_load")) {
+    om <- .reliability_core(spec, v, add_ind = TRUE, add_rel = TRUE)
+    # The two omegas are one quantity, reached by two expressions that agree to rounding.
+    expect_equal(unname(om["g", "hier"]), unname(om["g", "tot"]), tolerance = 1e-12)
+    expect_identical(unname(om["g", "sub"]), 0)
+    expect_identical(unname(om["g", "ECV"]), 1)
+    expect_identical(unname(om["g", "PUC"]), 1)
+    # The three that are reported carry information the solution actually supplies.
+    expect_true(all(is.finite(om["g", c("tot", "alpha", "H")])))
+  }
 })
 
 test_that("empty and single-item subscales get NA alpha/CR/AVE as appropriate", {

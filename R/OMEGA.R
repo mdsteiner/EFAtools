@@ -13,9 +13,9 @@
 #' or bifactor solution. The SL-based omegas can either be found from a
 #' [psych::schmid()], [efa_schmid_leiman()], or,
 #' in a more flexible way, by leaving
-#' `model = NULL` and specifying additional arguments. By setting the
-#' `type` argument, results from [psych::omega()]
-#' can be reproduced.
+#' `model = NULL` and specifying additional arguments. The `type` argument selects
+#' how variables are assigned to group factors, and can reproduce the assignment
+#' [psych::omega()] makes.
 #'
 #' @param model class [efa_schmid_leiman()], class `schmid`, or class
 #' `lavaan` object. That is, an output object from [efa_schmid_leiman()] or
@@ -132,7 +132,11 @@
 #' each group. For `lavaan` input the composite variances entering the omegas are
 #' model-implied (computed from the fitted loadings and residual variances), so the
 #' coefficients coincide with the observed-score versions when the model fits
-#' perfectly.
+#' perfectly. The omegas split a composite's variance into a general part and one part
+#' per group factor, which needs uncorrelated latent variables: fit a bifactor model
+#' with `orthogonal = TRUE` (not `lavaan`'s default) and leave the covariances between
+#' a second-order model's first-order factors at zero. A fit whose factors correlate is
+#' rejected rather than scored as though they did not.
 #' The type argument is not evaluated if `model` is of class
 #' `lavaan`.
 #'
@@ -157,19 +161,20 @@
 #'
 #' The only difference between `type = "EFAtools"` and `type = "psych"`
 #' is the determination of variable-to-factor correspondences. `type = "psych"`
-#' reproduces the [psych::omega()] results, where
-#' variable-to-factor correspondences are found by taking the highest
+#' derives them as [psych::omega()] does, by
+#' taking the highest
 #' group factor loading for each variable as the relevant group factor loading.
 #' To do this, `factor_corres` must be left `NULL`.
 #'
-#' `variance = "correlation"` gives the observed-variance form of omega, which
-#' reproduces [psych::omega()]; `"sums_load"` gives McDonald's model-implied
-#' total, which partitions exactly into omega hierarchical plus omega
-#' subscale. The two settings agree on the whole-scale omega total and omega
-#' hierarchical up to model misfit, and differ mainly in the whole-scale omega
-#' subscale, which counts all group-factor variance under `"sums_load"` but only the
-#' assigned subscale composites under `"correlation"`. On the subscale rows the
-#' two conventions agree when simple structure is well-achieved.
+#' Both settings score a composite by the true score variance the model attributes
+#' to it, counting every factor its variables load on; they differ only in the
+#' variance that is divided into. `variance = "correlation"` uses the composite's
+#' observed variance, giving the observed-score form of omega; `"sums_load"` uses its
+#' model-implied variance, which partitions exactly into omega hierarchical plus omega
+#' subscale on the whole-scale row. The two settings agree up to model misfit, and
+#' differ mainly in the whole-scale omega subscale, which counts all group-factor
+#' variance under `"sums_load"` but only the assigned subscale composites under
+#' `"correlation"`.
 #'
 #'
 #' @return If found for an SL or `lavaan` second-order or bifactor solution

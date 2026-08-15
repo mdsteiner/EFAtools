@@ -197,6 +197,28 @@ test_that("a user cormat is honoured for a flexible-input SL object", {
   expect_equal(unname(unclass(om_flex)), unname(unclass(om_flex_ref)))
 })
 
+test_that("a solution whose variables are keyed against each other is flagged", {
+  # The coefficients describe the unit-weighted sum of the variables as supplied, so a
+  # scale whose reverse-worded items were never reverse-coded is signalled rather than
+  # returned as a merely poor one. Shared with efa_reliability() through the reliability
+  # engine, so it reaches this surface too.
+  flip <- rep(1, 18)
+  flip[7:12] <- -1
+  cormat_flipped <- diag(flip) %*% test_models$baseline$cormat %*% diag(flip)
+  dimnames(cormat_flipped) <- dimnames(test_models$baseline$cormat)
+  efa_flipped <- suppressWarnings(EFA(cormat_flipped, N = 500, n_factors = 3,
+                                      type = "EFAtools", method = "PAF",
+                                      rotation = "promax"))
+  sl_flipped <- suppressWarnings(SL(efa_flipped, type = "EFAtools", method = "PAF"))
+  fc <- sl_flipped$sl[, c("F1", "F2", "F3")] >= .2
+
+  expect_warning(OMEGA(sl_flipped, type = "EFAtools", factor_corres = fc),
+                 class = "efa_reliability_mixed_keying")
+  expect_no_warning(OMEGA(sl_mod, type = "EFAtools",
+                          factor_corres = sl_mod$sl[, c("F1", "F2", "F3")] >= .2),
+                    class = "efa_reliability_mixed_keying")
+})
+
 test_that("print output is stable", {
   local_reproducible_output()
 

@@ -30,13 +30,23 @@
 # loadings (`g_load`), the group-factor loading matrix (`s_load`), the uniquenesses (`u2`),
 # the item-to-factor correspondence map (`map`), the group-factor row labels (`fac_names`),
 # the item names (`var_names`), and -- for `variance = "correlation"` -- a correlation
-# matrix (`cormat`). Given these, it computes
+# matrix (`cormat`) plus, for a correlated-factors solution, the factor
+# intercorrelations (`Phi`, in the column order of `s_load`). `Phi` belongs to a spec
+# with no general factor: it marks the group loadings as an oblique pattern whose
+# factors covary, and enters the model-implied common variance in either variance mode.
+# A spec that carries both a general factor and a `Phi` is not supported -- the callers that
+# build a `Phi` set `g_load` to zero, and reject the combination where a user could supply
+# one, because the general and group parts would no longer partition the composite.
+# Given these, it computes
 # McDonald's omega total, hierarchical, and subscale for the general factor and each group
 # factor, and, when `add_ind = TRUE`, the H index (Hancock & Mueller, 2001) together with the
-# ECV and PUC bifactor indices (Rodriguez, Reise & Haviland, 2016). Two total-variance
-# conventions are supported: `"correlation"` uses the correlation matrix; `"sums_load"` uses
-# the model-implied composite variance from the squared loading-column sums and the
-# uniquenesses, McDonald's (1999, Test Theory, Eq. 6.20a) model-implied total. When
+# ECV and PUC bifactor indices (Rodriguez, Reise & Haviland, 2016). Every omega numerator is
+# the true score variance the model attributes to a composite, read off the model-implied
+# common variance Lambda Psi Lambda'. Two total-variance denominators are supported:
+# `"correlation"` takes a composite's variance from the correlation matrix, as McDonald's
+# omega total does (1999, Test Theory, Eq. 6.2.1; Zinbarg, Yovel, Revelle & McDonald, 2006,
+# Eqs. 4 and 6); `"sums_load"` uses the model-implied composite variance instead, the common
+# variance plus the uniquenesses, and so needs no correlation matrix. When
 # `add_rel = TRUE`, three further columns are appended: standardized Cronbach's alpha
 # (Cronbach, 1951) for the whole scale and each subscale, and -- per group factor, over its
 # assigned (simple-structure) composite -- the composite reliability (congeneric omega;
@@ -61,6 +71,28 @@
   cormat <- spec$cormat
   var_names <- spec$var_names
 
+  # The map states membership, so only 0 and 1 (or the logicals they stand for) mean
+  # anything. Any other value is read two ways below and cannot be read one way: the
+  # composites are the entries equal to 1, while the map is also multiplied into the
+  # loadings and the uniquenesses, where it weights them. A map of 2s therefore names the
+  # same composites but empties every one of them -- the coefficients come back NA under a
+  # whole-scale row that still looks right -- so it is refused rather than resolved.
+  # Checked here rather than in the front ends because this is where every route meets: the
+  # derived maps are 0/1 or logical by construction, but a user's arrives through several
+  # callers, not all of which validate it.
+  # %in% is match-based, so a missing entry answers FALSE rather than propagating.
+  if (!(is.logical(factor_corres) || is.numeric(factor_corres)) ||
+      !all(factor_corres %in% c(0, 1))) {
+    vals <- unique(as.vector(as.matrix(factor_corres)))
+    other <- utils::head(vals[!vals %in% c(0, 1)], 3L)
+    cli::cli_abort(
+      c("{.arg {arg}} must hold only 0 and 1.",
+        "x" = "It also holds {.val {other}}.",
+        "i" = "Mark each variable's group factors with 1 and every other entry with 0."),
+      class = "efa_reliability_map_values"
+    )
+  }
+
   # Same general + group factor labels regardless of how s_load was obtained.
   factor_names <- c("g", seq_len(ncol(s_load)))
 
@@ -70,7 +102,9 @@
   rownames(input) <- var_names
   input$u2 <- u2
 
-  omega_mat <- input[, 2:(ncol(s_load) + 1), drop = FALSE] * factor_corres
+  # seq_len(k) + 1 rather than 2:(k + 1): the latter counts down to c(2, 1) when a spec
+  # arrives with no group factors, selecting the general column twice over.
+  omega_mat <- input[, seq_len(ncol(s_load)) + 1L, drop = FALSE] * factor_corres
 
   # Sum of all g loadings
   sum_g <- sum(input$g)
@@ -78,21 +112,38 @@
   # Sum of all error variances
   sum_e <- sum(input$u2)
 
-  # Compute sums of error variances and g-loadings for group factors
-  sums_e_s <- NULL
-  sums_g_s <- NULL
-
-  for (i in seq_len(ncol(s_load))){
-    sums_e_s[i] <- sum(input$u2 * factor_corres[, i])
-    sums_g_s[i] <- sum(input$g * factor_corres[, i])
-  }
-
+  # Sums of error variances and of loadings over each group factor's assigned items.
+  sums_e_s <- colSums(input$u2 * factor_corres)
   sums_s_s <- colSums(omega_mat)
+
+  # The variables a group factor's composite is made of. The omega numerators and
+  # denominators are formed from this one index vector, so each coefficient's two halves
+  # always describe the same composite. The map is 0/1 by the check above, so these are the
+  # same items the masked sums above are taken over.
+  members <- lapply(seq_len(ncol(s_load)), function(i) which(factor_corres[, i] == 1))
+
+  # Model-implied common variance of the variables, Lambda Psi Lambda'. The general factor
+  # is an extra column orthogonal to the group factors, so the quadratic form splits into a
+  # general and a group part; Psi is the identity for a bifactor or Schmid-Leiman solution
+  # and the factor intercorrelations Phi for a correlated-factors one, whose general column
+  # is zero throughout (see above). Summing the block belonging to a set of variables gives
+  # that composite's model-implied true score variance, 1' Lambda Psi Lambda' 1, which is the
+  # numerator of every omega total below (Zinbarg, Revelle, Yovel & Li, 2005, Eq. 8; Zinbarg,
+  # Yovel, Revelle & McDonald, 2006, Eq. 6). Its diagonal holds the communalities.
+  s_mat <- as.matrix(input[, seq_len(ncol(s_load)) + 1L, drop = FALSE])
+  Phi <- spec$Phi
+  group_common <- if (is.null(Phi)) tcrossprod(s_mat) else s_mat %*% Phi %*% t(s_mat)
+  common <- tcrossprod(input$g) + group_common
+
+  # The coefficients below describe the unit-weighted sum of the variables as supplied, so
+  # flag a solution whose variables are not all keyed in the same direction before any of
+  # them is reported.
+  .rel_check_keying(common, var_names)
 
   if(variance == "correlation"){
 
     # Compute omega total, hierarchical, and subscale for g-factor
-    omega_tot_g <- (sum(cormat) - sum_e) / sum(cormat)
+    omega_tot_g <- sum(common) / sum(cormat)
     omega_h_g <- sum_g^2 / sum(cormat)
     omega_sub_g <- sum(sums_s_s^2) / sum(cormat)
 
@@ -101,35 +152,72 @@
     omega_h_sub <- NULL
     omega_sub_sub <- NULL
 
+    # A composite's omega total is the true score variance the model attributes to it over
+    # its observed variance. Every factor the composite's variables load on contributes:
+    # with correlated factors through the cross-loadings and the factor correlations, and in
+    # an estimated bifactor or Schmid-Leiman solution through the cross-loadings alone,
+    # which such a solution always has -- only a confirmatory bifactor model carries
+    # structural zeros off a composite's own column. Counting the general factor and the
+    # composite's own column only would report that factor's congeneric omega, which the
+    # omega subscale column already reports, under the name of a total. Reading the
+    # composite's block of `common` counts every factor, whichever kind of solution the spec
+    # holds.
     for (i in seq_len(ncol(s_load))) {
-      subf <- which(factor_corres[, i] == 1)
+      subf <- members[[i]]
       Vgr <- sum(cormat[subf, subf])
-      omega_sub_sub[i] <- sums_s_s[i]^2 / Vgr
-      omega_h_sub[i] <- sums_g_s[i]^2 / Vgr
-      omega_tot_sub[i] <- (sums_s_s[i]^2 + sums_g_s[i]^2) / Vgr
+      omega_tot_sub[i] <- sum(common[subf, subf]) / Vgr
+      omega_h_sub[i] <- sum(input$g[subf])^2 / Vgr
+      omega_sub_sub[i] <- sum(s_mat[subf, i])^2 / Vgr
     }
 
   } else if(variance == "sums_load") {
 
     # Sums of all group factor loadings for all group factors
-    sums_s <- colSums(input[, 2:(ncol(s_load) + 1), drop = FALSE])
+    sums_s <- colSums(s_mat)
+
+    # What the group factors contribute to the whole-scale composite, 1' S Psi S' 1. For
+    # uncorrelated group factors that is the sum of the squared loading-column sums; for a
+    # correlated-factors spec the factor correlations enter it as the quadratic form
+    # (S'1)' Phi (S'1), which the squared column sums alone would drop. The subscale rows
+    # below read the Phi-aware `common`, so scoring this row from the column sums would
+    # describe an orthogonal model and a correlated one in the same table. The
+    # uncorrelated branch keeps the literal expression, so nothing about the arithmetic of
+    # a bifactor or Schmid-Leiman solution changes.
+    group_var <- if (is.null(Phi)) sum(sums_s^2) else sum(sums_s * (Phi %*% sums_s))
 
     # Compute omega total, hierarchical, and subscale for the whole scale. The
-    # composite here is all items, so every item's loading on every group factor
+    # composite here is all variables, so every loading on every group factor
     # contributes to its variance: the general and group terms use the full
-    # loading-column sums. omega total is then McDonald's model-implied total,
-    # 1 - sum(u^2) / V, with V the model-implied composite variance, and the
-    # general and group variances partition it exactly (tot = hier + sub for the
-    # g row). McDonald (1999, Test Theory, Eq. 6.20a).
-    omega_tot_g <- (sum_g^2 + sum(sums_s^2)) / (sum_g^2 + sum(sums_s^2) + sum_e)
-    omega_h_g <- sum_g^2 / (sum_g^2 + sum(sums_s^2) + sum_e)
-    omega_sub_g <- sum(sums_s^2) / (sum_g^2 + sum(sums_s^2) + sum_e)
+    # loading-column sums, which add up to the whole of the model-implied common
+    # variance. omega total is then 1 - sum(u^2) / V, with V
+    # the model-implied composite variance, and the general and group variances
+    # partition it exactly (tot = hier + sub for the g row).
+    omega_tot_g <- (sum_g^2 + group_var) / (sum_g^2 + group_var + sum_e)
+    omega_h_g <- sum_g^2 / (sum_g^2 + group_var + sum_e)
+    omega_sub_g <- group_var / (sum_g^2 + group_var + sum_e)
 
-    # Compute omega total, hierarchical, and subscale for group factors
-    omega_tot_sub <- (sums_g_s^2 + sums_s_s^2) / (sums_g_s^2 + sums_s_s^2 +
-                                                         sums_e_s)
-    omega_h_sub <- sums_g_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
-    omega_sub_sub <- sums_s_s^2 / (sums_g_s^2 + sums_s_s^2 + sums_e_s)
+    # Compute omega total, hierarchical, and subscale for group factors. A subscale
+    # composite's model-implied variance is the common variance it receives from every
+    # factor plus its unique variances, so the denominator reads that composite's block
+    # of `common` exactly as the whole-scale row above reads the whole matrix. Counting
+    # only the general and own-column terms would leave the variance the composite
+    # receives through cross-loadings on the other group factors out of both the
+    # numerator and the denominator, which understates omega total and inflates omega
+    # hierarchical and omega subscale. The three add up on the whole-scale row but not
+    # here, where omega subscale stays the factor's own contribution while omega total
+    # counts them all.
+    omega_tot_sub <- NULL
+    omega_h_sub <- NULL
+    omega_sub_sub <- NULL
+
+    for (i in seq_len(ncol(s_load))) {
+      subf <- members[[i]]
+      common_sub <- sum(common[subf, subf])
+      Vsub <- common_sub + sum(u2[subf])
+      omega_tot_sub[i] <- common_sub / Vsub
+      omega_h_sub[i] <- sum(input$g[subf])^2 / Vsub
+      omega_sub_sub[i] <- sum(s_mat[subf, i])^2 / Vsub
+    }
   }
 
   # A group factor with no assigned items (an all-zero map column, e.g. a
@@ -153,48 +241,82 @@
   omega_h <- c(omega_h_g, omega_h_sub)
   omega_sub <- c(omega_sub_g, omega_sub_sub)
 
-  # In "correlation" mode the total-variance denominator (the correlation matrix)
-  # is independent of the loading-based numerators, so a correlation matrix that
-  # is inconsistent with the supplied loadings and uniquenesses can push a
-  # coefficient above 1 or make omega hierarchical exceed omega total. These are
-  # not admissible reliabilities; warn rather than return them silently.
+  # A share of variance above 1, or a general-factor share above the share of all factors
+  # together, is not an admissible reliability whichever total variance it was divided by.
+  # The two conventions get there by different routes, so the remedy differs with them.
+  #
+  # In "correlation" mode the denominator (the correlation matrix) is independent of the
+  # loading-based numerators, so a correlation matrix inconsistent with the supplied loadings
+  # can push a coefficient above 1. It takes a composite whose loadings over-predict its
+  # observed variance by more than the whole of its unique variance, which cannot happen when
+  # the loadings were estimated from that same matrix, but can when the two come from
+  # different sources.
+  #
+  # In "sums_load" mode the denominator is that composite's own common variance plus its own
+  # unique variances, so an omega total above 1 takes those uniquenesses to sum to something
+  # negative -- an improper solution, which the Heywood check below reports from the
+  # uniquenesses themselves, except that that check is gated on `add_ind` while this one is
+  # not. Omega subscale reaches it by a second route that needs no improper solution at all:
+  # it divides a group factor's own squared loading sum by its composite's whole variance,
+  # and once the group factors are correlated that sum is not a part of it, because the
+  # composite's cross-loadings on the other factors can contribute negative common variance
+  # and take the total below what its own factor puts in.
+  #
+  # Either way, a set of factor correlations that is not positive semi-definite makes the
+  # group factors contribute negative common variance, which can put omega hierarchical above
+  # omega total. Warn rather than return any of these silently.
   tol <- .Machine$double.eps^0.5
-  if (variance == "correlation" &&
-      (any(c(omega_tot, omega_h, omega_sub) > 1 + tol, na.rm = TRUE) ||
-       any(omega_h > omega_tot + tol, na.rm = TRUE))) {
-    cli::cli_warn(
-      c("Some omega coefficients are out of range (above 1, or omega hierarchical above omega total).",
-        "i" = "Check that {.arg cormat} is consistent with the loadings and uniquenesses, or use {.code variance = \"sums_load\"}."),
-      class = "efa_omega_out_of_range"
-    )
+  if (any(c(omega_tot, omega_h, omega_sub) > 1 + tol, na.rm = TRUE) ||
+      any(omega_h > omega_tot + tol, na.rm = TRUE)) {
+
+    # Without a general factor omega hierarchical is zero throughout, so the second clause
+    # there says an omega total came out negative -- and the front-end drops the hierarchical
+    # column for such a solution, so naming it would point at a coefficient the result does
+    # not carry.
+    lead <- if (isTRUE(all(input$g == 0))) {
+      "Some omega coefficients are out of range (above 1, or a negative omega total)."
+    } else {
+      "Some omega coefficients are out of range (above 1, or omega hierarchical above omega total)."
+    }
+
+    # The uniquenesses are named rather than pointed at as {.arg u2}: they are only an
+    # argument on the manual and bare-matrix routes, and come from the model on the others.
+    hints <- if (variance == "correlation") {
+      "Check that {.arg cormat} is consistent with the loadings."
+    } else {
+      "Check the uniquenesses of the affected composite -- its own subtotal, not their sum over all variables -- for a negative value."
+    }
+    if (!is.null(Phi)) {
+      hints <- c(hints, paste("Omega subscale can also exceed 1 in a proper solution, when a",
+                              "composite's cross-loadings on the other group factors reduce its",
+                              "variance below what its own factor contributes; inspect those and",
+                              "{.field Phi}."))
+    }
+    names(hints) <- rep("i", length(hints))
+
+    cli::cli_warn(c(lead, hints), class = "efa_omega_out_of_range")
   }
 
   # Optional reliability / convergent-validity coefficients, appended as columns when
   # requested. Kept behind add_rel so the OMEGA coefficient menu is unchanged otherwise.
   if (isTRUE(add_rel)) {
 
-    s_mat <- as.matrix(input[, 2:(ncol(s_load) + 1), drop = FALSE])
-
     # Standardized Cronbach's alpha (Cronbach, 1951), k / (k - 1) *
     # (1 - sum(diag(R_sub)) / sum(R_sub)), for the whole scale (all items) and each
     # subscale (the map's assigned items). It needs a correlation matrix: the supplied
-    # cormat, or -- when none was given -- the model-implied Lambda Lambda' + diag(u2)
-    # built from the (orthogonal general + group) loadings and uniquenesses (which
-    # assumes the model holds), standardized to a unit diagonal with cov2cor so the
-    # formula returns the standardized coefficient even when the loadings and
-    # uniquenesses do not complete to unit item variance. Standardized alpha uses the
+    # cormat, or -- when none was given -- the model-implied common variance plus the
+    # uniquenesses (which assumes the model holds), standardized to a unit diagonal with
+    # cov2cor so the formula returns the standardized coefficient even when the loadings
+    # and uniquenesses do not complete to unit item variance. Standardized alpha uses the
     # correlation matrix; raw, covariance-based alpha would need item standard deviations
     # the spec does not carry. Alpha is undefined for fewer than two items (returned NA).
     R_rel <- if (!is.null(cormat)) {
       cormat
     } else {
-      Lambda <- cbind(input$g, s_mat)
-      stats::cov2cor(Lambda %*% t(Lambda) + diag(u2, nrow = length(u2)))
+      stats::cov2cor(common + diag(u2, nrow = length(u2)))
     }
 
-    composites <- c(list(seq_len(nrow(s_mat))),
-                    lapply(seq_len(ncol(s_load)),
-                           function(j) which(factor_corres[, j] == 1)))
+    composites <- c(list(seq_len(nrow(s_mat))), members)
     alpha <- vapply(composites, function(idx) {
       k <- length(idx)
       if (k < 2L) return(NA_real_)
@@ -437,6 +559,177 @@
 
 }
 
+# Warn when the variables of a solution are not all keyed in the same direction -- most
+# often a scale whose reverse-worded items were never reverse-coded. Every coefficient
+# computed here describes the raw unit-weighted sum of the variables as supplied, so a
+# variable keyed against the rest subtracts from that sum's true score variance instead of
+# adding to it and the coefficients collapse: correct for the sum that was scored, but
+# reading as a poor scale rather than as a missing step. The variables are deliberately not
+# reflected first, as psych::omega does, because reflection describes a different composite
+# than the one the coefficients are defined on (Flora, 2020).
+#
+# `common` is the model-implied common variance Lambda Psi Lambda' of the variables, whose
+# total sum(common) = 1' Lambda Psi Lambda' 1 is the composite's true score variance. Under
+# any re-keying D = diag(+-1) of the variables that variance becomes sum_ij d_i d_j
+# common_ij, which is at most sum(abs(common)); the ratio of the two is therefore 1 exactly
+# when no variable works against the sum and falls towards 0 as the keying becomes balanced.
+# The rule reads the common variance rather than the loading signs on purpose: `g_load` is
+# zero throughout for a correlated-factors spec, so a sign test on it never fires there, and
+# the group loadings carry no sign information either, because the factor columns are
+# reflected -- a reverse-keyed block comes back with positive loadings and a negative factor
+# correlation, which the common variance shows and the loadings do not.
+#
+# `cutoff` is deliberately far below any well-keyed solution, as `min_load` is in
+# .rel_check_map(): the ratio is (P - N) / (P + N) over the positive and negative common
+# variance, so firing takes negative common variance exceeding about a seventh of the
+# positive. On the bundled data no correctly keyed solution reaches that: the lowest is .89
+# (DOSPERT_raw at two factors, whose domains are only weakly related), whereas a scale whose
+# reverse-worded items were never reverse-coded stays below .32 (UPPS_raw, two to six
+# factors) and reverse-coding one factor's block of a well-keyed solution takes it to .23.
+#
+# The variables named are those whose own common variance with the composite, the row sum of
+# `common`, is negative -- the ones subtracting from the sum, and so the ones to reverse-code.
+# They are named for guidance and not as the trigger: a variable can drag the total down
+# without its own row sum turning negative, so the ratio decides whether to warn and the row
+# sums only say where to look. The list is therefore allowed to come out empty, in which case
+# the message states the finding without it. `var_names` may be NULL, as for the Heywood
+# report above, in which case the positions stand in for the names.
+.rel_check_keying <- function(common, var_names = NULL, cutoff = 0.75) {
+
+  aligned <- sum(abs(common))
+
+  # Nothing to judge: no loadings at all, or a malformed component (NA) the callers
+  # report separately.
+  if (!is.finite(aligned) || aligned <= .Machine$double.eps^0.5) return(invisible(NULL))
+
+  if (isTRUE(sum(common) < cutoff * aligned)) {
+
+    against <- which(rowSums(common) < 0)
+    n_bad <- length(against)
+
+    lead <- if (n_bad > 0) {
+      labs <- if (is.null(var_names)) as.character(against) else var_names[against]
+      # Capped as elsewhere: a long scale can have dozens of reverse-worded items, and a
+      # message that prints them all is unreadable.
+      cap <- .cap_label_list(labs)
+      paste("The variables are not all keyed in the same direction:",
+            "{.val {cap$shown}}{cap$rest} {cli::qty(n_bad)}{?is/are} keyed against the rest.")
+    } else {
+      "The variables are not all keyed in the same direction."
+    }
+
+    cli::cli_warn(
+      c(lead,
+        "i" = "The coefficients describe the raw unit-weighted sum of the variables as supplied, in which the reversed variables cancel rather than add.",
+        "i" = "Reverse-code them before fitting the solution (Flora, 2020)."),
+      class = "efa_reliability_mixed_keying"
+    )
+  }
+
+  invisible(NULL)
+
+}
+
+# Warn (classed) when supplied uniquenesses do not complete the supplied loadings to unit
+# variance. `h2` is the diagonal of the model-implied common variance Lambda Psi Lambda',
+# so a standardized solution has h2 + u2 = 1 for every variable. Only the routes whose
+# uniquenesses come from the user need this: every fitted route derives them as 1 - h2, and
+# so satisfies it by construction.
+#
+# What it catches is a slip on adjacent columns. The printed Schmid-Leiman table ends in
+# `h2` and `u2`, and many published tables report only `h2`, leaving the reader to form
+# `1 - h2` by hand -- so passing communalities where uniquenesses belong is a one-character
+# mistake rather than a contrived one. It is silent otherwise: `u2` does not enter the
+# coefficients at all under `variance = "correlation"` with a correlation matrix, and that
+# is the mode a user without one is turned away from, so the mistake is inert exactly where
+# it would be harmless and load-bearing exactly where it is not.
+#
+# A warning rather than an error, because unstandardized (covariance-metric) components are
+# a defensible input that yields a legitimate raw-score coefficient; the user needs to know
+# the components are not standardized, not to be stopped. `tol` sits well clear of both
+# sides: a published table rounded to two decimals leaves a residual of about .015, while
+# supplying communalities leaves at least .40.
+.rel_check_u2 <- function(h2, u2, tol = 0.05) {
+
+  # Nothing to compare: no variables at all, or a `u2` that does not line up with the
+  # loadings, which is the callers' error to report and not a statement about
+  # standardization. Either would otherwise reach `max()` over an empty vector or compare a
+  # recycled one.
+  if (length(h2) == 0L || length(h2) != length(u2)) return(invisible(NULL))
+
+  resid <- max(abs(h2 + u2 - 1))
+
+  # A non-finite residual is a malformed component, which the callers report separately.
+  if (!isTRUE(resid > tol)) return(invisible(NULL))
+
+  cli::cli_warn(
+    c("The supplied {.arg u2} do not complete the loadings to unit variance.",
+      "x" = "A communality plus its uniqueness differs from 1 by up to {round(resid, 3)}.",
+      "i" = "A standardized solution has {.code u2 = 1 - h2}; check that {.arg u2} holds uniquenesses rather than communalities, and that they belong to these loadings.",
+      "i" = "Unstandardized components are scored as given, and yield the coefficients of the raw composite."),
+    class = "efa_reliability_u2_not_standardized"
+  )
+
+  invisible(NULL)
+
+}
+
+# Abort (classed) unless `Phi` can be the factor intercorrelation matrix of the `k` group
+# factors it will be scored with. `NULL` means the identity -- uncorrelated group factors, as a
+# Schmid-Leiman or bifactor solution has by construction -- and is always admissible, so this
+# only runs where a matrix was actually supplied.
+#
+# The checks matter because `Phi` enters the model-implied common variance as the quadratic form
+# S Phi S', where a matrix that is not a correlation matrix does not merely mislabel the solution:
+# an asymmetric one is silently symmetrised by the quadratic form, a non-unit diagonal rescales
+# the factors, and one that is not positive semi-definite attributes negative common variance to a
+# composite and returns coefficients outside [0, 1] with nothing else to catch them.
+#
+# The shape tests are written out rather than delegated to .is_cormat(): that helper classifies
+# raw data against a correlation matrix, so it rejects by design the 1 x 1 matrix a single group
+# factor takes, and it aborts on a missing value instead of reporting one. Positive
+# semi-definiteness is judged on the smallest eigenvalue against the package's usual tolerance --
+# an estimated factor correlation matrix is often singular to rounding, which is admissible, while
+# a genuinely indefinite one is not.
+.rel_check_phi <- function(Phi, k, arg = "Phi") {
+
+  if (is.null(Phi)) return(invisible(NULL))
+
+  bad <- function(detail) {
+    cli::cli_abort(
+      c("{.arg {arg}} must be the correlation matrix of the {k} group factor{?s}.",
+        "x" = detail,
+        "i" = "Leave it {.val NULL} for uncorrelated group factors."),
+      class = "efa_reliability_bad_phi"
+    )
+  }
+
+  if (!is.matrix(Phi) || !is.numeric(Phi)) {
+    bad("It is {.obj_type_friendly {Phi}}, not a numeric matrix.")
+  }
+  if (nrow(Phi) != k || ncol(Phi) != k) {
+    bad("It is {nrow(Phi)} by {ncol(Phi)}, not {k} by {k}.")
+  }
+  if (anyNA(Phi)) {
+    bad("It contains missing values.")
+  }
+
+  tol <- .Machine$double.eps^0.5
+  if (any(abs(Phi - t(Phi)) > tol)) {
+    bad("It is not symmetric.")
+  }
+  if (any(abs(diag(Phi) - 1) > tol)) {
+    bad("Its diagonal is not all ones.")
+  }
+  # Symmetric by the test above, so the eigenvalues are real.
+  if (min(eigen(Phi, symmetric = TRUE, only.values = TRUE)$values) < -tol) {
+    bad("It is not positive semi-definite, so it is not a correlation matrix.")
+  }
+
+  invisible(NULL)
+
+}
+
 # Abort (classed) when a supplied correlation matrix fails the .is_cormat() check;
 # shared guard for the adapters that accept a user cormat. A correlation matrix supplied as a
 # data frame -- what read.csv() returns for a published correlation table -- is accepted and
@@ -446,7 +739,18 @@
 # only sum and subset it, which a data frame does support -- so without the coercion they
 # would return correct numbers and only add_rel = TRUE would fail. Keep the coercion here
 # rather than at the one operation, so the spec carries a single type.
-.rel_check_cormat <- function(cormat) {
+#
+# The matrix is also checked against the solution it will be used with, given as the
+# number of variables (`n_items`) and, where the solution carries them, their names
+# (`var_names`). The subscale coefficients divide loading sums by the correlations of the
+# same items, so a correlation matrix of other variables, or of the same variables in
+# another order, yields well-formed but wrong subscale coefficients while leaving the
+# whole-scale row -- which only sums the whole matrix -- untouched, and one of the wrong
+# size fails much later as an out-of-bounds subscript. Named variables in a different
+# order are an unambiguous permutation and are reordered to the solution; a different set
+# of names cannot be resolved and aborts.
+.rel_check_cormat <- function(cormat, var_names = NULL, n_items = NULL) {
+
   if (!.is_cormat(cormat)) {
     cli::cli_abort(
       c("{.arg cormat} is not a correlation matrix.",
@@ -454,7 +758,48 @@
       class = "efa_reliability_not_cormat"
     )
   }
-  as.matrix(cormat)
+
+  cormat <- as.matrix(cormat)
+
+  if (is.null(n_items) && !is.null(var_names)) n_items <- length(var_names)
+
+  if (!is.null(n_items) && nrow(cormat) != n_items) {
+    cli::cli_abort(
+      c("{.arg cormat} must have one row and column per variable in the solution.",
+        "x" = "{.arg cormat} has {nrow(cormat)} variable{?s}, but the solution has {n_items}.",
+        "i" = "Supply the correlation matrix of the variables in the solution."),
+      class = "efa_reliability_cormat_dim"
+    )
+  }
+
+  # Only labelled variables can be matched. An unlabelled correlation matrix, or an
+  # unlabelled solution, is matched by position as before.
+  rn <- rownames(cormat)
+  cn <- colnames(cormat)
+  if (!is.null(rn) && !is.null(cn) && !identical(rn, cn)) {
+    cli::cli_abort(
+      c("The row and column names of {.arg cormat} differ.",
+        "i" = "Use the same names on both axes, or remove them to match by position."),
+      class = "efa_reliability_cormat_names"
+    )
+  }
+  if (is.null(rn)) rn <- cn
+
+  if (!is.null(var_names) && !is.null(rn) && !identical(rn, var_names)) {
+    if (anyDuplicated(rn) == 0L && anyDuplicated(var_names) == 0L &&
+        setequal(rn, var_names)) {
+      idx <- match(var_names, rn)
+      cormat <- cormat[idx, idx, drop = FALSE]
+    } else {
+      cli::cli_abort(
+        c("The variables of {.arg cormat} are not the variables of the solution.",
+          "i" = "Supply the correlation matrix of the solution's variables, in any order."),
+        class = "efa_reliability_cormat_names"
+      )
+    }
+  }
+
+  cormat
 }
 
 # Adapter: normalize an SL() object to the reliability spec. Mirrors the SL branch of
@@ -473,7 +818,7 @@
   if (is.null(cormat)) {
     if (is.matrix(model$orig_R)) cormat <- model$orig_R
   } else {
-    cormat <- .rel_check_cormat(cormat)
+    cormat <- .rel_check_cormat(cormat, var_names, nrow(sl))
   }
 
   if (is.null(fac_names)) fac_names <- colnames(s_load)
@@ -503,7 +848,7 @@
   if (is.null(cormat)) {
     cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
   } else {
-    cormat <- .rel_check_cormat(cormat)
+    cormat <- .rel_check_cormat(cormat, var_names, nrow(sl))
   }
 
   if (is.null(fac_names)) fac_names <- s_load_names
@@ -515,40 +860,129 @@
 }
 
 # Adapter: normalize manually supplied SL/bifactor components (g_load, s_load, u2) to
-# the reliability spec. Mirrors the model = NULL branch of .OMEGA_FLEX. A cormat may
-# be given directly, reconstructed from an oblique pattern matrix and factor
-# intercorrelations, or left NULL for variance = "sums_load".
+# the reliability spec. Mirrors the model = NULL branch of .OMEGA_FLEX. A cormat may be
+# given directly or reconstructed from an oblique pattern matrix and factor
+# intercorrelations -- one or the other, not both -- or left NULL, which only
+# variance = "sums_load" can then score.
+#
+# `Phi` describes the loadings it is paired with. Supplied together with `pattern` it belongs
+# to that separate oblique solution and is used only to rebuild the correlation matrix, as it
+# always has been -- the pairing is what a Schmid-Leiman input needs, where `s_load` holds the
+# orthogonalized group loadings and `pattern` the parent oblique ones, two different matrices
+# whose model-implied correlations differ once more than three factors make the second-order
+# model overidentified. Supplied without a `pattern` there is no other loading matrix for it
+# to describe, so it is the factor intercorrelation matrix of `s_load` itself: the components
+# then specify a correlated-factors solution, and it enters the model-implied common variance
+# as the quadratic form S Phi S'. That is the one way this route can express correlated group
+# factors; without it the coefficients would describe an orthogonal model instead, and fall
+# short of the ones the same solution gets through `efa_fit()`.
 .rel_adapt_manual <- function(g_load, s_load, u2, var_names, factor_corres = NULL,
                               type = "EFAtools", cormat = NULL, pattern = NULL,
                               Phi = NULL, fac_names = NULL) {
 
-  s_load <- as.matrix(s_load)
+  # unclass() before as.matrix(): a Schmid-Leiman loading table is a matrix already, so
+  # as.matrix() returns it with its class intact, and the data.frame() the core builds from
+  # it then keeps it as a single column instead of expanding it -- which fails only later,
+  # on a names/length mismatch that says nothing about the input.
+  s_load <- as.matrix(unclass(s_load))
+
+  # `cormat` and `pattern` are two ways to give one thing, so taking both is an ambiguous
+  # request rather than a redundant one. It also cannot be resolved quietly: with a `cormat`
+  # in hand the reconstruction never runs and `pattern` is read by nothing, yet its presence
+  # still decides whether `Phi` describes this solution or that one -- an argument with no
+  # effect of its own silently choosing between two different sets of coefficients. Refuse the
+  # combination so the caller says which correlation matrix they mean.
+  if (!is.null(cormat) && !is.null(pattern)) {
+    cli::cli_abort(
+      c("{.arg cormat} and {.arg pattern} are two ways to give the same correlation matrix, so supply one or the other.",
+        "i" = "Drop {.arg pattern} to score the components against {.arg cormat}.",
+        "i" = "Drop {.arg cormat} to reconstruct one instead, from {.arg pattern} and the {.arg Phi} of the oblique solution it came from."),
+      class = "efa_reliability_cormat_and_pattern"
+    )
+  }
+
+  # Whether `Phi` describes this solution's own group factors, rather than a `pattern`'s.
+  phi_solution <- !is.null(Phi) && is.null(pattern)
+
+  # Checked on either reading: paired with a `pattern` it is what the reconstructed
+  # correlation matrix is built from, and so ends up in every coefficient's denominator,
+  # which makes it exactly as load-bearing as it is on its own. It has to be the correlation
+  # matrix of whichever loadings it describes, hence the two column counts.
+  if (!is.null(Phi)) {
+    .rel_check_phi(Phi, if (phi_solution) ncol(s_load) else NCOL(pattern))
+  }
+
+  if (phi_solution) {
+    # A general factor and correlated group factors together do not give the variance
+    # decomposition these coefficients report: omega hierarchical and omega subscale would
+    # no longer partition the composite, and the PUC presupposes that two variables of
+    # different group factors share only the general factor. The core makes the same
+    # statement in its own terms; refuse the combination here, where it can be named.
+    if (!isTRUE(all(g_load == 0))) {
+      cli::cli_abort(
+        c("{.arg Phi} describes correlated group factors, which cannot be combined with a general factor.",
+          "i" = "Supply {.arg Phi} for a correlated-factors solution, whose {.arg g_load} is zero throughout.",
+          "i" = "For a Schmid-Leiman or bifactor solution the group factors are orthogonal; pass {.arg pattern} as well if {.arg Phi} belongs to the oblique solution it came from."),
+        class = "efa_reliability_phi_with_general"
+      )
+    }
+  }
+
+  # A `pattern` alongside `Phi` says the two belong together and `s_load` is a separate,
+  # orthogonalized matrix -- which is exactly right for a Schmid-Leiman input, and exactly
+  # wrong for components that carry no general factor, where `s_load` is itself the oblique
+  # pattern and the factor correlations belong in its common variance. Here `pattern` is
+  # load-bearing (it is reconstructing the correlation matrix, or the check above would have
+  # aborted), so the reading cannot be settled from the arguments: a genuine parent oblique
+  # solution and a `pattern` that merely repeats `s_load` look the same. Take the documented
+  # one and say what was assumed, since the two give materially different coefficients.
+  if (!is.null(Phi) && !is.null(pattern) && isTRUE(all(g_load == 0))) {
+    cli::cli_warn(
+      c("{.arg Phi} is read as the factor correlations of {.arg pattern}, not of {.arg s_load}.",
+        "i" = "It is used to reconstruct the correlation matrix only, so the coefficients describe uncorrelated group factors.",
+        "i" = "Omit {.arg pattern} to score {.arg s_load} as a correlated-factors solution instead."),
+      class = "efa_reliability_phi_pattern"
+    )
+  }
 
   if (is.null(cormat)) {
     if (!is.null(Phi) && !is.null(pattern)) {
       cormat <- psych::factor.model(f = pattern, Phi = Phi, U2 = FALSE)
     }
   } else {
-    cormat <- .rel_check_cormat(cormat)
+    # Matched against the loadings' own row names, not `var_names`: here `var_names` are
+    # the labels the caller wants on the output rows, which need not be the names the
+    # correlation matrix carries. Unlabelled components are matched by position, as the
+    # manual contract -- every component in the row order of the loadings -- implies.
+    cormat <- .rel_check_cormat(cormat, rownames(s_load), nrow(s_load))
   }
+
+  # The communalities the supplied loadings imply -- the diagonal of Lambda Psi Lambda',
+  # under the factor correlations where this spec carries them. The uniquenesses are the
+  # caller's own here, so they are checked against these.
+  group_h2 <- if (phi_solution) rowSums((s_load %*% Phi) * s_load) else rowSums(s_load^2)
+  .rel_check_u2(g_load^2 + group_h2, u2)
 
   if (is.null(fac_names)) fac_names <- seq_len(ncol(s_load))
 
   list(g_load = g_load, s_load = s_load, u2 = u2,
        map = .rel_map(s_load, factor_corres, type),
+       Phi = if (phi_solution) Phi else NULL,
        cormat = cormat, var_names = var_names, fac_names = fac_names)
 
 }
 
-# Adapter: normalize a lavaan single-factor, bifactor, or second-order solution to
-# the reliability spec, one entry per fitted group. Mirrors the structural detection
-# and Schmid-Leiman transform of .OMEGA_LAVAAN (second-order group loadings via
-# .sl_group_loadings), and drives the core with variance = "sums_load" (the composite
-# variances are model-implied). Returns a list with, per group, either a full spec
-# (bifactor / second-order) or a single-factor marker (`single = TRUE`) carrying the
-# loadings and uniquenesses -- a single factor has no group factors and so is scored
-# directly (omega = sum(g)^2 / (sum(g)^2 + sum(u2)), H via .h_index), not through the
-# multi-factor core.
+# Adapter: normalize a lavaan single-factor, correlated-factors, bifactor, or
+# second-order solution to the reliability spec, one entry per fitted group. Mirrors the
+# structural detection and Schmid-Leiman transform of .OMEGA_LAVAAN (second-order group
+# loadings via .sl_group_loadings), and drives the core with variance = "sums_load" (the
+# composite variances are model-implied). Returns a list with, per group, a full spec
+# (correlated factors / bifactor / second-order / single factor); a single-factor group is
+# additionally flagged `single = TRUE`, since a solution with one factor defines fewer
+# coefficients than the core computes for it. A correlated-factors spec is flagged by
+# `correlated = TRUE` on the returned list: it carries no general factor, so a front-end
+# that reports the general-factor coefficients has to drop them (efa_reliability) or
+# refuse the input (OMEGA).
 .rel_adapt_lavaan <- function(model, g_name = "g", group_names = NULL) {
 
   .require_lavaan()
@@ -573,6 +1007,7 @@
 
   tol <- .Machine$double.eps * 100
   higherorder <- FALSE
+  correlated <- FALSE
   few_loadings <- FALSE
   groups <- vector("list", length(std_sol))
 
@@ -594,49 +1029,109 @@
 
     var_names_i <- rownames(lambda)
 
-    # A single factor has no group factors: mark it for direct scoring.
+    # A single factor has no group factors: normalize it to the spec such a solution takes on
+    # every other input route, which the core scores like any of them. Marked `single = TRUE`
+    # so the front-ends can report the coefficients it defines.
     if (ncol(lambda) == 1) {
-      groups[[i]] <- list(single = TRUE, g_load = lambda[, 1], u2 = diag(theta),
-                          var_names = var_names_i, fac_names = colnames(lambda))
+      groups[[i]] <- c(
+        # Carried beside the spec rather than in its `fac_names`, which the core reads to
+        # build the group-factor rows this spec has none of.
+        list(single = TRUE, fac_label = colnames(lambda)),
+        .rel_single_factor_spec(list(g_load = lambda[, 1],
+                                     s_load = lambda[, 0, drop = FALSE],
+                                     u2 = diag(theta), cormat = NULL,
+                                     var_names = var_names_i)))
       next
     }
 
     col_names <- colnames(lambda)
 
-    if (!any(col_names %in% g_name)) {
-      cli::cli_abort(
-        c("Could not find the specified general-factor name in the lavaan solution.",
-          "i" = "Please check the spelling."),
-        class = "efa_reliability_g_name"
-      )
-    }
-
-    # Detect the model type once (all groups share the fixed-zero structure): a
-    # general-factor column of zeros marks a second-order model (the general factor
-    # loads the first-order factors via `beta`, not the items); otherwise the solution
-    # must be a genuine bifactor (at least one item loading on two factors).
+    # Detect the model type once (all groups share the fixed-zero structure).
     if (i == 1) {
-      if (all(lambda[, g_name] == 0)) {
-        higherorder <- TRUE
-        if (sum(colSums(std_sol[[1]][["beta"]]) > 0) > 1) {
+
+      # A second-order model routes the covariances of its first-order factors through
+      # `beta`, which none of the other supported structures has. Read from `beta` rather
+      # than from an all-zero general-factor column, because that column cannot be found
+      # at all when the general factor is misnamed -- and such a fit would then pass the
+      # simple-structure test below and be scored as a set of correlated factors, whose
+      # `psi` is here the residual covariance matrix of the first-order factors rather
+      # than their correlation matrix.
+      beta <- std_sol[[i]][["beta"]]
+      higherorder <- !is.null(beta) && any(abs(beta) > tol, na.rm = TRUE)
+
+      # A variable loading on two or more factors is what a general factor over and above
+      # the group factors looks like in a loading matrix, and is the structure a bifactor
+      # model is recognized by. Without one -- and without the second-order structure
+      # above -- there is no general factor whose variance a composite could be
+      # decomposed into, and the fit is an ordinary set of correlated factors. Decided
+      # from the structure rather than from `g_name`, which says nothing on its own: a
+      # factor may be named "g" without being a general factor, and a general factor need
+      # not be named "g".
+      bi_check <- lambda
+      bi_check[abs(bi_check) > tol] <- 1
+      correlated <- !higherorder && all(rowSums(bi_check) < 2)
+
+      if (isTRUE(higherorder)) {
+        if (sum(colSums(beta) > 0) > 1) {
           cli::cli_abort("The higher-order model has more than two latent strata or more than one second-order factor; only second-order models with one second-order factor are supported.",
                          class = "efa_reliability_higher_order")
         }
-      } else {
-        bi_check <- lambda
-        bi_check[abs(bi_check) > tol] <- 1
-        if (all(rowSums(bi_check) < 2)) {
-          cli::cli_abort(
-            c("The lavaan input is invalid; no reliability coefficients are computed.",
-              "i" = "Provide a bifactor model, a second-order model, or a single-factor model."),
-            class = "efa_reliability_invalid_lavaan"
-          )
-        }
+      } else if (!correlated) {
         # A genuine bifactor has each item loading on the general and a group
         # factor; flag the borderline case where some item loads on fewer than
         # two factors so the front-end can warn the user (it is still scored).
         few_loadings <- !all(rowSums(bi_check) > 1)
       }
+    }
+
+    # Both structures with a general factor locate it by name; a correlated-factors
+    # solution has none to find, so it needs no name and reads none.
+    if (!correlated && !any(col_names %in% g_name)) {
+      cli::cli_abort(
+        c("Could not find the specified general-factor name in the lavaan solution.",
+          "i" = "Please check the spelling.",
+          "i" = if (!higherorder) {
+            "Some variables load on two or more factors, so the fit is read as a bifactor solution; a correlated-factors solution, which needs no general factor, has each variable loading on one factor only."
+          }),
+        class = "efa_reliability_g_name"
+      )
+    }
+
+    if (isTRUE(correlated)) {
+      # An ordinary set of correlated factors: no general factor, the loadings are the
+      # oblique pattern, and the standardized `psi` is the factor correlation matrix
+      # belonging to it. The core reads the pair as the model-implied common variance
+      # Lambda Psi Lambda', exactly as it does for an oblique `efa_fit()` solution; the
+      # front-end drops the coefficients such a solution does not define.
+      # `psi` is indexed by name rather than taken whole, as the second-order branch below
+      # does: the core reads it as the correlations of the columns of `s_load` in their
+      # order, which the two matrices' shared latent ordering supplies but nothing checks.
+      # Unlabelled columns, which a fitted model does not have, keep the positional
+      # reading rather than subscripting `psi` down to nothing.
+      Phi_i <- if (is.null(col_names)) psi else psi[col_names, col_names, drop = FALSE]
+      groups[[i]] <- list(single = FALSE, g_load = rep(0, nrow(lambda)),
+                          s_load = lambda, u2 = diag(theta), Phi = Phi_i,
+                          map = abs(lambda) > tol, cormat = NULL,
+                          var_names = var_names_i, fac_names = col_names)
+      next
+    }
+
+    # The coefficients decompose a composite's variance into a general part and one part
+    # per group factor, which requires the latent variables to be uncorrelated: a
+    # bifactor model is fitted with orthogonal factors, and a second-order model routes
+    # the first-order covariances through `beta`, leaving `psi` diagonal either way.
+    # `lavaan::cfa()` does not impose that by default, so a "bifactor" model fitted
+    # without `orthogonal = TRUE` returns correlated factors whose covariances the
+    # coefficients below would silently drop, as does a second-order model with a freed
+    # residual covariance between first-order factors. Reject either rather than report
+    # a decomposition of a model that does not admit one. An NA here is a malformed
+    # solution rather than a correlation, and is left to the checks above.
+    if (any(abs(psi[upper.tri(psi)]) > tol, na.rm = TRUE)) {
+      cli::cli_abort(
+        c("The factors of the {.cls lavaan} solution are correlated; the coefficients need uncorrelated factors.",
+          "i" = "A bifactor model needs {.code orthogonal = TRUE}; a second-order model needs no freed covariances between the first-order factors."),
+        class = "efa_reliability_correlated_factors"
+      )
     }
 
     col_names <- col_names[!col_names %in% g_name]
@@ -659,18 +1154,115 @@
   }
 
   list(groups = groups, group_names = group_names, variance = "sums_load",
-       higher_order = higherorder, few_loadings = few_loadings)
+       higher_order = higherorder, few_loadings = few_loadings,
+       correlated = correlated)
 
 }
 
-# Direct-scoring omega total and H index for a single-factor solution: a single
-# factor has no group factors, so it is scored directly rather than through the
-# multi-factor core. omega total is sum(loadings)^2 / (sum(loadings)^2 + sum(u2))
-# and H is the Heywood-guarded H index over the loadings. Used by the OMEGA and
-# efa_reliability front-ends for the lavaan single-factor path.
-.rel_single_factor <- function(g_load, u2) {
-  sum_g <- sum(g_load)
-  c(omega = sum_g^2 / (sum_g^2 + sum(u2)), H = .h_index(g_load))
+# Blank the cells of a computed coefficient matrix that a correlated-factors solution
+# (one with no general factor) does not define, so the result builder omits them as it
+# omits any other undefined coefficient.
+#
+# The general-factor decomposition is not identified without a general factor: omega
+# hierarchical and ECV are structurally zero, and PUC ("percent of uncontaminated
+# correlations") presupposes a general factor for the cross-factor correlations to be
+# uncontaminated of. On the whole-scale (g) row the omega subscale and H index are
+# further artifacts of the synthetic all-zero general-factor column rather than
+# coefficients (the H of an all-zero loading vector is 0, and the whole-scale subscale
+# omega does not partition the composite without a general factor). What remains is what
+# such a solution does define: whole-scale omega total and alpha, and each group factor's
+# congeneric omega, H, and alpha, which stay on their own rows.
+.rel_drop_general <- function(x) {
+  x[, c("hier", "ECV", "PUC")] <- NA
+  x["g", c("sub", "H")] <- NA
+  x
+}
+
+# The canonical spec of a solution with exactly one factor, or NULL when `spec` does not
+# describe one.
+#
+# One factor is one factor whichever slot it arrived in. An input that names it the general
+# factor (a single-factor `lavaan` fit, a one-column bifactor matrix) and one that names it
+# the only group factor (a one-factor `efa_fit()` solution, manual components with a zero
+# `g_load`) are the same model, so both are rewritten the same way -- the loadings as
+# `g_load`, no group-factor columns -- and every route reaches the same coefficients rather
+# than one reading of the same solution per input format. Any `Phi` goes with them: the
+# correlation matrix of a single factor can only be the 1 x 1 identity, which .rel_check_phi()
+# has already established and which says nothing about the solution.
+#
+# `fac_names` is emptied here only because the core builds the row labels as
+# c("g", fac_names) and this spec has one row; the name the input gave the factor is applied
+# to that row afterwards, by .rel_drop_single_factor(), from .rel_single_factor_label().
+#
+# The core scores the result as it scores every other spec -- its `seq_len(k) + 1` indexing
+# and its empty-map guards already cover a spec with no group factors -- so a single factor
+# needs no arithmetic of its own. What such a solution does not define is dropped afterwards,
+# by .rel_drop_single_factor().
+.rel_single_factor_spec <- function(spec) {
+
+  s_load <- as.matrix(spec$s_load)
+  n_g <- if (isTRUE(all(spec$g_load == 0))) 0L else 1L
+  if (n_g + ncol(s_load) != 1L) return(NULL)
+
+  g_load <- if (n_g == 1L) spec$g_load else s_load[, 1]
+  # No group factors, in the p x 0 shape the core reads as none.
+  none <- matrix(numeric(0), nrow = length(g_load), ncol = 0)
+
+  list(g_load = g_load, s_load = none, u2 = spec$u2, map = none, Phi = NULL,
+       cormat = spec$cormat, var_names = spec$var_names, fac_names = character(0))
+
+}
+
+# The row label of a single factor: the name the input gives it, or "F1" where the input gives
+# none. A factor supplied as the only group factor is named in `fac_names` -- from the
+# solution's loading columns, or from the user's own argument -- and keeps that name, as does
+# a `lavaan` factor, which the model syntax always names.
+#
+# The fallback is the default first-factor label rather than the general-factor "g" that the
+# multi-factor solutions use on this row. A single factor is the whole model, not the general
+# factor of a bifactor or hierarchical one, which is what "g" would state; a factor supplied
+# as the general factor of a one-column matrix carries no name saying otherwise, so it takes
+# the neutral label too. That also leaves every route agreeing on the label, and not only on
+# the coefficients, wherever the input names the factor nothing.
+#
+# A name is a name: an empty or missing one is not, and neither is the bare column position
+# the manual route falls back to when the caller names no factors (`seq_len(ncol(s_load))`,
+# which is 1 for a single factor).
+.rel_single_factor_label <- function(fac_names) {
+  if (length(fac_names) != 1L || is.na(fac_names) || is.numeric(fac_names) ||
+      !nzchar(as.character(fac_names))) {
+    return("F1")
+  }
+  as.character(fac_names)
+}
+
+# Blank the cells of a computed coefficient matrix that a single-factor solution does not
+# define, so the result builder omits them as it omits any other undefined coefficient, and
+# label its one row with the name the factor came in under (see .rel_single_factor_label).
+#
+# What one factor leaves is omega total, standardized alpha, and the H index. Alpha assumes
+# essentially tau-equivalent items, which is nested in a one-factor model, so this is the one
+# solution for which reporting it is defensible rather than merely computable. The others are
+# not withheld for want of an estimate but because each would state something the solution
+# cannot: omega subscale is the variance due to the group factors, of which there are none;
+# omega hierarchical is the same quantity as omega total here, the one factor accounting for
+# all of the common variance, and two columns holding the same number invite a reader to
+# compare a number with itself; and the ECV and the PUC are 1 by construction, which reads as
+# evidence of unidimensionality rather than as the arithmetic of a model with one factor.
+.rel_drop_single_factor <- function(x, fac_names = NULL) {
+  x[, c("hier", "sub", "ECV", "PUC")] <- NA
+  rownames(x) <- .rel_single_factor_label(fac_names)
+  x
+}
+
+# The single-factor note, stated once for both efa_reliability() paths that reach it (the
+# lavaan front-end and the shared spec route), so the two cannot drift apart.
+.rel_inform_single_factor <- function() {
+  cli::cli_inform(
+    c("i" = "The solution has a single factor; omega total, alpha, and the H index are returned.",
+      "i" = "Omega subscale needs group factors, omega hierarchical is the same quantity as omega total here, and the ECV and the PUC are 1 by construction, so they are omitted."),
+    class = "efa_reliability_single_factor"
+  )
 }
 
 # Adapter: normalize an oblique EFA() object to the reliability spec, treating it as
@@ -681,15 +1273,27 @@
 # which is underidentified for fewer than three factors, imposes proportionality
 # constraints, and biases the general loadings under the cross-loadings EFA solutions
 # almost always have (Flora, 2020, Adv. Methods Pract. Psychol. Sci.; Mansolf &
-# Reise, 2016, Multivariate Behav. Res.) -- the spec carries a zero general factor
-# and the oblique pattern as the group loadings. The core then returns omega total
-# as (1'R1 - sum(u2)) / 1'R1 with u2 = 1 - diag(L Phi L'), and per-factor congeneric
-# omega/H, with omega hierarchical / ECV / PUC 0. That total equals the model-implied
-# 1' L Phi L' 1 / 1'R1 only under exact fit; the two diverge as misfit grows.
+# Reise, 2016, Multivariate Behav. Res.) -- the spec carries a zero general factor,
+# the oblique pattern as the group loadings, and Phi. The core then returns the
+# whole-scale omega total as 1' L Phi L' 1 / 1'R1, each factor's omega total as the
+# Phi-aware common variance of its composite over that composite's observed variance,
+# each factor's congeneric omega subscale and H, and omega hierarchical / ECV / PUC 0.
+#
+# A one-factor solution is the exception to the oblique requirement below, having nothing to
+# rotate: `efa_fit()` returns it unrotated, and where a rotation was asked for anyway leaves
+# `rot_loadings` a copy of the unrotated loadings and no factor intercorrelations. It is read
+# from `unrot_loadings`, which such an object always carries, under the 1 x 1 identity its
+# single factor takes -- so the same expressions serve it -- and the front-end then rewrites
+# the one-column spec into the single-factor one (.rel_single_factor_spec), as it does for
+# every other route that can carry one factor. Refusing it for want of an oblique rotation
+# would be the one piece of advice a one-factor solution cannot follow.
 .rel_adapt_efa <- function(model, factor_corres = NULL, type = "psych",
                            cormat = NULL, fac_names = NULL) {
 
-  if (!("Phi" %in% names(model))) {
+  L_unrot <- unclass(model$unrot_loadings)
+  single <- NCOL(L_unrot) == 1L
+
+  if (!single && !("Phi" %in% names(model))) {
     cli::cli_abort(
       c("{.arg model} is not an oblique EFA solution.",
         "i" = "Reliability from an EFA needs correlated factors; refit with an oblique rotation."),
@@ -697,8 +1301,8 @@
     )
   }
 
-  L1 <- unclass(model$rot_loadings)
-  Phi <- model$Phi
+  L1 <- if (single) L_unrot else unclass(model$rot_loadings)
+  Phi <- if (single) diag(1) else model$Phi
 
   # Order the factor columns by number, as SL() does, for stable labels. Only some
   # rotations label their loading columns, so the order falls back to the columns'
@@ -715,7 +1319,7 @@
     cormat <- if (is.matrix(model$orig_R)) model$orig_R
               else common + diag(u2, nrow = length(u2))
   } else {
-    cormat <- .rel_check_cormat(cormat)
+    cormat <- .rel_check_cormat(cormat, rownames(s_load), nrow(s_load))
   }
 
   if (is.null(fac_names)) {
@@ -725,7 +1329,7 @@
   }
 
   list(g_load = rep(0, nrow(s_load)), s_load = s_load, u2 = u2,
-       map = .rel_map(s_load, factor_corres, type),
+       map = .rel_map(s_load, factor_corres, type), Phi = Phi,
        cormat = cormat, var_names = rownames(s_load), fac_names = fac_names)
 
 }
@@ -743,7 +1347,13 @@
   g_load <- loadings[, 1]
   s_load <- loadings[, -1, drop = FALSE]
 
-  if (is.null(u2)) u2 <- 1 - rowSums(loadings^2)
+  # Derived uniquenesses complete the loadings to unit variance by construction; only ones
+  # the caller supplied are worth checking against them.
+  if (is.null(u2)) {
+    u2 <- 1 - rowSums(loadings^2)
+  } else {
+    .rel_check_u2(rowSums(loadings^2), u2)
+  }
 
   if (is.null(factor_corres)) {
     factor_corres <- abs(s_load) > .Machine$double.eps * 100
@@ -758,14 +1368,20 @@
   if (is.null(cormat)) {
     cormat <- loadings %*% t(loadings) + diag(u2, nrow = length(u2))
   } else {
-    cormat <- .rel_check_cormat(cormat)
+    # The loadings' own row names, so an unlabelled matrix is matched by position
+    # rather than against the V1, V2, ... fallback labels below.
+    cormat <- .rel_check_cormat(cormat, rownames(loadings), nrow(loadings))
   }
 
   var_names <- rownames(loadings)
   if (is.null(var_names)) var_names <- paste0("V", seq_len(nrow(loadings)))
 
   if (is.null(fac_names)) {
-    fac_names <- colnames(s_load)
+    # A matrix with no group-factor columns holds a single factor, and the only place the
+    # matrix names it is the general column. Take the name from there, so the label the
+    # front-end puts on that solution's one row is the one the input gave it -- the same
+    # label the same solution gets through the components.
+    fac_names <- if (ncol(s_load) == 0L) colnames(loadings) else colnames(s_load)
     if (is.null(fac_names)) fac_names <- seq_len(ncol(s_load))
   }
 
@@ -832,9 +1448,17 @@
     # column-major, matching the coefficient-major row order -- so a matrix with no
     # surfaced columns yields a 0-row frame rather than a NULL that would break the
     # assembly below.
+    # The general factor is the first row of every matrix the core builds, whatever that row
+    # is labelled: it is "g" for a solution with group factors, and the factor's own name for
+    # a single-factor one, which reports that factor and no group factors at all. Read by
+    # position rather than by that label, which also keeps a group factor a user happens to
+    # name "g" at level "group". Vectorized over the row index so a matrix with no rows
+    # yields no levels, matching the empty coefficient and factor columns below.
+    row_level <- ifelse(seq_along(factors) == 1L, "general", "group")
+
     data.frame(
       coefficient = rep(keep$coefficient, each = length(factors)),
-      level = rep(ifelse(factors == "g", "general", "group"), times = nrow(keep)),
+      level = rep(row_level, times = nrow(keep)),
       factor = rep(factors, times = nrow(keep)),
       group = rep(group_names[g], length(factors) * nrow(keep)),
       value = as.numeric(mat[, keep$core]),
@@ -967,7 +1591,9 @@
 
       for(i in seq_len(nrow(s_load))){
 
-        factor_corres[i, which.max(abs(input[i, 2:(ncol(s_load) + 1)]))] <- 1
+        # seq_len(k) + 1, not 2:(k + 1): the latter counts down to c(2, 1) with no group
+        # factors and selects the general column, as .reliability_core() documents.
+        factor_corres[i, which.max(abs(input[i, seq_len(ncol(s_load)) + 1L]))] <- 1
 
       }
 
@@ -990,7 +1616,7 @@
   } else if (is.null(model)) {
     seq_len(ncol(s_load))
   } else {
-    colnames(model)[2:(ncol(s_load) + 1)]
+    colnames(model)[seq_len(ncol(s_load)) + 1L]
   }
 
   # Hand the normalized components to the reliability engine.
@@ -1007,17 +1633,36 @@
 #
 # OMEGA's lavaan path is a thin front-end over the shared reliability machinery:
 # the lavaan adapter normalizes the fitted model to a per-group spec (Schmid-
-# Leiman transforming a second-order model), the reliability core scores each
-# multi-factor group, and single-factor groups are scored directly. This function
-# only reassembles those results into OMEGA's historical shapes -- a coefficient
-# matrix per group (unwrapped for a single group), a named list for several
-# groups, and a named c(Omega, H) vector (or a bare omega) for a single factor --
-# and emits the user-facing notes about the model structure. All reliability math
-# lives in .reliability_core / .rel_single_factor.
+# Leiman transforming a second-order model) and the reliability core scores every
+# group, single-factor ones included. This function only reassembles those results
+# into OMEGA's historical shapes -- a coefficient matrix per group (unwrapped for a
+# single group), a named list for several groups, and a named c(Omega, H) vector
+# (or a bare omega) for a single factor -- and emits the user-facing notes about the
+# model structure. All reliability math lives in .reliability_core.
+#
+# A single factor defines standardized alpha as well, which the core computes and
+# efa_reliability() surfaces. OMEGA's single-factor output is a named c(Omega, H) vector
+# rather than a coefficient matrix, so reporting alpha would change the shape of a
+# superseded function's return value and not only its coefficient menu; it keeps the two
+# coefficients it has always returned.
 .OMEGA_LAVAAN <- function(model = NULL, g_name = "g", group_names = NULL,
                           add_ind = TRUE){
 
   adapt <- .rel_adapt_lavaan(model, g_name = g_name, group_names = group_names)
+
+  # OMEGA's input is a Schmid-Leiman, bifactor, second-order, or single-factor solution,
+  # each of which has a general factor, and its wide per-factor output reports that
+  # factor's omega hierarchical, ECV, and PUC. A correlated-factors fit defines none of
+  # them, so it is refused here rather than scored into a table whose general-factor
+  # columns would be zeros. efa_reliability() scores it and omits those coefficients.
+  if (isTRUE(adapt$correlated)) {
+    cli::cli_abort(
+      c("The lavaan input is invalid; no reliability coefficients are computed.",
+        "i" = "Provide a bifactor model, a second-order model, or a single-factor model.",
+        "i" = "To score a correlated-factors solution, use {.fn efa_reliability}."),
+      class = "efa_reliability_invalid_lavaan"
+    )
+  }
 
   # A second-order general factor was Schmid-Leiman transformed by the adapter.
   if (isTRUE(adapt$higher_order)) {
@@ -1055,11 +1700,14 @@
         informed_single <- TRUE
       }
 
-      sf <- .rel_single_factor(grp$g_load, grp$u2)
+      # Scored through the core on the spec the adapter normalized it to, as every other
+      # group is; only the two coefficients OMEGA reports for a single factor are kept.
+      sf <- unclass(.reliability_core(grp, "sums_load", add_ind = add_ind,
+                                      arg = "factor_corres"))
       omegas[[i]] <- if (isTRUE(add_ind)) {
-        stats::setNames(c(sf[["omega"]], sf[["H"]]), c("Omega", "H"))
+        stats::setNames(c(sf["g", "tot"], sf["g", "H"]), c("Omega", "H"))
       } else {
-        sf[["omega"]]
+        sf["g", "tot"]
       }
 
     } else {

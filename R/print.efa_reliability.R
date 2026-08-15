@@ -80,14 +80,44 @@ format.efa_reliability <- function(x, digits = 3, ...) {
       cli::cli_text("Total variance from {vtext}.")
     }
 
-    # A correlated-factors solution has no general factor, so a group factor's omega
-    # hierarchical is zero and its omega total and omega subscale coincide exactly.
-    # Say so, rather than print two identical columns unexplained. Only when both
-    # columns are actually shown (a coefficients = subset may drop one).
+    # A correlated-factors solution has no general factor, so relate the two omega
+    # columns rather than print them side by side unexplained. Which relation holds is a
+    # property of the solution: a factor's composite also carries true score variance
+    # from the other factors, through its cross-loadings and through any factor
+    # correlations, so the two columns differ -- in either direction, since the total is
+    # a quadratic form whose cross terms take the sign of the other columns' sums times
+    # their correlations. Only under exact simple structure and no factor correlations
+    # does the composite draw on nothing else and the two coincide. Decide from the
+    # values as printed, so the sentence always describes the table below it. Only shown
+    # when both columns are there (a coefficients = subset may drop one).
     if (isTRUE(settings$no_general) &&
         all(c("omega_total", "omega_subscale") %in% x$coefficient)) {
+      gr <- x[x$level == "group", , drop = FALSE]
+      tot <- gr[gr$coefficient == "omega_total", , drop = FALSE]
+      sub_om <- gr[gr$coefficient == "omega_subscale", , drop = FALSE]
+      # Paired on the group and the factor rather than on position: an undefined
+      # coefficient is dropped row by row, so two equally long columns need not describe
+      # the same factors, and a multigroup result repeats every factor label once per
+      # group -- pairing on the label alone would match only each factor's first group and
+      # leave the counts below unequal, so no multigroup table could ever be found to
+      # coincide. Only the factors carrying both can be compared, and a factor carrying one
+      # of them alone cannot establish equality, so it takes the general wording. Compared
+      # through the printer's own formatter rather than against a tolerance, so "equals"
+      # says the two columns show the same number at this `digits` -- a tolerance of one
+      # last decimal calls values equal that straddle a rounding boundary and print apart.
+      key <- function(d) paste(d$group, d$factor, sep = "\r")
+      both <- intersect(key(tot), key(sub_om))
+      shown <- function(d) .efa_num(d$value[match(both, key(d))], digits = digits,
+                                    pad = FALSE)
+      coincide <- length(both) > 0 &&
+        length(both) == nrow(tot) && length(both) == nrow(sub_om) &&
+        identical(shown(tot), shown(sub_om))
       cli::cli_text("")
-      cli::cli_text("Correlated-factors solution: with no general factor, each factor's subscale omega equals its total omega.")
+      if (isTRUE(coincide)) {
+        cli::cli_text("Correlated-factors solution: with no general factor, each factor's subscale omega equals its total omega.")
+      } else {
+        cli::cli_text("Correlated-factors solution: a factor's total omega counts the true score variance its composite receives from every factor, through its cross-loadings and any factor correlations; its subscale omega counts only that factor's own contribution.")
+      }
     }
 
     for (grp in groups) {

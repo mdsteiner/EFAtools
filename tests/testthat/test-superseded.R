@@ -372,7 +372,9 @@ test_that("SL() adds no condition and stays transparent", {
 })
 
 # OMEGA() and FACTOR_SCORES() carry the superseded badge but keep their own
-# implementation, output shape, and class. They must gain no runtime signal.
+# implementation, output shape, and class. The supersession itself must add no runtime
+# signal -- the statistical diagnostics they share with their successors through the
+# reliability and scoring engines are pinned in test-OMEGA.R and test-FACTOR_SCORES.R.
 
 test_that("OMEGA() adds no condition and keeps its class", {
   sl_mod <- efa_schmid_leiman(oblique_efa, estimator = "PAF",
@@ -736,9 +738,15 @@ test_that("SL() still routes a non-default `type` into the second-order fit", {
   # `efa_schmid_leiman()` has no `type` formal any more, so the frozen argument only reaches the
   # second-order fit if the wrapper repacks it into the estimation control. A default-valued
   # `type` would pass either way, so the preset pinned here has to be a non-default one.
-  old <- SL(efa_mod, type = "SPSS", method = "ULS")
-  new <- efa_schmid_leiman(efa_mod, estimator = "ULS",
-                           estimate_control = estimate_control(type = "SPSS"))
+  # The second-order fit is the only place the preset and the estimator take effect, so
+  # its note that only PAF is validated against SPSS is what tells the user that this
+  # combination is untested -- through the frozen wrapper and its successor alike.
+  expect_warning(old <- SL(efa_mod, type = "SPSS", method = "ULS"),
+                 class = "efa_spss_method_untested")
+  expect_warning(
+    new <- efa_schmid_leiman(efa_mod, estimator = "ULS",
+                             estimate_control = estimate_control(type = "SPSS")),
+    class = "efa_spss_method_untested")
   expect_equal(old, new, tolerance = fp_tol)
 
   # and it is honoured, not merely accepted: SPSS is not the preset the fit defaults to

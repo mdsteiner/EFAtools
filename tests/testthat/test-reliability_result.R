@@ -105,6 +105,46 @@ test_that("a single-factor matrix carries only its available coefficients", {
   expect_true(all(res_sf$level == "general"))
 })
 
+test_that("the general factor is the first row, whatever it is labelled", {
+  # The general factor is row one of every matrix the core builds; the label on it varies
+  # (a single-factor solution carries its own factor's name there), so the level cannot be
+  # read off the label. Reading it off the label would also mislabel a group factor a user
+  # names "g" as the whole-scale row.
+  named_sf <- .reliability_result(
+    matrix(c(0.86, 0.87), nrow = 1, dimnames = list("ability", c("tot", "H"))))
+  expect_true(all(named_sf$factor == "ability"))
+  expect_true(all(named_sf$level == "general"))
+
+  collide <- .reliability_result(
+    matrix(c(0.8, 0.7, 0.6, 0.5), nrow = 2,
+           dimnames = list(c("F1", "g"), c("tot", "H"))))
+  expect_identical(collide$level[collide$factor == "F1"], rep("general", 2L))
+  expect_identical(collide$level[collide$factor == "g"], rep("group", 2L))
+})
+
+test_that("the correlated-factors note agrees with the table it introduces", {
+  local_reproducible_output()
+  # The note states whether the two omega columns coincide, so it has to be decided from
+  # the values as printed: two coefficients less than one last decimal apart can still
+  # straddle a rounding boundary and print as different numbers, which "equals" would
+  # then contradict.
+  build <- function(tot, sub) {
+    m <- cbind(tot = c(0.9, tot), sub = c(NA_real_, sub))
+    rownames(m) <- c("g", paste0("F", seq_along(tot)))
+    .reliability_result(m, settings = list(variance = "correlation",
+                                           no_general = TRUE))
+  }
+  txt <- function(x) gsub("\\s+", " ", paste(cli::ansi_strip(format(x)), collapse = " "))
+  equal_note <- "subscale omega equals its total omega"
+
+  expect_match(txt(build(c(0.769, 0.745), c(0.769, 0.745))), equal_note, fixed = TRUE)
+
+  # Apart by 9e-4 -- inside the last printed decimal, but on either side of it.
+  differ <- txt(build(c(0.7694, 0.745), c(0.7685, 0.745)))
+  expect_false(grepl(equal_note, differ, fixed = TRUE))
+  expect_match(differ, "F1 .769 .768", fixed = TRUE)
+})
+
 test_that("print output is stable", {
   local_reproducible_output()
 

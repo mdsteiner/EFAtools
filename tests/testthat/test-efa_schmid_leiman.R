@@ -3,8 +3,12 @@ EFA_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                type = "EFAtools", method = "PAF", rotation = "promax")
 SL_EFAtools <- efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF")
 
-# with type SPSS and method ULS
-SL_SPSS <- efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "SPSS"), estimator = "ULS")
+# with type SPSS and method ULS. The second-order fit notes that only PAF is validated
+# against SPSS; that note is asserted where it belongs (test-superseded.R) and is muffled
+# here so the fixture does not raise a warning outside any test.
+SL_SPSS <- suppressWarnings(
+  efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "SPSS"),
+                    estimator = "ULS"))
 
 ## Use with an output from the psych::fa function with type psych
 fa_mod <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
@@ -287,6 +291,53 @@ test_that("errors are thrown correctly", {
   expect_error(efa_schmid_leiman(lav_fit_bifactor, g_name = "g"), class = "efa_sl_not_second_order")
 })
 
+test_that("the second-order fit's substantive warnings reach the user", {
+  # A factor space with an analytic Heywood case: for one factor on three variables
+  # lambda1^2 = r12 * r13 / r23, so these intercorrelations imply a communality of 1.44.
+  # PAF and ULS abort on it; ML clamps the communality at the boundary and warns, and
+  # that warning must not be swallowed -- the residualized loadings it leads to are
+  # essentially zero and everything computed from them rests on it.
+  Phi_hey <- matrix(c(1, .9, .8, .9, 1, .5, .8, .5, 1), 3, 3)
+  L1 <- matrix(0, 9, 3)
+  L1[1:3, 1] <- L1[4:6, 2] <- L1[7:9, 3] <- .7
+  colnames(L1) <- c("F1", "F2", "F3")
+
+  expect_warning(efa_schmid_leiman(L1, Phi = Phi_hey, estimator = "ML"),
+                 class = "efa_heywood")
+  # PAF aborts on the same input, after the fit has named the improper first-order
+  # factor -- the abort says that there is a Heywood case, the warning says where.
+  expect_warning(
+    expect_error(efa_schmid_leiman(L1, Phi = Phi_hey, estimator = "PAF"),
+                 class = "efa_sl_heywood"),
+    class = "efa_heywood")
+
+  # The identification warnings of the internal fit are structural -- one factor on a
+  # k by k matrix of factor intercorrelations is just identified at k = 3 for every
+  # input -- so a sound three-factor solution stays silent.
+  expect_no_warning(efa_schmid_leiman(EFA_mod, estimator = "PAF"))
+  expect_no_warning(efa_schmid_leiman(EFA_mod, estimator = "ML"))
+})
+
+test_that("too few first-order factors are reported on the user's solution", {
+  # One first-order factor leaves nothing to orthogonalize. The diagnostic must name the
+  # supplied solution rather than the internal one-factor fit on the 1 x 1 matrix of
+  # factor intercorrelations, which would otherwise abort about a single "variable".
+  expect_error(
+    efa_schmid_leiman(matrix(c(.7, .6, .5, .4), 4, 1), Phi = matrix(1, 1, 1),
+                      estimator = "PAF"),
+    class = "efa_sl_too_few_factors")
+
+  # Two first-order factors do not identify the second-order fit either, which is a
+  # warning and is raised before that fit runs.
+  L2 <- matrix(0, 4, 2)
+  L2[1:2, 1] <- 0.7
+  L2[3:4, 2] <- 0.7
+  colnames(L2) <- c("F1", "F2")
+  expect_warning(
+    efa_schmid_leiman(L2, Phi = matrix(c(1, .5, .5, 1), 2), estimator = "PAF"),
+    class = "efa_sl_underidentified")
+})
+
 test_that("efa_fit()'s inference arguments are refused", {
   # They are efa_fit() formals, so they used to ride through the dots into the second-order
   # fit -- which runs against a placeholder N and reports none of them, so a standard error
@@ -335,8 +386,11 @@ test_that("a second-order Heywood case raises a classed error", {
                           0.8, 1, 0.7,
                           0.95, 0.7, 1), nrow = 3)
 
-  expect_error(efa_schmid_leiman(L1, Phi = Phi_heywood, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"),
-               class = "efa_sl_heywood")
+  # The second-order fit names the improper first-order factor before the abort.
+  expect_warning(
+    expect_error(efa_schmid_leiman(L1, Phi = Phi_heywood, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"),
+                 class = "efa_sl_heywood"),
+    class = "efa_heywood")
 })
 
 test_that("oblique solutions with unlabelled factor columns keep all factors", {

@@ -333,9 +333,23 @@ efa_reliability(sl_dospert,
 The columns of `factor_map` are matched to the
 group factors **by position**, so the assignment has to be read off the solution rather than
 assumed: a column naming the wrong set of items yields a well-formed but meaningless subscale
-omega instead of an error. Comparing the two tables, the health row is the one that moves most:
-three of the six health items load higher on the ethical factor than on the health one, so
-pinning all six to F4 lowers that subscale's omega relative to the automatic assignment.
+omega instead of an error. Comparing the two tables, the health row (F4) moves clearly: three of
+the six health items load higher on the ethical factor than on the health one, so pinning all six
+to F4 roughly halves the variance its own group factor accounts for. Its omega total falls less,
+because those three items still bring in the true score variance they receive from the ethical
+factor — omega subscale counts a factor's own contribution, omega total everything the composite
+receives.
+
+Which coefficient to report depends on the question being asked. Omega hierarchical asks whether
+a total score can be read as a measure of a single construct; omega subscale asks whether a
+subscale score carries anything beyond the general factor; the H index asks whether a factor is
+well defined by its indicators; and ECV together with PUC ask whether a unidimensional model
+would be defensible at all. Alpha is reported alongside them because it is still widely
+expected, but it assumes essentially tau-equivalent items — equal true-score contributions —
+whereas factor analysis yields congeneric solutions, for which alpha is only a lower bound. For
+a multidimensional scale such as the DOSPERT it is therefore rarely the coefficient to report,
+and the omegas answer the question alpha is usually asked to answer. See `?efa_reliability` for
+the definition of each coefficient and the references behind it.
 
 ## Where to Next
 
