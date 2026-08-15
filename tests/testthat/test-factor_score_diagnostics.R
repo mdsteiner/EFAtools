@@ -76,15 +76,18 @@ test_that("regression determinacy matches psych's factor-score validity", {
 
   W  <- EFAtools:::.factor_score_weights(Lambda, Phi, R, h2, method = "Thurstone")
   d  <- EFAtools:::.factor_score_diagnostics(W, R, S)
+
+  # psych's Grice = TRUE value is gricef(), diag(S' R^-1 S) -- the same regression
+  # determinacy we report, so the two must agree to machine precision. psych's default
+  # (Grice = FALSE) builds the augmented error block from rowSums(f^2) rather than the
+  # true communality diag(Lambda Phi Lambda'), and diverges for oblique factors; it is
+  # a different quantity, not a looser version of this one.
   fs <- psych::factor.scores(x = R, f = unclass(Lambda), Phi = unname(Phi),
-                             method = "regression")
+                             method = "regression", Grice = TRUE)
 
   # psych reports R2 (squared validity); compare against our determinacy (the validity
-  # rho). The tolerance is deliberately loose: psych's fsi() builds the augmented error
-  # block from rowSums(f^2) rather than the true communality diag(Lambda Phi Lambda'), so
-  # the two determinacy definitions diverge for oblique factors (they agree to machine
-  # precision when Phi = I).
-  expect_equal(unname(d$determinacy), sqrt(fs$R2), tolerance = 0.1, ignore_attr = TRUE)
+  # rho). The measured agreement is 1.1e-16; 1e-10 keeps headroom for BLAS variation.
+  expect_equal(unname(d$determinacy), sqrt(fs$R2), tolerance = 1e-10, ignore_attr = TRUE)
 })
 
 test_that("the Guttman index matches its closed form", {

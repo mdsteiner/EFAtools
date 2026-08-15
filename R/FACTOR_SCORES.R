@@ -5,10 +5,15 @@
 #'
 #' `FACTOR_SCORES()` has been superseded by [efa_scores()], which is the
 #' recommended interface going forward. It remains available so existing code
-#' keeps working. Note that `R2` is now the squared factor-score determinacy
-#' (the value [psych::factor.scores()] returns with `Grice = TRUE`); earlier
-#' versions returned psych's default `Grice = FALSE` validity coefficient, so the
-#' slot is not comparable across versions.
+#' keeps working. Note that `R2` is now the squared factor-score determinacy of
+#' the *requested* `method`: the squared correlation between a factor and the
+#' scores that method produces. For `method = "Thurstone"` this is each factor's
+#' squared multiple correlation with the observed variables (the value
+#' [psych::factor.scores()] returns with `Grice = TRUE`); for every other method
+#' it is smaller, because no estimator correlates more highly with the factor
+#' than the regression estimator does. Earlier versions returned psych's default
+#' `Grice = FALSE` validity coefficient, so the slot is not comparable across
+#' versions.
 #'
 #' A convenience wrapper around [efa_scores()] that returns factor scores and
 #' weights in a compact list. Factor scores are calculated according to the
@@ -20,9 +25,9 @@
 #' @param f object of class [efa_fit()] or matrix.
 #' @param Phi matrix. A matrix of factor intercorrelations. Only needs to be
 #' specified if a factor loadings matrix is entered directly into `f`; for an
-#' [efa_fit()] object the intercorrelations are taken from the object. Default is
-#' `NULL`, in which case the intercorrelations of a directly supplied loading
-#' matrix are assumed to be zero.
+#' [efa_fit()] object the intercorrelations are taken from the object, and a
+#' supplied `Phi` is ignored with a warning. Default is `NULL`, in which case the
+#' intercorrelations of a directly supplied loading matrix are assumed to be zero.
 #' @param rho matrix. Correlation matrix used to derive the scoring weights.
 #' Defaults to `NULL`, in which case the matrix the EFA in `f` was fit on
 #' (`f$orig_R`) is used, so the weights stay consistent with the loadings even for
@@ -42,10 +47,11 @@
 #' \item{missing}{Whether the raw data contained missing values (only if raw data
 #' are provided).}
 #' \item{R2}{The squared factor-score determinacy for each factor: the squared
-#' correlation between a factor and its estimated score. For orthogonal factors
-#' this equals the squared multiple correlation between the factor and the
-#' observed variables; for oblique factors it is the score-specific determinacy.
-#' See [efa_scores()] for the underlying score-quality diagnostics.}
+#' correlation between a factor and the score the requested `method` produces.
+#' For `method = "Thurstone"` this equals the squared multiple correlation
+#' between the factor and the observed variables; for every other method it is
+#' specific to those scores and smaller. See [efa_scores()] for the underlying
+#' score-quality diagnostics.}
 #' \item{settings}{A list of the settings used.}
 #'
 #' @seealso [efa_scores()] for the factor-score weights together with the full

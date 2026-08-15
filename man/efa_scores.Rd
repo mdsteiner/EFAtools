@@ -42,21 +42,29 @@ column names, they are matched to the model variables by name (any extra
 columns are ignored, and a model variable missing from \code{x} is an error).
 A named correlation matrix is likewise matched to the loading rows by name;
 its row and column names must use the same order. Unnamed input is matched
-by position.}
+by position.
+
+Raw data are scored as supplied: no imputation is performed, so a case with a
+missing value on any model variable receives \code{NA} scores (and is reported as
+not scored). A model variable that carries no usable spread in \code{x} -- constant,
+infinite, or observed fewer than twice -- is an error.}
 
 \item{f}{object of class \code{\link[=efa_fit]{efa_fit()}}, an \code{efa_loadings} object, or a matrix of factor
 loadings.}
 
 \item{Phi}{matrix. Factor intercorrelations. Only used when a loading matrix is
-supplied directly in \code{f}; taken from the \code{efa} object otherwise. Named rows
-and columns are matched to the loading columns and must use the same order.
+supplied directly in \code{f}; taken from the \code{efa} object otherwise, in which
+case a supplied \code{Phi} is ignored with a warning. Named rows and columns are
+matched to the loading columns and must use the same order.
 Default is \code{NULL}, in which case the factors are assumed uncorrelated.}
 
 \item{rho}{matrix. Correlation matrix used to derive the scoring weights.
-Defaults to \code{NULL}, in which case \code{f$orig_R} is used for an \code{efa} object and
-\code{cor(x, use = "pairwise")} otherwise. Pass a matrix here to score against a
-correlation other than the one implied by \code{f}/\code{x}. Named rows and columns
-are matched to the loading rows; row and column names must use the same order.}
+Defaults to \code{NULL}, in which case \code{f$orig_R} is used for an \code{efa} object; for
+a directly supplied loading matrix, \code{x} itself when it is a correlation
+matrix, and \code{cor(x, use = "pairwise")} otherwise. Pass a matrix here to score
+against a correlation other than the one implied by \code{f}/\code{x}. Named rows and
+columns are matched to the loading rows; row and column names must use the
+same order.}
 
 \item{method}{character. The factor-score method: one of \code{"regression"}
 (default), \code{"Bartlett"}, \code{"Anderson"}, \code{"tenBerge"}, \code{"Harman"}, or
@@ -67,14 +75,19 @@ An object of class \code{efa_scores}, a list containing:
 
 \item{weights}{The \code{p} by \code{m} factor-score weight matrix.}
 \item{scores}{The factor scores (\code{n} by \code{m}), or \code{NULL} when a correlation
-matrix was supplied.}
-\item{r.scores}{The \code{m} by \code{m} correlations of the factor-score estimates.}
+matrix was supplied. A case with a missing value on any model variable is not
+scored and keeps \code{NA} in every column.}
+\item{r.scores}{The \code{m} by \code{m} correlations of the factor-score estimates. Like
+\code{score_cor} and \code{determinacy}, these describe the standardized combination
+\code{scale(x) \%*\% W}, which for \code{method = "components"} is not the scale the
+returned \code{scores} are on.}
 \item{score_cor}{The \code{m} by \code{m} score-factor correlation matrix; its diagonal
 is the determinacy (validity) of each score and its off-diagonals the
 univocality.}
 \item{determinacy}{A data frame with, per factor, the determinacy \code{rho}, the
 squared determinacy \code{rho2}, and Guttman's indeterminacy index \code{guttman}.}
-\item{settings}{A list of the settings used.}
+\item{settings}{A list of the settings used, including the number of supplied
+observations \code{n_obs} and the number of them that could be scored \code{n_scored}.}
 }
 \description{
 Computes factor-score weights (and, from raw data, the factor scores
@@ -98,7 +111,12 @@ scores; defined for orthogonal factors only.}
 \item{\code{"tenBerge"}}{ten Berge, Krijnen, Wansbeek & Shapiro's (1999) scores,
 which preserve the factor intercorrelations.}
 \item{\code{"Harman"}}{Harman's (1976) idealized-variable scores.}
-\item{\code{"components"}}{component scores, \code{W = Lambda}.}
+\item{\code{"components"}}{component scores, \code{W = Lambda}. These are formed from
+the raw, uncentered data (\code{X \%*\% W}) rather than the standardized data, so
+unlike the other methods they are on the scale of the input variables. The
+diagnostics below describe the standardized combination \code{scale(X) \%*\% W},
+and therefore differ from the realized correlations of the returned scores
+whenever the variables have unequal variances.}
 }
 The determinacy (validity) of a score is its correlation with the factor it
 estimates, computed from the returned weights; for regression scores it is the
@@ -110,6 +128,25 @@ between two equally valid sets of scores. For a \code{method} other than
 \code{"regression"} both quantities are specific to those scores: the determinacy is
 the method's own score-factor correlation (never larger than the regression
 value), and the reported \code{guttman} follows from it.
+
+Determinacies close to 1 mean the scores stand in for the factor with little
+loss; Grice (2001) regards values of about .90 and above as the level required
+before scores are interpreted for individual cases, and treats lower values as
+usable only for group-level research. The Guttman index makes the same point
+more sharply, because a factor score is never the factor: at \code{rho = .90} two
+equally valid sets of scores can still correlate as low as .62, and at
+\code{rho = .80} as low as .28, so the rank order of cases is not unique.
+
+Which \code{method} to prefer follows from what the scores are for. Regression
+scores correlate most highly with the factor, but they are biased towards it
+and correlate across factors even when the model is orthogonal. Bartlett
+scores are conditionally unbiased, which makes them the choice when the scores
+stand in for the factor in a later model. \code{"tenBerge"} reproduces the factor
+intercorrelations \code{Phi}, so it is the choice when the scores will be correlated
+with each other or with external variables. \code{"Anderson"} forces the scores to
+be uncorrelated with unit variance and is appropriate only when the factors
+themselves are orthogonal. \code{"components"} is a weighted sum of the observed
+variables rather than an estimate of a common factor.
 }
 \examples{
 # Weights and score diagnostics from an EFA on a correlation matrix

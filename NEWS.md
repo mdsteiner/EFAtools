@@ -140,6 +140,12 @@
 
 * `efa_scores(method = "Anderson")` and `FACTOR_SCORES(method = "Anderson")` now warn when the fitted factors are correlated, because Anderson-Rubin scores are uncorrelated even when the fitted factors are not.
 
+* `efa_scores()` and `FACTOR_SCORES()` now reject scoring data in which a model variable is constant, infinite, or observed fewer than twice, naming it, instead of standardising it into `NaN` scores for every case.
+
+* `efa_scores()` and `FACTOR_SCORES()` now warn when cases cannot be scored because they are missing a model variable. `efa_scores()` additionally reports the number of scored cases in `settings$n_scored`, and its print method now says how many of the supplied observations were scored and where the scores are stored.
+
+* `efa_scores()` and `FACTOR_SCORES()` now warn when `Phi` is supplied together with an `efa_fit()` solution, whose own factor intercorrelations are used instead.
+
 * `efa_schmid_leiman()` and `SL()` now reject the unsupported `se`, `b_boot`, `ci`, and `seed` arguments.
 
 ## Standard Errors

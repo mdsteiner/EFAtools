@@ -58,7 +58,86 @@ test_that("settings record the resolved method and dimensions", {
   expect_equal(fs_ob_cor$settings$method, "regression")   # the default
   expect_equal(fs_ob_cor$settings$n_factors, 3L)
   expect_true(is.na(fs_ob_cor$settings$n_obs))            # correlation input
+  expect_true(is.na(fs_ob_cor$settings$n_scored))
+  # n_obs counts the supplied rows, n_scored the rows that could be scored; with
+  # complete data the two agree.
   expect_equal(fs_grips$settings$n_obs, nrow(GRiPS_raw))
+  expect_equal(fs_grips$settings$n_scored, nrow(GRiPS_raw))
+})
+
+test_that("a constant model variable in the scoring data is an error", {
+  x_const <- as.matrix(GRiPS_raw)
+  x_const[, 2] <- 3
+  expect_error(
+    suppressMessages(efa_scores(x_const, f = efa_grips, method = "Bartlett")),
+    class = "efa_scores_constant_var")
+
+  # A data.frame takes the same route, and two constant variables render the
+  # plural branch of the message.
+  df_const <- as.data.frame(GRiPS_raw)
+  df_const[[1]] <- 2
+  df_const[[3]] <- 5
+  expect_error(
+    suppressMessages(efa_scores(df_const, f = efa_grips, method = "Bartlett")),
+    class = "efa_scores_constant_var")
+
+  # A model variable that is entirely missing, or that carries an infinite value, has
+  # no usable spread either; each renders its own cause in the same condition.
+  x_all_na <- as.matrix(GRiPS_raw)
+  x_all_na[, 3] <- NA_real_
+  expect_error(
+    suppressMessages(efa_scores(x_all_na, f = efa_grips, method = "Bartlett")),
+    class = "efa_scores_constant_var")
+
+  x_inf <- as.matrix(GRiPS_raw)
+  x_inf[1, 4] <- Inf
+  expect_error(
+    suppressMessages(efa_scores(x_inf, f = efa_grips, method = "Bartlett")),
+    class = "efa_scores_constant_var")
+
+  # Unnamed input reports the column position instead of a name.
+  x_unnamed <- unname(as.matrix(GRiPS_raw))
+  x_unnamed[, 2] <- 3
+  expect_error(
+    suppressMessages(efa_scores(x_unnamed, f = efa_grips, method = "Bartlett")),
+    class = "efa_scores_constant_var")
+
+  # A constant column that is not a model variable is dropped by name alignment
+  # and must not trip the guard.
+  x_extra <- cbind(as.matrix(GRiPS_raw), constant_extra = 1)
+  expect_no_error(
+    suppressMessages(efa_scores(x_extra, f = efa_grips, method = "Bartlett")))
+})
+
+test_that("cases with a missing model variable are counted and reported", {
+  x_na <- as.matrix(GRiPS_raw)
+  x_na[1, 1] <- NA
+
+  expect_warning(
+    fs_one <- suppressMessages(efa_scores(x_na, f = efa_grips, method = "Bartlett")),
+    class = "efa_scores_incomplete_cases")
+
+  # n_obs stays the number of supplied rows; only n_scored drops.
+  expect_equal(fs_one$settings$n_obs, nrow(GRiPS_raw))
+  expect_equal(fs_one$settings$n_scored, nrow(GRiPS_raw) - 1L)
+  expect_true(is.na(fs_one$scores[1, 1]))
+  expect_false(anyNA(fs_one$scores[-1, , drop = FALSE]))
+
+  # The plural branch of the message is a separate rendering.
+  x_na[5, 2] <- NA
+  x_na[9, 3] <- NA
+  expect_warning(
+    fs_many <- suppressMessages(efa_scores(x_na, f = efa_grips, method = "Bartlett")),
+    class = "efa_scores_incomplete_cases")
+  expect_equal(fs_many$settings$n_scored, nrow(GRiPS_raw) - 3L)
+})
+
+test_that("Phi supplied alongside an efa object is ignored with a warning", {
+  expect_warning(
+    fs <- suppressMessages(efa_scores(test_models$baseline$cormat, f = efa_ob,
+                                      Phi = diag(3))),
+    class = "efa_scores_phi_ignored")
+  expect_equal(fs$weights, fs_ob_cor$weights)
 })
 
 test_that("classed conditions fire as expected", {
@@ -304,6 +383,37 @@ test_that("accepted correlation round-off is canonicalized", {
     .align_correlation_axis(R_outside, 3L, letters[1:3], "rho"),
     class = "efa_scores_matrix_correlation"
   )
+})
+
+test_that("component scores stay raw-scale while their diagnostics are standardized", {
+  # method = "components" multiplies the raw, uncentered data by the loadings, but
+  # r.scores / score_cor / determinacy are computed from W' R W, i.e. they describe
+  # scale(x) %*% W. With unequal item variances the two diverge, which is what the
+  # help page states; every other method returns standardized scores, where they agree.
+  withr::local_seed(42)
+  R <- test_models$baseline$cormat
+  L <- unclass(efa_ob$rot_loadings)
+  p <- ncol(R)
+  x <- matrix(stats::rnorm(300 * p), 300, p) %*% chol(R)
+  x <- sweep(x, 2L, seq(1, 10, length.out = p), "*")  # unequal variances
+  x <- x + 10                                         # and non-zero means
+  colnames(x) <- rownames(L)
+
+  fs <- suppressMessages(suppressWarnings(
+    efa_scores(x, f = L, Phi = efa_ob$Phi, method = "components")))
+
+  expect_equal(fs$scores, x %*% fs$weights, ignore_attr = TRUE)
+  # Uncentered. Taken on the absolute mean because a rotated factor carries no fixed
+  # sign, so a column of the solution may be negated on another platform.
+  expect_gt(min(abs(colMeans(fs$scores))), 1)
+  expect_equal(unname(fs$r.scores),
+               unname(stats::cor(scale(x) %*% fs$weights)), tolerance = 1e-8)
+  expect_gt(max(abs(fs$r.scores - stats::cor(fs$scores))), 0.01)
+
+  fs_b <- suppressMessages(suppressWarnings(
+    efa_scores(x, f = L, Phi = efa_ob$Phi, method = "Bartlett")))
+  expect_equal(unname(fs_b$r.scores), unname(stats::cor(fs_b$scores)),
+               tolerance = 1e-8)
 })
 
 test_that("print and summary output are stable", {

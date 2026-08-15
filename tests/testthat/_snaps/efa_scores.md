@@ -6,7 +6,7 @@
       
       -- Factor scores (Bartlett) ----------------------------------------------------
       
-      Scored 810 observations on 1 factor.
+      Scored 810 of 810 observations on 1 factor (see `$scores`).
       
       -- Score determinacy -----------------------------------------------------------
       

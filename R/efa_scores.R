@@ -21,7 +21,12 @@
 #'   \item{`"tenBerge"`}{ten Berge, Krijnen, Wansbeek & Shapiro's (1999) scores,
 #'     which preserve the factor intercorrelations.}
 #'   \item{`"Harman"`}{Harman's (1976) idealized-variable scores.}
-#'   \item{`"components"`}{component scores, `W = Lambda`.}
+#'   \item{`"components"`}{component scores, `W = Lambda`. These are formed from
+#'     the raw, uncentered data (`X %*% W`) rather than the standardized data, so
+#'     unlike the other methods they are on the scale of the input variables. The
+#'     diagnostics below describe the standardized combination `scale(X) %*% W`,
+#'     and therefore differ from the realized correlations of the returned scores
+#'     whenever the variables have unequal variances.}
 #' }
 #' The determinacy (validity) of a score is its correlation with the factor it
 #' estimates, computed from the returned weights; for regression scores it is the
@@ -34,6 +39,25 @@
 #' the method's own score-factor correlation (never larger than the regression
 #' value), and the reported `guttman` follows from it.
 #'
+#' Determinacies close to 1 mean the scores stand in for the factor with little
+#' loss; Grice (2001) regards values of about .90 and above as the level required
+#' before scores are interpreted for individual cases, and treats lower values as
+#' usable only for group-level research. The Guttman index makes the same point
+#' more sharply, because a factor score is never the factor: at `rho = .90` two
+#' equally valid sets of scores can still correlate as low as .62, and at
+#' `rho = .80` as low as .28, so the rank order of cases is not unique.
+#'
+#' Which `method` to prefer follows from what the scores are for. Regression
+#' scores correlate most highly with the factor, but they are biased towards it
+#' and correlate across factors even when the model is orthogonal. Bartlett
+#' scores are conditionally unbiased, which makes them the choice when the scores
+#' stand in for the factor in a later model. `"tenBerge"` reproduces the factor
+#' intercorrelations `Phi`, so it is the choice when the scores will be correlated
+#' with each other or with external variables. `"Anderson"` forces the scores to
+#' be uncorrelated with unit variance and is appropriate only when the factors
+#' themselves are orthogonal. `"components"` is a weighted sum of the observed
+#' variables rather than an estimate of a common factor.
+#'
 #' @param x data.frame or matrix. Raw data (needed to obtain factor scores) or a
 #'   correlation matrix (yields weights and diagnostics only). When raw data carry
 #'   column names, they are matched to the model variables by name (any extra
@@ -41,17 +65,25 @@
 #'   A named correlation matrix is likewise matched to the loading rows by name;
 #'   its row and column names must use the same order. Unnamed input is matched
 #'   by position.
+#'
+#'   Raw data are scored as supplied: no imputation is performed, so a case with a
+#'   missing value on any model variable receives `NA` scores (and is reported as
+#'   not scored). A model variable that carries no usable spread in `x` -- constant,
+#'   infinite, or observed fewer than twice -- is an error.
 #' @param f object of class [efa_fit()], an `efa_loadings` object, or a matrix of factor
 #'   loadings.
 #' @param Phi matrix. Factor intercorrelations. Only used when a loading matrix is
-#'   supplied directly in `f`; taken from the `efa` object otherwise. Named rows
-#'   and columns are matched to the loading columns and must use the same order.
+#'   supplied directly in `f`; taken from the `efa` object otherwise, in which
+#'   case a supplied `Phi` is ignored with a warning. Named rows and columns are
+#'   matched to the loading columns and must use the same order.
 #'   Default is `NULL`, in which case the factors are assumed uncorrelated.
 #' @param rho matrix. Correlation matrix used to derive the scoring weights.
-#'   Defaults to `NULL`, in which case `f$orig_R` is used for an `efa` object and
-#'   `cor(x, use = "pairwise")` otherwise. Pass a matrix here to score against a
-#'   correlation other than the one implied by `f`/`x`. Named rows and columns
-#'   are matched to the loading rows; row and column names must use the same order.
+#'   Defaults to `NULL`, in which case `f$orig_R` is used for an `efa` object; for
+#'   a directly supplied loading matrix, `x` itself when it is a correlation
+#'   matrix, and `cor(x, use = "pairwise")` otherwise. Pass a matrix here to score
+#'   against a correlation other than the one implied by `f`/`x`. Named rows and
+#'   columns are matched to the loading rows; row and column names must use the
+#'   same order.
 #' @param method character. The factor-score method: one of `"regression"`
 #'   (default), `"Bartlett"`, `"Anderson"`, `"tenBerge"`, `"Harman"`, or
 #'   `"components"`.
@@ -60,14 +92,19 @@
 #'
 #' \item{weights}{The `p` by `m` factor-score weight matrix.}
 #' \item{scores}{The factor scores (`n` by `m`), or `NULL` when a correlation
-#'   matrix was supplied.}
-#' \item{r.scores}{The `m` by `m` correlations of the factor-score estimates.}
+#'   matrix was supplied. A case with a missing value on any model variable is not
+#'   scored and keeps `NA` in every column.}
+#' \item{r.scores}{The `m` by `m` correlations of the factor-score estimates. Like
+#'   `score_cor` and `determinacy`, these describe the standardized combination
+#'   `scale(x) %*% W`, which for `method = "components"` is not the scale the
+#'   returned `scores` are on.}
 #' \item{score_cor}{The `m` by `m` score-factor correlation matrix; its diagonal
 #'   is the determinacy (validity) of each score and its off-diagonals the
 #'   univocality.}
 #' \item{determinacy}{A data frame with, per factor, the determinacy `rho`, the
 #'   squared determinacy `rho2`, and Guttman's indeterminacy index `guttman`.}
-#' \item{settings}{A list of the settings used.}
+#' \item{settings}{A list of the settings used, including the number of supplied
+#'   observations `n_obs` and the number of them that could be scored `n_scored`.}
 #'
 #' @source Thurstone, L. L. (1935). *The vectors of mind*. University of Chicago
 #'   Press.
@@ -135,7 +172,7 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 
   if (!inherits(f, c("EFA", "matrix", "LOADINGS"))) {
     cli::cli_abort(
-      "{.arg f} must be an {.cls EFA} object, a matrix, or a {.cls LOADINGS} object.",
+      "{.arg f} must be an {.cls efa} object (from {.fn efa_fit}), a matrix, or an {.cls efa_loadings} object.",
       class = "efa_scores_bad_f"
     )
   }
@@ -145,6 +182,17 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
   orig_R <- NULL
 
   if (inherits(f, "EFA")) {
+
+    # The factor intercorrelations come from the fitted solution, so an explicitly
+    # supplied `Phi` cannot be honoured here; say so instead of discarding it silently.
+    if (!is.null(Phi)) {
+      cli::cli_warn(
+        c("{.arg Phi} is ignored when {.arg f} is an {.cls efa} object.",
+          "i" = "The factor intercorrelations of the fitted solution are used instead.",
+          "i" = "Pass the loading matrix (for example {.code f$rot_loadings}) in {.arg f} to score against a different {.arg Phi}."),
+        class = "efa_scores_phi_ignored"
+      )
+    }
 
     Phi <- f$Phi
     cor_method <- f$settings$cor_method
@@ -290,6 +338,59 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
     }
   }
 
+  # A model variable that carries no usable spread cannot be scored: a constant column
+  # divides by a zero standard deviation and becomes `NaN`, and because a score sums
+  # over all variables, one such column destroys the scores of every case. The rule is
+  # the same for every method -- a model variable that does not vary means the fitted
+  # correlation structure does not apply to these data. Checked after the alignment
+  # above, so only the variables actually used for scoring are examined, and before the
+  # scoring correlation is resolved, where the same column would otherwise surface as an
+  # opaque non-finite correlation.
+  #
+  # sd() is exactly 0 for a constant column, NaN for one carrying an infinity, and NA
+  # for one with fewer than two observed values, so the causes are separated before they
+  # are reported -- an infinite value is not an absent one -- the same split the
+  # uncomputable-correlation diagnosis makes. A small but positive standard deviation is
+  # ill-conditioned rather than undefined and is left to standardise as usual. Each test
+  # yields FALSE rather than NA on a column it cannot judge, so `any()` cannot abort with
+  # an unclassed base error in place of the classed condition.
+  if (!is_cmat) {
+    sds <- if (is.data.frame(x)) {
+      vapply(x, stats::sd, numeric(1), na.rm = TRUE)
+    } else {
+      apply(x, 2L, stats::sd, na.rm = TRUE)
+    }
+    nonfinite <- is.nan(sds)
+    unobserved <- is.na(sds) & !nonfinite
+    constant <- !is.na(sds) & sds == 0
+    unusable <- nonfinite | unobserved | constant
+    if (any(unusable)) {
+      # Name the offenders, falling back to their column positions as character labels
+      # so that cli::qty() reads the number of them rather than a position value. Long
+      # lists go through the shared cap, as in every other condition that enumerates
+      # affected variables.
+      nms <- colnames(x)
+      if (is.null(nms)) nms <- as.character(seq_along(sds))
+      n_bad <- sum(unusable)
+      cap <- .cap_label_list(nms[unusable])
+      why <- if (all(constant[unusable])) {
+        "{cli::qty(n_bad)}{?It has/They have} no variance, so {?it carries/they carry} no information about any factor."
+      } else if (all(nonfinite[unusable])) {
+        "{cli::qty(n_bad)}{?It contains/They contain} infinite values, which combine with no factor."
+      } else if (all(unobserved[unusable])) {
+        "{cli::qty(n_bad)}{?It has/They have} fewer than two observed values, so {?its/their} spread is undefined."
+      } else {
+        "{cli::qty(n_bad)}{?It has/They have} no variance, infinite values, or fewer than two observed values."
+      }
+      cli::cli_abort(
+        c("{cli::qty(n_bad)}Model variable{?s} {.val {cap$shown}}{cap$rest}{cli::qty(n_bad)} cannot be scored from {.arg x}.",
+          "x" = why,
+          "i" = "Correct the affected values, or drop {cli::qty(n_bad)}{?it/them} from the factor model."),
+        class = "efa_scores_constant_var"
+      )
+    }
+  }
+
   # Scoring correlation matrix R. A user-supplied `rho` wins; otherwise use the
   # matrix the EFA was fit on (f$orig_R), so the weights are consistent with the
   # loadings even for a non-Pearson fit; otherwise fall back to the correlation
@@ -335,10 +436,23 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
   diag_out <- .factor_score_diagnostics(W, R, S)
 
   # Factor scores only from raw data. Component scores are the raw (uncentered)
-  # data times the loadings; the other methods use the standardized data.
+  # data times the loadings; the other methods use the standardized data. A case with
+  # a missing value on any model variable cannot be scored (no imputation is
+  # performed), so its score row is NA -- count those cases and say so, rather than
+  # returning NA rows the caller only discovers downstream.
   scores <- NULL
+  n_scored <- NA_integer_
   if (!is_cmat) {
     scores <- if (method == "components") x %*% W else scale(x) %*% W
+    n_na <- sum(!stats::complete.cases(scores))
+    n_scored <- nrow(scores) - n_na
+    if (n_na > 0L) {
+      cli::cli_warn(
+        c("{n_na} case{?s} {?has/have} a missing value on at least one model variable, so {?its/their} factor score{?s} {?is/are} {.code NA}.",
+          "i" = "No imputation is performed: handle the missing values before scoring, or drop the affected cases."),
+        class = "efa_scores_incomplete_cases"
+      )
+    }
   }
 
   determinacy <- data.frame(
@@ -358,7 +472,8 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
       method = method,
       cor_method = cor_method,
       n_factors = ncol(Lambda),
-      n_obs = if (is.null(scores)) NA_integer_ else nrow(scores)
+      n_obs = if (is.null(scores)) NA_integer_ else nrow(scores),
+      n_scored = n_scored
     )
   )
 
@@ -536,9 +651,19 @@ format.summary.efa_scores <- function(x, digits = x$opts$digits, ...) {
     if (is.null(x$scores)) {
       cli::cli_text("Weights and diagnostics only (correlation-matrix input; no scores).")
     } else {
+      n_scored <- x$settings$n_scored
       n_obs <- x$settings$n_obs
       n_fac <- x$settings$n_factors
-      cli::cli_text("Scored {n_obs} observation{?s} on {n_fac} factor{?s}.")
+      # The pointer names a field of the printed object, which is what `print()` was
+      # handed; `summary()` wraps that object in a field of the same name, so the
+      # pointer would resolve to the wrapper there and is left off the fuller report.
+      # Written out twice rather than interpolated, because a `{.code ...}` carried in
+      # through a substitution is emitted as literal text instead of being styled.
+      if (full) {
+        cli::cli_text("Scored {n_scored} of {n_obs} observation{?s} on {n_fac} factor{?s}.")
+      } else {
+        cli::cli_text("Scored {n_scored} of {n_obs} observation{?s} on {n_fac} factor{?s} (see {.code $scores}).")
+      }
     }
 
     cli::cli_text("")
@@ -643,12 +768,14 @@ format.summary.efa_scores <- function(x, digits = x$opts$digits, ...) {
     tryCatch(solve(A, B), error = function(e) .pinv(A) %*% B)
   }
 
-  # Psi^-1 = diag(1 / (1 - h2)), the model-uniqueness weighting shared by the
-  # Bartlett and Anderson methods. A non-positive uniqueness makes the weighting
-  # undefined; abort instead of dividing by zero or returning finite-looking output
-  # from an invalid negative weight. A very small positive uniqueness is defined but
-  # ill-conditioned, so retain the existing warning for that distinct case.
-  psi_inverse <- function() {
+  # The model uniquenesses u2 = 1 - h2 that the Bartlett and Anderson methods weight
+  # by. Both need Psi^-1 Lambda = diag(1 / u2) %*% Lambda, which is the row scaling
+  # `Lambda / u2`, so the dense p x p diagonal matrix is never formed. A non-positive
+  # uniqueness makes the weighting undefined; abort instead of dividing by zero or
+  # returning finite-looking output from an invalid negative weight. A very small
+  # positive uniqueness is defined but ill-conditioned, so retain the existing warning
+  # for that distinct case.
+  uniquenesses <- function() {
     u2 <- 1 - h2
     nonpositive <- u2 <= 0
     if (any(nonpositive)) {
@@ -670,27 +797,26 @@ format.summary.efa_scores <- function(x, digits = x$opts$digits, ...) {
         class = "efa_scores_heywood"
       )
     }
-    diag(1 / u2, nrow = length(u2))
+    u2
   }
 
   W <- switch(
     method,
     Thurstone = solve_or_pinv(R, S),
     Bartlett = {
-      psi_inv <- psi_inverse()
-      psi_inv %*% Lambda %*%
-        solve_or_pinv(t(Lambda) %*% psi_inv %*% Lambda, diag(ncol(Lambda)))
+      Lu <- Lambda / uniquenesses()                 # Psi^-1 Lambda
+      Lu %*% solve_or_pinv(crossprod(Lu, Lambda), diag(ncol(Lambda)))
     },
     Anderson = {
-      psi_inv <- psi_inverse()
-      psi_inv %*% Lambda %*%
-        .inv_mat_sqrt(t(Lambda) %*% psi_inv %*% R %*% psi_inv %*% Lambda)
+      Lu <- Lambda / uniquenesses()                 # Psi^-1 Lambda
+      Lu %*% .inv_mat_sqrt(crossprod(Lu, R %*% Lu))
     },
     tenBerge = {
-      L <- Lambda %*% .mat_sqrt(Phi)
+      phi_sqrt <- .mat_sqrt(Phi)
+      L <- Lambda %*% phi_sqrt
       r_inv_sqrt <- .inv_mat_sqrt(R)
       C <- r_inv_sqrt %*% L %*% .inv_mat_sqrt(crossprod(L, solve_or_pinv(R, L)))
-      r_inv_sqrt %*% C %*% .mat_sqrt(Phi)
+      r_inv_sqrt %*% C %*% phi_sqrt
     },
     Harman = {
       M <- Lambda %*% t(S)

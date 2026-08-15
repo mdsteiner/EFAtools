@@ -20,9 +20,9 @@ factor scores) or matrix with correlations.}
 
 \item{Phi}{matrix. A matrix of factor intercorrelations. Only needs to be
 specified if a factor loadings matrix is entered directly into \code{f}; for an
-\code{\link[=efa_fit]{efa_fit()}} object the intercorrelations are taken from the object. Default is
-\code{NULL}, in which case the intercorrelations of a directly supplied loading
-matrix are assumed to be zero.}
+\code{\link[=efa_fit]{efa_fit()}} object the intercorrelations are taken from the object, and a
+supplied \code{Phi} is ignored with a warning. Default is \code{NULL}, in which case the
+intercorrelations of a directly supplied loading matrix are assumed to be zero.}
 
 \item{rho}{matrix. Correlation matrix used to derive the scoring weights.
 Defaults to \code{NULL}, in which case the matrix the EFA in \code{f} was fit on
@@ -45,10 +45,11 @@ A list of class FACTOR_SCORES containing the following:
 \item{missing}{Whether the raw data contained missing values (only if raw data
 are provided).}
 \item{R2}{The squared factor-score determinacy for each factor: the squared
-correlation between a factor and its estimated score. For orthogonal factors
-this equals the squared multiple correlation between the factor and the
-observed variables; for oblique factors it is the score-specific determinacy.
-See \code{\link[=efa_scores]{efa_scores()}} for the underlying score-quality diagnostics.}
+correlation between a factor and the score the requested \code{method} produces.
+For \code{method = "Thurstone"} this equals the squared multiple correlation
+between the factor and the observed variables; for every other method it is
+specific to those scores and smaller. See \code{\link[=efa_scores]{efa_scores()}} for the underlying
+score-quality diagnostics.}
 \item{settings}{A list of the settings used.}
 }
 \description{
@@ -56,10 +57,15 @@ See \code{\link[=efa_scores]{efa_scores()}} for the underlying score-quality dia
 
 \code{FACTOR_SCORES()} has been superseded by \code{\link[=efa_scores]{efa_scores()}}, which is the
 recommended interface going forward. It remains available so existing code
-keeps working. Note that \code{R2} is now the squared factor-score determinacy
-(the value \code{\link[psych:factor.scores]{psych::factor.scores()}} returns with \code{Grice = TRUE}); earlier
-versions returned psych's default \code{Grice = FALSE} validity coefficient, so the
-slot is not comparable across versions.
+keeps working. Note that \code{R2} is now the squared factor-score determinacy of
+the \emph{requested} \code{method}: the squared correlation between a factor and the
+scores that method produces. For \code{method = "Thurstone"} this is each factor's
+squared multiple correlation with the observed variables (the value
+\code{\link[psych:factor.scores]{psych::factor.scores()}} returns with \code{Grice = TRUE}); for every other method
+it is smaller, because no estimator correlates more highly with the factor
+than the regression estimator does. Earlier versions returned psych's default
+\code{Grice = FALSE} validity coefficient, so the slot is not comparable across
+versions.
 
 A convenience wrapper around \code{\link[=efa_scores]{efa_scores()}} that returns factor scores and
 weights in a compact list. Factor scores are calculated according to the
