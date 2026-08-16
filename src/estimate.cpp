@@ -424,7 +424,14 @@ Rcpp::List fit_dwls_cpp(const arma::mat& R, const int n_fac, const arma::mat& W)
   // same uniqueness floor as the ML/ULS fitters; see .uniqueness_floor in R/estimate_model.R
   wopt.set_lower(arma::vec(R.n_rows).fill(0.005));
   wopt.set_upper(arma::vec(R.n_rows).fill(1.0));
-  wopt.control.maxit = 200;
+  // Iteration budget for the warm start alone. Its numerical (central-difference) gradient
+  // costs 2p objective evaluations -- each a full p x p eigendecomposition -- per gradient call,
+  // which makes this budget the dominant cost of the whole fitter, while the analytic-gradient
+  // polish below does the actual optimisation. The warm start only has to land in the basin of
+  // the weighted optimum, which it does within a few dozen iterations on ordinal batteries from
+  // p = 20 to p = 61; truncating it there leaves the polished optimum unchanged to within the
+  // polish's own tolerance, so a longer budget buys eigendecompositions and nothing else.
+  wopt.control.maxit = 50;
   // squared-multiple-correlation start (uniqueness = 1 / diag(R^-1)), clamped off the box.
   // Use a non-throwing inverse so an indefinite (e.g. an unsmoothed bootstrap resample) but
   // invertible R still yields a warm start, matching how ULS/ML tolerate such matrices

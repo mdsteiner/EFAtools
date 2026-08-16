@@ -16,14 +16,21 @@
 // supplied by a `Manifold` strategy:
 //
 //   GpfState compute(const arma::mat& T) const;            // objective + projected gradient at T
+//   double   screen_objective(const arma::mat& T) const;   // objective at T alone
 //   bool     retract(const arma::mat& X, arma::mat& Tout); // map a raw step back onto the manifold
 //   arma::mat normalize_start(const arma::mat& T) const;   // condition a starting transformation
 //
 // `compute` returns the objective `f`, the projected-gradient norm `s`, the projected
-// gradient `Gp`, and a validity flag. `retract` returns false to reject a candidate
-// (e.g. a failed decomposition), which the line search skips. This lets the oblique
-// Procrustes solver (k x k inverse objective, column-normalization manifold) and the
-// orthogonal rotation solver (criterion objective, Stiefel manifold) share one engine.
+// gradient `Gp`, and a validity flag. `screen_objective` returns the same `f` for the
+// multi-start screen, which reads nothing else, and an infinite objective for a state the
+// manifold rejects on the objective side (a non-invertible transformation, non-finite
+// loadings, criterion or criterion gradient) -- it cannot see the gradient-mapping half of
+// `compute`'s validity test, so a start whose mapped gradient overflows is screened on its
+// finite objective instead. Such a start still cannot win: optimizing from it yields an
+// invalid fit. `retract` returns false to reject a candidate (e.g. a failed decomposition),
+// which the line search skips. This lets the oblique Procrustes solver (k x k inverse
+// objective, column-normalization manifold) and the orthogonal rotation solver (criterion
+// objective, Stiefel manifold) share one engine.
 //
 // Bernaards, C. A., & Jennrich, R. I. (2005). Gradient projection algorithms and
 // software for arbitrary rotation criteria in factor analysis. Educational and
@@ -68,13 +75,21 @@ struct GpfSummary {
   std::vector<int> screen_start_indices;
 };
 
+// The objective reported for a state the manifold rejects: infinite, so such a state can
+// never win selection (against `<`) or be screened ahead of an evaluable one. Both the
+// invalid state below and the manifolds' objective-only screen read it from here so the
+// two paths cannot drift apart.
+inline double gpf_invalid_objective() {
+  return std::numeric_limits<double>::infinity();
+}
+
 // An invalid state has an infinite objective so it can never win selection or pass the
 // convergence test. Its projected gradient is never read (the line search only steps
 // from valid states), so Gp is left empty rather than allocated.
 inline GpfState gpf_invalid_state() {
   GpfState out;
-  out.f = std::numeric_limits<double>::infinity();
-  out.s = std::numeric_limits<double>::infinity();
+  out.f = gpf_invalid_objective();
+  out.s = gpf_invalid_objective();
   out.valid = false;
   return out;
 }
@@ -475,11 +490,12 @@ GpfSummary run_gpf_multistart(const Manifold& manifold,
 
     for (int s = 0; s < random_starts; ++s) {
       arma::mat Tstart = random_orthogonal_start_cpp(k);
-      GpfState screen_state = manifold.compute(Tstart);
       GpfCandidate cand;
       cand.start_index = s + 2;
       cand.Tstart = Tstart;
-      cand.screen_value = screen_state.f;
+      // Objective only: the gradient the full state carries is discarded for every start
+      // the triage stage below does not keep.
+      cand.screen_value = manifold.screen_objective(Tstart);
       candidates.push_back(cand);
     }
 

@@ -241,6 +241,26 @@ test_that("smooth Procrustes does not use objective stalling as convergence", {
   expect_gt(10^tail(fit$Table[, "log10_s"], 1), 1e-30)
 })
 
+test_that("the oblique multi-start screen scores a start by the objective at that start", {
+  # The screen ranks random starts by the objective alone. Under a zero-iteration budget
+  # every optimization reports exactly the objective at the start it was handed, so the
+  # screened value and the optimized value of each start must agree start for start -- a
+  # screen scoring starts by any other quantity would diverge here.
+  set.seed(15)
+  A <- matrix(stats::rnorm(16), 8, 2)
+  B <- A + matrix(stats::rnorm(16, sd = .1), 8, 2)
+
+  set.seed(3)
+  fit <- .oblique_procrustes(A, B, random_starts = 8L, screen_keep = 8L,
+                             triage_maxit = 0L, maxit = 0L)
+
+  expect_length(fit$screen_values, 8L)
+  # screened ascending, so the retained starts are the best-scoring ones
+  expect_false(is.unsorted(fit$screen_values))
+  optimized <- fit$all_values[match(fit$screen_start_indices, fit$all_start_indices)]
+  expect_equal(optimized, fit$screen_values, tolerance = 1e-8)
+})
+
 test_that("piecewise-smooth simplimax retains objective-stall convergence", {
   set.seed(1)
   L <- matrix(stats::rnorm(24), 8, 3)

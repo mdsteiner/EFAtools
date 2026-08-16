@@ -20,23 +20,37 @@ using namespace arma;
 // U = solve(t(T)), S = A'A, C = A'B. A non-invertible T yields an infinite (invalid)
 // objective and is rejected rather than evaluated through a pseudo-inverse. U is not
 // carried in the iteration state; it is reconstructed from the winning T in
-// finalize_oblique().
+// finalize_oblique(). The multi-start screen, which reads the objective alone, takes it
+// from screen_objective() and so skips the gradient and the tangent projection.
 struct ProcrustesManifold {
   const arma::mat& S;
   const arma::mat& C;
   double BtB;
 
-  GpfState compute(const arma::mat& Tmat) const {
+  // Loadings transform and objective at T, shared by compute() and the objective-only
+  // screen below so both read one source. Returns false for a state the manifold rejects
+  // before any gradient work (a non-invertible T, a non-finite transform or objective).
+  bool value_at(const arma::mat& Tmat, arma::mat& U, arma::mat& SU, double& f) const {
     arma::mat invT;
     if (!inverse_checked_cpp(Tmat, invT, oblq_min_sigma)) {
+      return false;
+    }
+
+    U = invT.t();
+    SU = S * U;
+    f = 0.5 * (accu(U % SU) - 2.0 * accu(U % C) + BtB);
+    return std::isfinite(f) && all_finite_cpp(U);
+  }
+
+  GpfState compute(const arma::mat& Tmat) const {
+    arma::mat U;
+    arma::mat SU;
+    double f;
+    if (!value_at(Tmat, U, SU, f)) {
       return gpf_invalid_state();
     }
 
-    arma::mat U = invT.t();
-    arma::mat SU = S * U;
     arma::mat GU = SU - C;
-
-    double f = 0.5 * (accu(U % SU) - 2.0 * accu(U % C) + BtB);
     arma::mat G = -U * GU.t() * U;
 
     arma::mat Gp;
@@ -47,13 +61,22 @@ struct ProcrustesManifold {
     out.f = f;
     out.s = s;
     out.Gp = Gp;
-    out.valid = std::isfinite(f) && std::isfinite(s) && all_finite_cpp(U) &&
-      all_finite_cpp(G) && all_finite_cpp(Gp);
+    out.valid = std::isfinite(s) && all_finite_cpp(G) && all_finite_cpp(Gp);
 
     if (!out.valid) {
       return gpf_invalid_state();
     }
     return out;
+  }
+
+  double screen_objective(const arma::mat& Tmat) const {
+    arma::mat U;
+    arma::mat SU;
+    double f = gpf_invalid_objective();
+    if (!value_at(Tmat, U, SU, f)) {
+      return gpf_invalid_objective();
+    }
+    return f;
   }
 
   // The column-normalization projection always returns a candidate on the manifold;

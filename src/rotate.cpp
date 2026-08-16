@@ -272,20 +272,32 @@ static bool retract_orth(const arma::mat& X, arma::mat& Tout) {
 // this maps Gq to the gradient with respect to T (G = A' Gq), projects it onto the
 // tangent space (Gp = G - T (T'G + G'T)/2), and reports its Frobenius norm. Candidates
 // are retracted back onto the orthogonal group by the polar (SVD) projection. A
-// non-finite criterion or gradient yields an infinite (invalid) objective.
+// non-finite criterion or gradient yields an infinite (invalid) objective. The multi-start
+// screen, which reads the objective alone, takes it from screen_objective() and so skips
+// the gradient mapping and the tangent projection.
 struct OrthCriterionManifold {
   const arma::mat& A;
   const RotationCriterion& crit;
 
-  GpfState compute(const arma::mat& Tmat) const {
+  // The criterion at T, shared by compute() and the objective-only screen below so both
+  // read one source. Returns false for a state the manifold rejects before any gradient
+  // mapping (non-finite loadings, criterion or criterion gradient). The rotated loadings
+  // stay local: the orthogonal gradient mapping reads A and Gq, not L.
+  bool value_at(const arma::mat& Tmat, double& f, arma::mat& Gq) const {
     arma::mat L = A * Tmat;
     if (!all_finite_cpp(L)) {
-      return gpf_invalid_state();
+      return false;
     }
+    crit.eval(L, f, Gq);
+    return std::isfinite(f) && all_finite_cpp(Gq);
+  }
 
+  GpfState compute(const arma::mat& Tmat) const {
     double f;
     arma::mat Gq;
-    crit.eval(L, f, Gq);
+    if (!value_at(Tmat, f, Gq)) {
+      return gpf_invalid_state();
+    }
 
     arma::mat G = A.t() * Gq;
     arma::mat M = Tmat.t() * G;
@@ -297,13 +309,21 @@ struct OrthCriterionManifold {
     out.f = f;
     out.s = s;
     out.Gp = Gp;
-    out.valid = std::isfinite(f) && std::isfinite(s) && all_finite_cpp(Gq) &&
-      all_finite_cpp(G) && all_finite_cpp(Gp);
+    out.valid = std::isfinite(s) && all_finite_cpp(G) && all_finite_cpp(Gp);
 
     if (!out.valid) {
       return gpf_invalid_state();
     }
     return out;
+  }
+
+  double screen_objective(const arma::mat& Tmat) const {
+    double f = gpf_invalid_objective();
+    arma::mat Gq;
+    if (!value_at(Tmat, f, Gq)) {
+      return gpf_invalid_objective();
+    }
+    return f;
   }
 
   bool retract(const arma::mat& X, arma::mat& T_out) const {
@@ -325,24 +345,38 @@ struct OrthCriterionManifold {
 // (Gp = G - T diag(colSums(T .* G))), and reports its Frobenius norm. Candidates are
 // retracted back onto the manifold by column normalization. This mirrors GPArotation's
 // GPFoblq(); only the criterion functor changes between rotation methods. A non-invertible
-// T or a non-finite criterion/gradient yields an infinite (invalid) objective.
+// T or a non-finite criterion/gradient yields an infinite (invalid) objective. The
+// multi-start screen, which reads the objective alone, takes it from screen_objective()
+// and so skips the gradient mapping and the tangent projection.
 struct OblqCriterionManifold {
   const arma::mat& A;
   const RotationCriterion& crit;
 
+  // Inverse transformation, rotated loadings and the criterion at T, shared by compute()
+  // and the objective-only screen below so both read one source. Returns false for a state
+  // the manifold rejects before any gradient mapping (a non-invertible T, non-finite
+  // loadings, criterion or criterion gradient).
+  bool value_at(const arma::mat& Tmat, arma::mat& invT, arma::mat& L, double& f,
+                arma::mat& Gq) const {
+    if (!inverse_checked_cpp(Tmat, invT, oblq_min_sigma)) {
+      return false;
+    }
+    L = A * invT.t();
+    if (!all_finite_cpp(L)) {
+      return false;
+    }
+    crit.eval(L, f, Gq);
+    return std::isfinite(f) && all_finite_cpp(Gq);
+  }
+
   GpfState compute(const arma::mat& Tmat) const {
     arma::mat invT;
-    if (!inverse_checked_cpp(Tmat, invT, oblq_min_sigma)) {
-      return gpf_invalid_state();
-    }
-    arma::mat L = A * invT.t();
-    if (!all_finite_cpp(L)) {
-      return gpf_invalid_state();
-    }
-
+    arma::mat L;
     double f;
     arma::mat Gq;
-    crit.eval(L, f, Gq);
+    if (!value_at(Tmat, invT, L, f, Gq)) {
+      return gpf_invalid_state();
+    }
 
     arma::mat G = -(L.t() * Gq * invT).t();
     arma::mat Gp;
@@ -353,13 +387,23 @@ struct OblqCriterionManifold {
     out.f = f;
     out.s = s;
     out.Gp = Gp;
-    out.valid = std::isfinite(f) && std::isfinite(s) && all_finite_cpp(Gq) &&
-      all_finite_cpp(G) && all_finite_cpp(Gp);
+    out.valid = std::isfinite(s) && all_finite_cpp(G) && all_finite_cpp(Gp);
 
     if (!out.valid) {
       return gpf_invalid_state();
     }
     return out;
+  }
+
+  double screen_objective(const arma::mat& Tmat) const {
+    arma::mat invT;
+    arma::mat L;
+    double f = gpf_invalid_objective();
+    arma::mat Gq;
+    if (!value_at(Tmat, invT, L, f, Gq)) {
+      return gpf_invalid_objective();
+    }
+    return f;
   }
 
   // The column-normalization projection always returns a candidate on the manifold; a

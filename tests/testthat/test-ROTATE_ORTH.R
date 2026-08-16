@@ -229,4 +229,24 @@ test_that("orthogonal loadings and rotmat are reflected/reordered consistently",
                ignore_attr = TRUE, tolerance = 1e-6)
 })
 
+test_that("the multi-start screen retains the lowest-criterion starts", {
+  # As on the oblique manifold: under a zero-iteration budget every optimization reports the
+  # criterion at the start it was handed, so the starts kept by a smaller screen must be the
+  # minima of the criterion values seen when every start is kept (same seed, same draws).
+  L <- unclass(unrot$unrot_loadings)
+
+  set.seed(31)
+  all_kept <- .rotate_cf_orth(L, kappa = 0, random_starts = 20L, screen_keep = 20L,
+                              triage_maxit = 0L, maxit = 0L)
+  set.seed(31)
+  three_kept <- .rotate_cf_orth(L, kappa = 0, random_starts = 20L, screen_keep = 3L,
+                                triage_maxit = 0L, maxit = 0L)
+
+  # entry 1 is the primary (identity) start in both runs; the rest are the random ones
+  expect_length(all_kept$all_values, 21L)
+  expect_length(three_kept$all_values, 4L)
+  expect_equal(sort(three_kept$all_values[-1]),
+               sort(all_kept$all_values[-1])[1:3])
+})
+
 rm(unrot, equa, unrot_1, equa_1, quarti, bentT, geoT, bifacT)

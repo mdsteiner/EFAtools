@@ -131,7 +131,7 @@
 #'   listwise-complete cases. Its fit-index behaviour is described under *Fit indices*.
 #'
 #' ML and ULS are fitted by a bounded L-BFGS-B optimiser over the uniquenesses, capped at
-#' 100 iterations. DWLS runs a bounded warm start capped at 200 iterations and then
+#' 100 iterations. DWLS runs a bounded warm start capped at 50 iterations and then
 #' polishes the loadings with an unconstrained quasi-Newton optimiser capped at 500; the
 #' reported convergence code is the polish's. None of these caps is user-adjustable --
 #' `max_iter` governs the PAF iteration only -- so a fit that stops at its cap

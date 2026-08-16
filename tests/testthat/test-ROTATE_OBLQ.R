@@ -462,4 +462,25 @@ test_that("the native oblique solutions satisfy the oblique structure invariants
   }
 })
 
+test_that("the multi-start screen retains the lowest-criterion starts", {
+  # The screen must rank a random start by the criterion value the solver itself reports at
+  # that start. Under a zero-iteration budget every optimization returns exactly that value,
+  # so screening all starts lists the criterion at all of them, and screening the same starts
+  # (same seed, same draws) with a smaller keep must retain their minima.
+  L <- unclass(unrot$unrot_loadings)
+
+  set.seed(31)
+  all_kept <- .rotate_oblimin(L, gam = 0, random_starts = 20L, screen_keep = 20L,
+                              triage_maxit = 0L, maxit = 0L)
+  set.seed(31)
+  three_kept <- .rotate_oblimin(L, gam = 0, random_starts = 20L, screen_keep = 3L,
+                                triage_maxit = 0L, maxit = 0L)
+
+  # entry 1 is the primary (identity) start in both runs; the rest are the random ones
+  expect_length(all_kept$all_values, 21L)
+  expect_length(three_kept$all_values, 4L)
+  expect_equal(sort(three_kept$all_values[-1]),
+               sort(all_kept$all_values[-1])[1:3])
+})
+
 rm(unrot, obli, unrot_1, obli_1, quarti, simpli, bentQ, geoQ, bifacQ)
