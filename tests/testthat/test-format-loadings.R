@@ -245,6 +245,38 @@ test_that("block wrapping stacks blocks and never folds a row", {
   expect_true(all(cli::ansi_nchar(out) <= 40L))
 })
 
+test_that("stacked column blocks are separated by a blank line", {
+  local_reproducible_output()
+
+  # The renderer puts a blank line before every block after the first, and that separator has
+  # to survive into format(): without it the blocks run together and the "(block i/n)" label
+  # of one sits directly under the last data row of the previous. Both loading classes, and
+  # both routes into a block split (an explicit cap and a narrow console).
+  block_gaps <- function(lines) {
+    label <- grep("(block ", lines, fixed = TRUE)
+    sum(!nzchar(lines[label[-1L] - 1L]))
+  }
+
+  wide <- format(make_wide_loadings(), max_factors_per_block = 3)
+  expect_equal(sum(grepl("(block ", wide, fixed = TRUE)), 3L)
+  expect_equal(block_gaps(wide), 2L)
+
+  narrow <- withr::with_options(list(cli.width = 40), format(make_wide_loadings()))
+  expect_gt(sum(grepl("(block ", narrow, fixed = TRUE)), 1L)
+  expect_equal(block_gaps(narrow),
+               sum(grepl("(block ", narrow, fixed = TRUE)) - 1L)
+
+  sl <- format(make_sl(heywood = FALSE), max_factors_per_block = 1)
+  expect_equal(block_gaps(sl), sum(grepl("(block ", sl, fixed = TRUE)) - 1L)
+
+  # the separator is a genuine blank line, not padding, and no table ends on one
+  expect_true(all(wide[!nzchar(wide)] == ""))
+  expect_true(nzchar(wide[length(wide)]))
+
+  # a table that fits in one block gains no blank lines at all
+  expect_false(any(!nzchar(format(make_loadings()))))
+})
+
 test_that("wide non-loading tables wrap into stacked blocks", {
   local_reproducible_output() # console width 80
   # a rectangular variances-accounted table and a symmetric Phi (lower triangle only),
@@ -275,6 +307,151 @@ test_that("non-loading block wrapping splits columns without folding rows", {
   # a later block's leading rows fall entirely in the blanked upper triangle and are dropped,
   # so no emitted line is a value-less row label (a phantom blank row would print as bare "Fk")
   expect_false(any(grepl("^F[0-9]+ *$", phi)))
+})
+
+test_that("truncated row labels never collide", {
+  # Items sharing a long prefix (premeditation_1 ... premeditation_11) are the common
+  # psychometric case: every one of them truncates to the same ten characters, and the
+  # printed table then has rows the reader cannot tell apart.
+  nms <- c(paste0("premeditation_", 1:11), paste0("perseverance_", 1:10))
+  out <- .shorten_loadings_names(nms, max_length = 10, name_style = "truncate")
+  expect_length(unique(out), length(nms))
+  # the requested width is still respected
+  expect_true(all(nchar(out) <= 10))
+
+  # ... and the rendered table carries those labels, not just the helper
+  L <- matrix(0.5, nrow = length(nms), ncol = 2,
+              dimnames = list(nms, c("F1", "F2")))
+  class(L) <- c("efa_loadings", "LOADINGS")
+  labels <- sub("\\s.*$", "", format(L, color = FALSE)[-1L])
+  expect_length(unique(labels), length(nms))
+
+  # the same labels appear wherever else the report names a variable, so a row can be
+  # matched between the loading table and the sections below it
+  expect_identical(.efa_truncate_names(nms, 10), out)
+})
+
+test_that("row labels the caller supplied as duplicates are left as they are", {
+  # Collisions that were already in the data are not the shortening's to repair; inventing
+  # a distinction between two identically named variables would be worse than showing them
+  # as what they are.
+  nms <- c("premeditation_a", "premeditation_a", "perseverance_x")
+  expect_identical(.shorten_loadings_names(nms, max_length = 10, name_style = "truncate"),
+                   substr(nms, 1L, 10L))
+})
+
+test_that("disambiguation is budgeted into the width, and yields to it only when it must", {
+  nms <- paste0("aaaaaaaaaa_", 1:3)
+
+  # wide enough for abbreviation alone
+  out <- .shorten_loadings_names(nms, max_length = 4, name_style = "truncate")
+  expect_identical(out, c("aa_1", "aa_2", "aa_3"))
+
+  # too narrow for that: the numbering suffix is paid for out of the label, not added to it
+  expect_identical(.disambiguate_loadings_names(rep("premeditat", 3L), 10L),
+                   c("premeditat", "premedit~1", "premedit~2"))
+
+  # and where the width cannot hold a base character plus its suffix, uniqueness wins
+  narrow <- .shorten_loadings_names(nms, max_length = 2, name_style = "truncate")
+  expect_length(unique(narrow), 3L)
+  expect_true(any(nchar(narrow) > 2))
+})
+
+test_that("a row label is a property of the variable, not of the row order", {
+  # The numbering that resolves a collision is assigned in vector order, so deriving it from
+  # the sorted rows would label the same item differently under different sort_loadings.
+  nms <- paste0("Impulsivit\u00e4t_pers\u00f6nlich_", 1:4)
+  L <- matrix(c(0.8, 0.1,
+                0.2, 0.7,
+                0.6, 0.3,
+                0.1, 0.9),
+              nrow = 4, byrow = TRUE, dimnames = list(nms, c("F1", "F2")))
+  class(L) <- c("efa_loadings", "LOADINGS")
+
+  labels_of <- function(...) sub("\\s.*$", "", format(L, color = FALSE, ...)[-1L])
+
+  # all four names cut to the same ten characters, so the labels have to be disambiguated
+  unsorted <- labels_of()
+  expect_length(unique(unsorted), 4L)
+
+  # "primary" groups the two F1 items ahead of the two F2 items, i.e. rows 1, 3, 2, 4.
+  # Sorting must permute the labels, not re-derive them in the new order.
+  expect_identical(labels_of(sort_loadings = "primary"), unsorted[c(1L, 3L, 2L, 4L)])
+})
+
+test_that(".efa_wrap_chunks packs to the width and never splits a chunk", {
+  chunks <- c("Pooling settings:", "target_method = 'first_target',",
+              "align_unrotated = 'signed_tucker_congruence',",
+              "fit_pool_method = 'D2'.")
+
+  wide <- .efa_wrap_chunks(chunks, width = 200L)
+  expect_length(wide, 1L)
+  expect_identical(wide, paste(chunks, collapse = " "))
+
+  packed <- .efa_wrap_chunks(chunks, width = 60L)
+  expect_gt(length(packed), 1L)
+  expect_true(all(nchar(packed) <= 60L))
+  # continuation lines carry the exdent, and no chunk is broken
+  expect_true(all(startsWith(packed[-1L], "  ")))
+  expect_identical(paste(trimws(packed), collapse = " "), paste(chunks, collapse = " "))
+
+  # a chunk wider than the console has no split point that keeps it intact, so it is
+  # emitted as it is rather than folded mid-token
+  over <- .efa_wrap_chunks(chunks, width = 20L)
+  expect_identical(trimws(over), chunks)
+
+  # widths are display widths: a styled chunk packs by what it shows, not by its escapes
+  withr::local_options(cli.num_colors = 256)
+  styled <- .efa_wrap_chunks(c("a", cli::style_bold("b"), "c"), width = 5L)
+  expect_length(styled, 1L)
+
+  expect_identical(.efa_wrap_chunks(character(0)), character(0))
+  expect_identical(.efa_wrap_chunks(c("", "only")), "only")
+})
+
+test_that("repairing a collision never warns about non-ASCII names", {
+  # abbreviate() warns on non-ASCII input, so the automatic repair cannot route through it
+  # there: a print method must not raise a warning of its own accord.
+  nms <- paste0("Impulsivit\u00e4t_pers\u00f6nlich_", 1:3)
+  expect_no_warning(
+    out <- .shorten_loadings_names(nms, max_length = 10, name_style = "truncate"))
+  expect_length(unique(out), 3L)
+  expect_true(all(nchar(out) <= 10))
+})
+
+test_that("format.efa_sl_loadings honours the sibling display controls", {
+  local_reproducible_output()
+  sl <- make_sl(heywood = FALSE)
+  rownames(sl) <- c("premeditation_1", "premeditation_2", "perseverance_1")
+
+  # max_name_length + name_style reach the shared shortener instead of being absorbed by ...
+  expect_true(any(grepl("^premeditation_1 ", format(sl, name_style = "full"))))
+  short <- format(sl, max_name_length = 6)
+  expect_true(any(grepl("^prmd_1 ", short)))
+  # ... and still without a shared label
+  labels <- sub("\\s.*$", "", short[-1L])
+  expect_length(unique(labels), 3L)
+
+  # sort_loadings reaches the shared row ordering, and compares the group factors only: on g
+  # (the largest loading of all three items) "clustered" would leave the order untouched,
+  # while on F1/F2 it lifts the stronger F1 item above the weaker one
+  sorted <- sub("\\s.*$", "", format(sl, sort_loadings = "clustered", name_style = "full")[-1L])
+  expect_identical(sorted, c("premeditation_2", "premeditation_1", "perseverance_1"))
+
+  # max_factors_per_block splits the table the way it splits an ordinary loading table
+  blocks <- format(sl, max_factors_per_block = 1)
+  expect_gt(sum(grepl("(block ", blocks, fixed = TRUE)), 1L)
+
+  # the numeric controls are rejected exactly as the sibling rejects them
+  expect_error(format(sl, max_name_length = 0),
+               class = "efa_print_invalid_max_name_length")
+  expect_error(format(sl, max_factors_per_block = 0),
+               class = "efa_print_invalid_max_factors_per_block")
+
+  # and none of this disturbs the styling when colours are available
+  withr::local_options(cli.num_colors = 256)
+  expect_true(cli::ansi_has_any(paste(
+    format(sl, sort_loadings = "clustered", max_name_length = 6), collapse = "")))
 })
 
 test_that("format.efa_sl_loadings flags a Heywood case", {

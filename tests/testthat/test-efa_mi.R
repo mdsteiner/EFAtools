@@ -801,6 +801,52 @@ test_that("summary.efa_mi output is stable (ML, unrotated)", {
   expect_snapshot(print(summary(pooled_none)), transform = scrub_num)
 })
 
+test_that("the pooled header and pooling settings follow the console width", {
+  # The pooled header names the analysis, and its settings line is the longest line of the
+  # report; both are emitted verbatim so a "setting = 'value'" token is never split, and both
+  # therefore have to be packed to the console at the separators between those tokens.
+
+  # The settings an item reports, independent of where its lines happen to break.
+  tokens <- function(lines) {
+    txt <- sub("^Pooling( settings)?: ", "", paste(trimws(lines), collapse = " "))
+    strsplit(sub("\\.$", "", txt), ", ", fixed = TRUE)[[1L]]
+  }
+  at_width <- function(x, w) withr::with_options(list(cli.width = w), cli::ansi_strip(format(x)))
+
+  reference <- tokens(wrapped_item(at_width(pooled_obl, 120L), "^Pooling settings:"))
+  expect_length(reference, 3L)
+
+  for (w in c(120L, 80L, 60L)) {
+    out <- at_width(pooled_obl, w)
+    lines <- c(wrapped_item(out, "^Pooled EFA"), wrapped_item(out, "^Pooling settings:"))
+    expect_true(all(cli::ansi_nchar(lines, type = "width") <= w))
+    # wrapping only moves the line breaks: the same settings, in the same order ...
+    expect_identical(tokens(wrapped_item(out, "^Pooling settings:")), reference)
+    # ... and no line ends inside a "setting = 'value'" token
+    expect_false(any(grepl("= '[^']*$", lines)))
+    expect_true(any(grepl("estimator = 'PAF'", lines, fixed = TRUE)))
+    expect_true(any(grepl("rotation = 'promax'", lines, fixed = TRUE)))
+
+    # the summary's diagnostics entry reports the same settings and is packed the same way
+    pooling <- wrapped_item(at_width(summary(pooled_obl), w), "^Pooling:")
+    expect_true(all(cli::ansi_nchar(pooling, type = "width") <= w))
+    expect_identical(tokens(pooling), reference)
+  }
+})
+
+test_that("the wrapped pooled header keeps its styling when colours are on", {
+  withr::local_options(cli.num_colors = 256, cli.width = 60)
+
+  out <- format(pooled_obl)
+  # the estimator/rotation values stay emphasised after the line is packed ...
+  expect_true(cli::ansi_has_any(out[2L]) || cli::ansi_has_any(out[3L]))
+  # ... and with colours off the same lines are plain text, wrapped identically
+  withr::local_options(cli.num_colors = 1)
+  plain <- format(pooled_obl)
+  expect_false(cli::ansi_has_any(paste(plain[1:4], collapse = "")))
+  expect_identical(cli::ansi_strip(out[1:4]), plain[1:4])
+})
+
 test_that("format.efa_mi matches the printed output", {
   local_reproducible_output()
 

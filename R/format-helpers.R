@@ -234,6 +234,53 @@
   blocks
 }
 
+# Greedily pack pre-assembled chunks into console-width lines, joined by single spaces. A
+# chunk is never split, so a report line that has to be emitted verbatim -- because a
+# "setting = 'value'" token must not be broken across a line break -- can still be packed to
+# the console at the separators between its tokens. Widths are measured with
+# `cli::ansi_nchar(type = "width")`, so a styled chunk is packed by what it displays rather
+# than by the length of its escape sequences, and continuation lines are indented by `exdent`
+# so a wrapped line still reads as one item. A single chunk wider than the console is emitted
+# as it is: there is no split point inside it that would keep the token intact.
+.efa_wrap_chunks <- function(chunks, width = .efa_console_width(), exdent = 2L) {
+  chunks <- chunks[nzchar(chunks)]
+  if (length(chunks) < 1L) {
+    return(character(0))
+  }
+
+  chunk_width <- cli::ansi_nchar(chunks, type = "width")
+  indent <- strrep(" ", exdent)
+
+  out <- character(0)
+  line <- chunks[1L]
+  line_width <- chunk_width[1L]
+
+  for (i in seq_along(chunks)[-1L]) {
+    joined <- line_width + 1L + chunk_width[i]
+    if (joined > width) {
+      out <- c(out, line)
+      line <- paste0(indent, chunks[i])
+      line_width <- exdent + chunk_width[i]
+    } else {
+      line <- paste(line, chunks[i])
+      line_width <- joined
+    }
+  }
+
+  c(out, line)
+}
+
+# Turn "setting = 'value'" tokens into wrap chunks for `.efa_wrap_chunks()`: the comma
+# separator travels with the token it follows, so a wrapped line never starts with one, and
+# `end` closes the last token (e.g. with the sentence's full stop).
+.efa_setting_chunks <- function(tokens, end = "") {
+  if (length(tokens) < 1L) {
+    return(character(0))
+  }
+
+  paste0(tokens, c(rep(",", length(tokens) - 1L), end))
+}
+
 .efa_console_width <- function() {
   width <- tryCatch(cli::console_width(), error = function(e) NA_integer_)
   if (!is.finite(width) || width < 40L) {

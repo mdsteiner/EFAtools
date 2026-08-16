@@ -7,7 +7,17 @@
 \usage{
 \method{print}{efa_sl_loadings}(x, ...)
 
-\method{format}{efa_sl_loadings}(x, cutoff = 0.2, digits = 3, color = TRUE, ...)
+\method{format}{efa_sl_loadings}(
+  x,
+  cutoff = 0.2,
+  digits = 3,
+  max_name_length = 10,
+  color = TRUE,
+  name_style = c("truncate", "abbreviate", "full"),
+  max_factors_per_block = NULL,
+  sort_loadings = c("none", "primary", "clustered"),
+  ...
+)
 }
 \arguments{
 \item{x}{class efa_sl_loadings matrix.}
@@ -15,13 +25,34 @@
 \item{...}{additional arguments passed to print or format.}
 
 \item{cutoff}{numeric. The value at or above which loadings are emphasized
-(default is .2).}
+(default is .2). The default is lower than the .3 of an ordinary loading
+table (\code{\link[=print.efa_loadings]{print.efa_loadings()}}): the group-factor loadings are residualized,
+that is, they carry only the variance left once the general factor has been
+partialled out, and are therefore smaller than the corresponding first-order
+loadings.}
 
 \item{digits}{numeric. Passed to \code{\link[base:Round]{round}}. Number of digits
 to round the loadings to (default is 3).}
 
+\item{max_name_length}{numeric. The maximum length of the variable names to
+display; see \code{\link[=print.efa_loadings]{print.efa_loadings()}}.}
+
 \item{color}{logical. Whether to apply console styling using \pkg{cli}.
 Default is \code{TRUE}.}
+
+\item{name_style}{character. How to shorten variable names longer than
+\code{max_name_length}; see \code{\link[=print.efa_loadings]{print.efa_loadings()}}.}
+
+\item{max_factors_per_block}{numeric or \code{NULL}. Maximum number of factor
+columns to print per block. If \code{NULL}, the number is chosen from the
+console width.}
+
+\item{sort_loadings}{character. Optional row sorting; see
+\code{\link[=print.efa_loadings]{print.efa_loadings()}}. The default \code{"none"} keeps the input order. When
+sorting is requested, rows are grouped by their largest \emph{group}-factor
+loading: the general factor is left out of the comparison, since it is the
+largest loading of almost every item and sorting on it would leave the order
+untouched.}
 }
 \value{
 \code{print()} returns its argument \code{x} invisibly; it is

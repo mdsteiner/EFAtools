@@ -497,6 +497,52 @@ test_that("print output is stable", {
   expect_snapshot(print(int))
 })
 
+test_that("the signed difference table names its direction", {
+  local_reproducible_output()
+
+  # Unlabelled: the argument names are the stand-in, and they already say which way the
+  # subtraction runs.
+  expect_true(any(grepl("Differences: x - y.", cli::ansi_strip(format(matr)), fixed = TRUE)))
+
+  # Labelled: the labels efa_compare() recorded reach the report, not just the plot.
+  labelled <- efa_compare(matrix(c(1, 1, 1, 2), ncol = 2),
+                          matrix(c(1, 1, 1, 1), ncol = 2),
+                          x_labels = c("SPSS", "psych"))
+  out <- cli::ansi_strip(format(labelled))
+  expect_true(any(grepl("Differences: SPSS - psych.", out, fixed = TRUE)))
+  # it heads the signed table, and only that: the absolute summary block is untouched
+  expect_lt(grep("Elementwise differences", out)[1L],
+            grep("Differences: SPSS", out, fixed = TRUE)[1L])
+  expect_gt(grep("Differences: SPSS", out, fixed = TRUE)[1L],
+            grep("Median absolute difference", out)[1L])
+
+  # ... and it is not emitted when the table it heads is suppressed
+  expect_false(any(grepl("Differences: SPSS", cli::ansi_strip(format(labelled, print_diff = FALSE)),
+                         fixed = TRUE)))
+})
+
+test_that("the correspondence line follows the console width", {
+  cmp <- efa_compare(matrix(c(1, 1, 1, 2), ncol = 2), matrix(c(1, 1, 1, 1), ncol = 2))
+
+  counts <- function(lines) wrapped_item(lines, "^Differing")
+
+  for (w in c(120L, 80L, 60L)) {
+    out <- withr::with_options(list(cli.width = w, cli.num_colors = 1),
+                               cli::ansi_strip(format(cmp)))
+    lines <- counts(out)
+    expect_true(all(cli::ansi_nchar(lines, type = "width") <= w))
+    # wrapping moves the line break only; both counts and their qualifiers survive intact
+    expect_identical(
+      paste(trimws(lines), collapse = " "),
+      paste0("Differing indicator-to-factor correspondences: ", cmp$diff_corres,
+             " (highest loading), ", cmp$diff_corres_cross, " (all |loadings| >= 0.3)"))
+  }
+
+  # the counts keep their conditional colouring once the line is packed
+  withr::local_options(cli.width = 60, cli.num_colors = 256)
+  expect_true(cli::ansi_has_any(paste(counts(format(cmp)), collapse = "")))
+})
+
 test_that("display settings can be overridden at print time", {
   local_reproducible_output()
 

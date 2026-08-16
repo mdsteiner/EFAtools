@@ -527,6 +527,29 @@ test_that("format.efa is the source of truth and honours the colour state", {
   expect_false(any(grepl("\033", format(efa_psych), fixed = TRUE)))
 })
 
+test_that("the model header follows the console width", {
+  # The header names the analysis and is emitted verbatim, so a "setting = 'value'" token is
+  # never split; it is packed to the console around those tokens instead.
+  header <- function(w, colors = 1) {
+    out <- withr::with_options(list(cli.width = w, cli.num_colors = colors),
+                               cli::ansi_strip(format(efa_psych)))
+    wrapped_item(out, "^EFA performed")
+  }
+
+  for (w in c(120L, 80L, 60L)) {
+    lines <- header(w)
+    expect_true(all(cli::ansi_nchar(lines, type = "width") <= w))
+    # wrapping moves the line break only: the same sentence, with both tokens intact
+    expect_identical(paste(trimws(lines), collapse = " "),
+                     "EFA performed with estimator = 'PAF' and rotation = 'promax'.")
+    expect_false(any(grepl("= '[^']*$", lines)))
+  }
+
+  # a narrow console does split the line, and does so identically with colours on
+  expect_length(header(60L), 2L)
+  expect_identical(header(60L), header(60L, colors = 256))
+})
+
 test_that("summary.efa output is stable (PAF, promax)", {
   local_reproducible_output()
 

@@ -20,7 +20,10 @@
 #'  to round the loadings to (default is 3).
 #' @param max_name_length numeric. The maximum length of the variable names to
 #'  display. Everything beyond this will be cut from the right unless
-#'  `name_style = "abbreviate"` or `name_style = "full"` is used.
+#'  `name_style = "abbreviate"` or `name_style = "full"` is used. Cutting never
+#'  leaves two variables sharing a row label: if it would (as for items with a
+#'  long common prefix), the names are abbreviated instead, and numbered if
+#'  needed.
 #' @param h2 numeric. Vector of communalities to print. If named and `x`
 #'  has row names, names are used to align communalities to rows.
 #' @param color logical. Whether to apply console styling using \pkg{cli}.
@@ -106,7 +109,10 @@ format.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10
   )
 
   cli::cli_format_method({
-    cli::cli_verbatim(.efa_format_matrix(
+    # Through .efa_emit_lines(), not cli_verbatim() directly: a table too wide for the
+    # console is rendered as stacked column blocks separated by a blank line, and
+    # cli_verbatim() drops interior empty strings, which would run the blocks together.
+    .efa_emit_lines(.efa_format_matrix(
       values = spec$values,
       row_labels = spec$var_names,
       col_labels = spec$factor_names,
@@ -188,9 +194,19 @@ format.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10
     )
   }
 
+  # Shorten before reordering, so a row label is a property of the variable rather than of
+  # where it happens to sit: the numbering that resolves a collision is assigned in vector
+  # order, and deriving it from the sorted order would label the same item differently under
+  # different `sort_loadings`.
+  display_var_names <- .shorten_loadings_names(
+    var_names,
+    max_length = max_name_length,
+    name_style = name_style
+  )
+
   row_order <- .efa_loading_row_order(x, sort_loadings)
   x <- x[row_order, , drop = FALSE]
-  var_names <- var_names[row_order]
+  display_var_names <- display_var_names[row_order]
   if (has_h2) {
     h2 <- h2[row_order]
   }
@@ -203,12 +219,6 @@ format.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10
     factor_names <- c(factor_names, "h2", "u2")
     col_type <- c(col_type, "h2", "u2")
   }
-
-  display_var_names <- .shorten_loadings_names(
-    var_names,
-    max_length = max_name_length,
-    name_style = name_style
-  )
 
   display_factor_names <- .shorten_loadings_factor_names(
     factor_names,
@@ -243,6 +253,12 @@ format.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10
   as.numeric(h2)
 }
 
+# Shorten variable names to `max_length` for a loading table. Cutting from the right can map
+# distinct items onto one row label -- "premeditation_1" through "premeditation_11" all become
+# "premeditat" -- leaving rows the reader cannot tell apart, with nothing on screen to signal
+# it. So a truncation that collides falls back to abbreviation and, if that still collides, to
+# numbered labels: a row label is never shared by two different variables. Names the caller
+# supplied as duplicates are left as they are; those collisions are not the shortening's doing.
 .shorten_loadings_names <- function(x, max_length, name_style) {
   x <- as.character(x)
 
@@ -255,15 +271,57 @@ format.efa_loadings <- function(x, cutoff = .3, digits = 3, max_name_length = 10
   }
 
   if (identical(name_style, "abbreviate")) {
-    return(as.character(abbreviate(
-      x,
-      minlength = max_length,
-      strict = TRUE,
-      method = "both.sides"
-    )))
+    return(.abbreviate_loadings_names(x, max_length))
   }
 
-  substr(x, 1L, max_length)
+  out <- substr(x, 1L, max_length)
+  if (anyDuplicated(out) < 1L || anyDuplicated(x) > 0L) {
+    return(out)
+  }
+
+  # `abbreviate()` warns on non-ASCII input, and a table repairing its own row labels must
+  # not raise a warning for doing so; such names go straight to the numbering below. The
+  # test is `abbreviate()`'s own, so the two agree on what counts as non-ASCII.
+  if (all(nchar(x, type = "bytes") == nchar(x, type = "chars"))) {
+    abbreviated <- .abbreviate_loadings_names(x, max_length)
+    if (anyDuplicated(abbreviated) < 1L) {
+      return(abbreviated)
+    }
+    out <- abbreviated
+  }
+
+  .disambiguate_loadings_names(out, max_length)
+}
+
+# `abbreviate()` with `strict = TRUE` never exceeds `minlength`, so the result still respects
+# the requested width; `method = "both.sides"` also drops characters from a shared prefix,
+# which is what separates names that differ only near their end.
+.abbreviate_loadings_names <- function(x, max_length) {
+  as.character(abbreviate(
+    x,
+    minlength = max_length,
+    strict = TRUE,
+    method = "both.sides"
+  ))
+}
+
+# Last-resort disambiguation of labels that are still duplicated: the numeric suffix
+# `make.unique()` appends is budgeted out of `max_length` by trimming the label it is appended
+# to, so a disambiguated label keeps the requested width instead of growing past it. Trimming
+# can in principle re-collide, and a width too narrow to hold a suffix cannot be budgeted at
+# all; both fall back to the untrimmed form, which `make.unique()` guarantees is unique. An
+# over-wide label is still readable, an ambiguous one is not.
+.disambiguate_loadings_names <- function(x, max_length) {
+  suffixed <- make.unique(x, sep = "~")
+  suffix <- substr(suffixed, nchar(x) + 1L, nchar(suffixed))
+
+  keep <- max_length - nchar(suffix)
+  if (any(keep < 1L)) {
+    return(suffixed)
+  }
+
+  out <- paste0(substr(x, 1L, keep), suffix)
+  if (anyDuplicated(out) > 0L) suffixed else out
 }
 
 .shorten_loadings_factor_names <- function(x, max_length = NULL) {

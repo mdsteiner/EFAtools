@@ -47,6 +47,11 @@ disabled (for example when captured into a file or stripped with
 The line reporting the minimum number of decimals provided is shown only when it
 carries information: two ordinary double matrices carry the full double precision,
 for which the count is uninformative and the line is omitted.
+
+The summary statistics are absolute differences, so they carry no direction. The
+elementwise differences are signed, and the table is headed by the direction of the
+subtraction, named with the \code{x_labels} recorded by \code{\link[=efa_compare]{efa_compare()}} (\code{"x"} and \code{"y"} by
+default): a negative cell means the first solution is the lower of the two there.
 }
 \examples{
 # A type SPSS EFA to mimick the SPSS implementation

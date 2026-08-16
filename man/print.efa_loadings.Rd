@@ -35,7 +35,10 @@ to round the loadings to (default is 3).}
 
 \item{max_name_length}{numeric. The maximum length of the variable names to
 display. Everything beyond this will be cut from the right unless
-\code{name_style = "abbreviate"} or \code{name_style = "full"} is used.}
+\code{name_style = "abbreviate"} or \code{name_style = "full"} is used. Cutting never
+leaves two variables sharing a row label: if it would (as for items with a
+long common prefix), the names are abbreviated instead, and numbered if
+needed.}
 
 \item{h2}{numeric. Vector of communalities to print. If named and \code{x}
 has row names, names are used to align communalities to rows.}

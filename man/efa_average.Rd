@@ -83,12 +83,14 @@ Default is "promax".}
 \item{type}{character vector. Any combination of "none" (default), "EFAtools",
 "psych", and "SPSS" can be entered. "none" allows the specification of various
 combinations of the arguments controlling both factor extraction methods and
-the rotations. The others ("EFAtools", "psych", and "SPSS"), control the execution
-of the respective factor extraction method and rotation to be in line with how
-it is executed in this package (i.e., the respective default procedure), in the
-psych package, and in SPSS. A specific psych implementation exists for PAF, ML, varimax,
-and promax. The SPSS implementation exists for PAF, varimax, and promax. For
-details, see \code{\link[=efa_fit]{efa_fit()}}.}
+the rotations. The others ("EFAtools", "psych", and "SPSS") take the extraction
+and rotation tuning of the respective implementation: this package's default
+procedure, the psych package's, and SPSS's. A specific psych implementation
+exists for PAF, ML, varimax, and promax. The SPSS implementation exists for
+PAF, varimax, and promax. For details, see \code{\link[=efa_fit]{efa_fit()}}. The factor ordering is
+the one setting a named \code{type} does not bring here: every solution in the grid
+is fitted with the eigenvalue-based ordering, so that the solutions can be
+realigned to a common target before averaging.}
 
 \item{averaging}{character. One of "mean" (default), and "median". Controls
 whether the different results should be averaged using the (trimmed) mean,
@@ -267,6 +269,10 @@ supplied).}
 If the supplied arguments admit only a single EFA, there is nothing to average
 across: that one \code{\link[=efa_fit]{efa_fit()}} object is returned instead, with a warning. Its
 \code{settings} are that fit's, with \code{seed} recording the seed the run was governed by.
+They therefore describe the concrete arguments the fit ran under rather than the
+\code{type} that supplied them: a row taken from a named preset records \code{type = "none"}
+together with the preset's resolved values (for example \code{max_iter = 25} for
+"SPSS"), and \code{order_type = "eigen"} as for every other row in the grid.
 }
 \description{
 Not all EFA procedures always arrive at the same solution. This function allows
@@ -329,6 +335,16 @@ in \code{type}.
 
 The argument \code{start_method} is only evaluated if "ML" is included in
 \code{estimator}.
+
+Every solution in the grid is fitted with the eigenvalue-based factor ordering,
+including under a named \code{type}: the solutions are realigned to a common target
+before averaging, so a per-fit ordering (SPSS orders by the sum of squared
+loadings) would not survive into the averaged result. This is the one setting a
+named \code{type} does not carry, and it is visible in the two places the individual
+fits are: the solutions returned in \code{efa_list} are eigenvalue-ordered, and so is
+the single \code{\link[=efa_fit]{efa_fit()}} object returned when the grid collapses to one row. Their
+loadings can therefore appear in a different factor order than the same fit run
+through \code{\link[=efa_fit]{efa_fit()}} under that \code{type}, even though the solutions are the same.
 
 To avoid a bias in the averaged factor solutions from problematic solutions,
 these are excluded prior to averaging. A solution is deemed problematic if

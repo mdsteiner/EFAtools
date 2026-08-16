@@ -5,9 +5,12 @@
 #' indicator-to-factor correspondences, the averaged loadings (and, for oblique
 #' solutions, the factor intercorrelations), the variances accounted for, and the
 #' model fit. `format()` assembles the same report and returns it as a character
-#' vector; `print()` is `cat(format(x), sep = "\n")`. The lines follow the active
-#' console theme, so they are plain when colours are disabled (for example when
-#' captured into a file or stripped with [cli::ansi_strip()]).
+#' vector; by default (`plot = FALSE`) `print()` is `cat(format(x), sep = "\n")`.
+#' With `plot = TRUE` it additionally draws the loading plot, which is the one
+#' thing `format()` cannot return: the printed lines are the same, but the call
+#' has a side effect beyond them. The lines follow the active console theme, so
+#' they are plain when colours are disabled (for example when captured into a file
+#' or stripped with [cli::ansi_strip()]).
 #'
 #' @param x An object of class `efa_average` (output from [efa_average()]).
 #' @param stat character. A vector with the statistics to print. Possible inputs
@@ -15,7 +18,8 @@
 #' "range".
 #' @param plot logical. Whether a plot of the average and min- max loadings should
 #' be created. Default is FALSE. If more than 10 factors are extracted, no plot is
-#' created. Only used by `print()`.
+#' created. Only used by `print()`; [plot.efa_average()] draws the same plot and
+#' returns it, so it is the route to take when the plot object itself is wanted.
 #' @param ...  Not used; for consistency with the generic.
 #'
 #' @returns `print()` returns its argument `x` invisibly. `format()` returns a

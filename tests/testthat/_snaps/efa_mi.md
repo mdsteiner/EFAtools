@@ -20,8 +20,10 @@
       print(summary(pooled_boot))
     Output
       
-      Pooled EFA across 2 imputations performed with estimator = 'ML' and rotation = 'none'.
-      Pooling settings: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+      Pooled EFA across 2 imputations performed with estimator = 'ML' and
+        rotation = 'none'.
+      Pooling settings: align_unrotated = 'signed_tucker_congruence',
+        fit_pool_method = 'D2'.
       
       -- Pooled Model Diagnostics ----------------------------------------------------
       
@@ -110,8 +112,10 @@
       print(pooled_obl)
     Output
       
-      Pooled EFA across 3 imputations performed with estimator = 'PAF' and rotation = 'promax'.
-      Pooling settings: target_method = 'first_target', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+      Pooled EFA across 3 imputations performed with estimator = 'PAF' and
+        rotation = 'promax'.
+      Pooling settings: target_method = 'first_target',
+        align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
       
       -- Rotated Loadings ------------------------------------------------------------
       
@@ -163,8 +167,10 @@
       print(pooled_none)
     Output
       
-      Pooled EFA across 3 imputations performed with estimator = 'ML' and rotation = 'none'.
-      Pooling settings: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+      Pooled EFA across 3 imputations performed with estimator = 'ML' and
+        rotation = 'none'.
+      Pooling settings: align_unrotated = 'signed_tucker_congruence',
+        fit_pool_method = 'D2'.
       
       -- Unrotated Loadings ----------------------------------------------------------
       
@@ -206,8 +212,10 @@
       print(summary(pooled_obl))
     Output
       
-      Pooled EFA across 3 imputations performed with estimator = 'PAF' and rotation = 'promax'.
-      Pooling settings: target_method = 'first_target', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+      Pooled EFA across 3 imputations performed with estimator = 'PAF' and
+        rotation = 'promax'.
+      Pooling settings: target_method = 'first_target',
+        align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
       
       -- Pooled Model Diagnostics ----------------------------------------------------
       
@@ -215,7 +223,8 @@
       Variables: 18
       N: 500
       Imputations: 3
-      Pooling: target_method = 'first_target', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
+      Pooling: target_method = 'first_target',
+        align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
       Alignment: method = 'first_target', converged
       Heywood cases: 0
       Cross-loading items (|loading| >= <num>): 0
@@ -313,8 +322,10 @@
       print(summary(pooled_none))
     Output
       
-      Pooled EFA across 3 imputations performed with estimator = 'ML' and rotation = 'none'.
-      Pooling settings: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+      Pooled EFA across 3 imputations performed with estimator = 'ML' and
+        rotation = 'none'.
+      Pooling settings: align_unrotated = 'signed_tucker_congruence',
+        fit_pool_method = 'D2'.
       
       -- Pooled Model Diagnostics ----------------------------------------------------
       

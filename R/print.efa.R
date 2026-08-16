@@ -31,7 +31,12 @@
 #' @param digits numeric. Number of decimal places for the printed tables.
 #'   Default is 3.
 #' @param max_name_length numeric. Maximum length of the variable names to
-#'   display; longer names are cut from the right.
+#'   display; longer names are cut from the right, or abbreviated where cutting
+#'   would give two variables the same label. Applies to every table that names
+#'   variables. `name_style` (see [print.efa_loadings()]) can be passed through
+#'   `...` to choose the shortening explicitly, but it reaches the loading table
+#'   only; the confidence-interval and simple-structure tables always shorten by
+#'   cutting.
 #' @param sort_loadings character. Optional row sorting for the loading table.
 #'   See [print.efa_loadings()].
 #' @param show_loading_legend logical. Whether to print a short legend for the
@@ -357,12 +362,7 @@ format.summary.efa <- function(x, ...) {
   if (isTRUE(spec$is_pooled)) {
     .print_efa_pooled_header(spec)
   } else {
-    # Emitted verbatim (not via cli_text) so the "setting = 'value'" tokens are never split
-    # across a line break; the bold values therefore use style_bold() rather than {.strong}.
-    cli::cli_verbatim(paste0(
-      "EFA performed with estimator = '", cli::style_bold(spec$estimator),
-      "' and rotation = '", cli::style_bold(spec$rotation), "'."
-    ))
+    cli::cli_verbatim(.efa_wrap_chunks(c("EFA", .efa_model_header_chunks(spec))))
   }
 
   # Flag two-stage FIML correlations (saturated mean/covariance EM-estimated from raw data
@@ -394,26 +394,34 @@ format.summary.efa <- function(x, ...) {
 }
 
 
+# The estimator/rotation tail both model headers end in, as `.efa_wrap_chunks()` chunks.
+# Emitted verbatim rather than via cli_text() so a "setting = 'value'" token is never split
+# across a line break -- which is also why the values are style_bold() rather than {.strong}
+# -- while the packer still breaks the line around those tokens.
+.efa_model_header_chunks <- function(spec) {
+  c("performed", "with",
+    paste0("estimator = '", cli::style_bold(spec$estimator), "'"),
+    "and",
+    paste0("rotation = '", cli::style_bold(spec$rotation), "'."))
+}
+
 .print_efa_pooled_header <- function(spec) {
   n_imputations <- .efa_setting_text(spec$n_imputations)
 
   across <- if (nzchar(n_imputations)) {
-    paste0(" across ", cli::style_bold(n_imputations), " imputations")
+    c("across", cli::style_bold(n_imputations), "imputations")
   } else {
-    ""
+    character(0)
   }
-
-  # Verbatim, for the same reason as the unpooled header above.
-  cli::cli_verbatim(paste0(
-    "Pooled EFA", across, " performed with estimator = '",
-    cli::style_bold(spec$estimator),
-    "' and rotation = '", cli::style_bold(spec$rotation), "'."
+  cli::cli_verbatim(.efa_wrap_chunks(
+    c("Pooled EFA", across, .efa_model_header_chunks(spec))
   ))
 
   pooling_settings <- .efa_pooled_settings_text(spec)
   if (length(pooling_settings) > 0L) {
-    cli::cli_verbatim(paste0("Pooling settings: ",
-                             paste(pooling_settings, collapse = ", "), "."))
+    cli::cli_verbatim(.efa_wrap_chunks(
+      c("Pooling settings:", .efa_setting_chunks(pooling_settings, end = "."))
+    ))
   }
 
   invisible(NULL)
@@ -1405,11 +1413,12 @@ format.summary.efa <- function(x, ...) {
   paste0(.efa_ci_header_label(spec), " CIs for factor intercorrelations")
 }
 
+# Variable labels for the report's name columns (CI tables, simple-structure bullets).
+# Shares the loading table's shortening, so a variable carries the same label wherever the
+# report names it -- including the collision handling, without which the loading table and
+# the sections below it could label the same item differently.
 .efa_truncate_names <- function(x, max_name_length) {
-  x <- as.character(x)
-  too_long <- nchar(x) > max_name_length
-  x[too_long] <- substr(x[too_long], 1, max_name_length)
-  x
+  .shorten_loadings_names(x, max_length = max_name_length, name_style = "truncate")
 }
 
 # Format a vector of CI numbers for the CI tables. `.efa_num` is vectorized, so one
@@ -1834,7 +1843,10 @@ format.summary.efa <- function(x, ...) {
     }
     pooling <- .efa_pooled_settings_text(spec)
     if (length(pooling) > 0L) {
-      .efa_print_key_value("Pooling", paste(pooling, collapse = ", "))
+      # The only diagnostics entry whose value is a list of settings rather than a single
+      # number, so it is the only one long enough to need the console-width packing the
+      # pooled header uses; the rest stay one-line key/value pairs.
+      cli::cli_verbatim(.efa_wrap_chunks(c("Pooling:", .efa_setting_chunks(pooling))))
     }
 
     alignment_text <- .efa_alignment_summary(x)

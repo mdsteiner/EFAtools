@@ -22,6 +22,10 @@
 
 * Wide `efa_group()` output is now wrapped or split into blocks to fit the console.
 
+* The elementwise differences of `efa_compare()` are signed, and the table is now headed by the direction of the subtraction, named with `x_labels`. The line counting differing indicator-to-factor correspondences wraps to the console width.
+
+* `efa_average()` now documents that every solution in the grid is fitted with the eigenvalue-based factor ordering, including under a named `type`, and what the settings of the single `efa_fit()` object record when the grid collapses to one combination.
+
 ## Data Screening
 
 * The multivariate-outlier check in `efa_screen()` now correctly handles robust subsets with singular covariance matrices instead of discarding the best solution.
@@ -76,6 +80,8 @@
 
 * `efa_mi()` now rejects `mids` objects from `mice` with guidance to convert them first using `mice::complete(x, "all")`.
 
+* The pooled header and the pooling settings printed by `efa_mi()` and its `summary()` now wrap to the console width instead of running on to a fixed length. Individual `setting = 'value'` entries are still never split across a line.
+
 ## Ordinal Correlations
 
 * Perfectly ordered polychoric or tetrachoric pairs are now reported as `0.9999` or `-0.9999`, with a warning listing the affected pairs.
@@ -91,6 +97,16 @@
 * In simulation mode, `efa_power()` now warns when a requested factor-retention criterion never produces a suggestion and reports an `NA` hit rate over zero valid replicates.
 
 * Simulation mode now gives clear errors for missing or invalid `N` and `n_datasets`.
+
+## Printed Output
+
+* Truncating long variable names no longer gives two items the same row label in a loading table. Names that would collide are abbreviated instead, and numbered if abbreviating is not enough, so items sharing a long prefix stay distinguishable.
+
+* `print()` and `format()` for Schmid-Leiman loading matrices now honour `max_name_length`, `name_style`, `sort_loadings`, and `max_factors_per_block`, which were previously accepted and ignored. Row sorting compares the group factors only, since the general factor is the largest loading of nearly every item.
+
+* A loading table split into stacked column blocks now shows a blank line between them, so a block's header no longer sits directly under the last row of the block before it.
+
+* The model header of `efa_fit()` and the second-order header of `efa_schmid_leiman()` now wrap to the console width. As in every other report line of this kind, an individual `setting = 'value'` entry is never split across a line.
 
 ## Reliability and Factor Scores
 

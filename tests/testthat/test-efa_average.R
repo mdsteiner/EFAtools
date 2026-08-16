@@ -611,6 +611,29 @@ test_that("errors are thrown correctly", {
                  class = "efa_avg_single_combination")
 })
 
+test_that("a named type brings its tuning into the grid, but not its factor ordering", {
+  # The solutions are realigned to a common target before averaging, so a per-fit factor
+  # order would not survive into the averaged result; every row is therefore fitted
+  # eigenvalue-ordered even under a named `type`. That is user-visible, because the
+  # individual fits are returned, so it is documented and pinned here.
+  avg <- suppressWarnings(efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                                      estimator = c("PAF", "ML"), rotation = "promax",
+                                      type = "SPSS", show_progress = FALSE))
+  order_types <- vapply(avg$efa_list, function(f) f$settings$order_type, character(1))
+  expect_true(all(order_types == "eigen"))
+
+  # ... and on the single-row path, where that fit *is* the return value, the recorded
+  # settings are the concrete arguments it ran under rather than the type that supplied
+  # them: the SPSS iteration cap, but type "none" and the grid's eigenvalue ordering.
+  single <- suppressWarnings(efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                                         estimator = "PAF", rotation = "promax",
+                                         type = "SPSS", show_progress = FALSE))
+  expect_s3_class(single, "efa")
+  expect_identical(single$settings$type, "none")
+  expect_identical(single$settings$order_type, "eigen")
+  expect_equal(single$settings$max_iter, 25)
+})
+
 test_that("the single-combination shortcut still records the seed", {
   single <- function(seed) suppressMessages(suppressWarnings(
     efa_average(GRiPS_raw, n_factors = 1, estimator = "PAF", type = "EFAtools",

@@ -1,3 +1,14 @@
+# One emitted report item: the line matching `start` plus the continuation lines the
+# console-width packer indented under it. Used by the width tests of every printer that packs
+# a long line, so they all agree on what counts as one item (the indent is .efa_wrap_chunks()'s
+# `exdent`, and a blank line or any unindented line ends the item).
+wrapped_item <- function(lines, start) {
+  i <- grep(start, lines)[1L]
+  j <- i
+  while (j < length(lines) && startsWith(lines[j + 1L], "  ")) j <- j + 1L
+  lines[i:j]
+}
+
 # Shared snapshot scrub used by the print/format snapshot tests.
 #
 # Masks every decimal number, together with the sign and any padding in front of

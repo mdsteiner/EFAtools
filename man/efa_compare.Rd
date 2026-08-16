@@ -73,7 +73,9 @@ loading makes the correspondence counts undefined (\code{NA}). Default is FALSE.
 
 \item{x_labels}{character. A vector of length two containing identifying
 labels for the two objects x and y that will be compared. These will be used
-as labels on the x-axis of the plot. Default is "x" and "y".}
+as labels on the x-axis of the plot, and to name the direction of the signed
+elementwise differences in the printed report (see \code{\link[=print.efa_compare]{print.efa_compare()}}).
+Default is "x" and "y".}
 
 \item{plot}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} Accepted and validated, but
 without effect; retained for backwards compatibility. The difference plot is

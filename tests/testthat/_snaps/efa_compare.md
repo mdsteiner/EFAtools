@@ -11,9 +11,12 @@
       Root mean squared distance (RMSE):  .5000
       Max decimals where all numbers agree in absolute value: none
       Minimum number of decimals provided: 0
-      Differing indicator-to-factor correspondences: 1 (highest loading), 0 (all |loadings| >= 0.3)
+      Differing indicator-to-factor correspondences: 1 (highest loading),
+        0 (all |loadings| >= 0.3)
       
       -- Elementwise differences -----------------------------------------------------
+      
+      Differences: x - y.
       
             F1     F2
       V1  .0000   .0000
@@ -34,6 +37,8 @@
       Minimum number of decimals provided: 0
       
       -- Elementwise differences -----------------------------------------------------
+      
+      Differences: x - y.
       
       V1   .0000
       V2   .0000

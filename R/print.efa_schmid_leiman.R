@@ -43,13 +43,14 @@ format.efa_schmid_leiman <- function(x, ...) {
       # extract the estimator of the second-order EFA
       estimator <- x$settings$estimator
 
-      # Emitted verbatim (not via cli_text) so the "setting = 'value'" tokens are never split
-      # across a line break; the bold values therefore use style_bold() rather than {.strong}.
+      # Emitted verbatim (not via cli_text) so the "setting = 'value'" token is never split
+      # across a line break; the bold value therefore uses style_bold() rather than {.strong}.
+      # `.efa_wrap_chunks()` then packs the line to the console around that token.
       cli::cli_text("")
-      cli::cli_verbatim(paste0(
-        "EFA for second-order loadings performed with estimator = '",
-        cli::style_bold(estimator), "'"
-      ))
+      cli::cli_verbatim(.efa_wrap_chunks(c(
+        "EFA", "for", "second-order", "loadings", "performed", "with",
+        paste0("estimator = '", cli::style_bold(estimator), "'")
+      )))
 
       # Surface non-convergence of the second-order EFA, keyed on its convergence
       # code (with the iteration-count fallback), matching print.efa().

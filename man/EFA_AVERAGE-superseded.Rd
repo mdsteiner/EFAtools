@@ -58,12 +58,14 @@ Default is "promax".}
 \item{type}{character vector. Any combination of "none" (default), "EFAtools",
 "psych", and "SPSS" can be entered. "none" allows the specification of various
 combinations of the arguments controlling both factor extraction methods and
-the rotations. The others ("EFAtools", "psych", and "SPSS"), control the execution
-of the respective factor extraction method and rotation to be in line with how
-it is executed in this package (i.e., the respective default procedure), in the
-psych package, and in SPSS. A specific psych implementation exists for PAF, ML, varimax,
-and promax. The SPSS implementation exists for PAF, varimax, and promax. For
-details, see \code{\link[=efa_fit]{efa_fit()}}.}
+the rotations. The others ("EFAtools", "psych", and "SPSS") take the extraction
+and rotation tuning of the respective implementation: this package's default
+procedure, the psych package's, and SPSS's. A specific psych implementation
+exists for PAF, ML, varimax, and promax. The SPSS implementation exists for
+PAF, varimax, and promax. For details, see \code{\link[=efa_fit]{efa_fit()}}. The factor ordering is
+the one setting a named \code{type} does not bring here: every solution in the grid
+is fitted with the eigenvalue-based ordering, so that the solutions can be
+realigned to a common target before averaging.}
 
 \item{averaging}{character. One of "mean" (default), and "median". Controls
 whether the different results should be averaged using the (trimmed) mean,

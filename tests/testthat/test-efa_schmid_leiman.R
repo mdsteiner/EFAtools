@@ -497,6 +497,23 @@ test_that("print output is stable", {
   expect_snapshot(print(SL_EFAtools), transform = scrub_num)
 })
 
+test_that("the second-order header follows the console width", {
+  # Emitted verbatim so the "estimator = 'value'" token is never split, and packed to the
+  # console around it -- the same treatment the efa_fit() header gets.
+  header <- function(w) {
+    out <- withr::with_options(list(cli.width = w, cli.num_colors = 1), format(SL_EFAtools))
+    wrapped_item(out, "^EFA for second-order")
+  }
+
+  for (w in c(120L, 80L, 60L)) {
+    lines <- header(w)
+    expect_true(all(cli::ansi_nchar(lines, type = "width") <= w))
+    expect_identical(paste(trimws(lines), collapse = " "),
+                     "EFA for second-order loadings performed with estimator = 'PAF'")
+  }
+  expect_length(header(60L), 2L)
+})
+
 rm(EFA_mod, SL_EFAtools, SL_SPSS, fa_mod, SL_psych, SL_flex, EFA_mod_unrot,
    EFA_mod_orth, fa_mod_unrot, fa_mod_orth)
 if (requireNamespace("lavaan", quietly = TRUE)) {

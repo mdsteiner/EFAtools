@@ -15,6 +15,11 @@
 #' carries information: two ordinary double matrices carry the full double precision,
 #' for which the count is uninformative and the line is omitted.
 #'
+#' The summary statistics are absolute differences, so they carry no direction. The
+#' elementwise differences are signed, and the table is headed by the direction of the
+#' subtraction, named with the `x_labels` recorded by [efa_compare()] (`"x"` and `"y"` by
+#' default): a negative cell means the first solution is the lower of the two there.
+#'
 #' @param x An object of class `efa_compare` (output from [efa_compare()]).
 #' @param digits,m_red,range_red,round_red,print_diff Display controls, documented
 #'   in [efa_compare()]. Each defaults to `NULL`, meaning the value `efa_compare()`
@@ -75,6 +80,13 @@ format.efa_compare <- function(x, digits = NULL, m_red = NULL, range_red = NULL,
   # extract control settings
   corres <- x$settings$corres
   thresh <- x$settings$thresh
+  # The labels naming the two compared solutions. `efa_compare()` always records a pair, so
+  # the fallback only covers a hand-built or deserialized object; the argument names are the
+  # right stand-in, since they are what the sign convention `x - y` refers to.
+  x_labels <- x$settings$x_labels
+  if (length(x_labels) != 2L) {
+    x_labels <- c("x", "y")
+  }
 
   # The display controls are recorded at construction but govern only how the report
   # reads, so an argument supplied here overrides the recorded value for this call and
@@ -155,14 +167,23 @@ format.efa_compare <- function(x, digits = NULL, m_red = NULL, range_red = NULL,
       corres_style <- function(v) {
         .efa_style(v, if (v == 0) c("green", "bold") else c("red", "bold"))
       }
-      cli::cli_verbatim(paste0(
-        "Differing indicator-to-factor correspondences: ",
-        corres_style(diff_corres), " (highest loading), ",
-        corres_style(diff_corres_cross), " (all |loadings| >= ", format(thresh), ")"))
+      # The longest line of the report. Emitted verbatim so a styled count is never split
+      # from the rule it belongs to, but packed to the console width between the two counts.
+      cli::cli_verbatim(.efa_wrap_chunks(c(
+        "Differing", "indicator-to-factor", "correspondences:",
+        paste0(corres_style(diff_corres), " (highest loading),"),
+        paste0(corres_style(diff_corres_cross),
+               " (all |loadings| >= ", format(thresh), ")"))))
     }
 
     if (isTRUE(print_diff)) {
       .print_efa_rule("Elementwise differences")
+      # The table below is signed (`x - y`), and its cells are the only place the report
+      # shows a direction; name it with the labels the comparison recorded, so a reader can
+      # tell which solution a negative difference belongs to without opening the help page.
+      cli::cli_verbatim(.efa_wrap_chunks(
+        c("Differences:", paste0(x_labels[1L], " - ", x_labels[2L], "."))))
+      cli::cli_text("")
       .efa_emit_lines(.compare_diff_lines(diff, digits = digits, r_red = range_red))
     }
   })

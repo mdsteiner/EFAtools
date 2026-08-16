@@ -35,12 +35,14 @@
 #' @param type character vector. Any combination of "none" (default), "EFAtools",
 #' "psych", and "SPSS" can be entered. "none" allows the specification of various
 #' combinations of the arguments controlling both factor extraction methods and
-#' the rotations. The others ("EFAtools", "psych", and "SPSS"), control the execution
-#' of the respective factor extraction method and rotation to be in line with how
-#' it is executed in this package (i.e., the respective default procedure), in the
-#' psych package, and in SPSS. A specific psych implementation exists for PAF, ML, varimax,
-#' and promax. The SPSS implementation exists for PAF, varimax, and promax. For
-#' details, see [efa_fit()].
+#' the rotations. The others ("EFAtools", "psych", and "SPSS") take the extraction
+#' and rotation tuning of the respective implementation: this package's default
+#' procedure, the psych package's, and SPSS's. A specific psych implementation
+#' exists for PAF, ML, varimax, and promax. The SPSS implementation exists for
+#' PAF, varimax, and promax. For details, see [efa_fit()]. The factor ordering is
+#' the one setting a named `type` does not bring here: every solution in the grid
+#' is fitted with the eigenvalue-based ordering, so that the solutions can be
+#' realigned to a common target before averaging.
 #' @param averaging character. One of "mean" (default), and "median". Controls
 #' whether the different results should be averaged using the (trimmed) mean,
 #' or the median.
@@ -197,6 +199,16 @@
 #' The argument `start_method` is only evaluated if "ML" is included in
 #' `estimator`.
 #'
+#' Every solution in the grid is fitted with the eigenvalue-based factor ordering,
+#' including under a named `type`: the solutions are realigned to a common target
+#' before averaging, so a per-fit ordering (SPSS orders by the sum of squared
+#' loadings) would not survive into the averaged result. This is the one setting a
+#' named `type` does not carry, and it is visible in the two places the individual
+#' fits are: the solutions returned in `efa_list` are eigenvalue-ordered, and so is
+#' the single [efa_fit()] object returned when the grid collapses to one row. Their
+#' loadings can therefore appear in a different factor order than the same fit run
+#' through [efa_fit()] under that `type`, even though the solutions are the same.
+#'
 #' To avoid a bias in the averaged factor solutions from problematic solutions,
 #' these are excluded prior to averaging. A solution is deemed problematic if
 #' at least one of the following is true: an error occurred, the model did not
@@ -316,6 +328,10 @@
 #' If the supplied arguments admit only a single EFA, there is nothing to average
 #' across: that one [efa_fit()] object is returned instead, with a warning. Its
 #' `settings` are that fit's, with `seed` recording the seed the run was governed by.
+#' They therefore describe the concrete arguments the fit ran under rather than the
+#' `type` that supplied them: a row taken from a named preset records `type = "none"`
+#' together with the preset's resolved values (for example `max_iter = 25` for
+#' "SPSS"), and `order_type = "eigen"` as for every other row in the grid.
 #'
 #' @source Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
 #' of implementations of principal axis factoring and promax rotation in R and SPSS.

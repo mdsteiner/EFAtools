@@ -68,7 +68,12 @@ emphasised in the loading table. Default is .3.}
 Default is 3.}
 
 \item{max_name_length}{numeric. Maximum length of the variable names to
-display; longer names are cut from the right.}
+display; longer names are cut from the right, or abbreviated where cutting
+would give two variables the same label. Applies to every table that names
+variables. \code{name_style} (see \code{\link[=print.efa_loadings]{print.efa_loadings()}}) can be passed through
+\code{...} to choose the shortening explicitly, but it reaches the loading table
+only; the confidence-interval and simple-structure tables always shorten by
+cutting.}
 
 \item{sort_loadings}{character. Optional row sorting for the loading table.
 See \code{\link[=print.efa_loadings]{print.efa_loadings()}}.}
