@@ -166,8 +166,14 @@
 #'   lower correlation when its table has an empty response-category combination -- is
 #'   re-integrated with a finer rule, because the base rule under-resolves the narrow
 #'   conditional transition of such a pair. The resulting correlations agree with an exact
-#'   bivariate-normal integrator to about `1e-5`, so no quadrature setting is exposed as an
-#'   argument.
+#'   bivariate-normal integrator to about `1e-5` over most of the range, and to about
+#'   `1e-4` for a two-by-two table whose correlation sits just below the value at which the
+#'   finer rule takes over; both are far inside the sampling error of the estimate at any
+#'   realistic sample size, so no quadrature setting is exposed as an argument.
+#'   Each of the `p(p - 1)/2` variable pairs is a separate numerical optimisation, so a
+#'   polychoric matrix costs substantially more than a Pearson one, and the difference grows
+#'   quadratically in the number of variables; with `se = "np-boot"` the whole matrix is
+#'   re-estimated for every bootstrap replicate.
 #' - **"fiml"** estimates a two-stage full-information maximum-likelihood correlation. The
 #'   saturated multivariate-normal mean and covariance are estimated from raw data with
 #'   missing values by an EM algorithm assuming the data are missing at random (Yuan,

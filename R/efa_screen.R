@@ -8,17 +8,22 @@
 #' the squared multiple correlation (SMC) of each variable with all the others.
 #'
 #' @param x data.frame or matrix. Data frame or matrix of raw data, or a matrix of
-#'   correlations.
+#'   correlations. At least three variables are required, and no variable may be a
+#'   perfect linear combination of the others.
 #' @param N numeric. The number of observations. Only needs to be specified when a
 #'   correlation matrix is supplied; it is required for Bartlett's test of
 #'   sphericity and is taken from the data when raw data are supplied. Default is
 #'   `NA`.
-#' @param use character. Passed to [stats::cor()] if raw data are supplied. Default
-#'   is `"pairwise.complete.obs"`.
+#' @param use character. The missing-data policy for raw data. Passed to
+#'   [stats::cor()] for `"pearson"`, `"spearman"`, and `"kendall"`; for `"poly"` /
+#'   `"tetra"` the same policies are applied to the raw data before the polychoric
+#'   estimation, where `"all.obs"` and `"everything"` abort on a missing value instead
+#'   of returning `NA` correlations. Default is `"pairwise.complete.obs"`.
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
-#'   (a two-step estimator). Default is
+#'   (a two-step estimator). Only `"poly"` and `"tetra"` accept factor or character
+#'   columns; the other three need numeric data. Default is
 #'   `"pearson"`.
 #' @param mcd_alpha numeric. The proportion of observations covered by the minimum
 #'   covariance determinant (MCD) subset used for the robust outlier diagnostics, in
@@ -62,7 +67,10 @@
 #'     available values) and the percentage of missing values. Factor and character
 #'     columns are recoded to their integer level codes, so `variance` and the
 #'     empty-category check below refer to those codes (the category counts
-#'     themselves are labelled by the original levels). These, and the
+#'     themselves are labelled by the original levels). Such columns reach the
+#'     correlation matrix only with `cor_method = "poly"` or `"tetra"`; a Pearson,
+#'     Spearman, or Kendall correlation of a factor or character frame is refused.
+#'     These, and the
 #'     category tabulation below, are computed column by column from the supplied
 #'     data using every non-missing value, and so do not depend on `use`, which
 #'     governs only the correlation matrix. Under a listwise `use`
@@ -72,7 +80,11 @@
 #'     rows is recorded in `settings$n_obs`. Available only from raw data.}
 #'   \item{Categories}{For each variable with fewer than ten distinct values
 #'     (treated as categorical), the response-category counts, flagging a *sparse*
-#'     category (fewer than five responses) and, for integer-coded variables, an
+#'     category (fewer than five responses; a heuristic of this package, borrowing the
+#'     conventional minimum cell count of five from contingency-table analysis
+#'     (Cochran, 1954), because a polychoric correlation is estimated from the
+#'     bivariate response table, in which a category with very few responses leaves
+#'     its threshold poorly determined) and, for integer-coded variables, an
 #'     *empty* interior category (an unused category between the smallest and
 #'     largest observed value). A variable with ten or more distinct values is
 #'     treated as continuous and is not tabulated. As a rough guide, items with
@@ -82,7 +94,11 @@
 #'     from raw data.}
 #'   \item{Multivariate normality}{Two tests of multivariate normality computed from
 #'     the complete cases of the raw data: Mardia's (1970) multivariate skewness and
-#'     kurtosis, and the Henze-Zirkler (1990) omnibus test. A small p-value indicates
+#'     kurtosis, and the Henze-Zirkler (1990) omnibus test. Both use the
+#'     maximum-likelihood (divisor-\eqn{n}) covariance, so Mardia's coefficients differ
+#'     from implementations using the unbiased divisor by a factor of
+#'     \eqn{(n / (n - 1))^3} for the skewness coefficient and \eqn{(n / (n - 1))^2} for
+#'     the kurtosis coefficient. A small p-value indicates
 #'     a departure from multivariate normality, a reason to prefer robust or ordinal
 #'     estimation over normal-theory maximum likelihood. Available only from raw data,
 #'     and skipped with a note if the complete-case covariance is singular.}
@@ -161,6 +177,8 @@
 #'   approximation in factor analysis. Biometrika, 38, 337-344.
 #' @source Belsley, D. A., Kuh, E. & Welsch, R. E. (1980). Regression diagnostics:
 #'   Identifying influential data and sources of collinearity. Wiley.
+#' @source Cochran, W. G. (1954). Some methods for strengthening the common
+#'   \eqn{\chi^2} tests. Biometrics, 10, 417-451.
 #' @source Croux, C. & Haesbroeck, G. (1999). Influence function and efficiency of the
 #'   minimum covariance determinant scatter matrix estimator. Journal of Multivariate
 #'   Analysis, 71, 161-190.
@@ -211,6 +229,19 @@ efa_screen <- function(x, N = NA,
   # Perform argument checks
   .assert_cor_input(x)
 
+  # Below three variables the report is degenerate rather than merely uninformative: the
+  # KMO is 0/0 at p = 1 and identically .5 at p = 2 whatever the correlation, and
+  # Bartlett's test has no or one degree of freedom, so the sections would contradict
+  # each other. Refuse it instead of issuing a confident verdict on nothing.
+  if (ncol(x) < 3L) {
+    cli::cli_abort(
+      c("Screening data for factor analysis needs at least three variables.",
+        "x" = "{.arg x} has {ncol(x)} variable{?s}.",
+        "i" = "The sampling adequacy of one or two variables is not defined: the KMO is
+               undefined for a single variable and exactly {.val {0.5}} for any pair."),
+      class = "efa_screen_too_few_vars")
+  }
+
   use <- .match_arg_ci(use)
   cor_method <- .match_arg_ci(cor_method)
   checkmate::assert_count(N, na.ok = TRUE)
@@ -245,8 +276,19 @@ efa_screen <- function(x, N = NA,
   # N_policy = "optional" keeps N as NA for a correlation matrix without N (only
   # Bartlett's test needs it), and inform_from_data = FALSE suppresses the
   # "computing correlations from the raw data" note.
-  prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
-                             N_policy = "optional", inform_from_data = FALSE)
+  # A singular matrix stays a refusal -- every suitability measure here is built from
+  # R^-1, so there is nothing trustworthy to report -- but redundant items are the most
+  # common reason to screen in the first place, so name them instead of leaving the user
+  # to find them. The near-singular case is untouched and still yields a full report with
+  # its multicollinearity flags.
+  # The handler runs from tryCatch()'s own frame, so the re-raise is given this call
+  # explicitly; otherwise the abort would name the internal helper rather than
+  # efa_screen(), as every other condition here does.
+  screen_call <- rlang::current_env()
+  prep <- tryCatch(
+    .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
+                       N_policy = "optional", inform_from_data = FALSE),
+    efa_cor_singular = function(cnd) .screen_singular_abort(cnd, call = screen_call))
   R <- prep$R
   N <- prep$N
   p <- ncol(R)
@@ -389,6 +431,44 @@ efa_screen <- function(x, N = NA,
 
   output
 
+}
+
+# Re-raise a singular-correlation-matrix condition with the redundancy that caused it.
+# `cnd` carries the offending matrix, so the perfectly correlated pairs are read off it
+# rather than recomputed. A singular matrix without such a pair is singular through a
+# linear combination of several variables (a total score, say), which no pair names.
+# The pairs are attached to the re-raised condition (`$pairs`) so a caller can act on
+# them without parsing the message. Pairs are named as elsewhere in the package
+# (.polychoric()'s pair labels), "first-second".
+.screen_singular_abort <- function(cnd, call = rlang::caller_env()) {
+  R0 <- cnd$R
+  # Only .prepare_cor_input() raises this class here, and it attaches the matrix; keep
+  # the shared message rather than failing inside the handler if that ever changes.
+  if (!is.matrix(R0)) {
+    cli::cli_abort(conditionMessage(cnd), class = "efa_cor_singular", call = call)
+  }
+  nms <- colnames(R0)
+  if (is.null(nms)) nms <- rownames(R0)
+  if (is.null(nms)) nms <- paste0("V", seq_len(ncol(R0)))
+  hi <- which(abs(R0) > 1 - 1e-8 & upper.tri(R0), arr.ind = TRUE)
+  # paste0() recycles its separator against an empty index, so the no-pair case has to
+  # be taken before it, not after.
+  culprits <- if (nrow(hi) > 0L) {
+    paste0(nms[hi[, "row"]], "-", nms[hi[, "col"]])
+  } else {
+    character()
+  }
+  cli::cli_abort(
+    c("The correlation matrix is singular; no further analyses are performed.",
+      if (length(culprits)) {
+        c("x" = "{cli::qty(culprits)}Perfectly correlated variable pair{?s}: {.val {culprits}}.",
+          "i" = "Drop one variable of each pair and screen again.")
+      } else {
+        c("x" = "No pair is perfectly correlated, so one or more variables are an exact
+                 combination of the others.",
+          "i" = "Look for total or difference scores among the variables and drop them.")
+      }),
+    class = "efa_cor_singular", pairs = culprits, call = call)
 }
 
 # Level labels of each column of a raw-data input, in column order: the character

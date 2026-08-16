@@ -70,7 +70,9 @@
 #' replicate counts as a success when the smallest (`min`) or the average (`mean`)
 #' matched congruence reaches it. **Convergence**: the same fit supplies the
 #' proportion of replicates whose fit completed and, among those, the proportion that
-#' converged and that produced a Heywood case.
+#' converged and that produced a Heywood case. A replicate whose fit fails outright
+#' contributes to none of the three; if any fit fails, a warning reports how many did
+#' and the first replicate's cause.
 #'
 #' Replicates are analysed in parallel with \pkg{future.apply}; a plan is selected with
 #' [future::plan()]. Each replicate is bound to its own reproducible random-number
@@ -93,8 +95,9 @@
 #'   `NULL` to solve for the required `N` at a target `power`. In `"simulation"`
 #'   mode `N` is required and is the size of each drawn sample, with no sample size
 #'   solved for and no `group` division.
-#' @param p numeric. The number of observed variables. Used with `k` to derive
-#'   `df` when `df` is not given directly.
+#' @param p numeric. The number of observed variables. In `"rmsea"` mode, used with
+#'   `k` to derive `df` when `df` is not given directly. In `"simulation"` mode it is
+#'   read off the population, so leave it unset (or matching `nrow(Lambda)` / `nrow(R)`).
 #' @param k numeric. The number of factors. In `"rmsea"` mode, used with `p` to
 #'   derive `df` when `df` is not given directly. In `"simulation"` mode it is the
 #'   true number of factors: it is required with an `R` population and must be left
@@ -196,8 +199,9 @@
 #'   and `convergence_rate` / `heywood_rate` (converged / Heywood, over the completed
 #'   fits).}
 #' \item{replicates}{The raw per-replicate values: the suggested factor counts
-#'   (`n_hat`), the matched congruences (`rec_min`, `rec_mean`), and the `converged`,
-#'   `heywood`, and `fit_ok` flags.}
+#'   (`n_hat`), the matched congruences (`rec_min`, `rec_mean`), the `converged`,
+#'   `heywood`, and `fit_ok` flags, and `fit_error`, the message of the fit that did
+#'   not complete (`NA` where it did).}
 #' \item{k_true}{The true number of factors.}
 #' \item{model_error}{The [efa_simulate()] model-error record, or `NULL`.}
 #' \item{settings}{A list of the simulation inputs.}
@@ -491,6 +495,9 @@ efa_power <- function(mode = c("rmsea", "simulation"),
 
   # k_true (the true factor count) comes from Lambda for a factor-model population --
   # a conflicting `k` is an error -- and must be given for a bare correlation matrix.
+  # `p` is likewise read off the population; a conflicting one is an error rather than
+  # silently replaced, so the two dimension arguments are policed the same way.
+  if (!is.null(p)) checkmate::assert_count(p, positive = TRUE)
   if (have_lambda) {
     Lambda <- as.matrix(Lambda)
     k_true <- ncol(Lambda)
@@ -500,7 +507,8 @@ efa_power <- function(mode = c("rmsea", "simulation"),
           "i" = "With a factor-model population the true factor count is {.code ncol(Lambda)}; leave {.arg k} unset."),
         class = "efa_power_bad_k")
     }
-    p <- nrow(Lambda)
+    pop_arg <- "Lambda"
+    p_true <- nrow(Lambda)
   } else {
     if (is.null(k)) {
       cli::cli_abort(
@@ -510,16 +518,34 @@ efa_power <- function(mode = c("rmsea", "simulation"),
     }
     checkmate::assert_count(k, positive = TRUE)
     k_true <- as.integer(k)
-    p <- nrow(as.matrix(R))
+    pop_arg <- "R"
+    p_true <- nrow(as.matrix(R))
   }
+  if (!is.null(p) && p != p_true) {
+    cli::cli_abort(
+      c("{.arg p} ({p}) does not match the number of rows of {.arg {pop_arg}} ({p_true}).",
+        "i" = "In simulation mode the number of variables comes from the population; leave {.arg p} unset."),
+      class = "efa_power_bad_p")
+  }
+  p <- p_true
 
   # Structure recovery aligns the fitted loadings against the population loadings, so
   # it needs a factor-model population; a bare R carries no loadings to recover.
   has_recovery <- have_lambda
 
-  # Recovery-fit rotation: match the population when unset -- varimax for orthogonal
-  # factors, promax for oblique ones. Both are deterministic, so the run stays
-  # reproducible; a single factor has no rotation.
+  # Recovery-fit rotation: resolved against efa_fit()'s own choices before any data is
+  # drawn, so a value it would reject costs milliseconds rather than a full run whose
+  # recovery, convergence, and Heywood columns then come back empty. The choices are
+  # read off efa_fit()'s formal rather than restated, so the two cannot drift apart.
+  # (A test that replaces efa_fit() with a stub replaces its formals too, so such a
+  # stub must either carry a `rotation` formal or leave `rotation` unset here.)
+  if (!is.null(rotation)) {
+    rotation <- .match_arg_ci(rotation, eval(formals(efa_fit)$rotation))
+  }
+
+  # Match the population when unset -- varimax for orthogonal factors, promax for
+  # oblique ones. Both are deterministic, so the run stays reproducible; a single
+  # factor has no rotation.
   if (is.null(rotation)) {
     oblique_pop <- have_lambda && !is.null(Phi) &&
       !isTRUE(all.equal(unname(as.matrix(Phi)), diag(k_true)))
@@ -610,6 +636,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   converged <- vapply(per_rep, function(r) r$converged, logical(1))
   heywood <- vapply(per_rep, function(r) r$heywood, logical(1))
   fit_ok <- vapply(per_rep, function(r) r$fit_ok, logical(1))
+  fit_error <- vapply(per_rep, function(r) r$fit_error, character(1))
 
   recovery <- if (has_recovery) {
     n_rec <- sum(!is.na(rec_min))
@@ -630,6 +657,36 @@ efa_power <- function(mode = c("rmsea", "simulation"),
     convergence_rate = if (n_fit_ok > 0) sum(converged) / n_fit_ok else NA_real_,
     heywood_rate = if (n_fit_ok > 0) sum(heywood) / n_fit_ok else NA_real_)
 
+  # Mirrors the criterion-failure warning above. A systematic failure -- a rotation or
+  # estimator that cannot fit this population, a population the fit cannot handle -- is
+  # otherwise indistinguishable from per-replicate numerical trouble, and when every fit
+  # fails the whole recovery/convergence half of the report is NA with no stated cause.
+  # The replicate's own error message is carried through so the user does not have to
+  # reproduce the failure to see it. The completed retention results are still returned.
+  n_fit_failed <- as.integer(n_datasets) - n_fit_ok
+  if (n_fit_failed > 0L) {
+    first_failed <- which(!fit_ok)[1L]
+    first_cause <- fit_error[first_failed]
+    # An R population has no loadings to recover, so the same fit is only the source of
+    # the convergence and Heywood rates there; name it for what it did on this run.
+    what_fit <- if (has_recovery) "recovery fit" else "replicate fit"
+    affected <- if (has_recovery) {
+      "Structure recovery, the convergence rate, and the Heywood rate"
+    } else {
+      "The convergence rate and the Heywood rate"
+    }
+    cli::cli_warn(
+      c("The {what_fit} failed on {n_fit_failed} of the {n_datasets} replicate{?s}.",
+        "x" = if (n_fit_ok == 0L) {
+          "{affected} are missing."
+        } else {
+          "{affected} are over the {n_fit_ok} fit{?s} that completed."
+        },
+        "i" = "Replicate {first_failed} failed with: {first_cause}",
+        "i" = "Check {.arg rotation} ({.val {rotation}}) and {.arg estimator} ({.val {estimator}}) against what {.fn efa_fit} accepts."),
+      class = "efa_power_fit_failed")
+  }
+
   settings <- list(mode = "simulation", N = as.integer(N),
                    n_datasets = as.integer(n_datasets), p = p, k = k_true,
                    criteria = criteria, estimator = estimator, rotation = rotation,
@@ -642,7 +699,8 @@ efa_power <- function(mode = c("rmsea", "simulation"),
       hit_rate = hit_rate, hits = hits, recovery = recovery,
       convergence = convergence,
       replicates = list(n_hat = t(hit_mat), rec_min = rec_min, rec_mean = rec_mean,
-                        converged = converged, heywood = heywood, fit_ok = fit_ok),
+                        converged = converged, heywood = heywood, fit_ok = fit_ok,
+                        fit_error = fit_error),
       k_true = k_true, model_error = sim$model_error, settings = settings),
     class = "efa_power")
 }
@@ -674,10 +732,17 @@ efa_power <- function(mode = c("rmsea", "simulation"),
 
   # k_true-factor fit (once): the source of the convergence/Heywood rate and the
   # loadings recovery aligns against. EFA's own Heywood/non-convergence warnings are
-  # muffled here; the flags are read off the returned object instead.
+  # muffled here; the flags are read off the returned object instead. A failure keeps
+  # its cause, so the aggregation can report why the fit did not complete instead of
+  # leaving the user with a column of NAs.
   fit <- suppressMessages(suppressWarnings(tryCatch(
     efa_fit(dat, n_factors = k_true, estimator = estimator, rotation = rotation),
-    error = function(e) NULL)))
+    error = function(e) e)))
+  fit_error <- NA_character_
+  if (inherits(fit, "error")) {
+    fit_error <- conditionMessage(fit)
+    fit <- NULL
+  }
   fit_ok <- !is.null(fit)
   converged <- isTRUE(fit_ok && fit$convergence == 0)
   heywood <- isTRUE(fit_ok && length(fit$heywood) > 0)
@@ -707,7 +772,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   }
 
   list(n_hat = n_hat, converged = converged, heywood = heywood, fit_ok = fit_ok,
-       rec_min = rec_min, rec_mean = rec_mean)
+       fit_error = fit_error, rec_min = rec_min, rec_mean = rec_mean)
 }
 
 #' Print and format an efa_power object

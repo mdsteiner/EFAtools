@@ -123,7 +123,8 @@
 #'   with `Lambda`. Default is `NULL`, in which case the unique variances that
 #'   standardize the population to a correlation matrix are used.
 #' @param R matrix. A `p` by `p` population correlation matrix to draw from
-#'   directly. Supply this instead of `Lambda`/`Phi`/`Psi`.
+#'   directly. Supply this instead of `Lambda`/`Phi`/`Psi`. It must have a unit
+#'   diagonal; standardize a covariance matrix with [stats::cov2cor()] first.
 #' @param model_error character. The method used to perturb the population so the factor model
 #'   fits it imperfectly ("model error"): one of `"CB"` (Cudeck-Browne, the default), `"TKL"`
 #'   (Tucker-Koopman-Linn), `"WB"` (Wu-Browne), or `"none"`. Model error is only applied when a
@@ -638,6 +639,19 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
         class = "efa_simulate_input")
     }
     p <- nrow(R)
+    # Ordinal thresholds, the Vale-Maurelli cubic, and the `match = "polychoric"`
+    # assertion all live on the standard-normal scale, so a non-unit diagonal is not a
+    # rescaling of the requested population but a different one: the drawn variables
+    # would keep the supplied variances while the categorization assumes unit variance.
+    # Aborting keeps that visible; silently standardizing would hide the mistake.
+    diag_dev <- max(abs(diag(R) - 1))
+    if (diag_dev > tol) {
+      cli::cli_abort(
+        c("{.arg R} must be a correlation matrix, with a unit diagonal.",
+          "x" = "Its largest deviation of a diagonal element from 1 is {.val {diag_dev}}.",
+          "i" = "Standardize a covariance matrix with {.fun stats::cov2cor} first."),
+        class = "efa_simulate_input")
+    }
     R_pop <- R
     # Variable names live on either dimension of a correlation matrix; fall back to
     # the column names when only those are present.

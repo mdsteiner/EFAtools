@@ -108,7 +108,11 @@
     many <- nms[n_cat >= 10L]
     cli::cli_warn(
       c("{cli::qty(many)} Variable{?s} {.val {many}} {?has/have} 10 or more response categories.",
-        "i" = "Polychoric correlations assume a few ordered categories; check that {cli::qty(many)} {?this variable is/these variables are} not continuous."),
+        "i" = "Polychoric correlations assume a few ordered categories; check that {cli::qty(many)} {?this variable is/these variables are} not continuous.",
+        "i" = "Each pair is estimated on a contingency table with one cell per pair of
+               observed values, so the work per pair grows with the square of the number of
+               categories: a continuous variable, whose every distinct value is a category,
+               is far slower than an ordinal one."),
       class = "efa_cor_many_categories")
   }
 

@@ -70,7 +70,11 @@ format.efa_screen <- function(x, digits = 3, ...) {
       kval <- round(kmo, digits)
       band$alert("The overall KMO value for your data is {band$label} (Overall KMO = {kval}).",
                  wrap = TRUE)
-      cli::cli_text("These data are {band$suitability} suitable for factor analysis.")
+      # The bands are named on screen for the same reason the condition-index rule is:
+      # a verbal band is a convention, not a finding, and an unattributed cut-off
+      # standing next to an attributed one reads as the latter.
+      cli::cli_text(paste("These data are {band$suitability} suitable for factor",
+                          "analysis (verbal bands: Kaiser & Rice, 1974)."))
     } else {
       cli::cli_alert_warning("The overall KMO value for your data is not available.",
                              wrap = TRUE)
@@ -113,11 +117,11 @@ format.efa_screen <- function(x, digits = 3, ...) {
     dstr <- format(det_R, digits = digits, scientific = FALSE)
     if (det_low) {
       cli::cli_alert_danger(
-        "Determinant: {dstr}. Multicollinearity likely (a value near 0 signals it).",
+        "Determinant: {dstr}. Multicollinearity likely (a value near 0 signals it; Field, 2018).",
         wrap = TRUE)
     } else {
       cli::cli_alert_success(
-        "Determinant: {dstr}. No concern (a value near 0 signals multicollinearity).",
+        "Determinant: {dstr}. No concern (a value near 0 signals multicollinearity; Field, 2018).",
         wrap = TRUE)
     }
 
@@ -180,6 +184,13 @@ format.efa_screen <- function(x, digits = 3, ...) {
         }
         cli::cli_text(if (isTRUE(mvn_nonnormal)) "These data depart from multivariate normality."
                       else "These data are consistent with multivariate normality.")
+        # The tests use the complete cases, which under non-ignorable missingness are not
+        # a random subsample: with missing data the verdict above is a statement about a
+        # subset, so say which one. Silent when every row is complete.
+        if (.screen_incomplete(nm$n_complete, x$settings$n_obs)) {
+          cli::cli_text("(Computed from {nm$n_complete} complete cases of the
+                         {x$settings$n_obs} rows supplied.)")
+        }
       }
     }
 
@@ -213,7 +224,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
         # Mahalanobis when the robust covariance could not be formed).
         dist_label <- if (identical(o$method, "classical")) "Mahalanobis distance" else "robust distance"
         cli::cli_alert_info(paste0(
-          nf, " of ", o$n_complete, " observations ",
+          nf, " of ", .screen_case_base(o$n_complete, x$settings$n_obs), " ",
           .screen_plural(nf, "was", "were"), " flagged as ",
           .screen_plural(nf, "a multivariate outlier", "multivariate outliers"),
           " (", dist_label, " > ", cstr_o, ")."), wrap = TRUE)
@@ -247,6 +258,23 @@ format.efa_screen <- function(x, digits = 3, ...) {
     list(min = -Inf, label = "unacceptable", colour = cli::col_red,    alert = cli::cli_alert_danger,  symbol = "x", suitability = "not")
   )
   Find(function(b) kmo >= b$min, bands)
+}
+
+# TRUE when the complete cases the normality and outlier diagnostics use are fewer than
+# the rows supplied, i.e. when the two possible denominators differ.
+.screen_incomplete <- function(n_complete, n_obs) {
+  !is.null(n_obs) && !is.na(n_obs) && !is.null(n_complete) && n_obs > n_complete
+}
+
+# The denominator of the complete-case diagnostics, named as such -- together with the
+# number of rows supplied -- whenever missing values make the two differ, so a count or a
+# rate cannot be read against the wrong base.
+.screen_case_base <- function(n_complete, n_obs) {
+  if (.screen_incomplete(n_complete, n_obs)) {
+    paste0(n_complete, " complete cases of the ", n_obs, " rows supplied")
+  } else {
+    paste0(n_complete, " observations")
+  }
 }
 
 # TRUE when a p-value is present and below .05 (guards NA / NULL p-values).
@@ -404,8 +432,17 @@ format.efa_screen <- function(x, digits = 3, ...) {
       # of genuine outliers clear it - so the flagged set must also be too long to work
       # through case by case, which is what makes the ordinary advice below unhelpful.
       if (nf >= 10L && frac > 5 * nominal) {
-        push("!", paste0(nf, " of ", x$outliers$n_complete, " observations (",
-                         round(100 * frac), "%) exceed the outlier cutoff, far above the ",
+        # The rate is over the complete cases, so with missing data both bases are named:
+        # read against the rows supplied it would look milder than it is.
+        of_those <- if (.screen_incomplete(x$outliers$n_complete, x$settings$n_obs)) {
+          "% of those cases"
+        } else {
+          "%"
+        }
+        push("!", paste0(nf, " of ",
+                         .screen_case_base(x$outliers$n_complete, x$settings$n_obs),
+                         " (", round(100 * frac), of_those,
+                         ") exceed the outlier cutoff, far above the ",
                          # keep a significant digit: a tight cutoff has a nominal rate well
                          # below 0.1%, which rounds to a self-defeating "0%"
                          format(signif(100 * nominal, 2), trim = TRUE, scientific = FALSE),

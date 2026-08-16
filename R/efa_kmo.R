@@ -7,8 +7,11 @@
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #'  correlations.
-#' @param use character. Passed to [stats::cor()] if raw
-#'  data is given as input. Default is "pairwise.complete.obs".
+#' @param use character. The missing-data policy for raw data. Passed to
+#'  [stats::cor()] for `"pearson"`, `"spearman"`, and `"kendall"`; for `"poly"` /
+#'  `"tetra"` the same policies are applied to the raw data before the polychoric
+#'  estimation, where `"all.obs"` and `"everything"` abort on a missing value instead
+#'  of returning `NA` correlations. Default is "pairwise.complete.obs".
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
@@ -17,7 +20,7 @@
 #'
 #' @details Kaiser (1970) proposed this index, originally called measure of
 #' sampling adequacy (MSA), that indicates how near the inverted correlation
-#' matrix \eqn{R^{-1}} is to a diagonal matrix \eqn{S} to determine a given
+#' matrix \eqn{R^{-1}} is to a diagonal matrix to determine a given
 #' correlation matrix's (\eqn{R}) suitability for factor analysis.
 #' The index is
 #' \deqn{KMO = \frac{\sum_{i \neq j} r_{ij}^2}{\sum_{i \neq j} r_{ij}^2 + \sum_{i \neq j} q_{ij}^2}}

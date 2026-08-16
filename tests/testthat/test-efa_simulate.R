@@ -122,6 +122,21 @@ test_that("invalid population specifications raise a classed error", {
   expect_error(efa_simulate(N = 10, R = R_asym), class = "efa_simulate_input")
 })
 
+test_that("a covariance matrix supplied as R is rejected", {
+  # Ordinal thresholds, the Vale-Maurelli cubic, and the polychoric match all assume
+  # unit variances, so a non-unit diagonal would silently produce a population other
+  # than the one those options describe.
+  sdv <- c(2, rep(1, nrow(R_pop) - 1))
+  S_cov <- diag(sdv) %*% R_pop %*% diag(sdv)
+  dimnames(S_cov) <- dimnames(R_pop)
+  expect_error(efa_simulate(N = 10, R = S_cov), class = "efa_simulate_input")
+  expect_error(efa_simulate(R = S_cov, return_pop = TRUE), class = "efa_simulate_input")
+  # The same matrix standardized is accepted, so it is the scale that is refused and
+  # not the correlation structure.
+  expect_s3_class(efa_simulate(N = 10, R = stats::cov2cor(S_cov), seed = 1),
+                  "efa_simulated")
+})
+
 test_that("an indefinite population is rejected", {
   # A symmetric matrix with a negative eigenvalue is not a valid covariance.
   R_indef <- matrix(c(1, 1, 0,

@@ -53,8 +53,9 @@ plain sample size when \code{group} is \code{1}): give \code{N} to compute power
 mode \code{N} is required and is the size of each drawn sample, with no sample size
 solved for and no \code{group} division.}
 
-\item{p}{numeric. The number of observed variables. Used with \code{k} to derive
-\code{df} when \code{df} is not given directly.}
+\item{p}{numeric. The number of observed variables. In \code{"rmsea"} mode, used with
+\code{k} to derive \code{df} when \code{df} is not given directly. In \code{"simulation"} mode it is
+read off the population, so leave it unset (or matching \code{nrow(Lambda)} / \code{nrow(R)}).}
 
 \item{k}{numeric. The number of factors. In \code{"rmsea"} mode, used with \code{p} to
 derive \code{df} when \code{df} is not given directly. In \code{"simulation"} mode it is the
@@ -175,8 +176,9 @@ completed (\code{n_fit_ok}), and rates: \code{fit_rate} (fits completed, over al
 and \code{convergence_rate} / \code{heywood_rate} (converged / Heywood, over the completed
 fits).}
 \item{replicates}{The raw per-replicate values: the suggested factor counts
-(\code{n_hat}), the matched congruences (\code{rec_min}, \code{rec_mean}), and the \code{converged},
-\code{heywood}, and \code{fit_ok} flags.}
+(\code{n_hat}), the matched congruences (\code{rec_min}, \code{rec_mean}), the \code{converged},
+\code{heywood}, and \code{fit_ok} flags, and \code{fit_error}, the message of the fit that did
+not complete (\code{NA} where it did).}
 \item{k_true}{The true number of factors.}
 \item{model_error}{The \code{\link[=efa_simulate]{efa_simulate()}} model-error record, or \code{NULL}.}
 \item{settings}{A list of the simulation inputs.}
@@ -249,7 +251,9 @@ are matched to the population loadings, and the matched-factor Tucker congruence
 replicate counts as a success when the smallest (\code{min}) or the average (\code{mean})
 matched congruence reaches it. \strong{Convergence}: the same fit supplies the
 proportion of replicates whose fit completed and, among those, the proportion that
-converged and that produced a Heywood case.
+converged and that produced a Heywood case. A replicate whose fit fails outright
+contributes to none of the three; if any fit fails, a warning reports how many did
+and the first replicate's cause.
 
 Replicates are analysed in parallel with \pkg{future.apply}; a plan is selected with
 \code{\link[future:plan]{future::plan()}}. Each replicate is bound to its own reproducible random-number

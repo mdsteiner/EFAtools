@@ -768,6 +768,62 @@ test_that("outlier_cutoff is bounded to the range in which it defines a cutoff",
   expect_error(efa_screen(R, N = 500, outlier_cutoff = 0), class = "simpleError")
 })
 
+test_that("fewer than three variables is refused rather than reported on", {
+  # At p = 1 the KMO is 0/0 and Bartlett's test has no degrees of freedom; at p = 2 the
+  # KMO is algebraically .5 for every correlation. Both produced a confident report.
+  expect_error(efa_screen(data.frame(a = rnorm(50))),
+               class = "efa_screen_too_few_vars")
+  expect_error(efa_screen(data.frame(a = rnorm(50), b = rnorm(50))),
+               class = "efa_screen_too_few_vars")
+  expect_error(efa_screen(matrix(1, 1, 1), N = 100),
+               class = "efa_screen_too_few_vars")
+  expect_error(efa_screen(diag(2), N = 100), class = "efa_screen_too_few_vars")
+  # Three variables is the first usable width and still runs.
+  expect_s3_class(efa_screen(test_models$baseline$cormat[1:3, 1:3], N = 500),
+                  "efa_screen")
+})
+
+test_that("an exactly singular matrix names the redundancy that caused it", {
+  # The abort is deliberate -- every measure here is built from R^-1 -- but the user
+  # screening for redundant items is exactly the one who cannot get a report, so the
+  # condition carries the culprit pairs as data (`$pairs`), which is what is asserted
+  # here rather than the wording that reports them.
+  set.seed(4)
+  dup <- data.frame(a = rnorm(120), b = rnorm(120), c = rnorm(120))
+  dup$copy_of_a <- dup$a
+  expect_error(efa_screen(dup), class = "efa_cor_singular")
+  cnd <- tryCatch(efa_screen(dup), efa_cor_singular = function(e) e)
+  expect_identical(cnd$pairs, "a-copy_of_a")
+  # The abort is attributed to efa_screen(), not to the internal handler that builds it.
+  expect_identical(rlang::call_name(conditionCall(cnd)), "efa_screen")
+
+  # A correlation-matrix input takes the same route, and an unnamed one falls back to
+  # the V-names used elsewhere in the report.
+  R_dup <- stats::cor(dup)
+  expect_error(efa_screen(R_dup, N = 120), class = "efa_cor_singular")
+  R_un <- unname(R_dup)
+  cnd_un <- tryCatch(efa_screen(R_un, N = 120), efa_cor_singular = function(e) e)
+  expect_identical(cnd_un$pairs, "V1-V4")
+
+  # Rank deficiency without a perfect pair (a sum score) has no pair to name, so it
+  # reports none rather than an empty pair label.
+  cnd_sum <- tryCatch(efa_screen(sing_raw), efa_cor_singular = function(e) e)
+  expect_identical(cnd_sum$pairs, character())
+})
+
+test_that("a near-singular matrix still produces the full report", {
+  # The distinction is the point: perturbing a duplicate by 1e-7 is statistically the
+  # same data, and it must come back as a report with multicollinearity flags rather
+  # than as the singular abort.
+  set.seed(5)
+  near <- data.frame(a = rnorm(120), b = rnorm(120), c = rnorm(120))
+  near$copy_of_a <- near$a + rnorm(120, sd = 1e-7)
+  scr <- suppressWarnings(efa_screen(near, seed = 1))
+  expect_s3_class(scr, "efa_screen")
+  expect_lt(scr$determinant, 1e-10)
+  expect_gt(scr$condition, 30)
+})
+
 # singular / non-positive-definite inputs
 test_that("errors and warnings are thrown correctly", {
   # The rank-deficient raw data and its correlation matrix (`sing_raw` / `sing_cor`, with
@@ -830,6 +886,35 @@ test_that("the per-variable display marks the missing percentage and hides an em
   disp <- EFAtools:::.screen_per_item_display(scr, 3)
   expect_true("flags" %in% names(disp))
   expect_equal(disp["cont", "flags"], "-")
+})
+
+test_that("the complete-case denominator is named when rows are incomplete", {
+  # The normality tests and the outlier diagnostic are computed from the complete cases,
+  # which under non-ignorable missingness are not a random subsample of the rows
+  # supplied. Both bases therefore have to appear, so neither the normality verdict nor
+  # the outlier rate can be read against the wrong one.
+  local_reproducible_output(width = 200)
+  set.seed(31)
+  n3 <- 240L
+  S3 <- matrix(0.4, p_out, p_out)
+  diag(S3) <- 1
+  X3 <- matrix(rnorm(n3 * p_out), n3, p_out) %*% chol(S3)
+  colnames(X3) <- paste0("v", seq_len(p_out))
+  X3[1:60, 1] <- NA
+  scr_na <- efa_screen(X3, seed = 1)
+  expect_equal(scr_na$settings$n_obs, 240L)
+  expect_equal(scr_na$normality$n_complete, 180L)
+
+  txt <- cli::ansi_strip(paste(format(scr_na), collapse = " "))
+  expect_match(txt, "Computed from 180 complete cases of the 240 rows supplied",
+               fixed = TRUE)
+  expect_match(txt, "of 180 complete cases of the 240 rows supplied", fixed = TRUE)
+
+  # With no missing values the two bases coincide, so the report stays as it was.
+  scr_full <- efa_screen(X3[stats::complete.cases(X3), ], seed = 1)
+  txt_full <- cli::ansi_strip(paste(format(scr_full), collapse = " "))
+  expect_no_match(txt_full, "rows supplied", fixed = TRUE)
+  expect_match(txt_full, "of 180 observations", fixed = TRUE)
 })
 
 test_that("print output is stable", {

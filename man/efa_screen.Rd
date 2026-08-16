@@ -10,6 +10,9 @@ approximation in factor analysis. Biometrika, 38, 337-344.
 Belsley, D. A., Kuh, E. & Welsch, R. E. (1980). Regression diagnostics:
 Identifying influential data and sources of collinearity. Wiley.
 
+Cochran, W. G. (1954). Some methods for strengthening the common
+\eqn{\chi^2} tests. Biometrics, 10, 417-451.
+
 Croux, C. & Haesbroeck, G. (1999). Influence function and efficiency of the
 minimum covariance determinant scatter matrix estimator. Journal of Multivariate
 Analysis, 71, 161-190.
@@ -58,20 +61,25 @@ efa_screen(
 }
 \arguments{
 \item{x}{data.frame or matrix. Data frame or matrix of raw data, or a matrix of
-correlations.}
+correlations. At least three variables are required, and no variable may be a
+perfect linear combination of the others.}
 
 \item{N}{numeric. The number of observations. Only needs to be specified when a
 correlation matrix is supplied; it is required for Bartlett's test of
 sphericity and is taken from the data when raw data are supplied. Default is
 \code{NA}.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data are supplied. Default
-is \code{"pairwise.complete.obs"}.}
+\item{use}{character. The missing-data policy for raw data. Passed to
+\code{\link[stats:cor]{stats::cor()}} for \code{"pearson"}, \code{"spearman"}, and \code{"kendall"}; for \code{"poly"} /
+\code{"tetra"} the same policies are applied to the raw data before the polychoric
+estimation, where \code{"all.obs"} and \code{"everything"} abort on a missing value instead
+of returning \code{NA} correlations. Default is \code{"pairwise.complete.obs"}.}
 
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator). Default is
+(a two-step estimator). Only \code{"poly"} and \code{"tetra"} accept factor or character
+columns; the other three need numeric data. Default is
 \code{"pearson"}.}
 
 \item{mcd_alpha}{numeric. The proportion of observations covered by the minimum
@@ -177,7 +185,10 @@ little variance with the rest of the set.}
 available values) and the percentage of missing values. Factor and character
 columns are recoded to their integer level codes, so \code{variance} and the
 empty-category check below refer to those codes (the category counts
-themselves are labelled by the original levels). These, and the
+themselves are labelled by the original levels). Such columns reach the
+correlation matrix only with \code{cor_method = "poly"} or \code{"tetra"}; a Pearson,
+Spearman, or Kendall correlation of a factor or character frame is refused.
+These, and the
 category tabulation below, are computed column by column from the supplied
 data using every non-missing value, and so do not depend on \code{use}, which
 governs only the correlation matrix. Under a listwise \code{use}
@@ -187,7 +198,11 @@ supplied row so that it explains why \code{N} is smaller; the number of supplied
 rows is recorded in \code{settings$n_obs}. Available only from raw data.}
 \item{Categories}{For each variable with fewer than ten distinct values
 (treated as categorical), the response-category counts, flagging a \emph{sparse}
-category (fewer than five responses) and, for integer-coded variables, an
+category (fewer than five responses; a heuristic of this package, borrowing the
+conventional minimum cell count of five from contingency-table analysis
+(Cochran, 1954), because a polychoric correlation is estimated from the
+bivariate response table, in which a category with very few responses leaves
+its threshold poorly determined) and, for integer-coded variables, an
 \emph{empty} interior category (an unused category between the smallest and
 largest observed value). A variable with ten or more distinct values is
 treated as continuous and is not tabulated. As a rough guide, items with
@@ -197,7 +212,11 @@ normal-theory maximum likelihood (Rhemtulla et al., 2012). Available only
 from raw data.}
 \item{Multivariate normality}{Two tests of multivariate normality computed from
 the complete cases of the raw data: Mardia's (1970) multivariate skewness and
-kurtosis, and the Henze-Zirkler (1990) omnibus test. A small p-value indicates
+kurtosis, and the Henze-Zirkler (1990) omnibus test. Both use the
+maximum-likelihood (divisor-\eqn{n}) covariance, so Mardia's coefficients differ
+from implementations using the unbiased divisor by a factor of
+\eqn{(n / (n - 1))^3} for the skewness coefficient and \eqn{(n / (n - 1))^2} for
+the kurtosis coefficient. A small p-value indicates
 a departure from multivariate normality, a reason to prefer robust or ordinal
 estimation over normal-theory maximum likelihood. Available only from raw data,
 and skipped with a note if the complete-case covariance is singular.}

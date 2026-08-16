@@ -160,6 +160,46 @@ test_that("near-collinear pairs match the exact two-step estimate", {
   }
 })
 
+test_that("binary pairs below the refinement gate hold the documented 1e-4 accuracy", {
+  skip_on_cran()
+  skip_if_not_installed("mnormt")
+
+  # The band just below the gate at which the finer quadrature rule takes over is where the
+  # fixed 12-node rule is least accurate, and a two-by-two table is its worst case: with only
+  # one threshold per variable the whole likelihood rests on four wide bands whose conditional
+  # transition the base rule under-resolves. The help page promises about 1e-4 there (against
+  # about 1e-5 elsewhere), so that is what is pinned. The bound is set a few times the
+  # measured discrepancy -- about 3e-5 at rho = .85 and 1.5e-4 at rho = .92 across seeds --
+  # because it must hold on any BLAS, while still catching a loss of the refinement rule or a
+  # coarser base rule, which cost an order of magnitude.
+  gate_tol <- 5e-4
+  for (rt in c(0.85, 0.92, -0.85, -0.92)) {
+    for (seed in c(11, 12)) {
+      set.seed(seed)
+      L <- chol(matrix(c(1, rt, rt, 1), 2L))
+      Z <- matrix(stats::rnorm(2 * 1500), 1500, 2L) %*% L
+      a <- as.integer(Z[, 1] > 0); b <- as.integer(Z[, 2] > 0)
+      ours <- .polychoric(cbind(a, b))$R[1, 2]
+      expect_lt(abs(ours - .gold_polychor(a, b)), gate_tol)
+      # Reversing one variable's coding reflects the latent variable about its threshold,
+      # so the estimate must come back negated -- the accuracy above is a quadrature
+      # residual, not an asymmetry between the two signs. Measured at exactly zero
+      # difference here, but pinned loosely enough that a last-ulp difference in the
+      # complementary threshold on another platform's qnorm cannot fail it, and still
+      # six orders tighter than the accuracy band it has to distinguish.
+      expect_equal(.polychoric(cbind(a, 1L - b))$R[1, 2], -ours, tolerance = 1e-10)
+    }
+  }
+
+  # Unequal marginals put the single threshold off centre, which moves the bands the rule has
+  # to resolve; the same accuracy has to hold there.
+  set.seed(31)
+  L <- chol(matrix(c(1, 0.92, 0.92, 1), 2L))
+  Z <- matrix(stats::rnorm(2 * 1500), 1500, 2L) %*% L
+  a <- as.integer(Z[, 1] > 0.6); b <- as.integer(Z[, 2] > 0.6)
+  expect_lt(abs(.polychoric(cbind(a, b))$R[1, 2] - .gold_polychor(a, b)), gate_tol)
+})
+
 test_that("an empty pairwise-complete marginal category does not corrupt the estimate", {
   skip_on_cran()
   skip_if_not_installed("polycor")

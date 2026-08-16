@@ -61,7 +61,10 @@ static const double POLY_INV_SQRT_2 = 0.70710678118654752440;    // 1/sqrt(2)
 static const double POLY_CLAMP = 8.5;
 // Gauss-Legendre node count for the rectangle quadrature. The integrand is a smooth Gaussian
 // over each threshold band whose conditional transition has width sqrt(1 - rho^2), so 12 nodes
-// reproduce the reference estimators to within ~1e-5 for |rho| up to about 0.95. Near |rho| = 1
+// reproduce an exact two-step integrator to within ~1e-5 over most of the range. The residual
+// grows as the transition narrows: for a two-by-two table it reaches ~1e-4 just below
+// POLY_REFINE_RHO, which is still well inside the sampling error of the estimate (about 4e-3 at
+// N = 1500) and is why the gate, not the base node count, is the accuracy control. Near |rho| = 1
 // the transition narrows and a fixed 12-node rule under-resolves it, biasing the estimate, so a
 // pair whose estimate exceeds POLY_REFINE_RHO is re-estimated with the finer POLY_GL_N_HI rule.
 // The common, moderate-correlation case keeps the cheap 12-node rule and is unchanged.

@@ -9,8 +9,11 @@
 #' correlations.
 #' @param N numeric. The number of observations. Needs only be specified if a
 #' correlation matrix is used.
-#' @param use character. Passed to [stats::cor()] if raw data
-#' is given as input. Default is "pairwise.complete.obs".
+#' @param use character. The missing-data policy for raw data. Passed to
+#' [stats::cor()] for `"pearson"`, `"spearman"`, and `"kendall"`; for `"poly"` /
+#' `"tetra"` the same policies are applied to the raw data before the polychoric
+#' estimation, where `"all.obs"` and `"everything"` abort on a missing value instead
+#' of returning `NA` correlations. Default is "pairwise.complete.obs".
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
@@ -26,7 +29,7 @@
 #' where \eqn{det(R)} is the determinant of the correlation matrix, \eqn{N} is
 #' the sample size, and \eqn{p} is the number of variables.
 #'
-#' This tests requires multivariate normality. If this condition is not met,
+#' This test requires multivariate normality. If this condition is not met,
 #' the Kaiser-Meyer-Olkin criterion ([efa_kmo()])
 #' can still be used.
 #'

@@ -272,6 +272,10 @@ test_that("simulation mode recovers a clean population", {
   expect_equal(sim$convergence$convergence_rate, 1)
   expect_equal(sim$convergence$heywood_rate, 0)
 
+  # Every fit completed, so no replicate carries a failure reason.
+  expect_true(all(sim$replicates$fit_ok))
+  expect_true(all(is.na(sim$replicates$fit_error)))
+
   # hits data frame is consistent with the hit_rate vector.
   expect_equal(sim$hits$hit_rate, unname(sim$hit_rate))
   expect_true(all(sim$hits$hits <= sim$hits$n_valid))
@@ -288,10 +292,13 @@ test_that("a criterion that fails on every replicate is reported, not dropped", 
   # replicate. The criterion must still appear in the results -- with no valid replicates
   # and an NA hit-rate -- and be named in a classed warning, rather than vanishing while
   # the settings still record the request.
+  # The singular matrix also stops the recovery fit, which warns in its own right.
   expect_warning(
-    sim <- efa_power("simulation", Lambda = sim_Lambda, N = 6, n_datasets = 3,
-                     criteria = "MAP", seed = 1),
-    class = "efa_power_criterion_failed")
+    expect_warning(
+      sim <- efa_power("simulation", Lambda = sim_Lambda, N = 6, n_datasets = 3,
+                       criteria = "MAP", seed = 1),
+      class = "efa_power_criterion_failed"),
+    class = "efa_power_fit_failed")
   expect_s3_class(sim, "efa_power")
   expect_named(sim$hit_rate, "MAP")
   expect_true(is.na(sim$hit_rate[["MAP"]]))
@@ -309,6 +316,83 @@ test_that("a criterion that decides on every replicate raises no failure warning
               n_datasets = 4, criteria = "EKC", seed = 3))
 })
 
+test_that("a recovery fit that fails everywhere is reported, not thrown away", {
+  # The recovery fit fails on every replicate while the retention criteria are
+  # unaffected: the completed retention results must still be returned, with a warning,
+  # rather than the whole (expensive) run being discarded.
+  testthat::local_mocked_bindings(
+    efa_fit = function(x, ...) {
+      cli::cli_abort("Mocked recovery failure.", class = "efa_mock_fit_failure")
+    })
+
+  expect_warning(
+    sim <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 150,
+                     n_datasets = 3, criteria = "EKC", seed = 1),
+    class = "efa_power_fit_failed")
+  expect_s3_class(sim, "efa_power")
+  expect_equal(sim$hits$n_valid, 3L, ignore_attr = TRUE)
+  expect_true(is.finite(sim$hit_rate[["EKC_BvA2017"]]))
+
+  # The fit half is missing, and every replicate keeps the reason it failed.
+  expect_equal(sim$convergence$fit_rate, 0)
+  expect_true(is.na(sim$convergence$convergence_rate))
+  expect_true(is.na(sim$recovery$min_rate))
+  expect_equal(sim$recovery$n_valid, 0L)
+  expect_false(any(sim$replicates$fit_ok))
+  expect_length(sim$replicates$fit_error, 3L)
+  expect_true(all(grepl("Mocked recovery failure", sim$replicates$fit_error,
+                        fixed = TRUE)))
+})
+
+test_that("a partly failing recovery fit keeps the replicates that did fit", {
+  # A deterministic per-replicate property of the drawn data decides which fits fail,
+  # so the run has both kinds of replicate under a fixed seed.
+  real_fit <- efa_fit
+  testthat::local_mocked_bindings(
+    efa_fit = function(x, ...) {
+      if (x[1, 1] > 0) {
+        cli::cli_abort("Mocked recovery failure.", class = "efa_mock_fit_failure")
+      }
+      real_fit(x, ...)
+    })
+
+  expect_warning(
+    sim <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 150,
+                     n_datasets = 6, criteria = "EKC", seed = 11),
+    class = "efa_power_fit_failed")
+  failed <- !sim$replicates$fit_ok
+  expect_true(any(failed))
+  expect_false(all(failed))
+
+  # The rates are over the completed fits, and each failure keeps its parent cause at
+  # its own replicate index.
+  expect_equal(sim$convergence$n_fit_ok, sum(!failed))
+  expect_equal(sim$convergence$fit_rate, mean(!failed))
+  expect_equal(sim$recovery$n_valid, sum(!failed))
+  expect_true(all(grepl("Mocked recovery failure",
+                        sim$replicates$fit_error[failed], fixed = TRUE)))
+  expect_true(all(is.na(sim$replicates$fit_error[!failed])))
+})
+
+test_that("an unusable recovery rotation aborts before any data is drawn", {
+  # `rotation` is resolved against efa_fit()'s own choices, so a value it would reject
+  # costs no simulation time and is reported instead of silently emptying the report.
+  expect_error(
+    efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 200,
+              n_datasets = 500, criteria = "EKC", rotation = "nonesuch"),
+    class = "efa_bad_choice")
+  expect_error(
+    efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 200,
+              n_datasets = 500, criteria = "EKC",
+              rotation = c("varimax", "promax")),
+    class = "efa_bad_choice")
+  # A valid rotation is matched case-insensitively and stored canonically, as elsewhere.
+  vm <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 120,
+                  n_datasets = 2, criteria = "EKC", rotation = "Varimax", seed = 1)
+  expect_identical(vm$settings$rotation, "varimax")
+  expect_true(all(is.na(vm$replicates$fit_error)))
+})
+
 test_that("simulation mode: R-only population turns recovery off but keeps the hit-rate", {
   R_pop <- efa_simulate(Lambda = sim_Lambda, Phi = sim_Phi, return_pop = TRUE)$population
   rr <- efa_power("simulation", R = R_pop, k = 3, N = 200, n_datasets = 6,
@@ -317,6 +401,28 @@ test_that("simulation mode: R-only population turns recovery off but keeps the h
   expect_false(rr$settings$has_recovery)
   expect_equal(rr$k_true, 3L)
   expect_true(is.finite(rr$hit_rate[["EKC_BvA2017"]]))
+})
+
+test_that("model error follows each function's own documented default", {
+  # The two defaults deliberately differ: efa_power() perturbs with TKL, whose minor
+  # common factors degrade structure recovery as well as fit, while efa_simulate()
+  # defaults to CB. The same target passed to both therefore builds different
+  # populations unless `model_error` is set explicitly.
+  pw <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 150,
+                  n_datasets = 2, criteria = "EKC", target_rmsea = 0.05, seed = 1)
+  expect_identical(pw$settings$model_error, "TKL")
+  expect_identical(pw$model_error$method, "TKL")
+  expect_equal(pw$model_error$target_rmsea, 0.05)
+  expect_lt(abs(pw$model_error$rmsea - 0.05), 0.02)
+
+  sim <- efa_simulate(Lambda = sim_Lambda, Phi = sim_Phi, target_rmsea = 0.05,
+                      return_pop = TRUE, seed = 1)
+  expect_identical(sim$model_error$method, "CB")
+
+  # Without a target neither function perturbs the population, whatever the method.
+  exact <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 120,
+                     n_datasets = 2, criteria = "EKC", seed = 1)
+  expect_null(exact$model_error)
 })
 
 test_that("simulation-mode classed conditions fire as expected", {
@@ -332,6 +438,17 @@ test_that("simulation-mode classed conditions fire as expected", {
                class = "efa_power_missing_k")
   expect_error(efa_power("simulation", Lambda = sim_Lambda, k = 2, N = 200,
                          n_datasets = 2), class = "efa_power_bad_k")
+  # p is read off the population, like k: a conflicting value is an error on both
+  # population routes rather than being silently replaced.
+  expect_error(efa_power("simulation", Lambda = sim_Lambda, p = 99, N = 200,
+                         n_datasets = 2), class = "efa_power_bad_p")
+  expect_error(efa_power("simulation", R = R_pop, k = 3, p = 99, N = 200,
+                         n_datasets = 2), class = "efa_power_bad_p")
+  # A matching p is accepted and recorded.
+  expect_identical(
+    efa_power("simulation", Lambda = sim_Lambda, p = nrow(sim_Lambda), N = 120,
+              n_datasets = 2, criteria = "EKC", seed = 1)$settings$p,
+    nrow(sim_Lambda))
   # N is required in simulation mode (it is optional in RMSEA mode, where it is solved
   # for), and both N and n_datasets must be positive whole numbers.
   expect_error(efa_power("simulation", Lambda = sim_Lambda), class = "efa_power_input")

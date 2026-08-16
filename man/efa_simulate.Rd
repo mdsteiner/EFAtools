@@ -49,7 +49,8 @@ with \code{Lambda}. Default is \code{NULL}, in which case the unique variances t
 standardize the population to a correlation matrix are used.}
 
 \item{R}{matrix. A \code{p} by \code{p} population correlation matrix to draw from
-directly. Supply this instead of \code{Lambda}/\code{Phi}/\code{Psi}.}
+directly. Supply this instead of \code{Lambda}/\code{Phi}/\code{Psi}. It must have a unit
+diagonal; standardize a covariance matrix with \code{\link[stats:cov2cor]{stats::cov2cor()}} first.}
 
 \item{model_error}{character. The method used to perturb the population so the factor model
 fits it imperfectly ("model error"): one of \code{"CB"} (Cudeck-Browne, the default), \code{"TKL"}

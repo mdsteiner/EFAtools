@@ -7,7 +7,8 @@
       -- Sampling adequacy and sphericity --------------------------------------------
       
       v The overall KMO value for your data is marvellous (Overall KMO = <num>).
-      These data are probably suitable for factor analysis.
+      These data are probably suitable for factor analysis (verbal bands: Kaiser &
+      Rice, 1974).
       
       v The Bartlett's test of sphericity was significant at an alpha level of <num>.
       These data are probably suitable for factor analysis.
@@ -15,7 +16,8 @@
       
       -- Multicollinearity -----------------------------------------------------------
       
-      v Determinant: <num>. No concern (a value near 0 signals multicollinearity).
+      v Determinant: <num>. No concern (a value near 0 signals multicollinearity;
+      Field, 2018).
       v Condition number: <num> (condition index <num>). No concern (index below 10;
       Belsley, Kuh & Welsch, 1980).
       
@@ -56,7 +58,8 @@
       -- Sampling adequacy and sphericity --------------------------------------------
       
       v The overall KMO value for your data is marvellous (Overall KMO = <num>).
-      These data are probably suitable for factor analysis.
+      These data are probably suitable for factor analysis (verbal bands: Kaiser &
+      Rice, 1974).
       
       v The Bartlett's test of sphericity was significant at an alpha level of <num>.
       These data are probably suitable for factor analysis.
@@ -64,7 +67,8 @@
       
       -- Multicollinearity -----------------------------------------------------------
       
-      v Determinant: <num>. No concern (a value near 0 signals multicollinearity).
+      v Determinant: <num>. No concern (a value near 0 signals multicollinearity;
+      Field, 2018).
       v Condition number: <num> (condition index <num>). No concern (index below 10;
       Belsley, Kuh & Welsch, 1980).
       
@@ -123,14 +127,16 @@
       -- Sampling adequacy and sphericity --------------------------------------------
       
       v The overall KMO value for your data is marvellous (Overall KMO = <num>).
-      These data are probably suitable for factor analysis.
+      These data are probably suitable for factor analysis (verbal bands: Kaiser &
+      Rice, 1974).
       
       ! Bartlett's test of sphericity was not computed; no sample size (N) was
       supplied.
       
       -- Multicollinearity -----------------------------------------------------------
       
-      v Determinant: <num>. No concern (a value near 0 signals multicollinearity).
+      v Determinant: <num>. No concern (a value near 0 signals multicollinearity;
+      Field, 2018).
       v Condition number: <num> (condition index <num>). No concern (index below 10;
       Belsley, Kuh & Welsch, 1980).
       
@@ -172,7 +178,8 @@
       
       v The overall KMO value for your data is marvellous
       (Overall KMO = <num>).
-      These data are probably suitable for factor analysis.
+      These data are probably suitable for factor analysis
+      (verbal bands: Kaiser & Rice, 1974).
       
       v The Bartlett's test of sphericity was significant at an
       alpha level of <num>.
@@ -182,7 +189,7 @@
       -- Multicollinearity ---------------------------------------
       
       v Determinant: <num>. No concern (a value near 0 signals
-      multicollinearity).
+      multicollinearity; Field, 2018).
       v Condition number: <num> (condition index <num>). No
       concern (index below 10; Belsley, Kuh & Welsch, 1980).
       

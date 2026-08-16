@@ -756,8 +756,11 @@
   # Check if the correlation matrix is invertible, if it is not, stop with message
   if (check_singular &&
       min(abs(ev)) / max(abs(ev)) < ncol(R) * .Machine$double.eps) {
+    # The offending matrix travels with the condition, so a caller that wants to name
+    # the culprits (efa_screen() reports the perfectly correlated pairs) does not have
+    # to recompute a correlation matrix this function has already built.
     cli::cli_abort("The correlation matrix is singular; {singular_tail}.",
-                   class = "efa_cor_singular", call = error_call)
+                   class = "efa_cor_singular", R = R, call = error_call)
   }
 
   # Check if correlation matrix is positive definite, if it is not, either stop

@@ -19,8 +19,11 @@ correlations.}
 \item{N}{numeric. The number of observations. Needs only be specified if a
 correlation matrix is used.}
 
-\item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
-is given as input. Default is "pairwise.complete.obs".}
+\item{use}{character. The missing-data policy for raw data. Passed to
+\code{\link[stats:cor]{stats::cor()}} for \code{"pearson"}, \code{"spearman"}, and \code{"kendall"}; for \code{"poly"} /
+\code{"tetra"} the same policies are applied to the raw data before the polychoric
+estimation, where \code{"all.obs"} and \code{"everything"} abort on a missing value instead
+of returning \code{NA} correlations. Default is "pairwise.complete.obs".}
 
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
