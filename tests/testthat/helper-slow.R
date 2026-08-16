@@ -14,3 +14,29 @@ skip_if_not_slow <- function() {
     "slow test; set EFATOOLS_TEST_SLOW=true to run"
   )
 }
+
+# Counts the gated blocks in the test files themselves, so the number the notice below
+# reports cannot drift away from the suite. Returns 0 when called from outside the test
+# directory, where the files are not visible.
+n_slow_gated <- function() {
+  sum(vapply(
+    list.files(pattern = "^test-.*\\.[Rr]$"),
+    function(path) {
+      sum(grepl("skip_if_not_slow()", readLines(path, warn = FALSE), fixed = TRUE))
+    },
+    integer(1)
+  ))
+}
+
+# A skip is not a failure, so a default run can look complete when it is not. State once
+# what the gate holds back -- a fact about the suite, not about the blocks this particular
+# run happens to touch. local() keeps the count out of the environment the tests run in.
+if (!is_slow_test()) local({
+  n_gated <- n_slow_gated()
+  if (n_gated > 0) {
+    cli::cli_inform(c("i" = paste(
+      "The suite has {n_gated} slow test block{?s} gated off; set",
+      "{.envvar EFATOOLS_TEST_SLOW}=true (with {.envvar NOT_CRAN}=true) to run them."
+    )))
+  }
+})

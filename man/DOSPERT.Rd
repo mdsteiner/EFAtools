@@ -32,4 +32,9 @@ and the sample size (N) based on the publicly available dataset at
 The items measure risk-taking propensity on six different domains: social,
 recreational, gambling, health/ safety, investment, and ethical.
 }
+\details{
+The underlying data deposit is licensed under CC BY 4.0
+(\url{https://creativecommons.org/licenses/by/4.0/legalcode}). These correlations are a
+derivative of it and are attributed to Frey et al. (2017), as the licence requires.
+}
 \keyword{datasets}

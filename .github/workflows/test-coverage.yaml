@@ -15,6 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # covr re-runs the test suite, and covr itself never sets this, so without it the
+      # reported coverage would silently exclude the CRAN-gated blocks -- the oracle
+      # comparisons that exercise the numerical core. The slow gate is deliberately left
+      # off here: those blocks are covered by the full test suite check job, and running
+      # them under coverage instrumentation would put the whole coverage run at risk.
+      NOT_CRAN: true
 
     steps:
       - uses: actions/checkout@v5

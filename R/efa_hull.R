@@ -154,9 +154,13 @@
 #'
 #'\dontrun{
 #' # using parallel processing (Note: plans can be adapted, see the future
-#' # package for details)
-#' future::plan(future::multisession)
-#' efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
+#' # package for details). future::plan() returns the plan it replaces, so
+#' # on.exit() puts the session back as it was -- also if the call fails.
+#' local({
+#'   old_plan <- future::plan(future::multisession, workers = 2)
+#'   on.exit(future::plan(old_plan), add = TRUE)
+#'   efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
+#' })
 #' }
 efa_hull <- function(x, N = NA, n_fac_theor = NA,
                  estimator = c("PAF", "ULS", "ML"), gof = c("CAF", "CFI", "RMSEA"),

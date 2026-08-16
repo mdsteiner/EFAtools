@@ -7,6 +7,10 @@
 #' The items measure risk-taking propensity on six different domains: social,
 #' recreational, gambling, health/ safety, investment, and ethical.
 #'
+#' The underlying data deposit is licensed under CC BY 4.0
+#' (<https://creativecommons.org/licenses/by/4.0/legalcode>). These correlations are a
+#' derivative of it and are attributed to Frey et al. (2017), as the licence requires.
+#'
 #' @format A list of 2 with elements "cormat" (40 x 40 matrix of bivariate
 #' correlations) and "N" (scalar).
 #' \describe{

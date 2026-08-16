@@ -116,8 +116,8 @@ values (means and percentiles) used for printing and plotting.}
 \description{
 Various methods for performing parallel analysis. This function uses
 \link[future.apply:future_lapply]{future_lapply()} for which a parallel processing plan can
-be selected. To do so, call \code{library(future)} and, for example,
-\code{plan(multisession)}; see examples.
+be selected. To do so, register a plan with \code{\link[future:plan]{future::plan()}}, for example
+\code{future::plan(future::multisession, workers = 2)}; see examples.
 }
 \details{
 Parallel analysis (Horn, 1965) compares the eigenvalues obtained from
@@ -162,9 +162,13 @@ pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, estimator = "ML",
 }
 
 \dontrun{
-# for parallel computation
-future::plan(future::multisession)
-pa_faster <- efa_parallel(test_models$case_11b$cormat, N = 500)
+# for parallel computation. future::plan() returns the plan it replaces, so
+# on.exit() puts the session back as it was -- also if the call fails.
+pa_faster <- local({
+  old_plan <- future::plan(future::multisession, workers = 2)
+  on.exit(future::plan(old_plan), add = TRUE)
+  efa_parallel(test_models$case_11b$cormat, N = 500)
+})
 }
 }
 \seealso{

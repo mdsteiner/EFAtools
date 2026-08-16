@@ -2,8 +2,8 @@
 #'
 #' Various methods for performing parallel analysis. This function uses
 #' [future_lapply()][future.apply::future_lapply] for which a parallel processing plan can
-#' be selected. To do so, call `library(future)` and, for example,
-#'  `plan(multisession)`; see examples.
+#' be selected. To do so, register a plan with [future::plan()], for example
+#'  `future::plan(future::multisession, workers = 2)`; see examples.
 #'
 #' @param x matrix or data.frame. The real data to compare the simulated eigenvalues
 #'  against. Must not contain variables of classes other than numeric. Can be a
@@ -133,9 +133,13 @@
 #'}
 #'
 #'\dontrun{
-#' # for parallel computation
-#' future::plan(future::multisession)
-#' pa_faster <- efa_parallel(test_models$case_11b$cormat, N = 500)
+#' # for parallel computation. future::plan() returns the plan it replaces, so
+#' # on.exit() puts the session back as it was -- also if the call fails.
+#' pa_faster <- local({
+#'   old_plan <- future::plan(future::multisession, workers = 2)
+#'   on.exit(future::plan(old_plan), add = TRUE)
+#'   efa_parallel(test_models$case_11b$cormat, N = 500)
+#' })
 #' }
 
 efa_parallel <- function(x = NULL,

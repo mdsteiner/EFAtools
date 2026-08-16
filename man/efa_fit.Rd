@@ -614,8 +614,8 @@ It is the most general method -- available for any \code{estimator}, \code{rotat
 \code{cor_method} -- and the most robust to non-normality and misfit, at the cost of speed;
 its intervals are bootstrap percentile intervals. The replicate fits are run across
 replicates with the \code{future} framework. By default they run sequentially; to run them
-in parallel, register a plan with \code{\link[future:plan]{future::plan()}} (e.g.
-\code{future::plan(future::multisession, workers = 2)}; see examples). With a fixed \code{seed}
+in parallel, register a plan with \code{\link[future:plan]{future::plan()}} and restore the previous one
+afterwards, as the examples show. With a fixed \code{seed}
 the bootstrap is reproducible and yields the same result regardless of the number of
 workers. Under \code{cor_method = "fiml"} each resample also
 re-runs the EM moment estimation and is therefore slow, so a smaller \code{b_boot} may be
@@ -917,11 +917,14 @@ efa_fiml
 
 \dontrun{
 # Bootstrap standard errors from raw data, reproducible via a fixed seed and run
-# in parallel across replicates.
-future::plan(future::multisession, workers = 2)
-efa_boot <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
-                    se = "np-boot", b_boot = 1000, seed = 42)
-future::plan(future::sequential)
+# in parallel across replicates. future::plan() returns the plan it replaces, so
+# on.exit() puts the session back as it was -- also if the fit fails.
+efa_boot <- local({
+  old_plan <- future::plan(future::multisession, workers = 2)
+  on.exit(future::plan(old_plan), add = TRUE)
+  efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
+          se = "np-boot", b_boot = 1000, seed = 42)
+})
 }
 
 }
