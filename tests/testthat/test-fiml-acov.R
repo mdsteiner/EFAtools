@@ -63,6 +63,65 @@ test_that("the score vanishes at the EM fixed point", {
   expect_lt(max(abs(sc)) / em$n, 1e-5)
 })
 
+test_that("the analytic information matches a numerical Jacobian of the score", {
+  X <- .acov_mar_data()
+  em <- .fiml_em_moments(X)
+  p <- ncol(X)
+  pstar <- p * (p + 1L) / 2L
+  patterns <- .fiml_patterns(!is.na(X))
+
+  ana <- .fiml_saturated_information(X, em$mu, em$sigma, patterns)
+
+  # Central differences of the analytic score, at the eps^(1/3) optimum step scaled by each
+  # parameter's own magnitude (a mean is on the variable's scale, sigma_ij on sd_i sd_j).
+  theta0 <- c(em$mu, .vech(em$sigma))
+  sds <- sqrt(diag(em$sigma))
+  ij <- which(lower.tri(diag(p), diag = TRUE), arr.ind = TRUE)
+  h <- .Machine$double.eps^(1 / 3) *
+    pmax(abs(theta0), c(sds, sds[ij[, 1L]] * sds[ij[, 2L]]))
+  score_at <- function(theta) {
+    .fiml_saturated_score(X, theta[seq_len(p)], .unvech(theta[p + seq_len(pstar)], p),
+                          patterns = patterns)
+  }
+  num <- vapply(seq_along(theta0), function(k) {
+    tp <- theta0; tp[k] <- tp[k] + h[k]
+    tm <- theta0; tm[k] <- tm[k] - h[k]
+    -(score_at(tp) - score_at(tm)) / (2 * h[k])
+  }, numeric(length(theta0)))
+
+  expect_equal(ana, (num + t(num)) / 2, tolerance = 1e-6, ignore_attr = TRUE)
+  expect_true(isSymmetric(ana, tol = 0))
+})
+
+test_that("the analytic information equals the complete-data closed form", {
+  # With no missing values the observed information of the saturated multivariate normal has
+  # the textbook block-diagonal form n Sigma^-1 for the means and n/2 D'(Sigma^-1 kron
+  # Sigma^-1) D for vech(Sigma), with D the duplication matrix (Magnus & Neudecker, 2019).
+  set.seed(11)
+  p <- 5L
+  n <- 200L
+  Sig <- 0.5 ^ abs(outer(seq_len(p), seq_len(p), "-"))
+  X <- matrix(stats::rnorm(n * p), n) %*% chol(Sig)
+  colnames(X) <- paste0("V", seq_len(p))
+  mu_hat <- colMeans(X)
+  S_hat <- crossprod(sweep(X, 2L, mu_hat, "-")) / n
+
+  ana <- .fiml_saturated_information(X, mu_hat, S_hat, .fiml_patterns(!is.na(X)))
+
+  pstar <- p * (p + 1L) / 2L
+  ij <- which(lower.tri(diag(p), diag = TRUE), arr.ind = TRUE)
+  D <- matrix(0, p * p, pstar)
+  D[cbind((ij[, 2L] - 1L) * p + ij[, 1L], seq_len(pstar))] <- 1
+  D[cbind((ij[, 1L] - 1L) * p + ij[, 2L], seq_len(pstar))] <- 1
+  S_inv <- solve(S_hat)
+  closed <- matrix(0, p + pstar, p + pstar)
+  closed[seq_len(p), seq_len(p)] <- n * S_inv
+  closed[p + seq_len(pstar), p + seq_len(pstar)] <-
+    (n / 2) * crossprod(D, kronecker(S_inv, S_inv) %*% D)
+
+  expect_equal(ana, closed, tolerance = 1e-10, ignore_attr = TRUE)
+})
+
 test_that("the information and asymptotic covariances are well-formed", {
   skip_on_cran()
 

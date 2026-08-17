@@ -56,6 +56,10 @@
 
 * Factor-retention functions now reject the unsupported arguments `seed`, `se`, `b_boot`, and `ci`. Use `set.seed()` to control randomness.
 
+* `efa_parallel()` now reads the `"PCA"` and `"SMC"` reference eigenvalues off the same simulated datasets when both are requested, halving the simulation and pairing the two reference series dataset by dataset. A draw that the `"SMC"` series cannot use is discarded for `"PCA"` as well.
+
+* A failed block of the `efa_parallel()` simulation is now redrawn on its own instead of restarting the whole batch, and the abort that follows repeated failures reports the failure that caused it.
+
 ## Input Validation and Correlation Handling
 
 * `efa_fit()` and `efa_average()` now reject `N = 0`. `N = NA` remains the way to say that the sample size is unknown.

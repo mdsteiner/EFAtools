@@ -142,7 +142,18 @@ The reference eigenvalues are obtained from simulated data, so the suggested num
 of factors varies slightly from run to run. Call \code{\link[=set.seed]{set.seed()}} beforehand to make a
 run reproducible; the result is then also independent of the parallel plan set via
 \code{\link[future:plan]{future::plan()}}, so it can be reproduced on a machine with a different number of
-cores.
+cores. The simulation is drawn in independently seeded blocks; a block that fails --
+which happens when a simulated correlation matrix is singular, so that no eigenvalues
+can be taken from it -- is redrawn on its own, leaving the blocks that succeeded with
+the draws they already made.
+
+When both \code{"PCA"} and \code{"SMC"} are requested, the two are read off the \emph{same} simulated
+datasets rather than from two independent simulations: they differ only in the diagonal
+substituted into the simulated correlation matrix, so one set of draws serves both and
+the two reference series are paired dataset by dataset. A draw that cannot be used for
+the SMC series -- a simulated matrix with no inverse, and hence no squared multiple
+correlations -- is discarded for the \code{"PCA"} series as well, so that the pairing stays
+exact. \code{"EFA"} fits a model to each simulated dataset and draws its own.
 
 The \code{efa_parallel} function can also be called together with other factor
 retention criteria in the \code{\link[=efa_retain]{efa_retain()}} function.

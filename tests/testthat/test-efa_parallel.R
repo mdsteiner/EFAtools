@@ -317,6 +317,119 @@ test_that(".parallel_chunks is exact at the sizes efa_parallel asks for", {
 })
 
 
+test_that("only the simulation chunk that failed is redrawn", {
+  # Deterministic chunk failure: the mocked simulation fails one chunk evaluation and only
+  # that one, so the redraw meets a working simulation again. Counting the evaluations shows
+  # what a failure costs -- redrawing the whole batch would repeat every chunk, which for a
+  # failure in the last of twenty chunks is nineteen sound chunks thrown away.
+  skip_if_not_installed("testthat", "3.2.0")
+
+  # The mock replaces the simulation in this process only, so the chunks have to resolve
+  # here; an ambient parallel plan would run the real one in a worker and count nothing.
+  old_plan <- future::plan(future::sequential)
+  on.exit(future::plan(old_plan), add = TRUE)
+
+  real <- .parallel_sim_eig
+  n_chunks <- length(.parallel_chunks(40, max(1L, min(40, 20L))))
+
+  count <- function(fail_on) {
+    calls <- 0L
+    local_mocked_bindings(
+      .parallel_sim_eig = function(n_datasets, ...) {
+        calls <<- calls + 1L
+        if (isTRUE(calls == fail_on)) {
+          cli::cli_abort("simulated chunk failure", class = "efa_test_chunk_failure")
+        }
+        real(n_datasets, ...)
+      }
+    )
+    set.seed(11)
+    suppressWarnings(suppressMessages(
+      efa_parallel(N = 200, n_vars = 5, n_datasets = 40, eigen_type = "PCA")))
+    calls
+  }
+
+  expect_identical(count(NA_integer_), n_chunks)
+  expect_identical(count(3L), n_chunks + 1L)
+  expect_identical(count(n_chunks), n_chunks + 1L)
+})
+
+
+test_that("a redrawn chunk leaves the other chunks' draws untouched", {
+  # The retry runs on the failing chunk alone, so the chunks that succeeded keep the exact
+  # draws of the first attempt; only the redrawn one gets a fresh random-number stream.
+  skip_if_not_installed("testthat", "3.2.0")
+
+  old_plan <- future::plan(future::sequential)
+  on.exit(future::plan(old_plan), add = TRUE)
+
+  real <- .parallel_sim_eig
+  size_vec <- .parallel_chunks(40, max(1L, min(40, 20L)))
+  failed_rows <- (sum(size_vec[1:2]) + 1L):sum(size_vec[1:3])
+
+  run <- function(fail_on) {
+    calls <- 0L
+    local_mocked_bindings(
+      .parallel_sim_eig = function(n_datasets, ...) {
+        calls <<- calls + 1L
+        if (isTRUE(calls == fail_on)) {
+          cli::cli_abort("simulated chunk failure", class = "efa_test_chunk_failure")
+        }
+        real(n_datasets, ...)
+      }
+    )
+    set.seed(11)
+    .parallel_sim_chunks(size_vec, label = "PCA", N = 200, n_vars = 5,
+                         eigen_type = 1, cor_method = "pearson")
+  }
+
+  clean <- run(NA_integer_)
+  broken <- run(3L)
+
+  expect_identical(broken[-failed_rows, ], clean[-failed_rows, ])
+  expect_false(identical(broken[failed_rows, ], clean[failed_rows, ]))
+})
+
+
+test_that("the parallel-analysis abort carries the failure that caused it", {
+  skip_if_not_installed("testthat", "3.2.0")
+
+  old_plan <- future::plan(future::sequential)
+  on.exit(future::plan(old_plan), add = TRUE)
+
+  local_mocked_bindings(
+    .parallel_sim_eig = function(n_datasets, ...) {
+      cli::cli_abort("no usable draw", class = "efa_test_sim_failure")
+    }
+  )
+
+  cnd <- expect_error(
+    .parallel_sim_chunks(.parallel_chunks(4, 2), label = "PCA", N = 200, n_vars = 5,
+                         eigen_type = 1, cor_method = "pearson", max_tries = 3L),
+    class = "efa_parallel_sim_failed")
+  expect_s3_class(cnd$parent, "efa_test_sim_failure")
+})
+
+
+test_that("a failing parallel backend is retried and reported the same way", {
+  # A chunk reports its own failure, so what the batch-level retry covers is the backend
+  # itself -- a lost worker, say. It must reach the same classed abort, not leak out raw.
+  skip_if_not_installed("testthat", "3.2.0")
+
+  local_mocked_bindings(
+    future_lapply = function(...) {
+      cli::cli_abort("the workers are gone", class = "efa_test_backend_failure")
+    },
+    .package = "future.apply")
+
+  cnd <- expect_error(
+    .parallel_sim_chunks(.parallel_chunks(4, 2), label = "SMCs", N = 200, n_vars = 5,
+                         eigen_type = 2, cor_method = "pearson", max_tries = 2L),
+    class = "efa_parallel_sim_failed")
+  expect_s3_class(cnd$parent, "efa_test_backend_failure")
+})
+
+
 test_that("a seeded efa_parallel run is invariant to the number of workers", {
   skip_on_cran()
   skip_if_not_slow()
@@ -455,6 +568,104 @@ test_that(".parallel_sim_eig draws its rank-method reference from the shared ker
   }, numeric(p)))
 
   expect_equal(got, want, tolerance = fp_tol)
+})
+
+test_that("the PCA and SMC series are taken from one set of simulated datasets", {
+  # PCA and SMC differ only in the diagonal put into the same simulated correlation matrix,
+  # so asking for both must simulate n_datasets datasets, not 2 * n_datasets. Counted at the
+  # kernel rather than by restating the branch, so a call site that reverted to two
+  # independent simulations would fail here.
+  skip_if_not_installed("testthat", "3.2.0")
+
+  # The mock counts draws in this process, so the chunks have to resolve here.
+  old_plan <- future::plan(future::sequential)
+  on.exit(future::plan(old_plan), add = TRUE)
+
+  real <- .parallel_sim
+  n_datasets <- 20
+  n_chunks <- length(.parallel_chunks(n_datasets, max(1L, min(n_datasets, 20L))))
+
+  traced <- function(eigen_type) {
+    drawn <- 0L
+    types <- numeric(0)
+    local_mocked_bindings(
+      .parallel_sim = function(n_datasets, n_vars, N, eigen_type, maxit) {
+        drawn <<- drawn + n_datasets
+        types <<- c(types, eigen_type)
+        real(n_datasets, n_vars, N, eigen_type, maxit)
+      })
+    set.seed(3)
+    suppressWarnings(suppressMessages(
+      efa_parallel(N = 200, n_vars = 5, n_datasets = n_datasets,
+                   eigen_type = eigen_type)))
+    list(drawn = drawn, types = types)
+  }
+
+  pca <- traced("PCA")
+  expect_identical(pca$drawn, n_datasets)
+  expect_equal(pca$types, rep(1, n_chunks))
+
+  smc <- traced("SMC")
+  expect_identical(smc$drawn, n_datasets)
+  expect_equal(smc$types, rep(2, n_chunks))
+
+  both <- traced(c("PCA", "SMC"))
+  expect_identical(both$drawn, n_datasets)
+  expect_equal(both$types, rep(3, n_chunks))
+
+  # the default set adds "EFA", which fits a model per dataset and draws its own
+  all_three <- traced(c("PCA", "SMC", "EFA"))
+  expect_identical(all_three$drawn, n_datasets)
+  expect_equal(all_three$types, rep(3, n_chunks))
+})
+
+test_that("the shared draw feeds both series with the eigenvalues each would get alone", {
+  # The shared kernel run must return exactly the two series the single-type runs produce
+  # from the same random-number stream: the PCA eigenvalues in the first n_vars columns and
+  # the SMC eigenvalues in the next, replicate by replicate.
+  N <- 200L; p <- 6L; nd <- 25L
+
+  set.seed(4)
+  shared <- .parallel_sim(nd, p, N, 3L, nd * 10L)
+  set.seed(4)
+  pca_only <- .parallel_sim(nd, p, N, 1L, nd * 10L)
+  set.seed(4)
+  smc_only <- .parallel_sim(nd, p, N, 2L, nd * 10L)
+
+  expect_identical(dim(shared), c(nd, 2L * p))
+  expect_identical(shared[, seq_len(p)], pca_only)
+  expect_identical(shared[, p + seq_len(p)], smc_only)
+})
+
+test_that("a draw the SMC series cannot use is discarded for the PCA series too", {
+  # A simulated correlation matrix with no inverse yields no squared multiple correlations,
+  # and the draw is then dropped from both series so that they stay paired. Admissible input
+  # essentially never produces such a matrix, so the rejection is forced here, on the
+  # rank-based route where it is taken in R.
+  skip_if_not_installed("testthat", "3.2.0")
+
+  N <- 60; p <- 5
+  real <- .smc_start
+
+  set.seed(606)
+  clean <- .parallel_sim_eig(4, n_vars = p, N = N, eigen_type = 3L,
+                             cor_method = "spearman")
+
+  calls <- 0L
+  local_mocked_bindings(
+    .smc_start = function(R, ...) {
+      calls <<- calls + 1L
+      if (calls == 2L) stop("singular simulated matrix")
+      real(R, ...)
+    })
+  set.seed(606)
+  rejected <- .parallel_sim_eig(3, n_vars = p, N = N, eigen_type = 3L,
+                                cor_method = "spearman")
+
+  # the second draw is gone from both halves, and the third took its place in both
+  expect_identical(rejected[1L, ], clean[1L, ])
+  expect_identical(rejected[2L, ], clean[3L, ])
+  expect_identical(rejected[3L, ], clean[4L, ])
 })
 
 test_that(".parallel_EFA_sim draws its reference from the shared kernel", {

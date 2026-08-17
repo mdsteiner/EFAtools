@@ -93,6 +93,38 @@ test_that("weights satisfy their estimator-defining properties (psych-free)", {
                tolerance = 1e-8, ignore_attr = TRUE)
 })
 
+test_that("Bartlett and Anderson weights lie in the column space of Psi^-1 Lambda", {
+  # The identities above pin the right-hand normalizer but not the uniqueness
+  # weighting: Lambda' W = I holds for W = D Lambda (Lambda' D Lambda)^-1 with
+  # *any* symmetric D, and W' R W = I holds for the analogous Anderson-Rubin form,
+  # so both stay at machine precision even if Psi^-1 is replaced by Psi, by
+  # diag(1 / h2), or by the identity. What identifies the weighting is the column
+  # space: both estimators are Psi^-1 Lambda times an invertible m x m factor, so
+  # W must leave no residual when regressed on Psi^-1 Lambda. The residuals are
+  # judged against the scale of W itself, so the bound does not silently loosen if
+  # the fixture is exchanged for one with larger weights.
+
+  # Bartlett: W = Psi^-1 Lambda (Lambda' Psi^-1 Lambda)^-1 (Bartlett, 1937).
+  Lu_ob <- Lambda_ob / (1 - h2_ob)
+  W_bart <- EFAtools:::.factor_score_weights(Lambda_ob, Phi_ob, R_mat, h2_ob,
+                                             method = "Bartlett")
+  expect_lt(max(abs(qr.resid(qr(Lu_ob), W_bart))), 1e-8 * max(abs(W_bart)))
+
+  # Anderson-Rubin: W = Psi^-1 Lambda (Lambda' Psi^-1 R Psi^-1 Lambda)^-1/2
+  # (Anderson & Rubin, 1956).
+  Lu_or <- Lambda_or / (1 - h2_or)
+  W_and <- EFAtools:::.factor_score_weights(Lambda_or, Phi_or, R_mat, h2_or,
+                                            method = "Anderson")
+  expect_lt(max(abs(qr.resid(qr(Lu_or), W_and))), 1e-8 * max(abs(W_and)))
+
+  # W' R W = I fixes the Anderson-Rubin right factor only up to an orthogonal
+  # rotation. The estimator takes the *symmetric* inverse root, which leaves
+  # Lu' R W = (Lu' R Lu)^1/2 symmetric; a mis-specified Psi makes the right factor
+  # non-symmetric and shows up here even though it cannot disturb W' R W = I.
+  M_and <- crossprod(Lu_or, R_mat %*% W_and)
+  expect_lt(max(abs(M_and - t(M_and))), 1e-8 * max(abs(M_and)))
+})
+
 test_that("the singular-matrix pseudo-inverse fallback works", {
   # .pinv is the Moore-Penrose inverse of a rank-deficient matrix: M Mp M = M
   # and Mp M Mp = Mp.

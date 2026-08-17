@@ -79,7 +79,18 @@
 #'  of factors varies slightly from run to run. Call [set.seed()] beforehand to make a
 #'  run reproducible; the result is then also independent of the parallel plan set via
 #'  [future::plan()], so it can be reproduced on a machine with a different number of
-#'  cores.
+#'  cores. The simulation is drawn in independently seeded blocks; a block that fails --
+#'  which happens when a simulated correlation matrix is singular, so that no eigenvalues
+#'  can be taken from it -- is redrawn on its own, leaving the blocks that succeeded with
+#'  the draws they already made.
+#'
+#'  When both `"PCA"` and `"SMC"` are requested, the two are read off the *same* simulated
+#'  datasets rather than from two independent simulations: they differ only in the diagonal
+#'  substituted into the simulated correlation matrix, so one set of draws serves both and
+#'  the two reference series are paired dataset by dataset. A draw that cannot be used for
+#'  the SMC series -- a simulated matrix with no inverse, and hence no squared multiple
+#'  correlations -- is discarded for the `"PCA"` series as well, so that the pairing stays
+#'  exact. `"EFA"` fits a model to each simulated dataset and draws its own.
 #'
 #'  The `efa_parallel` function can also be called together with other factor
 #'  retention criteria in the [efa_retain()] function.
@@ -277,35 +288,35 @@ efa_parallel <- function(x = NULL,
 
   .assert_n_gt_vars(N, n_vars)
 
+    # PCA and SMC differ only in the diagonal substituted into the same simulated
+    # correlation matrix, so when both are requested they are read off one set of
+    # simulated datasets instead of two independent ones -- which halves the simulation
+    # and pairs the two reference series dataset by dataset.
+    if (all(c("PCA", "SMC") %in% eigen_type)) {
+
+      eigvals_both <- .parallel_sim_chunks(size_vec, label = "PCA and SMCs", N = N,
+                                           n_vars = n_vars, eigen_type = 3,
+                                           cor_method = cor_method,
+                                           maxit = n_datasets * 10)
+      eigvals_PCA <- eigvals_both[, seq_len(n_vars), drop = FALSE]
+      eigvals_SMC <- eigvals_both[, n_vars + seq_len(n_vars), drop = FALSE]
+
+    } else if ("PCA" %in% eigen_type) {
+
+      eigvals_PCA <- .parallel_sim_chunks(size_vec, label = "PCA", N = N,
+                                          n_vars = n_vars, eigen_type = 1,
+                                          cor_method = cor_method)
+
+    } else if ("SMC" %in% eigen_type) {
+
+      eigvals_SMC <- .parallel_sim_chunks(size_vec, label = "SMCs", N = N,
+                                          n_vars = n_vars, eigen_type = 2,
+                                          cor_method = cor_method,
+                                          maxit = n_datasets * 10)
+
+    }
+
     if ("PCA" %in% eigen_type) {
-
-      eigvals_PCA <- try(future.apply::future_lapply(size_vec, .parallel_sim_eig, N = N,
-                                             n_vars = n_vars, eigen_type = 1,
-                                             cor_method = cor_method,
-                                             future.seed = TRUE),
-                         silent = TRUE)
-
-      it_i <- 1
-      while (inherits(eigvals_PCA, "try-error") && it_i < 25) {
-        eigvals_PCA <- try(future.apply::future_lapply(size_vec, .parallel_sim_eig,
-                                                       N = N,
-                                                       n_vars = n_vars,
-                                                       eigen_type = 1,
-                                                       cor_method = cor_method,
-                                                       future.seed = TRUE),
-                           silent = TRUE)
-        it_i <- it_i + 1
-      }
-
-      if (inherits(eigvals_PCA, "try-error")) {
-        cli::cli_abort(
-          c("Eigenvalues from simulated data via {.val PCA} could not be found in 25 tries.",
-            "i" = "This is likely due to singular matrices."),
-          class = "efa_parallel_sim_failed"
-        )
-      }
-
-      eigvals_PCA <- do.call(rbind, eigvals_PCA)
 
       results_PCA <- .parallel_summarise(eigvals_PCA, percent = percent,
                                         n_vars = n_vars)
@@ -322,35 +333,6 @@ efa_parallel <- function(x = NULL,
     }
 
     if ("SMC" %in% eigen_type) {
-
-      eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim_eig,
-                                                     N = N, n_vars = n_vars,
-                                                     eigen_type = 2,
-                                                     cor_method = cor_method,
-                                                     maxit = n_datasets * 10,
-                                                     future.seed = TRUE),
-                         silent = TRUE)
-      it_i <- 1
-      while (inherits(eigvals_SMC, "try-error") && it_i < 25) {
-        eigvals_SMC <- try(future.apply::future_lapply(size_vec, .parallel_sim_eig,
-                                                       N = N,
-                                                       n_vars = n_vars,
-                                                       eigen_type = 2,
-                                                       cor_method = cor_method,
-                                                       maxit = n_datasets * 10,
-                                                       future.seed = TRUE),
-                           silent = TRUE)
-        it_i <- it_i + 1
-      }
-
-      if (inherits(eigvals_SMC, "try-error")) {
-        cli::cli_abort(
-          c("Eigenvalues from simulated data via {.val SMCs} could not be found in 25 tries.",
-            "i" = "This is likely due to singular matrices."),
-          class = "efa_parallel_sim_failed"
-        )
-      }
-      eigvals_SMC <- do.call(rbind, eigvals_SMC)
 
       results_SMC <- .parallel_summarise(eigvals_SMC, percent = percent,
                                         n_vars = n_vars)
@@ -499,6 +481,62 @@ efa_parallel <- function(x = NULL,
   return(eigvals)
 }
 
+# One simulation chunk, reporting a failure instead of raising it, so that one bad draw
+# costs its own chunk rather than the whole batch (see .parallel_sim_chunks()).
+.parallel_sim_eig_try <- function(n_datasets, ...) {
+  try(.parallel_sim_eig(n_datasets, ...), silent = TRUE)
+}
+
+# Reference eigenvalues for the whole simulation, one future per chunk of `size_vec`, the
+# chunks stacked into one matrix of n_datasets rows.
+#
+# A chunk can fail: the simulation refuses a draw whose correlation matrix is singular and
+# gives up once it has exhausted its own per-draw budget. Such a chunk is redrawn on its own,
+# up to `max_tries` times, while the chunks that already succeeded keep the draws they made.
+# Repeating the whole batch instead would discard every chunk that had nothing wrong with it
+# for one bad draw and -- because future.seed = TRUE spawns fresh random-number streams for
+# every call -- would replace their draws as well.
+#
+# The try() around the batch covers the parallel backend rather than the simulation: a chunk
+# reports its own failure through .parallel_sim_eig_try(), so what is caught here is a failure
+# of future.apply itself (a lost worker, say), which is retried the same way.
+#
+# `label` names the eigenvalue type in the abort, which carries the failure that defeated the
+# last attempt as its parent, so the reason a chunk kept failing is not lost.
+.parallel_sim_chunks <- function(size_vec, label, ..., max_tries = 25L) {
+
+  out <- vector("list", length(size_vec))
+  todo <- seq_along(size_vec)
+  cause <- NULL
+
+  for (i in seq_len(max_tries)) {
+
+    res <- try(future.apply::future_lapply(size_vec[todo], .parallel_sim_eig_try, ...,
+                                           future.seed = TRUE),
+               silent = TRUE)
+
+    if (inherits(res, "try-error")) {
+      cause <- attr(res, "condition")
+      next
+    }
+
+    out[todo] <- res
+    failed <- vapply(res, inherits, logical(1L), what = "try-error")
+    if (!any(failed)) return(do.call(rbind, out))
+
+    todo <- todo[failed]
+    cause <- attr(out[[todo[1L]]], "condition")
+  }
+
+  cli::cli_abort(
+    c("Eigenvalues from simulated data via {.val {label}} could not be found in
+       {max_tries} tries.",
+      "i" = "This is likely due to singular matrices."),
+    class = "efa_parallel_sim_failed",
+    parent = cause
+  )
+}
+
 # Reference eigenvalues for one simulation chunk. Horn's (1965) parallel analysis
 # requires the reference matrices to be built with the same correlation estimator
 # as the observed data. The default Pearson case uses the compiled .parallel_sim()
@@ -514,7 +552,12 @@ efa_parallel <- function(x = NULL,
     return(.parallel_sim(n_datasets, n_vars, N, eigen_type, maxit))
   }
 
-  eig_vals <- matrix(NA_real_, nrow = n_datasets, ncol = n_vars)
+  want_pca <- eigen_type %in% c(1, 3)
+  want_smc <- eigen_type %in% c(2, 3)
+
+  eig_vals <- matrix(NA_real_, nrow = n_datasets,
+                     ncol = (want_pca + want_smc) * n_vars)
+  smc_col <- if (want_pca) n_vars else 0L
   success <- 0L
   iter <- 0L
 
@@ -522,24 +565,34 @@ efa_parallel <- function(x = NULL,
   # kernel from the identity correlation (the no-factor case).
   R_null <- diag(n_vars)
 
-  # Only the SMC path can reject a draw (a singular simulated matrix) and so needs
-  # the maxit retry bound. The PCA path never rejects, so it must run all n_datasets
-  # draws regardless of maxit, matching the compiled .parallel_sim() whose PCA loop
-  # ignores maxit.
-  while (success < n_datasets && (eigen_type != 2 || iter < maxit)) {
+  # One loop over the draws for both series, matching the compiled .parallel_sim(): PCA
+  # and SMC differ only in the diagonal substituted into the same simulated correlation
+  # matrix, so one draw serves both and a draw the SMC series cannot use is discarded
+  # for the PCA series too. Only the SMC series can reject a draw and so needs the maxit
+  # retry bound; the PCA series runs all n_datasets draws regardless of maxit.
+  while (success < n_datasets && (!want_smc || iter < maxit)) {
     iter <- iter + 1L
     x <- .simulate_cfm_mvn(R_null, N)
     R <- stats::cor(x, method = cor_method)
 
-    if (eigen_type == 2) { # SMC: replace the diagonal with squared multiple
-      # correlations; skip the draw if the simulated matrix is singular.
+    if (want_smc) { # SMC: replace the diagonal with squared multiple correlations;
+      # skip the draw if the simulated matrix is singular.
       smc <- try(.smc_start(R), silent = TRUE)
       if (inherits(smc, "try-error")) next
-      diag(R) <- smc
     }
 
     success <- success + 1L
-    eig_vals[success, ] <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+
+    if (want_pca) {
+      eig_vals[success, seq_len(n_vars)] <-
+        eigen(R, symmetric = TRUE, only.values = TRUE)$values
+    }
+
+    if (want_smc) {
+      diag(R) <- smc
+      eig_vals[success, smc_col + seq_len(n_vars)] <-
+        eigen(R, symmetric = TRUE, only.values = TRUE)$values
+    }
   }
 
   if (success < n_datasets) {

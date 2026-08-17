@@ -37,8 +37,17 @@
 # The result is unnamed on both routes (chol2inv() drops dimnames, solve() keeps them), so
 # the return shape does not depend on which one ran. Callers that surface the values name
 # them from the correlation matrix themselves.
-.smc_start <- function(R) {
-  d <- tryCatch(diag(chol2inv(chol(R))), error = function(e) NULL)
+#
+# `R_inv` lets a caller that has already formed R^-1 hand it over rather than pay for a
+# second factorisation (efa_screen() builds one inverse for several measures at once). The
+# underflow check and the solve() fallback below still run, so the singularity contract is
+# the same on either route.
+.smc_start <- function(R, R_inv = NULL) {
+  d <- if (!is.null(R_inv)) {
+    diag(R_inv)
+  } else {
+    tryCatch(diag(chol2inv(chol(R))), error = function(e) NULL)
+  }
   if (is.null(d) || min(1 / d) <= ncol(R)^2 * .Machine$double.eps) {
     d <- diag(solve(R))
   }

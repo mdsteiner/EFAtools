@@ -299,15 +299,37 @@ efa_screen <- function(x, N = NA,
   if (is.null(nms)) nms <- rownames(R)
   if (is.null(nms)) nms <- paste0("V", seq_len(p))
 
+  # Two factorisations of R serve every correlation-side measure below, each formed once
+  # rather than once per measure: they cost O(p^3), which is the bulk of the work when a
+  # large correlation matrix is screened.
+  #
+  # The eigenvalues give the condition number and the log-determinant, both taken in
+  # absolute value: the singular values of a symmetric matrix are its absolute eigenvalues,
+  # so max|lambda| / min|lambda| is exactly the 2-norm condition number, and
+  # prod(sign(lambda)) with sum(log|lambda|) are exactly the sign and log-modulus of the
+  # determinant. The raw ratio and the raw logarithm would be defined only for a positive
+  # definite R.
+  ev <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+
+  # R^-1, needed by the KMO's anti-image matrix and by the squared multiple correlations,
+  # from the Cholesky factor, which uses the symmetry and positive definiteness that
+  # solve()'s LU ignores. .prepare_cor_input() above has refused a numerically singular R
+  # and smoothed an indefinite one, so the factorisation exists. Should a Cholesky pivot
+  # still turn non-positive, the inverse is left unset and each measure falls back to the
+  # route it takes when it is given no inverse -- which keeps .compute_kmo()'s classed
+  # singularity abort rather than replacing it with a bare solve() error here.
+  R_inv <- tryCatch(chol2inv(chol(R)), error = function(e) NULL)
+
   # KMO measure of sampling adequacy, overall and per variable
-  kmo <- .compute_kmo(R)
+  kmo <- .compute_kmo(R, R_inv = R_inv)
   names(kmo$KMO_i) <- nms
 
-  # Log-determinant of R, computed once: passed to the Bartlett statistic (the log
-  # form keeps that statistic finite even when |R| underflows to 0) and reused here
-  # to report the determinant without a second decomposition.
-  ld <- determinant(R, logarithm = TRUE)
-  det_R <- as.numeric(ld$sign) * exp(as.numeric(ld$modulus))
+  # Log-determinant of R: passed to the Bartlett statistic (the log form keeps that
+  # statistic finite even when |R| underflows to 0) and used here to report the
+  # determinant itself. Shaped like determinant()'s return value, which is what
+  # .null_chisq() reads.
+  ld <- list(sign = prod(sign(ev)), modulus = sum(log(abs(ev))))
+  det_R <- ld$sign * exp(ld$modulus)
 
   # Bartlett's test of sphericity (Bartlett, 1951): the null-model chi-square with
   # df = p(p - 1)/2. It needs N; without it the test is skipped with a warning and the
@@ -330,13 +352,13 @@ efa_screen <- function(x, N = NA,
          df = df)
   }
 
-  # Condition number of R: the ratio of its largest to its smallest eigenvalue (the
-  # exact 2-norm condition number; for a symmetric positive-definite matrix kappa()
-  # returns lambda_max / lambda_min). Large values flag near-collinearity.
-  condition <- kappa(R, exact = TRUE)
+  # Condition number of R: the ratio of its largest to its smallest eigenvalue in
+  # absolute value, i.e. the exact 2-norm condition number. Large values flag
+  # near-collinearity.
+  condition <- max(abs(ev)) / min(abs(ev))
 
   # Squared multiple correlation of each variable with the others (1 - 1/diag(R^-1))
-  smc <- .smc_start(R)
+  smc <- .smc_start(R, R_inv = R_inv)
   names(smc) <- nms
 
   # Raw-data descriptive diagnostics: per-item variance, percentage missing, and a

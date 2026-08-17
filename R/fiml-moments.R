@@ -277,9 +277,7 @@
 
   # No valid score without a positive-definite covariance (mirrors .fiml_loglik() /
   # .fiml_saturated_acov(); a principal submatrix of a positive-definite matrix is positive
-  # definite, so every pattern's Sigma_oo is then safe to factor below). This also classifies the
-  # rare case where a finite-difference perturbation in .fiml_saturated_acov() tips a near-
-  # singular Sigma indefinite, so that path raises the classed condition rather than a bare chol().
+  # definite, so every pattern's Sigma_oo is then safe to factor below).
   if (any(eigen(sigma, symmetric = TRUE, only.values = TRUE)$values < .Machine$double.eps)) {
     cli::cli_abort(
       c("The covariance matrix is not positive definite, so the FIML score is undefined.",
@@ -322,11 +320,98 @@
   c(mu_grad, .vech(Gpar))
 }
 
+# Observed information of the saturated observed-data log-likelihood at theta =
+# (mu, vech(sigma)): the negative Hessian of .fiml_loglik(), whose gradient is
+# .fiml_saturated_score(), in closed form and accumulated per missingness pattern.
+#
+# Write M for the pattern's inverse Sigma_oo^-1 padded back to p x p by the selection matrix
+# that picks its observed columns, u = M sum_i (y_i - mu) and W = M (sum_i (y_i - mu)(y_i -
+# mu)') M. Differentiating the score of a pattern with n_g cases gives the three blocks
+#
+#   mu    x mu    :  n_g M
+#   sigma x mu    :  D' (u kron M)
+#   sigma x sigma :  (1/2) D' [ W kron M + M kron W - n_g (M kron M) ] D
+#
+# with D the duplication matrix that maps vech(Sigma) to vec(Sigma) -- the same closed form
+# lavaan accumulates in lav_mvnorm_missing_logl_hessian_samplestats(). Its derivation is the
+# product rule applied to d(Sigma_oo^-1) = -Sigma_oo^-1 (d Sigma_oo) Sigma_oo^-1 (Magnus &
+# Neudecker, 2019, Matrix Differential Calculus, 3rd ed., ch. 10). No Kronecker product is
+# formed: every entry of the covariance block is a product of two entries of M and W, which
+# the index vectors below read off directly, and only the pattern's own observed parameters
+# are touched, since M and W vanish outside its observed block.
+#
+# Cost is one factorisation per missingness pattern, against the 1 + 2 * (p + p(p+1)/2) score
+# evaluations -- and as many factorisations per pattern -- that a numerical Jacobian of the
+# score needs; the difference is what makes a FIML bootstrap, which rebuilds this for every
+# replicate, affordable at realistic p.
+#
+# `sigma` must be positive definite and `Y` and `patterns` must be the matrix and grouping
+# .fiml_saturated_acov() has already prepared: it raises the classed efa_fiml_not_posdef
+# before calling, so every pattern's Sigma_oo below is safe to factor and the check is not
+# repeated per replicate.
+.fiml_saturated_information <- function(Y, mu, sigma, patterns) {
+
+  p <- ncol(Y)
+  pstar <- p * (p + 1L) / 2L
+
+  # Column-major lower-triangle position of each (row >= col) entry of vech(sigma).
+  ij <- which(lower.tri(diag(p), diag = TRUE), arr.ind = TRUE)
+  vech_pos <- matrix(0L, p, p)
+  vech_pos[ij] <- seq_len(pstar)
+
+  info <- matrix(0, p + pstar, p + pstar)
+
+  for (pat in patterns) {
+    o <- pat$o
+    k <- length(o)
+    ng <- pat$freq
+
+    A <- chol2inv(chol(sigma[o, o, drop = FALSE]))        # M on the observed block
+    C <- sweep(Y[pat$rows, o, drop = FALSE], 2L, mu[o], "-")
+    u <- as.numeric(A %*% colSums(C))
+    W <- A %*% crossprod(C) %*% A
+    P <- ng * A - W
+
+    # The pattern's own vech pairs (local indices, row >= col) and where they sit in the
+    # global vech(sigma).
+    lij <- which(lower.tri(diag(k), diag = TRUE), arr.ind = TRUE)
+    b <- lij[, 1L]
+    cl <- lij[, 2L]
+    off <- b != cl                                        # the duplicated parameters
+    gi <- p + vech_pos[cbind(o[b], o[cl])]
+
+    # Mean block.
+    info[o, o] <- info[o, o] + ng * A
+
+    # Mean-by-covariance block.
+    X <- A[, b, drop = FALSE] * rep(u[cl], each = k)
+    X[, off] <- X[, off] +
+      A[, cl[off], drop = FALSE] * rep(u[b[off]], each = k)
+    info[o, gi] <- info[o, gi] + X
+    info[gi, o] <- info[gi, o] + t(X)
+
+    # Covariance block. Each entry pairs the row parameter sigma_bc with the column
+    # parameter sigma_de. A column for an off-diagonal parameter gains the term with d and e
+    # exchanged, because that parameter sits in both Sigma[d, e] and Sigma[e, d]; a row for
+    # one carries the matching factor two from the same chain rule.
+    H <- 0.5 * (A[b, b, drop = FALSE] * P[cl, cl, drop = FALSE] -
+                  W[b, b, drop = FALSE] * A[cl, cl, drop = FALSE])
+    H[, off] <- H[, off] +
+      0.5 * (A[b, cl[off], drop = FALSE] * P[cl, b[off], drop = FALSE] -
+               W[b, cl[off], drop = FALSE] * A[cl, b[off], drop = FALSE])
+    H[off, ] <- 2 * H[off, ]
+    info[gi, gi] <- info[gi, gi] - H
+  }
+
+  # Symmetric by construction; the average removes the accumulated round-off.
+  (info + t(info)) / 2
+}
+
 # Asymptotic covariance of the Stage-1 saturated FIML estimates: the inverse observed
 # information (negative Hessian of the saturated log-likelihood) of theta = (mu, vech(sigma)),
 # and its correlation-scale variant for the off-diagonal correlations of cov2cor(sigma). The
-# information is the negative numerical Jacobian of the analytic score .fiml_saturated_score();
-# the correlation variant standardises the covariance block by the delta method. Returns a list
+# information comes from .fiml_saturated_information(); the correlation variant standardises
+# the covariance block by the delta method. Returns a list
 # with `theta` (the full ACOV on the (mu, vech(sigma)) scale) and `cor` (the off-diagonal
 # correlation ACOV in utils::combn(p, 2) order, the meat the corrected two-stage standard errors
 # reuse, on the same scale and layout as the continuous ADF covariance .adf_gamma()).
@@ -349,8 +434,8 @@
   if (is.null(nms)) nms <- names(mu)
   if (is.null(nms)) nms <- paste0("V", seq_len(p))
 
-  # Group the rows once so every score evaluation in the finite-difference loop reuses the same
-  # missingness patterns (and the same fully-missing-row filtering).
+  # Group the rows once so the information accumulates over the same missingness patterns
+  # (and the same fully-missing-row filtering) as the log-likelihood and the score.
   if (is.null(patterns)) {
     obs <- !is.na(Y)
     keep <- rowSums(obs) > 0L
@@ -359,33 +444,13 @@
   }
 
   pstar <- p * (p + 1L) / 2L
-  theta0 <- c(mu, .vech(sigma))
-  score_at <- function(theta) {
-    sig <- .unvech(theta[p + seq_len(pstar)], p)
-    .fiml_saturated_score(Y, theta[seq_len(p)], sig, patterns = patterns)
-  }
 
-  # Index pairs (row >= col) of vech(sigma) in column-major order, shared below by the finite-
-  # difference step scale, the theta labels, and the standardisation Jacobian.
+  # Index pairs (row >= col) of vech(sigma) in column-major order, shared below by the theta
+  # labels and the standardisation Jacobian.
   sds <- sqrt(diag(sigma))
   ij <- which(lower.tri(diag(p), diag = TRUE), arr.ind = TRUE)
 
-  # Observed information = -d(score)/d(theta) by central differences. A per-parameter relative
-  # step (eps^(1/3) is the central-difference optimum) keeps the Jacobian accurate across the
-  # differing scales of the means, variances, and covariances; each parameter's own scale (the
-  # variable SD for a mean, sd_i sd_j for sigma_ij) floors a near-zero parameter so the step never
-  # overshoots its variable's spread (which could otherwise drive a small variance negative).
-  d <- p + pstar
-  scale_k <- c(sds, sds[ij[, 1L]] * sds[ij[, 2L]])
-  h <- .Machine$double.eps^(1 / 3) * pmax(abs(theta0), scale_k)
-
-  info <- matrix(0, d, d)
-  for (k in seq_len(d)) {
-    tp <- theta0; tp[k] <- tp[k] + h[k]
-    tm <- theta0; tm[k] <- tm[k] - h[k]
-    info[, k] <- -(score_at(tp) - score_at(tm)) / (2 * h[k])
-  }
-  info <- (info + t(info)) / 2
+  info <- .fiml_saturated_information(Y, mu, sigma, patterns = patterns)
 
   # A singular information signals genuine near-degeneracy (coverage is validated upstream in
   # .fiml_em_moments()); refuse with its own classed condition -- distinct from the non-positive-

@@ -119,10 +119,13 @@ efa_kmo <- function(x, use = c("pairwise.complete.obs", "all.obs", "complete.obs
 # outsourced computation of KMO to
 # use it when computing CAF which needs
 # different input checks
-.compute_kmo <- function(R) {
+#
+# `R_inv` lets a caller that has already formed R^-1 hand it over instead of paying for a
+# second p x p inversion (efa_screen() builds one inverse for several measures at once).
+.compute_kmo <- function(R, R_inv = NULL) {
 
   # Check if correlation matrix is invertable, if it is not, stop with message
-  R_i <- try(solve(R), silent = TRUE)
+  R_i <- if (is.null(R_inv)) try(solve(R), silent = TRUE) else R_inv
 
   if (inherits(R_i, "try-error")) {
     cli::cli_abort("The matrix is singular; KMO cannot be computed.",
