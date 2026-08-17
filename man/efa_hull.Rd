@@ -156,7 +156,7 @@ provide example code on how to enable parallel processing.
 The upper bound \emph{J} comes from \code{\link[=efa_parallel]{efa_parallel()}}, which compares against simulated
 data, so the suggested number of factors varies slightly from run to run; a
 criterion-based rotation passed through \code{...} adds its own random starts. Call
-\code{\link[=set.seed]{set.seed()}} beforehand to make a run reproducible; the result is then also
+\code{\link[base:set.seed]{base::set.seed()}} beforehand to make a run reproducible; the result is then also
 independent of the parallel plan.
 
 Note that if \code{gof = "RMSEA"} is used, 1 - RMSEA is actually used to

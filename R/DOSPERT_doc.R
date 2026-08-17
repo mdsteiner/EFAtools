@@ -1,6 +1,6 @@
 #' DOSPERT
 #'
-#' A list containing the the bivariate correlations (cormat) of the 40 items of
+#' A list containing the bivariate correlations (cormat) of the 40 items of
 #' the Domain Specific Risk Taking Scale (DOSPERT; Weber, Blais, & Betz, 2002)
 #' and the sample size (N) based on the publicly available dataset at
 #' (<https://osf.io/rce7g>) of the Basel-Berlin Risk Study (Frey et al., 2017).

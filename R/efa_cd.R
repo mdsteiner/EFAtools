@@ -1,8 +1,8 @@
 #' Comparison data
 #'
 #' Factor retention method introduced by Ruscio and Roche (2012). The code was
-#' adapted from the CD code by Auerswald and Moshagen (2019) available at
-#' <https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668>
+#' adapted from the CD code published by Auerswald and Moshagen (2019), available
+#' at <https://osf.io/x5cz2/>.
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data.
 #' @param n_factors_max numeric. The maximum number of factors to test against.
@@ -40,7 +40,7 @@
 #' look at a correlation matrix.
 #'
 #' The comparison data are obtained by simulation, so the suggested number of factors
-#' varies slightly from run to run. Call [set.seed()] beforehand to make a run
+#' varies slightly from run to run. Call [base::set.seed()] beforehand to make a run
 #' reproducible.
 #'
 #' Note that if the data contains missing values, these will be removed for the

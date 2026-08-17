@@ -139,7 +139,7 @@ the shared variance is already accounted in the first eigenvalue (e.g.,
 Braeken & van Assen, 2017).
 
 The reference eigenvalues are obtained from simulated data, so the suggested number
-of factors varies slightly from run to run. Call \code{\link[=set.seed]{set.seed()}} beforehand to make a
+of factors varies slightly from run to run. Call \code{\link[base:set.seed]{base::set.seed()}} beforehand to make a
 run reproducible; the result is then also independent of the parallel plan set via
 \code{\link[future:plan]{future::plan()}}, so it can be reproduced on a machine with a different number of
 cores. The simulation is drawn in independently seeded blocks; a block that fails --

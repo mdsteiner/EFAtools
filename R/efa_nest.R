@@ -58,7 +58,7 @@
 #'  NEST aborts rather than continuing from an inadmissible reference.
 #'
 #'  The reference eigenvalues are obtained from simulated data, so the suggested number
-#'  of factors varies slightly from run to run. Call [set.seed()] beforehand to make a
+#'  of factors varies slightly from run to run. Call [base::set.seed()] beforehand to make a
 #'  run reproducible.
 #'
 #'  For details on the method, including simulation studies, see Achim (2017),

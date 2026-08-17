@@ -106,7 +106,7 @@ one of them leaves no unique variance to simulate the reference data from, so
 NEST aborts rather than continuing from an inadmissible reference.
 
 The reference eigenvalues are obtained from simulated data, so the suggested number
-of factors varies slightly from run to run. Call \code{\link[=set.seed]{set.seed()}} beforehand to make a
+of factors varies slightly from run to run. Call \code{\link[base:set.seed]{base::set.seed()}} beforehand to make a
 run reproducible.
 
 For details on the method, including simulation studies, see Achim (2017),

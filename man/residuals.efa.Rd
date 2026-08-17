@@ -22,7 +22,7 @@ A numeric matrix of residual correlations.
 \description{
 Returns the residual correlation matrix of an \code{\link[=efa_fit]{efa_fit()}} or \code{\link[=efa_mi]{efa_mi()}}
 solution. Residuals are a pure extractor here; their diagnostics and a
-formatted display are part of \code{\link[=summary]{summary()}} of the efa object.
+formatted display are part of \code{\link[=summary.efa]{summary.efa()}}.
 }
 \examples{
 efa <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500)

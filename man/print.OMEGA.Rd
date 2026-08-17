@@ -13,7 +13,7 @@
 \item{x}{An object of class \code{OMEGA} (output from \code{\link[=OMEGA]{OMEGA()}}).}
 
 \item{digits}{Integer. The number of decimal places the coefficients are
-rounded to (passed to \code{\link[=round]{round()}}). Default is 3.}
+rounded to (passed to \code{\link[base:round]{base::round()}}). Default is 3.}
 
 \item{...}{Not used; for consistency with the generic.}
 }

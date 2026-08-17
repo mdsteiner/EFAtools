@@ -246,7 +246,7 @@
 #'   or more after matching factors and signs. Because every start is fully optimised (there
 #'   is no screening stage), raising `random_starts` to several hundred costs proportionally
 #'   more time but buys a better optimum; always fix the generator with `seed` (or
-#'   [set.seed()]) when reporting a simplimax solution.
+#'   [base::set.seed()]) when reporting a simplimax solution.
 #' - **bentlerQ** is the oblique Bentler invariant pattern simplicity criterion.
 #' - **geominQ** is the oblique geomin criterion; it handles complex (cross-loading)
 #'   structure well but is multimodal, so it benefits from more `random_starts` (and uses a
@@ -264,7 +264,7 @@
 #' complexity criteria (simplimax and geominQ in particular) are the most multimodal. The
 #' starts are drawn from the random-number generator, so different starts can reach
 #' genuinely different optima and such a fit is reproducible only when the generator is
-#' controlled: pass `seed`, or call [set.seed()] beforehand. `precision` and `maxit` govern
+#' controlled: pass `seed`, or call [base::set.seed()] beforehand. `precision` and `maxit` govern
 #' different stages of a rotation and are described with the arguments themselves in
 #' [rotate_control()]. The
 #' `type` argument changes the varimax and promax settings (see *Using the type presets*)
@@ -517,7 +517,7 @@
 #'
 #' If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 #' this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
-#' fail, but uses the Moore-Penrose Psudo Inverse of a matrix, thus, taking "unity"
+#' fail, but uses the Moore-Penrose Pseudo Inverse of a matrix, thus, taking "unity"
 #' is only necessary if negative eigenvalues occur afterwards in the iterative
 #' PAF procedure. The EFAtools type setting combination was the best in terms of accuracy
 #' and number of Heywood cases compared to all the
@@ -557,7 +557,7 @@
 #' "unnorm" uses the formula from Hendrickson and White (1964), specifically:
 #' `P = abs(A^(k + 1)) / A`,
 #' where A is the unnormalized matrix containing varimax rotated loadings.
-#' "norm" uses the normalized varimax rotated loadings. Specifically it used the
+#' "norm" uses the normalized varimax rotated loadings. Specifically it uses the
 #' following formula, which can be found in the SPSS 23 and SPSS 27 Algorithms manuals:
 #' `P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)`.
 #' As for PAF, the EFAtools type setting combination for promax was the best

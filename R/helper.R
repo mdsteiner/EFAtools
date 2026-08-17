@@ -1,20 +1,22 @@
 #' Extract a list object by its name
 #'
-#' @author Andreas Soteriades
-#'
 #' Consider a list of named sub-lists. This function extracts, for each sub-list,
 #' the sub-list element that is specified by the user. This function is useful
-#' for extracting results from [efa_fit()] for each permutation run in
+#' for extracting results from [efa_fit()] for each imputation in
 #' [efa_mi()].
 #'
 #' @param alist A list of sub-lists, typically a list of \eqn{m} objects of class
-#' `"EFA"`, where \eqn{m} is the number of imputations passed to
+#' `"efa"`, where \eqn{m} is the number of imputations passed to
 #' [efa_mi()].
 #' @param object String of length 1. The name of the object to extract e.g.
 #' `"h2"` or `"vars_accounted"`.
 #'
 #' @return A list of length \eqn{m}, with each element containing the extracted
 #' `object` for the \eqn{k}th element (\eqn{k = 1,..., m}).
+#'
+#' @author Andreas Soteriades
+#'
+#' @keywords internal
 .extract_list_object <- function(alist, object) {
   lapply(
     alist,
@@ -106,12 +108,10 @@
 
 #' Convert an `"efa_loadings"` table to matrix or a matrix to `"efa_loadings"`
 #'
-#' @author Andreas Soteriades
-#'
 #' The loadings tables returned by [efa_fit()] are of class
 #' `c("efa_loadings", "LOADINGS")`, which prevents applying functions on them.
-#' This function allows to change their class to `"matrix"`, and to change back
-#' to `"efa_loadings"` when done.
+#' This function changes their class to `"matrix"`, and changes it back to
+#' `"efa_loadings"` when done.
 #'
 #' @param x A table of class `"matrix"` or `"efa_loadings"`.
 #' @param cl A character vector with the class to change the table to. Should be
@@ -119,6 +119,10 @@
 #'
 #' @return A table with the loadings, of class either `"efa_loadings"` or
 #' `"matrix"`.
+#'
+#' @author Andreas Soteriades
+#'
+#' @keywords internal
 .change_class <- function(x, cl = 'matrix') {
   class(x) <- cl
   return(x)

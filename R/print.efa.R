@@ -3,7 +3,7 @@
 #' `print()` shows a concise overview of an [efa_fit()] or [efa_mi()] solution:
 #' a model header, the loading matrix (with the factor intercorrelations for
 #' oblique solutions), the variances accounted for, and the model fit.
-#' [summary()] returns a `summary.efa` object whose print method adds the full
+#' `summary()` returns a `summary.efa` object whose print method adds the full
 #' diagnostics: model and simple-structure diagnostics, confidence-interval
 #' tables, the structure matrix, multiple-imputation uncertainty (for pooled
 #' objects), and residual diagnostics. `format()` assembles the same report and
@@ -16,16 +16,16 @@
 #' The methods are shared by single-imputation `efa` objects and pooled
 #' `efa_mi` objects. For `efa_mi` objects the header reports the number
 #' of imputations and the alignment/pooling settings; confidence intervals and a
-#' multiple-imputation uncertainty summary are shown by [summary()] when the
+#' multiple-imputation uncertainty summary are shown by `summary()` when the
 #' pooled object carries bootstrap/MI quantities.
 #'
-#' In [summary()], `ci_filter` controls which loading intervals are shown:
+#' In `summary()`, `ci_filter` controls which loading intervals are shown:
 #' `"salient"` reports intervals for loadings whose absolute point estimate is at
 #' least `cutoff`, `"nonzero"` reports intervals excluding zero, and `"all"`
 #' reports every finite interval.
 #'
 #' @param x,object An object of class `efa` (from [efa_fit()]) or `efa_mi` (from [efa_mi()]); for
-#'   the `summary.efa` methods, the object returned by [summary()].
+#'   the `summary.efa` methods, the object returned by `summary()`.
 #' @param cutoff numeric. The absolute value at or above which loadings are
 #'   emphasised in the loading table. Default is .3.
 #' @param digits numeric. Number of decimal places for the printed tables.
@@ -45,27 +45,27 @@
 #'   output it is omitted and this argument has no effect.
 #' @param max_factors_per_block numeric or `NULL`. Maximum number of factor
 #'   columns per loading-table block. If `NULL`, chosen from the console width.
-#' @param ci character. Which confidence intervals [summary()] shows, if
+#' @param ci character. Which confidence intervals `summary()` shows, if
 #'   available. `"auto"` and `"separate"` print CI sections when CIs were
 #'   computed; `"none"` suppresses them. Default is `"auto"`.
-#' @param ci_filter character. Which loading CIs [summary()] prints: `"salient"`
+#' @param ci_filter character. Which loading CIs `summary()` prints: `"salient"`
 #'   (default), `"all"`, or `"nonzero"`; see Details.
 #' @param diagnostics_top_n numeric. Maximum number of item-level entries
-#'   [summary()] prints per simple-structure diagnostic.
+#'   `summary()` prints per simple-structure diagnostic.
 #' @param residual_cutoff numeric. Absolute residual cutoff for the residual
-#'   diagnostics in [summary()]. Default is .1.
-#' @param residual_top_n numeric. Maximum number of residuals [summary()] prints.
+#'   diagnostics in `summary()`. Default is .1.
+#' @param residual_top_n numeric. Maximum number of residuals `summary()` prints.
 #'   Use `Inf` to print all residuals above `residual_cutoff`.
-#' @param show_structure logical. Whether [summary()] prints the structure matrix
+#' @param show_structure logical. Whether `summary()` prints the structure matrix
 #'   for oblique solutions when available. Default is `TRUE`.
 #' @param cross_loading_cutoff numeric. Cutoff for counting cross-loadings in the
-#'   [summary()] diagnostics. Defaults to `cutoff`.
+#'   `summary()` diagnostics. Defaults to `cutoff`.
 #' @param min_primary_gap numeric. Minimum desired absolute difference between the
 #'   largest and second-largest absolute loading of an item, used in the
-#'   [summary()] diagnostics.
+#'   `summary()` diagnostics.
 #' @param min_salient_per_factor numeric. Minimum number of salient indicators per
-#'   factor used in the [summary()] diagnostics. Default is 3.
-#' @param show_mi_diagnostics logical or `NULL`. Whether [summary()] prints a
+#'   factor used in the `summary()` diagnostics. Default is 3.
+#' @param show_mi_diagnostics logical or `NULL`. Whether `summary()` prints a
 #'   multiple-imputation uncertainty summary for pooled EFAs. `NULL` shows it for
 #'   pooled objects.
 #' @param ... Further arguments passed to [print.efa_loadings()].

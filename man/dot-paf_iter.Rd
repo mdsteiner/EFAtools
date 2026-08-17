@@ -25,3 +25,4 @@
 Function called from within PAF so usually no call to this is needed by the user.
 Provides a C++ implementation of the PAF procedure
 }
+\keyword{internal}

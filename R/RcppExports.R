@@ -42,6 +42,8 @@
 #' @param x numeric matrix. A matrix of pattern coefficients.
 #' @param y numeric matrix. A second matrix of coefficients.
 #' @param thresh numeric. The threshold to classify a pattern coefficient as substantial.
+#'
+#' @keywords internal
 .factor_corres <- function(x, y, thresh = 0.3) {
     .Call(`_EFAtools_factor_corres`, x, y, thresh)
 }
@@ -181,6 +183,8 @@
 #' @param abs_eig logical. Whether absolute eigenvalues should be used to compute the loadings.
 #' @param crit_type numeric. Whether maximum absolute differences (crit_type = 1), or sum of differences (crit_type = 2) should be used
 #' @param max_iter numeric. The number of iterations after which to end the procedure if no convergence has been reached by then.
+#'
+#' @keywords internal
 .paf_iter <- function(h2, criterion, R, n_fac, abs_eig, crit_type, max_iter) {
     .Call(`_EFAtools_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
 }
@@ -195,6 +199,8 @@
 #' @param N numeric. Number of cases / observations in dataset.
 #' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1), SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs), or both from the same simulated datasets (eigen_type = 3), in which case the returned matrix holds the PCA eigenvalues in the first n_vars columns and the SMC eigenvalues in the next n_vars.
 #' @param maxit numeric. Maximum iterations to perform after which to abort.
+#'
+#' @keywords internal
 .parallel_sim <- function(n_datasets, n_vars, N, eigen_type, maxit = 10000L) {
     .Call(`_EFAtools_parallel_sim`, n_datasets, n_vars, N, eigen_type, maxit)
 }
@@ -645,6 +651,8 @@
 #' @param R numeric matrix. Population correlation/covariance matrix.
 #' @param N integer. Number of cases to draw.
 #' @param tol numeric. Eigenvalues below `-tol` mark `R` as indefinite.
+#'
+#' @keywords internal
 .simulate_cfm_mvn <- function(R, N, tol = 1e-8) {
     .Call(`_EFAtools_simulate_cfm_mvn`, R, N, tol)
 }
@@ -669,6 +677,8 @@
 #'   (`p x (nf - 1)`); pass a `p x 0` matrix for the `nf == 1` null (identity) model.
 #' @param Psi numeric vector. Uniquenesses (`1 - h2`) of the reference model.
 #' @param nreps integer. Number of datasets to simulate.
+#'
+#' @keywords internal
 .simulate_cfm_eigen <- function(nf, N, Lambda, Psi, nreps = 1000L) {
     .Call(`_EFAtools_simulate_cfm_eigen`, nf, N, Lambda, Psi, nreps)
 }

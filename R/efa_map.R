@@ -87,7 +87,7 @@
 #' Human Assessment: Honoring Douglas N. Jackson at Seventy* (pp. 41--71). Boston: Kluwer.
 #' @source Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
 #' determining the number of components to retain. *Psychological Bulletin, 99*,
-#' 432--442. http://dx.doi.org/10.1037/0033-2909.99.3.432
+#' 432--442. https://doi.org/10.1037/0033-2909.99.3.432
 #'
 #'
 #' @examples

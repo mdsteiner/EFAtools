@@ -18,6 +18,8 @@
 #'  cumulative. The three cumulative and common-variance rows are omitted when
 #'  `L_rot` has a single column, where they would only repeat the two above them,
 #'  so the result has two rows there and five otherwise.
+#'
+#' @keywords internal
 .compute_vars <- function(L_unrot, L_rot, Phi = NULL) {
 
   if (is.null(Phi)) {

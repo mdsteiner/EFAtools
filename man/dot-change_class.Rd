@@ -17,13 +17,12 @@ A table with the loadings, of class either \code{"efa_loadings"} or
 \code{"matrix"}.
 }
 \description{
-Convert an \code{"efa_loadings"} table to matrix or a matrix to \code{"efa_loadings"}
+The loadings tables returned by \code{\link[=efa_fit]{efa_fit()}} are of class
+\code{c("efa_loadings", "LOADINGS")}, which prevents applying functions on them.
+This function changes their class to \code{"matrix"}, and changes it back to
+\code{"efa_loadings"} when done.
 }
 \author{
 Andreas Soteriades
-
-The loadings tables returned by \code{\link[=efa_fit]{efa_fit()}} are of class
-\code{c("efa_loadings", "LOADINGS")}, which prevents applying functions on them.
-This function allows to change their class to \code{"matrix"}, and to change back
-to \code{"efa_loadings"} when done.
 }
+\keyword{internal}

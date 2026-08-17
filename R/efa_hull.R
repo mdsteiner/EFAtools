@@ -82,7 +82,7 @@
 #'   The upper bound *J* comes from [efa_parallel()], which compares against simulated
 #'   data, so the suggested number of factors varies slightly from run to run; a
 #'   criterion-based rotation passed through `...` adds its own random starts. Call
-#'   [set.seed()] beforehand to make a run reproducible; the result is then also
+#'   [base::set.seed()] beforehand to make a run reproducible; the result is then also
 #'   independent of the parallel plan.
 #'
 #'   Note that if `gof = "RMSEA"` is used, 1 - RMSEA is actually used to

@@ -31,3 +31,4 @@ post-multiplying by the factor-score matrix is faster than forming the model-
 implied correlation matrix and drawing from it, and matches the position at which
 efa_nest() reads the reference eigenvalue.
 }
+\keyword{internal}

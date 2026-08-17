@@ -8,7 +8,7 @@
 }
 \arguments{
 \item{alist}{A list of sub-lists, typically a list of \eqn{m} objects of class
-\code{"EFA"}, where \eqn{m} is the number of imputations passed to
+\code{"efa"}, where \eqn{m} is the number of imputations passed to
 \code{\link[=efa_mi]{efa_mi()}}.}
 
 \item{object}{String of length 1. The name of the object to extract e.g.
@@ -19,13 +19,12 @@ A list of length \eqn{m}, with each element containing the extracted
 \code{object} for the \eqn{k}th element (\eqn{k = 1,..., m}).
 }
 \description{
-Extract a list object by its name
+Consider a list of named sub-lists. This function extracts, for each sub-list,
+the sub-list element that is specified by the user. This function is useful
+for extracting results from \code{\link[=efa_fit]{efa_fit()}} for each imputation in
+\code{\link[=efa_mi]{efa_mi()}}.
 }
 \author{
 Andreas Soteriades
-
-Consider a list of named sub-lists. This function extracts, for each sub-list,
-the sub-list element that is specified by the user. This function is useful
-for extracting results from \code{\link[=efa_fit]{efa_fit()}} for each permutation run in
-\code{\link[=efa_mi]{efa_mi()}}.
 }
+\keyword{internal}

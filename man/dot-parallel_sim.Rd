@@ -21,3 +21,4 @@
 Function called from within efa_parallel() so usually no call to this is needed by the user.
 Provides a C++ implementation of the efa_parallel() simulation procedure
 }
+\keyword{internal}

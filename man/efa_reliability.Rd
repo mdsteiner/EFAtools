@@ -193,8 +193,8 @@ Structurally undefined cells (for example ECV and PUC on a group factor) are
 omitted. The object carries a \code{settings} attribute (the total-variance
 convention used, and whether the solution has a general factor) and a
 \code{kind} attribute tagging each coefficient as a
-reliability coefficient or a common-variance index, and has a \code{\link[=print]{print()}}
-method.
+reliability coefficient or a common-variance index, and has a
+\code{\link[=print.efa_reliability]{print.efa_reliability()}} method.
 }
 \description{
 Computes model-based reliability coefficients (McDonald's omega total,

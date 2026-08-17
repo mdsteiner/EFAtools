@@ -20,7 +20,7 @@
 }
 \arguments{
 \item{x, object}{An object of class \code{efa_scores}; for the \code{summary.efa_scores}
-methods, the object returned by \code{\link[=summary]{summary()}}.}
+methods, the object returned by \code{summary()}.}
 
 \item{digits}{numeric. Number of decimal places for the printed tables.
 Default is 3.}
@@ -36,7 +36,7 @@ report lines. \code{summary()} returns an object of class \code{summary.efa_scor
 \code{print()} shows a concise overview of an \code{\link[=efa_scores]{efa_scores()}} result: a header naming
 the method and whether factor scores were computed, and the per-factor
 determinacy table (determinacy, squared determinacy, and Guttman index).
-\code{\link[=summary]{summary()}} returns a \code{summary.efa_scores} object whose print method adds the
+\code{summary()} returns a \code{summary.efa_scores} object whose print method adds the
 full factor-weight matrix, the score validity/univocality matrix, and the score
 intercorrelations. \code{format()} assembles the same report and returns it as a
 character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}. The lines follow

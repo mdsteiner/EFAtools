@@ -27,3 +27,4 @@ From unrotated loadings compute the communalities and uniquenesses for total
 variance. Compute explained variances per factor from rotated loadings (and
 factor intercorrelations Phi if oblique rotation was used).
 }
+\keyword{internal}

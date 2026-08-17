@@ -13,7 +13,7 @@
 #' perform. Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`,
 #' `"KGC"`, `"MAP"`, `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"`
 #' (see details). By default, a subset of often used, well-performing methods
-#' are performed.
+#' are performed; the details name them.
 #' @param suitability logical. Whether the data should be checked for suitability
 #' for factor analysis using the Bartlett's test of sphericity and the
 #' Kaiser-Meyer-Olkin criterion (see details). Default is `TRUE`.
@@ -133,6 +133,7 @@
 #'   \item Empirical Kaiser criterion (see [efa_ekc()])
 #'   \item Hull method (see [efa_hull()])
 #'   \item Kaiser-Guttman criterion (see [efa_kgc()])
+#'   \item Velicer's minimum average partial, MAP (see [efa_map()])
 #'   \item Parallel analysis (see [efa_parallel()])
 #'   \item Next Eigenvalue Sufficiency Test, NEST (see [efa_nest()])
 #'   \item Scree plot (see [efa_scree()])
@@ -140,10 +141,17 @@
 #'     (see [efa_smt()])
 #' }
 #'
+#' The default `criteria` are comparison data, the empirical Kaiser criterion, the
+#' Hull method, MAP, NEST, and parallel analysis. No single criterion is the most
+#' accurate in all conditions. `efa_retain()` therefore runs several criteria
+#' together, and the printed summary gives the range of their suggestions and the
+#' most common one. Auerswald and Moshagen (2019) compare the criteria and give
+#' guidance on the selection.
+#'
 #' The comparison data, parallel analysis, and NEST criteria compare the data against
 #' simulated reference data, so their suggested numbers of factors vary slightly from run
 #' to run; the Hull method does too, because it calls [efa_parallel()] to set its upper
-#' bound. Call [set.seed()] before `efa_retain()` to make them reproducible.
+#' bound. Call [base::set.seed()] before `efa_retain()` to make them reproducible.
 #'
 #' @returns A list of class `c("efa_retain", "N_FACTORS")`, the trailing class
 #'   keeping `inherits(x, "N_FACTORS")` working for code written against the
@@ -171,6 +179,11 @@
 #'   goodness-of-fit indices and `gof_used` the ones the Hull method actually computed
 #'   (it reduces them to `"CAF"` for the PAF estimator); `gof_used` is `NA` when HULL was
 #'   not requested, was skipped, or failed.}
+#'
+#' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
+#' factors to retain in exploratory factor analysis: A comparison of extraction
+#' methods under realistic conditions. Psychological Methods, 24(4), 468–491.
+#' https://doi.org/10.1037/met0000200
 #'
 #' @seealso [efa_screen()] for data screening before retention, and [efa_fit()] to extract
 #'  the chosen number of factors.

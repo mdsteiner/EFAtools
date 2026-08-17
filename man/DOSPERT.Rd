@@ -25,7 +25,7 @@ Frey, R., Pedroni, A., Mata, R., Rieskamp, J., & Hertwig, R. (2017). Risk prefer
 DOSPERT
 }
 \description{
-A list containing the the bivariate correlations (cormat) of the 40 items of
+A list containing the bivariate correlations (cormat) of the 40 items of
 the Domain Specific Risk Taking Scale (DOSPERT; Weber, Blais, & Betz, 2002)
 and the sample size (N) based on the publicly available dataset at
 (\url{https://osf.io/rce7g}) of the Basel-Berlin Risk Study (Frey et al., 2017).

@@ -250,8 +250,8 @@
 #'   omitted. The object carries a `settings` attribute (the total-variance
 #'   convention used, and whether the solution has a general factor) and a
 #'   `kind` attribute tagging each coefficient as a
-#'   reliability coefficient or a common-variance index, and has a [print()]
-#'   method.
+#'   reliability coefficient or a common-variance index, and has a
+#'   [print.efa_reliability()] method.
 #'
 #' @source McDonald, R. P. (1978). Generalizability in factorable domains: Domain
 #'   validity and generalizability. Educational and Psychological Measurement, 38,

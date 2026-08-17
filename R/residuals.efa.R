@@ -2,7 +2,7 @@
 #'
 #' Returns the residual correlation matrix of an [efa_fit()] or [efa_mi()]
 #' solution. Residuals are a pure extractor here; their diagnostics and a
-#' formatted display are part of [summary()] of the efa object.
+#' formatted display are part of [summary.efa()].
 #'
 #' @param object a list of class `efa`. Output from [efa_fit()] or [efa_mi()].
 #' @param type character. Which residuals to return. `"raw"` (default) returns

@@ -502,7 +502,7 @@ at the default \code{random_starts = 100}, and the corresponding loadings can di
 or more after matching factors and signs. Because every start is fully optimised (there
 is no screening stage), raising \code{random_starts} to several hundred costs proportionally
 more time but buys a better optimum; always fix the generator with \code{seed} (or
-\code{\link[=set.seed]{set.seed()}}) when reporting a simplimax solution.
+\code{\link[base:set.seed]{base::set.seed()}}) when reporting a simplimax solution.
 \item \strong{bentlerQ} is the oblique Bentler invariant pattern simplicity criterion.
 \item \strong{geominQ} is the oblique geomin criterion; it handles complex (cross-loading)
 structure well but is multimodal, so it benefits from more \code{random_starts} (and uses a
@@ -521,7 +521,7 @@ projection with \code{random_starts} random starts to guard against local minima
 complexity criteria (simplimax and geominQ in particular) are the most multimodal. The
 starts are drawn from the random-number generator, so different starts can reach
 genuinely different optima and such a fit is reproducible only when the generator is
-controlled: pass \code{seed}, or call \code{\link[=set.seed]{set.seed()}} beforehand. \code{precision} and \code{maxit} govern
+controlled: pass \code{seed}, or call \code{\link[base:set.seed]{base::set.seed()}} beforehand. \code{precision} and \code{maxit} govern
 different stages of a rotation and are described with the arguments themselves in
 \code{\link[=rotate_control]{rotate_control()}}. The
 \code{type} argument changes the varimax and promax settings (see \emph{Using the type presets})
@@ -779,7 +779,7 @@ For PAF, the values of \code{init_comm}, \code{criterion}, \code{criterion_type}
 
 If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute eigenvalues,
 this is hardly ever the case. Psych, on the other hand, takes "unity" if SMCs
-fail, but uses the Moore-Penrose Psudo Inverse of a matrix, thus, taking "unity"
+fail, but uses the Moore-Penrose Pseudo Inverse of a matrix, thus, taking "unity"
 is only necessary if negative eigenvalues occur afterwards in the iterative
 PAF procedure. The EFAtools type setting combination was the best in terms of accuracy
 and number of Heywood cases compared to all the
@@ -816,7 +816,7 @@ which formula is used to compute the target matrix P in the promax rotation.
 "unnorm" uses the formula from Hendrickson and White (1964), specifically:
 \code{P = abs(A^(k + 1)) / A},
 where A is the unnormalized matrix containing varimax rotated loadings.
-"norm" uses the normalized varimax rotated loadings. Specifically it used the
+"norm" uses the normalized varimax rotated loadings. Specifically it uses the
 following formula, which can be found in the SPSS 23 and SPSS 27 Algorithms manuals:
 \code{P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)}.
 As for PAF, the EFAtools type setting combination for promax was the best

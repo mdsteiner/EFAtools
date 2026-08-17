@@ -47,6 +47,8 @@ static inline arma::mat cfm_draw(const int N, const arma::mat& M,
 //' @param R numeric matrix. Population correlation/covariance matrix.
 //' @param N integer. Number of cases to draw.
 //' @param tol numeric. Eigenvalues below `-tol` mark `R` as indefinite.
+//'
+//' @keywords internal
 // [[Rcpp::export(.simulate_cfm_mvn)]]
 arma::mat simulate_cfm_mvn(const arma::mat& R, const int N,
                            const double tol = 1e-8) {
@@ -101,6 +103,8 @@ arma::mat simulate_cfm_mvn(const arma::mat& R, const int N,
 //'   (`p x (nf - 1)`); pass a `p x 0` matrix for the `nf == 1` null (identity) model.
 //' @param Psi numeric vector. Uniquenesses (`1 - h2`) of the reference model.
 //' @param nreps integer. Number of datasets to simulate.
+//'
+//' @keywords internal
 // [[Rcpp::export(.simulate_cfm_eigen)]]
 arma::vec simulate_cfm_eigen(const int nf, const int N, const arma::mat& Lambda,
                              const arma::vec& Psi, const int nreps = 1000) {

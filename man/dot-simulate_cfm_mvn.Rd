@@ -25,3 +25,4 @@ singular \code{R} (which makes the Cholesky fail although it is still a valid
 covariance, e.g. a no-factor block or a smoothed factor intercorrelation
 matrix) falls back to a symmetric eigen square root.
 }
+\keyword{internal}

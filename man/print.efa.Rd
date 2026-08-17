@@ -57,7 +57,7 @@
 }
 \arguments{
 \item{x, object}{An object of class \code{efa} (from \code{\link[=efa_fit]{efa_fit()}}) or \code{efa_mi} (from \code{\link[=efa_mi]{efa_mi()}}); for
-the \code{summary.efa} methods, the object returned by \code{\link[=summary]{summary()}}.}
+the \code{summary.efa} methods, the object returned by \code{summary()}.}
 
 \item{...}{Further arguments passed to \code{\link[=print.efa_loadings]{print.efa_loadings()}}.}
 
@@ -86,36 +86,36 @@ output it is omitted and this argument has no effect.}
 \item{max_factors_per_block}{numeric or \code{NULL}. Maximum number of factor
 columns per loading-table block. If \code{NULL}, chosen from the console width.}
 
-\item{ci}{character. Which confidence intervals \code{\link[=summary]{summary()}} shows, if
+\item{ci}{character. Which confidence intervals \code{summary()} shows, if
 available. \code{"auto"} and \code{"separate"} print CI sections when CIs were
 computed; \code{"none"} suppresses them. Default is \code{"auto"}.}
 
-\item{ci_filter}{character. Which loading CIs \code{\link[=summary]{summary()}} prints: \code{"salient"}
+\item{ci_filter}{character. Which loading CIs \code{summary()} prints: \code{"salient"}
 (default), \code{"all"}, or \code{"nonzero"}; see Details.}
 
 \item{diagnostics_top_n}{numeric. Maximum number of item-level entries
-\code{\link[=summary]{summary()}} prints per simple-structure diagnostic.}
+\code{summary()} prints per simple-structure diagnostic.}
 
 \item{residual_cutoff}{numeric. Absolute residual cutoff for the residual
-diagnostics in \code{\link[=summary]{summary()}}. Default is .1.}
+diagnostics in \code{summary()}. Default is .1.}
 
-\item{residual_top_n}{numeric. Maximum number of residuals \code{\link[=summary]{summary()}} prints.
+\item{residual_top_n}{numeric. Maximum number of residuals \code{summary()} prints.
 Use \code{Inf} to print all residuals above \code{residual_cutoff}.}
 
-\item{show_structure}{logical. Whether \code{\link[=summary]{summary()}} prints the structure matrix
+\item{show_structure}{logical. Whether \code{summary()} prints the structure matrix
 for oblique solutions when available. Default is \code{TRUE}.}
 
 \item{cross_loading_cutoff}{numeric. Cutoff for counting cross-loadings in the
-\code{\link[=summary]{summary()}} diagnostics. Defaults to \code{cutoff}.}
+\code{summary()} diagnostics. Defaults to \code{cutoff}.}
 
 \item{min_primary_gap}{numeric. Minimum desired absolute difference between the
 largest and second-largest absolute loading of an item, used in the
-\code{\link[=summary]{summary()}} diagnostics.}
+\code{summary()} diagnostics.}
 
 \item{min_salient_per_factor}{numeric. Minimum number of salient indicators per
-factor used in the \code{\link[=summary]{summary()}} diagnostics. Default is 3.}
+factor used in the \code{summary()} diagnostics. Default is 3.}
 
-\item{show_mi_diagnostics}{logical or \code{NULL}. Whether \code{\link[=summary]{summary()}} prints a
+\item{show_mi_diagnostics}{logical or \code{NULL}. Whether \code{summary()} prints a
 multiple-imputation uncertainty summary for pooled EFAs. \code{NULL} shows it for
 pooled objects.}
 }
@@ -128,7 +128,7 @@ lines. \code{summary()} returns an object of class \code{summary.efa}.
 \code{print()} shows a concise overview of an \code{\link[=efa_fit]{efa_fit()}} or \code{\link[=efa_mi]{efa_mi()}} solution:
 a model header, the loading matrix (with the factor intercorrelations for
 oblique solutions), the variances accounted for, and the model fit.
-\code{\link[=summary]{summary()}} returns a \code{summary.efa} object whose print method adds the full
+\code{summary()} returns a \code{summary.efa} object whose print method adds the full
 diagnostics: model and simple-structure diagnostics, confidence-interval
 tables, the structure matrix, multiple-imputation uncertainty (for pooled
 objects), and residual diagnostics. \code{format()} assembles the same report and
@@ -141,10 +141,10 @@ disabled (for example when captured into a file or stripped with
 The methods are shared by single-imputation \code{efa} objects and pooled
 \code{efa_mi} objects. For \code{efa_mi} objects the header reports the number
 of imputations and the alignment/pooling settings; confidence intervals and a
-multiple-imputation uncertainty summary are shown by \code{\link[=summary]{summary()}} when the
+multiple-imputation uncertainty summary are shown by \code{summary()} when the
 pooled object carries bootstrap/MI quantities.
 
-In \code{\link[=summary]{summary()}}, \code{ci_filter} controls which loading intervals are shown:
+In \code{summary()}, \code{ci_filter} controls which loading intervals are shown:
 \code{"salient"} reports intervals for loadings whose absolute point estimate is at
 least \code{cutoff}, \code{"nonzero"} reports intervals excluding zero, and \code{"all"}
 reports every finite interval.

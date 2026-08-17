@@ -3,6 +3,12 @@
 \name{efa_retain}
 \alias{efa_retain}
 \title{Various factor retention criteria}
+\source{
+Auerswald, M., & Moshagen, M. (2019). How to determine the number of
+factors to retain in exploratory factor analysis: A comparison of extraction
+methods under realistic conditions. Psychological Methods, 24(4), 468–491.
+https://doi.org/10.1037/met0000200
+}
 \usage{
 efa_retain(
   x,
@@ -43,7 +49,7 @@ data.}
 perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
 \code{"KGC"}, \code{"MAP"}, \code{"NEST"},\code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
 (see details). By default, a subset of often used, well-performing methods
-are performed.}
+are performed; the details name them.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
 for factor analysis using the Bartlett's test of sphericity and the
@@ -222,6 +228,7 @@ documentations for details):
 \item Empirical Kaiser criterion (see \code{\link[=efa_ekc]{efa_ekc()}})
 \item Hull method (see \code{\link[=efa_hull]{efa_hull()}})
 \item Kaiser-Guttman criterion (see \code{\link[=efa_kgc]{efa_kgc()}})
+\item Velicer's minimum average partial, MAP (see \code{\link[=efa_map]{efa_map()}})
 \item Parallel analysis (see \code{\link[=efa_parallel]{efa_parallel()}})
 \item Next Eigenvalue Sufficiency Test, NEST (see \code{\link[=efa_nest]{efa_nest()}})
 \item Scree plot (see \code{\link[=efa_scree]{efa_scree()}})
@@ -229,10 +236,17 @@ documentations for details):
 (see \code{\link[=efa_smt]{efa_smt()}})
 }
 
+The default \code{criteria} are comparison data, the empirical Kaiser criterion, the
+Hull method, MAP, NEST, and parallel analysis. No single criterion is the most
+accurate in all conditions. \code{efa_retain()} therefore runs several criteria
+together, and the printed summary gives the range of their suggestions and the
+most common one. Auerswald and Moshagen (2019) compare the criteria and give
+guidance on the selection.
+
 The comparison data, parallel analysis, and NEST criteria compare the data against
 simulated reference data, so their suggested numbers of factors vary slightly from run
 to run; the Hull method does too, because it calls \code{\link[=efa_parallel]{efa_parallel()}} to set its upper
-bound. Call \code{\link[=set.seed]{set.seed()}} before \code{efa_retain()} to make them reproducible.
+bound. Call \code{\link[base:set.seed]{base::set.seed()}} before \code{efa_retain()} to make them reproducible.
 }
 \examples{
 \donttest{

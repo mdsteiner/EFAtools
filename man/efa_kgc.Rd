@@ -10,15 +10,15 @@ methods under realistic conditions. Psychological Methods, 24(4), 468–491.
 https://doi.org/10.1037/met0000200
 
 Guttman, L. (1954). Some necessary conditions for common-factor analysis.
-Psychometrika, 19, 149 –161. http://dx.doi.org/10.1007/BF02289162
+Psychometrika, 19, 149 –161. https://doi.org/10.1007/BF02289162
 
 Kaiser, H. F. (1960). The application of electronic computers to factor
 analysis. Educational and Psychological Measurement, 20, 141–151.
-http://dx.doi.org/10.1177/001316446002000116
+https://doi.org/10.1177/001316446002000116
 
 Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
 determining the number of components to retain. Psychological Bulletin, 99,
-432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
+432–442. https://doi.org/10.1037/0033-2909.99.3.432
 }
 \usage{
 efa_kgc(

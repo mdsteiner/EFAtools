@@ -558,7 +558,7 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 #' `print()` shows a concise overview of an [efa_scores()] result: a header naming
 #' the method and whether factor scores were computed, and the per-factor
 #' determinacy table (determinacy, squared determinacy, and Guttman index).
-#' [summary()] returns a `summary.efa_scores` object whose print method adds the
+#' `summary()` returns a `summary.efa_scores` object whose print method adds the
 #' full factor-weight matrix, the score validity/univocality matrix, and the score
 #' intercorrelations. `format()` assembles the same report and returns it as a
 #' character vector; `print()` is `cat(format(x), sep = "\n")`. The lines follow
@@ -566,7 +566,7 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 #' example when captured into a file or stripped with [cli::ansi_strip()]).
 #'
 #' @param x,object An object of class `efa_scores`; for the `summary.efa_scores`
-#'   methods, the object returned by [summary()].
+#'   methods, the object returned by `summary()`.
 #' @param digits numeric. Number of decimal places for the printed tables.
 #'   Default is 3.
 #' @param ... Not used; for consistency with the generics.

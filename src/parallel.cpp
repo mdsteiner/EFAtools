@@ -15,6 +15,8 @@ using namespace arma;
 //' @param N numeric. Number of cases / observations in dataset.
 //' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1), SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs), or both from the same simulated datasets (eigen_type = 3), in which case the returned matrix holds the PCA eigenvalues in the first n_vars columns and the SMC eigenvalues in the next n_vars.
 //' @param maxit numeric. Maximum iterations to perform after which to abort.
+//'
+//' @keywords internal
 // [[Rcpp::export(.parallel_sim)]]
 arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
                           const int eigen_type, const int maxit = 10000) {

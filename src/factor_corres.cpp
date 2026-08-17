@@ -20,6 +20,8 @@ static std::string join_corres(const Rcpp::CharacterVector& pos) {
 //' @param x numeric matrix. A matrix of pattern coefficients.
 //' @param y numeric matrix. A second matrix of coefficients.
 //' @param thresh numeric. The threshold to classify a pattern coefficient as substantial.
+//'
+//' @keywords internal
 // [[Rcpp::export(.factor_corres)]]
 Rcpp::List factor_corres(NumericMatrix x,
                         NumericMatrix y,

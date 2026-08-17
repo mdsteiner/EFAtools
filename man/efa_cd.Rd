@@ -65,8 +65,8 @@ factor count are left as zero).}
 }
 \description{
 Factor retention method introduced by Ruscio and Roche (2012). The code was
-adapted from the CD code by Auerswald and Moshagen (2019) available at
-\url{https://osf.io/x5cz2/?view_only=d03efba1fd0f4c849a87db82e6705668}
+adapted from the CD code published by Auerswald and Moshagen (2019), available
+at \url{https://osf.io/x5cz2/}.
 }
 \details{
 Comparison data (CD) extends parallel analysis by reproducing the
@@ -86,7 +86,7 @@ raw data are at hand and the runtime is acceptable, and a poor one for a quick
 look at a correlation matrix.
 
 The comparison data are obtained by simulation, so the suggested number of factors
-varies slightly from run to run. Call \code{\link[=set.seed]{set.seed()}} beforehand to make a run
+varies slightly from run to run. Call \code{\link[base:set.seed]{base::set.seed()}} beforehand to make a run
 reproducible.
 
 Note that if the data contains missing values, these will be removed for the

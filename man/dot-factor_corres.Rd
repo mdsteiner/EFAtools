@@ -16,3 +16,4 @@
 \description{
 Compute number of non-matching indicator-to-factor correspondences
 }
+\keyword{internal}

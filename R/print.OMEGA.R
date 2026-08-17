@@ -11,7 +11,7 @@
 #'
 #' @param x An object of class `OMEGA` (output from [OMEGA()]).
 #' @param digits Integer. The number of decimal places the coefficients are
-#'   rounded to (passed to [round()]). Default is 3.
+#'   rounded to (passed to [base::round()]). Default is 3.
 #' @param ... Not used; for consistency with the generic.
 #'
 #' @returns `print()` returns its argument `x` invisibly. `format()` returns a
