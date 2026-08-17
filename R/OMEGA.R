@@ -130,9 +130,10 @@
 #' In this case, `g_name` is not needed. Finally, if a solution from a
 #' `lavaan` multiple group analysis is entered, the indices are computed for
 #' each group. For `lavaan` input the composite variances entering the omegas are
-#' model-implied (computed from the fitted loadings and residual variances), so the
-#' coefficients coincide with the observed-score versions when the model fits
-#' perfectly. The omegas split a composite's variance into a general part and one part
+#' model-implied: they are computed from the fitted loadings and the fitted residual
+#' covariance matrix, and count any freed residual covariance as well as the residual
+#' variances. The coefficients thus coincide with the observed-score versions when the
+#' model fits perfectly. The omegas split a composite's variance into a general part and one part
 #' per group factor, which needs uncorrelated latent variables: fit a bifactor model
 #' with `orthogonal = TRUE` (not `lavaan`'s default) and leave the covariances between
 #' a second-order model's first-order factors at zero. A fit whose factors correlate is

@@ -110,14 +110,18 @@
 #' `h2` and `u2` display columns and with its uniquenesses; unlike the solution
 #' itself it carries no correlation matrix, so supply `cormat` to score it against
 #' the observed correlations rather than the model-implied ones. The loading matrix of
-#' an ordinary factor solution is not a bifactor matrix and is rejected -- unless `Phi`
-#' is supplied with it, which makes the pair a correlated-factors solution: it is then
+#' an ordinary factor solution is not a bifactor matrix and is rejected -- unless it is
+#' supplied with `Phi` and carries the loading class [efa_fit()] gives it, which makes the
+#' pair a correlated-factors solution: it is then
 #' scored as the solution it came from is, with the uniquenesses derived from the
 #' loadings under `Phi` unless `u2` is given. Unlike the solution itself the pair carries
 #' no correlation matrix, and none is reconstructed for it, so `variance = "correlation"`
 #' needs one in `cormat` and errors without it; `variance = "sums_load"` needs none.
 #' The matrix to pass is the pattern, which is what `Phi` accompanies; a
-#' structure matrix carries the same loading class and would be read as a pattern. The
+#' structure matrix carries the same loading class and would be read as a pattern. A matrix
+#' without that class is a bifactor one. The group factors of a hierarchy are uncorrelated, so
+#' `Phi` given with a bifactor or Schmid-Leiman matrix is an error and not an argument that is
+#' dropped. The
 #' rejection applies to a matrix of two or more factors: one of a single factor is read
 #' as that factor, there being no hierarchy to mistake it for and no factor
 #' intercorrelations to supply. A correlation matrix is rejected, which belongs in `cormat`. Both
@@ -179,7 +183,8 @@
 #'   composite variance from the loadings and the uniquenesses, which needs no
 #'   correlation matrix and so is the way to score a bare loading matrix or
 #'   manual components given without one. `lavaan` input fixes the convention: its
-#'   composite variances are always model-implied.
+#'   composite variances are always model-implied, and count any freed residual
+#'   covariance as well as the residual variances.
 #' @param var_names character. Subtest names in the row order of the loadings.
 #'   Only needed when `model` is `NULL`.
 #' @param fac_names character. An optional vector of group-factor names in the
@@ -221,10 +226,15 @@
 #'   identity, which is accepted and changes nothing, the components being scored as the
 #'   single factor they are either way. `NULL` (default) means uncorrelated group factors, as
 #'   a Schmid-Leiman or bifactor solution has. Supplied with the loading matrix of an
-#'   oblique solution it is that solution's factor intercorrelations, and is what makes
-#'   the matrix a correlated-factors solution rather than a rejected pattern matrix;
-#'   with any other `model` it is ignored, with a warning, the fitted solution carrying
-#'   its own.
+#'   oblique solution -- which carries the loading class [efa_fit()] gives it -- it is that
+#'   solution's factor intercorrelations, and is what makes the matrix a correlated-factors
+#'   solution rather than a rejected pattern matrix. Supplied with a matrix read as a
+#'   hierarchy, a bifactor loading matrix or the loading table of an [efa_schmid_leiman()]
+#'   solution, it is an error: such a matrix has its general factor in the first column and
+#'   group factors that are uncorrelated by construction, so there is nothing for it to
+#'   describe, and the same combination given through the components is refused in the same
+#'   terms. With a fitted solution in `model` it is ignored, with a warning, that solution
+#'   carrying its own.
 #'
 #' @returns An object of class `efa_reliability`: a long-format data frame with
 #'   one row per computed coefficient, with columns
@@ -377,16 +387,15 @@ efa_reliability <- function(model = NULL,
   # coefficients with nothing to say why.
   if (!is.null(model)) {
     # Two of them are read by a matrix `model` and so are not reported for one: `u2`, as an
-    # override of the uniquenesses the adapter would derive, and -- for the pattern matrix
-    # of an ordinary factor solution -- `Phi`, which is what makes its columns correlated
-    # factors rather than a bifactor solution. A `lavaan` fit reads neither the
+    # override of the uniquenesses the adapter would derive, and `Phi`, which a matrix never
+    # merely ignores -- it makes the columns of an oblique pattern matrix correlated factors,
+    # and with a matrix read as a hierarchy it is refused rather than dropped, where the
+    # dispatch can say which of the two readings was taken. A `lavaan` fit reads neither the
     # correspondences nor a correlation matrix -- it is scored per group from its own -- so
     # those two are discarded there as well, and pointing at them would send the user
     # nowhere.
-    oblique_matrix <- inherits(model, c("efa_loadings", "LOADINGS"))
     unused <- c("g_load", "s_load", "var_names", "pattern")
-    if (!oblique_matrix) unused <- c(unused, "Phi")
-    if (!is.matrix(model)) unused <- c(unused, "u2")
+    if (!is.matrix(model)) unused <- c(unused, "Phi", "u2")
     if (lavaan_fit) unused <- c(unused, "cormat", "factor_map")
     given <- unused[!vapply(mget(unused), is.null, logical(1))]
     if (length(given) > 0) {
@@ -753,6 +762,31 @@ efa_reliability <- function(model = NULL,
           "i" = "To score a solution against these correlations, pass the matrix as {.arg cormat}."),
         class = "efa_reliability_cormat_as_model"
       )
+    }
+    # Everything still here is read as a hierarchy: a bare bifactor loading matrix, or the
+    # loading table of a Schmid-Leiman solution reduced to its factor columns above. Its
+    # general factor is the first column and its group factors are orthogonal by
+    # construction, so there are no correlated group factors for `Phi` to be the correlation
+    # matrix of, and the general and group parts would no longer partition the composite.
+    # .rel_adapt_manual() refuses that combination under this class already; refusing it here
+    # too keeps one solution from being scored two ways according to whether its loading
+    # class survived the handling that got it here -- an attribute that `[`, `rbind()` and a
+    # round-trip through a data frame all drop, while the argument stays.
+    #
+    # One column is the exception this route makes throughout: one factor is not a hierarchy,
+    # and the only correlation matrix its factor can have is the 1 by 1 identity, which says
+    # nothing either way. It is checked and then changes nothing, as on the classed route.
+    if (!is.null(Phi)) {
+      if (ncol(model) > 1L) {
+        cli::cli_abort(
+          c("{.arg Phi} describes correlated group factors, which a Schmid-Leiman or bifactor loading matrix does not have.",
+            "i" = "To score the pattern matrix of an oblique solution, pass the {.fn efa_fit} object, or supply the components: the pattern in {.arg s_load}, a {.arg g_load} that is zero throughout, and {.arg u2} and {.arg var_names}, with this {.arg Phi}.",
+            "i" = "To reconstruct a correlation matrix for a hierarchy instead, supply its components together with the {.arg pattern} of the separate oblique solution {.arg Phi} belongs to.",
+            "i" = "Otherwise drop {.arg Phi}: the group factors of a hierarchy are uncorrelated."),
+          class = "efa_reliability_phi_with_general"
+        )
+      }
+      .rel_check_phi(Phi, ncol(model))
     }
     # Uniquenesses reach this route either from the caller, overriding the ones the adapter
     # would derive from the loadings, or off a Schmid-Leiman table's own `u2` column. Both

@@ -15,6 +15,53 @@ auto <- local({
   m
 })
 
+# A population bifactor carrying two residual covariances, with the model syntaxes that
+# reproduce it exactly. Shared by the residual-covariance blocks below: their cross-checks
+# only compare like with like while they all describe one model. Pure algebra, so it costs
+# nothing where lavaan is absent.
+rc <- local({
+  vn <- paste0("V", 1:18)
+  g <- rep(.5, 18)
+  S <- matrix(0, 18, 3)
+  S[1:6, 1] <- .45; S[7:12, 2] <- .45; S[13:18, 3] <- .45
+  common <- tcrossprod(g) + tcrossprod(S)
+  Theta <- diag(1 - diag(common))
+  Theta[1, 2] <- Theta[2, 1] <- .30
+  Theta[3, 4] <- Theta[4, 3] <- .25
+  Sigma <- common + Theta
+  dimnames(Sigma) <- list(vn, vn)
+  first_order <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+                  F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+                  F3 =~ V13 + V14 + V15 + V16 + V17 + V18'
+  all_items <- paste(vn, collapse = " + ")
+  list(common = common, Sigma = Sigma,
+       correlated = first_order,
+       bifactor = paste(first_order, paste("g =~", all_items), sep = "\n"),
+       second_order = paste(first_order, "g =~ F1 + F2 + F3", sep = "\n"),
+       single = paste("g =~", all_items))
+})
+
+# The residual covariance matrix of a standardized lavaan solution. lavaan reports the
+# off-diagonal of `theta` as a residual correlation and its diagonal as a residual variance,
+# so the two are put back in one metric before they are summed. Written out here rather than
+# taken from the package, so the expected values below are derived independently of the code
+# under test.
+rc_theta <- function(theta) {
+  d <- diag(theta)
+  out <- theta * sqrt(outer(d, d))
+  diag(out) <- d
+  out
+}
+
+# Fitted once and shared by the blocks that read it: the correction and its semTools
+# cross-check have to be statements about one and the same fit.
+rc_fit_bifactor <- if (requireNamespace("lavaan", quietly = TRUE)) {
+  suppressWarnings(lavaan::cfa(paste(rc$bifactor, "V1 ~~ V2", "V3 ~~ V4", sep = "\n"),
+                               sample.cov = rc$Sigma, sample.nobs = 1000,
+                               estimator = "ml", orthogonal = TRUE,
+                               sample.cov.rescale = FALSE))
+}
+
 test_that("efa_reliability wires the SL adapter, core, and result builder together", {
   spec <- .rel_adapt_SL(sl_mod, factor_corres = fc, type = "EFAtools")
   core <- .reliability_core(spec, "correlation", add_ind = TRUE, add_rel = TRUE)
@@ -763,14 +810,15 @@ test_that("an ordinary loading matrix with its Phi is scored as a correlated-fac
   # Without Phi nothing says the columns are correlated factors, so the matrix is still
   # refused rather than read as a bifactor one.
   expect_error(efa_reliability(L, cormat = cm), class = "efa_reliability_pattern_matrix")
-  # And Phi is no longer reported as ignored on this route, while it still is on the
-  # others -- an unclassed matrix is documented as a bifactor one, whose group factors are
-  # orthogonal by construction, and reading its first column as an ordinary factor because
-  # a second argument was given would be the silent reinterpretation the refusal prevents.
+  # Phi is not reported as ignored on this route -- it is what the route reads.
   expect_no_warning(efa_reliability(L, Phi = Phi, cormat = cm),
                     class = "efa_reliability_args_ignored")
-  expect_warning(efa_reliability(unclass(L), Phi = Phi, cormat = cm),
-                 class = "efa_reliability_args_ignored")
+  # Stripped of its class the same matrix is a bifactor one, whose group factors are
+  # orthogonal by construction: reading its first column as an ordinary factor because a
+  # second argument was given would be a silent reinterpretation, and dropping Phi would
+  # score a different solution than the one asked for. Refused instead, so neither happens.
+  expect_error(efa_reliability(unclass(L), Phi = Phi, cormat = cm),
+               class = "efa_reliability_phi_with_general")
 
   # The uniquenesses are derived from the loadings under Phi, and a supplied set overrides
   # them, as on the bare bifactor matrix route. Shown in the model-implied convention,
@@ -785,6 +833,46 @@ test_that("an ordinary loading matrix with its Phi is scored as a correlated-fac
                class = "efa_invalid_argument")
   # A Phi that cannot be the correlation matrix of these columns is named as such.
   expect_error(efa_reliability(L, Phi = diag(2), cormat = cm),
+               class = "efa_reliability_bad_phi")
+})
+
+test_that("Phi with a matrix read as a hierarchy is refused, as it is through the components", {
+  L <- unclass(efa_mod$rot_loadings)
+  cm <- test_models$baseline$cormat
+  Phi2 <- matrix(c(1, .4, .4, 1), 2, 2)
+  cls <- "efa_reliability_phi_with_general"
+
+  # A matrix without the loading class is a bifactor one: its first column is the general
+  # factor, and a general factor together with correlated group factors does not give the
+  # variance decomposition these coefficients report. The components route already refuses
+  # that combination; the matrix route now refuses the same solution under the same class,
+  # instead of dropping Phi and returning the hierarchy's coefficients.
+  expect_error(efa_reliability(L, Phi = Phi2, cormat = cm), class = cls)
+  expect_error(efa_reliability(NULL, var_names = rownames(L), g_load = L[, 1],
+                               s_load = L[, -1, drop = FALSE], u2 = 1 - rowSums(L^2),
+                               Phi = Phi2, variance = "sums_load"),
+               class = cls)
+
+  # The loading table of a Schmid-Leiman solution is read as a hierarchy too, so it takes
+  # the same refusal.
+  expect_error(efa_reliability(sl_mod$sl, Phi = Phi2, cormat = cm), class = cls)
+
+  # The refusal is the matrix routes only. A fitted solution carries its own factor
+  # intercorrelations, so there Phi is still reported as ignored rather than refused.
+  expect_warning(efa_reliability(sl_mod, factor_map = fc, Phi = Phi2, cormat = cm),
+                 class = "efa_reliability_args_ignored")
+
+  # One column is one factor, not a hierarchy. The only correlation matrix its factor can
+  # have is the 1 by 1 identity, which says nothing about the solution, so it is checked and
+  # the same coefficients come back with it or without it, classed or not.
+  one <- efa_fit(cm, N = 500, n_factors = 1, estimator = "PAF")$unrot_loadings
+  res <- suppressMessages(efa_reliability(one, Phi = matrix(1, 1, 1), cormat = cm))
+  expect_identical(res, suppressMessages(efa_reliability(unclass(one),
+                                                         Phi = matrix(1, 1, 1),
+                                                         cormat = cm)))
+  expect_identical(res, suppressMessages(efa_reliability(unclass(one), cormat = cm)))
+  # A Phi that cannot be that identity is still named on the unclassed route.
+  expect_error(efa_reliability(unclass(one), Phi = matrix(2, 1, 1), cormat = cm),
                class = "efa_reliability_bad_phi")
 })
 
@@ -859,6 +947,155 @@ test_that("a lavaan bifactor fit matches OMEGA and yields one block", {
   get <- function(coef, fac) res$value[res$coefficient == coef & res$factor == fac]
   expect_equal(get("omega_total", "g"), unname(om["g", "tot"]))
   expect_equal(get("H", "F1"), unname(om["F1", "H"]))
+})
+
+test_that("a lavaan fit with correlated residuals counts them in the composite variance", {
+  skip_if_not_installed("lavaan")
+  # A composite's model-implied variance is 1' (Lambda Psi Lambda' + Theta) 1, so a freed
+  # residual covariance belongs in it. The uniquenesses are only the diagonal of Theta, and
+  # summing those alone leaves it out. Scored on a population bifactor built with two
+  # residual covariances and fitted by the model that generated it, so the fit is exact and
+  # the right answer is known rather than reproduced from the same code.
+  fit_rc <- rc_fit_bifactor
+  std <- suppressWarnings(lavaan::lavInspect(fit_rc, "std"))
+  lam <- std$lambda
+  common <- tcrossprod(lam[, "g"]) + tcrossprod(lam[, c("F1", "F2", "F3")])
+  d <- diag(std$theta)
+  Th <- rc_theta(std$theta)
+
+  res <- efa_reliability(fit_rc, g_name = "g")
+  get <- function(x, coef, fac) x$value[x$coefficient == coef & x$factor == fac]
+  i1 <- seq_len(6)
+
+  expect_equal(get(res, "omega_total", "g"), sum(common) / (sum(common) + sum(Th)))
+  expect_equal(get(res, "omega_total", "F1"),
+               sum(common[i1, i1]) / (sum(common[i1, i1]) + sum(Th[i1, i1])))
+  # Standardized alpha follows the same composite variance, through the model-implied
+  # correlation matrix it is computed from.
+  expect_equal(get(res, "alpha", "g"), 18 / 17 * (1 - 18 / sum(common + Th)))
+  expect_equal(get(res, "alpha", "F1"),
+               6 / 5 * (1 - 6 / sum((common + Th)[i1, i1])))
+
+  # Not an identity the uncorrected arithmetic also satisfies: dropping the off-diagonal
+  # moves the subscale omega by more than .04 and the alpha by more than .01.
+  expect_gt(abs(get(res, "omega_total", "F1") -
+                sum(common[i1, i1]) / (sum(common[i1, i1]) + sum(diag(Th)[i1]))), 0.04)
+  expect_gt(abs(get(res, "alpha", "F1") -
+                6 / 5 * (1 - 6 / sum((common + diag(d))[i1, i1]))), 0.01)
+
+  # The whole scale reproduces the population value the fit was built from.
+  expect_equal(get(res, "omega_total", "g"), sum(rc$common) / sum(rc$Sigma),
+               tolerance = 1e-6)
+
+  # OMEGA() reaches the core through its own front end and is corrected with it.
+  om <- OMEGA(fit_rc, g_name = "g")
+  expect_equal(unname(om["g", "tot"]), get(res, "omega_total", "g"))
+  expect_equal(unname(om["F1", "tot"]), get(res, "omega_total", "F1"))
+
+  # A second-order fit reaches the same expression after the Schmid-Leiman transform.
+  fit_ho <- suppressWarnings(lavaan::cfa(paste(rc$second_order, "V1 ~~ V2", sep = "\n"),
+                                         sample.cov = rc$Sigma, sample.nobs = 1000,
+                                         estimator = "ml", sample.cov.rescale = FALSE))
+  res_ho <- suppressMessages(efa_reliability(fit_ho, g_name = "g"))
+  sh <- suppressWarnings(lavaan::lavInspect(fit_ho, "std"))
+  fo <- c("F1", "F2", "F3")
+  L1 <- sh$lambda[, fo]
+  # The Schmid-Leiman columns, written out rather than taken from the package's own helper,
+  # so the expected value is derived independently of the code under test.
+  sl <- tcrossprod(L1 %*% sh$beta[fo, "g"]) +
+    tcrossprod(L1 %*% diag(sqrt(diag(sh$psi)[fo])))
+  expect_equal(get(res_ho, "omega_total", "g"),
+               sum(sl) / (sum(sl) + sum(rc_theta(sh$theta))))
+
+  # Multiple groups are corrected per group, each from its own residual covariances.
+  fit_gr <- suppressWarnings(lavaan::cfa(paste(rc$bifactor, "V1 ~~ V2", sep = "\n"),
+                                         sample.cov = list(rc$Sigma, rc$Sigma),
+                                         sample.nobs = c(1000, 1000), estimator = "ml",
+                                         orthogonal = TRUE, sample.cov.rescale = FALSE))
+  res_gr <- efa_reliability(fit_gr, g_name = "g")
+  tot_gr <- res_gr$value[res_gr$coefficient == "omega_total" & res_gr$factor == "F1"]
+  expect_length(tot_gr, 2L)
+  # Each block against its own group's residual covariances, not against the other's: the
+  # two groups are fitted separately, so their parameters agree only to optimizer tolerance.
+  std_gr <- suppressWarnings(lavaan::lavInspect(fit_gr, "std",
+                                                drop.list.single.group = FALSE))
+  for (k in seq_along(std_gr)) {
+    lam_k <- std_gr[[k]]$lambda
+    common_k <- tcrossprod(lam_k[, "g"]) + tcrossprod(lam_k[, c("F1", "F2", "F3")])
+    Th_k <- rc_theta(std_gr[[k]]$theta)
+    expect_equal(tot_gr[k],
+                 sum(common_k[i1, i1]) / (sum(common_k[i1, i1]) + sum(Th_k[i1, i1])))
+    expect_gt(abs(tot_gr[k] - sum(common_k[i1, i1]) /
+                    (sum(common_k[i1, i1]) + sum(diag(Th_k)[i1]))), 0.01)
+  }
+
+  # And the correction is confined to fits that have residual covariances: with a diagonal
+  # Theta the composite variance stays the loading-and-uniqueness expression it always was.
+  fit_plain <- suppressWarnings(lavaan::cfa(rc$bifactor, sample.cov = rc$Sigma,
+                                            sample.nobs = 1000,
+                                            estimator = "ml", orthogonal = TRUE,
+                                            sample.cov.rescale = FALSE))
+  sp <- suppressWarnings(lavaan::lavInspect(fit_plain, "std"))
+  cp <- tcrossprod(sp$lambda[, "g"]) + tcrossprod(sp$lambda[, c("F1", "F2", "F3")])
+  res_plain <- efa_reliability(fit_plain, g_name = "g")
+  expect_equal(get(res_plain, "omega_total", "g"),
+               sum(cp) / (sum(cp) + sum(diag(sp$theta))))
+  expect_equal(get(res_plain, "omega_total", "F1"),
+               sum(cp[i1, i1]) / (sum(cp[i1, i1]) + sum(diag(sp$theta)[i1])))
+})
+
+test_that("the residual-covariance correction reaches every lavaan spec shape", {
+  skip_if_not_installed("lavaan")
+  # The lavaan adapter builds three spec shapes, and each has to carry the model-implied
+  # correlation matrix. The block above covers the bifactor and second-order one; these are
+  # the other two, built at their own sites.
+  i1 <- seq_len(6)
+  get <- function(x, coef, fac) x$value[x$coefficient == coef & x$factor == fac]
+
+  cf <- suppressWarnings(lavaan::cfa(paste(rc$correlated, "V1 ~~ V2", sep = "\n"),
+                                     sample.cov = rc$Sigma, sample.nobs = 1000,
+                                     estimator = "ml", sample.cov.rescale = FALSE))
+  s_cf <- suppressWarnings(lavaan::lavInspect(cf, "std"))
+  common_cf <- s_cf$lambda %*% s_cf$psi %*% t(s_cf$lambda)
+  Th_cf <- rc_theta(s_cf$theta)
+  res_cf <- suppressMessages(efa_reliability(cf))
+  expect_equal(get(res_cf, "omega_total", "F1"),
+               sum(common_cf[i1, i1]) / (sum(common_cf[i1, i1]) + sum(Th_cf[i1, i1])))
+  expect_gt(abs(get(res_cf, "omega_total", "F1") - sum(common_cf[i1, i1]) /
+                  (sum(common_cf[i1, i1]) + sum(diag(Th_cf)[i1]))), 0.02)
+
+  # A single factor is normalized to its own spec, which rebuilds the list and so has to
+  # carry the matrix over rather than drop it.
+  sf <- suppressWarnings(lavaan::cfa(paste(rc$single, "V1 ~~ V2", sep = "\n"),
+                                     sample.cov = rc$Sigma, sample.nobs = 1000,
+                                     estimator = "ml", sample.cov.rescale = FALSE))
+  s_sf <- suppressWarnings(lavaan::lavInspect(sf, "std"))
+  common_sf <- tcrossprod(s_sf$lambda[, 1])
+  Th_sf <- rc_theta(s_sf$theta)
+  res_sf <- suppressMessages(efa_reliability(sf))
+  tot_sf <- res_sf$value[res_sf$coefficient == "omega_total"]
+  expect_equal(tot_sf, sum(common_sf) / (sum(common_sf) + sum(Th_sf)))
+  expect_gt(abs(tot_sf - sum(common_sf) / (sum(common_sf) + sum(diag(Th_sf)))), 0.005)
+  # OMEGA()'s single-factor vector is corrected with it.
+  expect_equal(unname(suppressMessages(OMEGA(sf))["Omega"]), tot_sf)
+})
+
+test_that("the correlated-residual coefficients match semTools", {
+  skip_on_cran()
+  skip_if_not_installed("lavaan")
+  skip_if_not_installed("semTools")
+  # An independent implementation of the same model-based omega. semTools::compRelSEM()
+  # counts the residual covariances in the composite variance, which is the quantity under
+  # test here; obs.var = FALSE selects the model-implied total variance it is defined on.
+  res <- efa_reliability(rc_fit_bifactor, g_name = "g")
+  ref <- unlist(semTools::compRelSEM(rc_fit_bifactor, obs.var = FALSE,
+                                     return.total = TRUE))
+
+  get <- function(fac) res$value[res$coefficient == "omega_total" & res$factor == fac]
+  expect_equal(get("g"), unname(ref[".TOTAL."]), tolerance = 1e-6)
+  for (f in c("F1", "F2", "F3")) {
+    expect_equal(get(f), unname(ref[f]), tolerance = 1e-6)
+  }
 })
 
 test_that("a lavaan correlated-factors fit is scored as the oblique solution it is", {

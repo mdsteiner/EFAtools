@@ -29,7 +29,9 @@
 # Reliability coefficients over a normalized model spec. `spec` carries the general-factor
 # loadings (`g_load`), the group-factor loading matrix (`s_load`), the uniquenesses (`u2`),
 # the item-to-factor correspondence map (`map`), the group-factor row labels (`fac_names`),
-# the item names (`var_names`), and -- for `variance = "correlation"` -- a correlation
+# the item names (`var_names`), optionally the model-implied correlation matrix of the
+# variables (`implied`, see the total-variance denominators below), and -- for
+# `variance = "correlation"` -- a correlation
 # matrix (`cormat`) plus, for a correlated-factors solution, the factor
 # intercorrelations (`Phi`, in the column order of `s_load`). `Phi` belongs to a spec
 # with no general factor: it marks the group loadings as an oblique pattern whose
@@ -45,8 +47,13 @@
 # common variance Lambda Psi Lambda'. Two total-variance denominators are supported:
 # `"correlation"` takes a composite's variance from the correlation matrix, as McDonald's
 # omega total does (1999, Test Theory, Eq. 6.2.1; Zinbarg, Yovel, Revelle & McDonald, 2006,
-# Eqs. 4 and 6); `"sums_load"` uses the model-implied composite variance instead, the common
-# variance plus the uniquenesses, and so needs no correlation matrix. When
+# Eqs. 4 and 6); `"sums_load"` uses the model-implied composite variance instead, and so needs
+# no correlation matrix. That variance is the common variance plus the uniquenesses, unless the
+# spec carries the model-implied correlation matrix of the variables in `implied`, in which case
+# each composite's variance is the sum of its block of that matrix. An adapter supplies
+# `implied` only where the uniquenesses do not hold the whole of the residual variance, which
+# takes a fitted model with residual covariances; where they do, the two expressions are the
+# same quantity and `implied` stays NULL. When
 # `add_rel = TRUE`, three further columns are appended: standardized Cronbach's alpha
 # (Cronbach, 1951) for the whole scale and each subscale, and -- per group factor, over its
 # assigned (simple-structure) composite -- the composite reliability (congeneric omega;
@@ -132,6 +139,7 @@
   # Yovel, Revelle & McDonald, 2006, Eq. 6). Its diagonal holds the communalities.
   s_mat <- as.matrix(input[, seq_len(ncol(s_load)) + 1L, drop = FALSE])
   Phi <- spec$Phi
+  implied <- spec$implied
   group_common <- if (is.null(Phi)) tcrossprod(s_mat) else s_mat %*% Phi %*% t(s_mat)
   common <- tcrossprod(input$g) + group_common
 
@@ -192,9 +200,15 @@
     # variance. omega total is then 1 - sum(u^2) / V, with V
     # the model-implied composite variance, and the general and group variances
     # partition it exactly (tot = hier + sub for the g row).
-    omega_tot_g <- (sum_g^2 + group_var) / (sum_g^2 + group_var + sum_e)
-    omega_h_g <- sum_g^2 / (sum_g^2 + group_var + sum_e)
-    omega_sub_g <- group_var / (sum_g^2 + group_var + sum_e)
+    #
+    # V comes from `implied` where the spec carries it. There the residual covariances hold
+    # variance that `sum_e`, the sum of the residual variances alone, does not count
+    # (Raykov, 2001). The numerators are the common variance either way, so the partition
+    # is unaffected.
+    var_g <- if (is.null(implied)) sum_g^2 + group_var + sum_e else sum(implied)
+    omega_tot_g <- (sum_g^2 + group_var) / var_g
+    omega_h_g <- sum_g^2 / var_g
+    omega_sub_g <- group_var / var_g
 
     # Compute omega total, hierarchical, and subscale for group factors. A subscale
     # composite's model-implied variance is the common variance it receives from every
@@ -213,7 +227,10 @@
     for (i in seq_len(ncol(s_load))) {
       subf <- members[[i]]
       common_sub <- sum(common[subf, subf])
-      Vsub <- common_sub + sum(u2[subf])
+      # As on the whole-scale row: that composite's block of `implied` where the spec
+      # carries one, its own unique variances otherwise.
+      Vsub <- if (is.null(implied)) common_sub + sum(u2[subf]) else
+        sum(implied[subf, subf])
       omega_tot_sub[i] <- common_sub / Vsub
       omega_h_sub[i] <- sum(input$g[subf])^2 / Vsub
       omega_sub_sub[i] <- sum(s_mat[subf, i])^2 / Vsub
@@ -304,14 +321,18 @@
     # Standardized Cronbach's alpha (Cronbach, 1951), k / (k - 1) *
     # (1 - sum(diag(R_sub)) / sum(R_sub)), for the whole scale (all items) and each
     # subscale (the map's assigned items). It needs a correlation matrix: the supplied
-    # cormat, or -- when none was given -- the model-implied common variance plus the
-    # uniquenesses (which assumes the model holds), standardized to a unit diagonal with
-    # cov2cor so the formula returns the standardized coefficient even when the loadings
-    # and uniquenesses do not complete to unit item variance. Standardized alpha uses the
-    # correlation matrix; raw, covariance-based alpha would need item standard deviations
-    # the spec does not carry. Alpha is undefined for fewer than two items (returned NA).
+    # cormat; else the model-implied one the spec carries in `implied`, which already has a
+    # unit diagonal; else the model-implied common variance plus the uniquenesses (which
+    # assumes the model holds and that the residual covariance matrix is diagonal),
+    # standardized to a unit diagonal with cov2cor so the formula returns the standardized
+    # coefficient even when the loadings and uniquenesses do not complete to unit item
+    # variance. Standardized alpha uses the correlation matrix; raw, covariance-based alpha
+    # would need item standard deviations the spec does not carry. Alpha is undefined for
+    # fewer than two items (returned NA).
     R_rel <- if (!is.null(cormat)) {
       cormat
+    } else if (!is.null(implied)) {
+      implied
     } else {
       stats::cov2cor(common + diag(u2, nrow = length(u2)))
     }
@@ -976,7 +997,8 @@
 # second-order solution to the reliability spec, one entry per fitted group. Mirrors the
 # structural detection and Schmid-Leiman transform of .OMEGA_LAVAAN (second-order group
 # loadings via .sl_group_loadings), and drives the core with variance = "sums_load" (the
-# composite variances are model-implied). Returns a list with, per group, a full spec
+# composite variances are model-implied, and are read off the model-implied correlation
+# matrix where the fit has residual covariances). Returns a list with, per group, a full spec
 # (correlated factors / bifactor / second-order / single factor); a single-factor group is
 # additionally flagged `single = TRUE`, since a solution with one factor defines fewer
 # coefficients than the core computes for it. A correlated-factors spec is flagged by
@@ -994,6 +1016,12 @@
 
   std_sol <- suppressWarnings(lavaan::lavInspect(model, what = "std",
                                 drop.list.single.group = FALSE))
+
+  # The model-implied correlation matrix of the variables, per group, fetched on first use
+  # below and only where a group has residual covariances -- so a fit whose residual
+  # covariance matrix is diagonal, which is every fit the coefficients were defined on until
+  # now, asks lavaan for nothing more than it did.
+  implied_cor <- NULL
 
   if (is.null(group_names)) {
     group_names <- names(std_sol)
@@ -1029,6 +1057,26 @@
 
     var_names_i <- rownames(lambda)
 
+    # The uniquenesses below are the diagonal of Theta. A composite's model-implied variance
+    # is 1' (Lambda Psi Lambda' + Theta) 1, so a fit with correlated residuals holds variance
+    # that the diagonal does not carry (Raykov, 2001). Such a fit takes its composite
+    # variances from the model-implied correlation matrix instead.
+    #
+    # That matrix is read from lavaan, not rebuilt from Theta. The standardized Theta holds
+    # residual correlations off the diagonal and residual variances on it, so it is not one
+    # matrix in one metric. For a second-order fit the rebuild would also have to add the
+    # first-order factor covariances that `beta` carries.
+    #
+    # With a diagonal Theta the two expressions are the same quantity. This then stays NULL,
+    # and the arithmetic of every such solution is unchanged.
+    implied_i <- if (any(abs(theta[upper.tri(theta)]) > tol, na.rm = TRUE)) {
+      if (is.null(implied_cor)) {
+        implied_cor <- lavaan::lavInspect(model, what = "cor.ov",
+                                          drop.list.single.group = FALSE)
+      }
+      implied_cor[[i]]
+    }
+
     # A single factor has no group factors: normalize it to the spec such a solution takes on
     # every other input route, which the core scores like any of them. Marked `single = TRUE`
     # so the front-ends can report the coefficients it defines.
@@ -1040,6 +1088,7 @@
         .rel_single_factor_spec(list(g_load = lambda[, 1],
                                      s_load = lambda[, 0, drop = FALSE],
                                      u2 = diag(theta), cormat = NULL,
+                                     implied = implied_i,
                                      var_names = var_names_i)))
       next
     }
@@ -1112,6 +1161,7 @@
       groups[[i]] <- list(single = FALSE, g_load = rep(0, nrow(lambda)),
                           s_load = lambda, u2 = diag(theta), Phi = Phi_i,
                           map = abs(lambda) > tol, cormat = NULL,
+                          implied = implied_i,
                           var_names = var_names_i, fac_names = col_names)
       next
     }
@@ -1149,6 +1199,7 @@
 
     groups[[i]] <- list(single = FALSE, g_load = lambda[, g_name], s_load = s_load,
                         u2 = diag(theta), map = abs(s_load) > tol, cormat = NULL,
+                        implied = implied_i,
                         var_names = var_names_i, fac_names = col_names)
 
   }
@@ -1188,7 +1239,9 @@
 # `g_load`, no group-factor columns -- and every route reaches the same coefficients rather
 # than one reading of the same solution per input format. Any `Phi` goes with them: the
 # correlation matrix of a single factor can only be the 1 x 1 identity, which .rel_check_phi()
-# has already established and which says nothing about the solution.
+# has already established and which says nothing about the solution. The correlation matrix
+# `cormat` and the model-implied one `implied` are carried over untouched: both describe the
+# variables, which the rewrite does not change.
 #
 # `fac_names` is emptied here only because the core builds the row labels as
 # c("g", fac_names) and this spec has one row; the name the input gave the factor is applied
@@ -1209,7 +1262,8 @@
   none <- matrix(numeric(0), nrow = length(g_load), ncol = 0)
 
   list(g_load = g_load, s_load = none, u2 = spec$u2, map = none, Phi = NULL,
-       cormat = spec$cormat, var_names = spec$var_names, fac_names = character(0))
+       cormat = spec$cormat, implied = spec$implied, var_names = spec$var_names,
+       fac_names = character(0))
 
 }
 

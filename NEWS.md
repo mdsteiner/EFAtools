@@ -130,6 +130,10 @@
 
 * The out-of-range warning of `efa_reliability()` and `OMEGA()` now also covers `variance = "sums_load"`.
 
+* `efa_reliability()` now refuses a `Phi` supplied with a matrix it reads as a hierarchy -- a bifactor loading matrix, or the loading table of an `efa_schmid_leiman()` solution -- instead of dropping it and returning that hierarchy's coefficients. Such a matrix has its general factor in the first column and uncorrelated group factors, so there is nothing for `Phi` to describe, and the same combination supplied through the components was already an error. The pattern matrix of an oblique solution, which carries the loading class `efa_fit()` gives it, still reads `Phi` as its factor intercorrelations.
+
+* `efa_reliability()` and `OMEGA()` now count the residual covariances of a `lavaan` fit in the model-implied composite variances. A fit with a freed covariance between two variables previously divided by the residual variances alone, which overstated the omegas and understated the standardized alpha of every composite holding such a pair. Fits whose residual covariance matrix is diagonal are unchanged.
+
 * `efa_reliability()` and `OMEGA()` now reject a bifactor or second-order `lavaan` fit whose latent variables are correlated instead of scoring it as though they were not.
 
 * `efa_reliability()` now scores the loading table of an `efa_schmid_leiman()` solution as the bifactor matrix it is, and no longer reads the pattern matrix of an oblique solution as a bifactor one; pass the `efa_fit()` object itself to score that solution.

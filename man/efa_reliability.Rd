@@ -118,7 +118,8 @@ matrix, giving the observed-score omega; \code{"sums_load"} uses the model-impli
 composite variance from the loadings and the uniquenesses, which needs no
 correlation matrix and so is the way to score a bare loading matrix or
 manual components given without one. \code{lavaan} input fixes the convention: its
-composite variances are always model-implied.}
+composite variances are always model-implied, and count any freed residual
+covariance as well as the residual variances.}
 
 \item{var_names}{character. Subtest names in the row order of the loadings.
 Only needed when \code{model} is \code{NULL}.}
@@ -167,10 +168,15 @@ must carry no general factor; for a single group factor that leaves only the 1 b
 identity, which is accepted and changes nothing, the components being scored as the
 single factor they are either way. \code{NULL} (default) means uncorrelated group factors, as
 a Schmid-Leiman or bifactor solution has. Supplied with the loading matrix of an
-oblique solution it is that solution's factor intercorrelations, and is what makes
-the matrix a correlated-factors solution rather than a rejected pattern matrix;
-with any other \code{model} it is ignored, with a warning, the fitted solution carrying
-its own.}
+oblique solution -- which carries the loading class \code{\link[=efa_fit]{efa_fit()}} gives it -- it is that
+solution's factor intercorrelations, and is what makes the matrix a correlated-factors
+solution rather than a rejected pattern matrix. Supplied with a matrix read as a
+hierarchy, a bifactor loading matrix or the loading table of an \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}
+solution, it is an error: such a matrix has its general factor in the first column and
+group factors that are uncorrelated by construction, so there is nothing for it to
+describe, and the same combination given through the components is refused in the same
+terms. With a fitted solution in \code{model} it is ignored, with a warning, that solution
+carrying its own.}
 }
 \value{
 An object of class \code{efa_reliability}: a long-format data frame with
@@ -302,14 +308,18 @@ hierarchical one. The loading table of an
 \code{h2} and \code{u2} display columns and with its uniquenesses; unlike the solution
 itself it carries no correlation matrix, so supply \code{cormat} to score it against
 the observed correlations rather than the model-implied ones. The loading matrix of
-an ordinary factor solution is not a bifactor matrix and is rejected -- unless \code{Phi}
-is supplied with it, which makes the pair a correlated-factors solution: it is then
+an ordinary factor solution is not a bifactor matrix and is rejected -- unless it is
+supplied with \code{Phi} and carries the loading class \code{\link[=efa_fit]{efa_fit()}} gives it, which makes the
+pair a correlated-factors solution: it is then
 scored as the solution it came from is, with the uniquenesses derived from the
 loadings under \code{Phi} unless \code{u2} is given. Unlike the solution itself the pair carries
 no correlation matrix, and none is reconstructed for it, so \code{variance = "correlation"}
 needs one in \code{cormat} and errors without it; \code{variance = "sums_load"} needs none.
 The matrix to pass is the pattern, which is what \code{Phi} accompanies; a
-structure matrix carries the same loading class and would be read as a pattern. The
+structure matrix carries the same loading class and would be read as a pattern. A matrix
+without that class is a bifactor one. The group factors of a hierarchy are uncorrelated, so
+\code{Phi} given with a bifactor or Schmid-Leiman matrix is an error and not an argument that is
+dropped. The
 rejection applies to a matrix of two or more factors: one of a single factor is read
 as that factor, there being no hierarchy to mistake it for and no factor
 intercorrelations to supply. A correlation matrix is rejected, which belongs in \code{cormat}. Both
