@@ -39,8 +39,7 @@ test_that("output class and dimensions are correct", {
                                     "estimator", "method", "gof", "gof_used",
                                     "eigen_type_HULL",
                                     "eigen_type_other", "n_factors", "n_datasets",
-                                    "percent", "decision_rule",
-                                    "ekc_type", "n_datasets_nest",
+                                    "percent", "decision_rule", "n_datasets_nest",
                                     "alpha_nest", "estimate_control"))
 })
 
@@ -72,7 +71,7 @@ test_that("the summary line counts one vote per criterion", {
   # a criterion whose variants tie has no modal value and abstains: here 3 is the mode
   # of the per-variant vector, but only SMT decides, so no value wins more than one vote
   expect_equal(
-    .retention_summary(list(EKC = crit(EKC_BvA2017 = 3, EKC_AM2019 = 2),
+    .retention_summary(list(MAP = crit(MAP_TR2 = 3, MAP_TR4 = 2),
                             KGC = crit(KGC_PCA = 3, KGC_SMC = 1),
                             SMT = crit(SMT_chi = 3, SMT_RMSEA = 3))),
     "6 suggestions from 3 criteria, ranging from 1 to 3 factors.")
@@ -92,6 +91,20 @@ test_that("the summary line counts one vote per criterion", {
   expect_equal(
     .retention_summary(list(A = crit(A_x = 2, A_y = NA_real_), B = crit(B = 3))),
     "2 suggestions from 2 criteria, ranging from 2 to 3 factors.")
+})
+
+test_that("the summary line renders its counts whatever options(scipen) is", {
+  # An efa_retention object holds its counts as doubles, and a double is rendered in
+  # scientific notation under a negative options(scipen) ("3e+00" instead of "3"). Both
+  # branches of the line carry counts, so both are pinned.
+  crit <- function(...) list(n_factors = c(...))
+  withr::local_options(scipen = -5)
+
+  expect_equal(.retention_summary(list(A = crit(A = 3), B = crit(B = 3))),
+               "2 suggestions from 2 criteria, all suggesting 3 factors.")
+  expect_equal(
+    .retention_summary(list(A = crit(A = 2), B = crit(B = 2), C = crit(C = 4))),
+    "3 suggestions from 3 criteria, ranging from 2 to 4 factors (most common: 2).")
 })
 
 test_that("settings record the Hull goodness-of-fit indices that actually ran", {

@@ -82,13 +82,13 @@ test_that("efa_fit stores the canonical estimator and rotation from lowercase in
 test_that("the retention criteria canonicalize case-insensitive choices (fast path)", {
   cmat <- test_models$baseline$cormat
 
-  # efa_kgc's eigen_type (several.ok) and efa_ekc's type (several.ok) resolve without an
+  # efa_kgc's eigen_type (several.ok) and efa_ekc's use (single choice) resolve without an
   # EFA fit, so these exercise the .match_arg_ci swap on a default run
   kgc <- efa_kgc(cmat, eigen_type = c("pca", "smc"))
   expect_identical(kgc$settings$eigen_type, c("PCA", "SMC"))
 
-  ekc <- efa_ekc(cmat, N = 500, type = c("bva2017", "am2019"))
-  expect_identical(ekc$settings$type, c("BvA2017", "AM2019"))
+  ekc <- efa_ekc(cmat, N = 500, use = "PAIRWISE.COMPLETE.OBS")
+  expect_identical(ekc$settings$use, "pairwise.complete.obs")
 })
 
 test_that("efa_retain matches criteria case-insensitively and keeps canonical names", {
@@ -212,7 +212,7 @@ test_that("efa_scores matches the factor-score method case-insensitively", {
     case("efa_kmo", list(cmat), "use", "cor_method"),
     case("efa_map", list(cmat), "use", "cor_method"),
     case("efa_smt", list(cmat, N = 500), "use", "cor_method"),
-    case("efa_ekc", list(cmat, N = 500), "use", "cor_method", "type"),
+    case("efa_ekc", list(cmat, N = 500), "use", "cor_method"),
     case("efa_kgc", list(cmat), "use", "cor_method", "eigen_type"),
     case("efa_scree", list(cmat), "use", "cor_method", "eigen_type"),
     case("efa_hull", list(cmat, N = 500),
@@ -224,7 +224,7 @@ test_that("efa_scores matches the factor-score method case-insensitively", {
     case("efa_screen", list(cmat, N = 500), "use", "cor_method"),
     case("efa_retain", list(cmat, N = 500, suitability = FALSE),
          "use", "cor_method", "decision_rule", "criteria", "estimator", "gof",
-         "eigen_type_HULL", "eigen_type_other", "ekc_type"),
+         "eigen_type_HULL", "eigen_type_other"),
     case("efa_average", list(cmat, n_factors = 3, N = 500, show_progress = FALSE),
          "use", "cor_method", "averaging"),
     case("efa_compare", list(loads, loads), "reorder"),

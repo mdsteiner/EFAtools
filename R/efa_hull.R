@@ -377,7 +377,8 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
       if (length(issues) > 0) {
         inadmissible <- c(
           inadmissible,
-          paste0(g, ": ", retain, " factor", if (retain != 1) "s" else "",
+          paste0(g, ": ", .retention_count(retain), " factor",
+                 if (retain != 1) "s" else "",
                  " (", paste(issues, collapse = ", "), ")")
         )
       }

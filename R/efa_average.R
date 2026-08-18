@@ -202,7 +202,10 @@
 #' Every solution in the grid is fitted with the eigenvalue-based factor ordering,
 #' including under a named `type`: the solutions are realigned to a common target
 #' before averaging, so a per-fit ordering (SPSS orders by the sum of squared
-#' loadings) would not survive into the averaged result. This is the one setting a
+#' loadings) would not survive into the averaged result. That target is the first
+#' solution the grid retains, in grid order; solutions dropped for an error,
+#' non-convergence, or a Heywood case cannot become it. The averaged loadings are
+#' therefore in the factor order and sign of that solution. This is the one setting a
 #' named `type` does not carry, and it is visible in the two places the individual
 #' fits are: the solutions returned in `efa_list` are eigenvalue-ordered, and so is
 #' the single [efa_fit()] object returned when the grid collapses to one row. Their

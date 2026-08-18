@@ -342,8 +342,10 @@
 #'   a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see *Fit indices*). The
 #'   statistic reported as `chi` is always the scaled-and-shifted one (the WLSMV default,
 #'   flagged by `chi_scaled_type`), for the continuous Pearson path as well as the ordinal
-#'   one; the mean-adjusted statistic that \pkg{lavaan}'s `MLM` reports for continuous data
-#'   is returned alongside it as `chi_mean_adjusted`.
+#'   one; the mean-adjusted statistic of the kind \pkg{lavaan}'s `MLM` reports for continuous
+#'   data is returned alongside it as `chi_mean_adjusted`. It is not numerically equal to
+#'   `MLM`, because it projects only the off-diagonal correlation residuals, and the two can
+#'   differ substantially on data that is not multivariate normal.
 #'   Because the asymptotic covariance must describe the same cases as the correlation
 #'   matrix, the sandwich (like `estimator = "DWLS"`) is computed on the listwise-complete
 #'   cases; on data with missing values the reported `N`, the correlation matrix, and the
@@ -395,8 +397,10 @@
 #' (ECVI; Browne & Cudeck, 1989), the Root Mean Squared Residual (RMSR), the Standardized
 #' Root Mean Squared Residual (SRMR; Bentler, 1995), and the common-part-accounted-for
 #' (CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). They come with the
-#' independence-baseline statistics `chi_null`, `df_null`, and `p_null`: Bartlett's test of
-#' sphericity, which is the baseline that CFI and TLI are computed against.
+#' independence-baseline statistics `chi_null`, `df_null`, and `p_null`. On the unscaled ML
+#' and ULS paths `chi_null` is Bartlett's test of sphericity; a scaled chi-square, and the
+#' two-stage statistic of a `cor_method = "fiml"` fit, each carry their own baseline
+#' instead.
 #'
 #' The degrees of freedom are \eqn{((p - k)^2 - (p + k))/2} for \eqn{p} variables and \eqn{k}
 #' factors: the \eqn{p(p + 1)/2} distinct correlations, less the \eqn{pk + p} free loadings
@@ -415,9 +419,14 @@
 #' comparable.)
 #'
 #' The model chi-square is the
-#' Bartlett-corrected discrepancy (matching [stats::factanal()] for ML); the AIC, BIC, and
-#' ECVI are the minimum-fit-function (chi-square-based) forms \eqn{\chi^2 - 2\,df} and
-#' \eqn{\chi^2 - \log(N)\,df} for AIC and BIC, as in [psych::fa()], and
+#' Bartlett-corrected discrepancy (matching [stats::factanal()] for ML). For ULS it is that
+#' same maximum-likelihood (Wishart) discrepancy, evaluated at the ULS-fitted \eqn{\Sigma},
+#' as in [psych::fa()]. It is not the least-squares criterion made into a test statistic,
+#' which is what \pkg{lavaan} reports as its standard ULS test, so the two are not
+#' comparable. The AIC, BIC, and
+#' ECVI are the minimum-fit-function (chi-square-based) forms \eqn{\chi^2 - 2\,df} for AIC,
+#' \eqn{\chi^2 - \log(N)\,df} for BIC (the form [psych::fa()] reports as its `BIC`;
+#' \pkg{psych} reports no AIC), and
 #' \eqn{(\chi^2 + 2\,q)/(N - 1)} with \eqn{q = p(p + 1)/2 - df} free parameters for ECVI. AIC
 #' and BIC can therefore be negative. All three are built on the reported
 #' (Bartlett-corrected) chi-square, so the ECVI differs slightly from the uncorrected
@@ -425,7 +434,10 @@
 #' place the model and baseline
 #' noncentrality on the uncorrected \eqn{N - 1} discrepancy scale on which these
 #' approximate-fit indices are defined, so the Bartlett small-sample correction does not
-#' enter those three.
+#' enter those three. On the unscaled paths the reported `chi` and `chi_null` therefore do not
+#' reproduce the reported CFI and TLI: those two are built on \eqn{F(N - 1)} and
+#' \eqn{-\log|R|(N - 1)}, the latter being the baseline \pkg{lavaan} reports as
+#' `baseline.chisq`. On the other paths the reported pair is the pair the indices use.
 #'
 #' Which indices are reported depends on the estimator:
 #' - **ML and ULS** compute the full set above.
@@ -566,12 +578,13 @@
 #' Kaiser normalization (`normalize = TRUE`), whereas [psych::fa()] does not
 #' normalize before its promax target rotation; set `normalize = FALSE` to
 #' reproduce the [psych::fa()] promax result. What is left after that is the convergence
-#' noise of the underlying varimax base rather than an algorithmic difference -- it shrinks
-#' monotonically as `precision` is tightened -- but it is *not* bounded by `precision`
-#' itself: the tolerance is on the varimax criterion, and near a flat optimum the
-#' corresponding gap in the loadings is far larger. On an awkward correlation matrix it can
-#' reach the second decimal at the default `precision = 1e-5`, so tighten `precision` if you
-#' need the comparison to be exact.
+#' noise of the two varimax bases rather than an algorithmic difference. It is *not*
+#' bounded by `precision` alone: the tolerance is on the varimax criterion, and near a flat
+#' optimum the corresponding gap in the loadings is far larger. On an awkward correlation
+#' matrix it can reach the second decimal at the default `precision = 1e-5`. Each package
+#' converges its own base, so the difference is bounded by both tolerances: a lower
+#' `precision` takes it down only as far as the tolerance of \pkg{psych}'s base. Tighten
+#' that one too, with `eps` in [psych::Promax()], if you need the comparison to be exact.
 #'
 #' The `varimax_type` argument can take two values, "svd", and "kaiser". "svd" uses
 #' singular value decomposition, by calling [stats::varimax()]. "kaiser"
@@ -642,7 +655,9 @@
 #' additionally carries `chi_scaled_type` (`"scaled.shifted"`) and the scaling
 #' components: `chi_scaling` (the multiplier a in the scaled-and-shifted statistic
 #' \eqn{aT + b}, i.e. the reciprocal of \pkg{lavaan}'s `chisq.scaling.factor`),
-#' `chi_shift` (b), `chi_unscaled` (the unscaled statistic T), and the alternative
+#' `chi_shift` (b), `chi_unscaled` (the unscaled statistic T, which sits on the
+#' package's own weight scale: the reported statistics do not depend on that scale,
+#' but T itself is not comparable across estimators or programs), and the alternative
 #' `chi_mean_adjusted` and `chi_mean_var` statistics with their `df_mean_var`.
 #' `chi_scaled_type` is the field that says which statistic `chi` is: a
 #' `cor_method = "fiml"` fit whose corrected statistic could not be formed instead
@@ -658,12 +673,14 @@
 #' multiplier), for ULS half the squared Frobenius norm of the residual
 #' \eqn{R - \Psi - \Lambda\Lambda'}, whose diagonal vanishes at an interior optimum
 #' and there leaves the sum of squared residual correlations over the unique variable
-#' pairs (equal there to the criterion [psych::fa()] reports for `fm = "minres"`, and
-#' half the one it reports for `fm = "uls"`, which sums each pair twice), for DWLS the
+#' pairs (\pkg{psych} does not report this criterion: [psych::fa()]'s
+#' `criteria["objective"]` is the maximum-likelihood discrepancy at the fitted solution
+#' for every `fm`, `"uls"` included), for DWLS the
 #' weighted residual sum of squares over those same unique
 #' pairs, and `NA` for PAF, which minimises no explicit objective. It also carries the
-#' independence-baseline statistics `chi_null` (Bartlett's test of sphericity, the
-#' baseline that CFI and TLI are referenced to), its degrees of freedom `df_null`
+#' independence-baseline statistics `chi_null` (Bartlett's test of sphericity on the
+#' unscaled paths, the scaled or likelihood-ratio baseline otherwise), its degrees of
+#' freedom `df_null`
 #' (\eqn{p(p - 1)/2}), and the corresponding `p_null`. See the *Fit indices* section in
 #' Details for how each index is defined, scaled, and referenced.}
 #' \item{model_implied_R}{The model implied correlation

@@ -44,6 +44,10 @@
 
 ## Factor Retention
 
+* The `type` argument of `efa_ekc()` and the `ekc_type` argument of `efa_retain()` are deprecated and ignored. The `"AM2019"` reference values they could select do not depend on the observed eigenvalues, so they do not apply the empirical correction that defines the criterion.
+
+* The empirical Kaiser criterion is now always computed as in Braeken and van Assen (2017). The suggested number of factors can therefore differ from earlier results, and `efa_retain()` no longer reports an `EKC_AM2019` entry.
+
 * `efa_cd()` now reports a clear error when the data contain constant variables.
 
 * `efa_smt()` now warns when a recommended model has a Heywood case or has not converged. The recommendation is still returned but should be treated cautiously.

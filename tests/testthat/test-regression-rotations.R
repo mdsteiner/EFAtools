@@ -574,8 +574,9 @@ test_that("promax with normalize = FALSE reproduces psych's Promax", {
 
   # Pins the documented claim that switching off Kaiser normalization reproduces the
   # psych promax solution "to within the varimax convergence tolerance". psych::Promax is
-  # what psych::fa(rotate = "Promax") calls. The residual is the convergence noise of the
-  # shared stats::varimax base at eps = 1e-5, not an algorithmic difference, so the
+  # what psych::fa(rotate = "Promax") calls. Each package converges its own varimax base
+  # (psych::Promax forwards eps through ... to GPArotation::Varimax), so the residual is
+  # bounded by both tolerances rather than being an algorithmic difference, and the
   # equivalence is asserted at 1e-4 rather than at machine precision.
   efa <- suppressWarnings(
     .rotate_model(unrot, rotation = "promax", type = "psych", normalize = FALSE)

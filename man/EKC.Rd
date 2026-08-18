@@ -10,7 +10,7 @@ EKC(
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
-  type = "BvA2017"
+  type = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -33,9 +33,10 @@ behaviour of product-moment correlations; with \code{"poly"} / \code{"tetra"} (a
 lesser degree, the rank-based methods) the reference series is therefore an
 approximation.}
 
-\item{type}{character. The calculation of EKC. type \code{"BvA2017"} is the original implementation; type \code{"AM2019"} differs from the original implementation but was used in simulation studies (Auerswald & Moshagen, 2019; Caron, 2025). See details.
-Use \code{type = c("BvA2017", "AM2019")} for both implementations. Make sure
-to report which version you used.}
+\item{type}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. It selected
+between two ways to compute the reference values. The \code{"AM2019"} reference values
+do not depend on the observed eigenvalues, so they do not apply the empirical
+correction that defines the criterion, and they are no longer computed.}
 }
 \value{
 An object of class \code{efa_retention}, identical to the value of

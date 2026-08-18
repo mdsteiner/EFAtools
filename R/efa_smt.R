@@ -233,7 +233,8 @@ efa_smt <- function(x, N = NA, use = c("pairwise.complete.obs", "all.obs",
     if (length(issues) > 0) {
       inadmissible <- c(
         inadmissible,
-        paste0(rule, ": ", k, " factor", if (k != 1) "s" else "",
+        paste0(rule, ": ", .retention_count(k), " factor",
+               if (k != 1) "s" else "",
                " (", paste(issues, collapse = ", "), ")")
       )
     }

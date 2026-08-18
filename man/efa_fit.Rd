@@ -256,7 +256,9 @@ correction could be formed) AIC, BIC, and ECVI are \code{NA} and the list
 additionally carries \code{chi_scaled_type} (\code{"scaled.shifted"}) and the scaling
 components: \code{chi_scaling} (the multiplier a in the scaled-and-shifted statistic
 \eqn{aT + b}, i.e. the reciprocal of \pkg{lavaan}'s \code{chisq.scaling.factor}),
-\code{chi_shift} (b), \code{chi_unscaled} (the unscaled statistic T), and the alternative
+\code{chi_shift} (b), \code{chi_unscaled} (the unscaled statistic T, which sits on the
+package's own weight scale: the reported statistics do not depend on that scale,
+but T itself is not comparable across estimators or programs), and the alternative
 \code{chi_mean_adjusted} and \code{chi_mean_var} statistics with their \code{df_mean_var}.
 \code{chi_scaled_type} is the field that says which statistic \code{chi} is: a
 \code{cor_method = "fiml"} fit whose corrected statistic could not be formed instead
@@ -272,12 +274,14 @@ maximum-likelihood discrepancy (there the two do coincide, up to the Bartlett
 multiplier), for ULS half the squared Frobenius norm of the residual
 \eqn{R - \Psi - \Lambda\Lambda'}, whose diagonal vanishes at an interior optimum
 and there leaves the sum of squared residual correlations over the unique variable
-pairs (equal there to the criterion \code{\link[psych:fa]{psych::fa()}} reports for \code{fm = "minres"}, and
-half the one it reports for \code{fm = "uls"}, which sums each pair twice), for DWLS the
+pairs (\pkg{psych} does not report this criterion: \code{\link[psych:fa]{psych::fa()}}'s
+\code{criteria["objective"]} is the maximum-likelihood discrepancy at the fitted solution
+for every \code{fm}, \code{"uls"} included), for DWLS the
 weighted residual sum of squares over those same unique
 pairs, and \code{NA} for PAF, which minimises no explicit objective. It also carries the
-independence-baseline statistics \code{chi_null} (Bartlett's test of sphericity, the
-baseline that CFI and TLI are referenced to), its degrees of freedom \code{df_null}
+independence-baseline statistics \code{chi_null} (Bartlett's test of sphericity on the
+unscaled paths, the scaled or likelihood-ratio baseline otherwise), its degrees of
+freedom \code{df_null}
 (\eqn{p(p - 1)/2}), and the corresponding \code{p_null}. See the \emph{Fit indices} section in
 Details for how each index is defined, scaled, and referenced.}
 \item{model_implied_R}{The model implied correlation
@@ -600,8 +604,10 @@ by the same delta method, and additionally fills the model fit's chi-square bloc
 a scaled (Satorra-Bentler / scaled-and-shifted) chi-square (see \emph{Fit indices}). The
 statistic reported as \code{chi} is always the scaled-and-shifted one (the WLSMV default,
 flagged by \code{chi_scaled_type}), for the continuous Pearson path as well as the ordinal
-one; the mean-adjusted statistic that \pkg{lavaan}'s \code{MLM} reports for continuous data
-is returned alongside it as \code{chi_mean_adjusted}.
+one; the mean-adjusted statistic of the kind \pkg{lavaan}'s \code{MLM} reports for continuous
+data is returned alongside it as \code{chi_mean_adjusted}. It is not numerically equal to
+\code{MLM}, because it projects only the off-diagonal correlation residuals, and the two can
+differ substantially on data that is not multivariate normal.
 Because the asymptotic covariance must describe the same cases as the correlation
 matrix, the sandwich (like \code{estimator = "DWLS"}) is computed on the listwise-complete
 cases; on data with missing values the reported \code{N}, the correlation matrix, and the
@@ -655,8 +661,10 @@ Akaike and Bayesian Information Criteria (AIC, BIC), the Expected Cross-Validati
 (ECVI; Browne & Cudeck, 1989), the Root Mean Squared Residual (RMSR), the Standardized
 Root Mean Squared Residual (SRMR; Bentler, 1995), and the common-part-accounted-for
 (CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). They come with the
-independence-baseline statistics \code{chi_null}, \code{df_null}, and \code{p_null}: Bartlett's test of
-sphericity, which is the baseline that CFI and TLI are computed against.
+independence-baseline statistics \code{chi_null}, \code{df_null}, and \code{p_null}. On the unscaled ML
+and ULS paths \code{chi_null} is Bartlett's test of sphericity; a scaled chi-square, and the
+two-stage statistic of a \code{cor_method = "fiml"} fit, each carry their own baseline
+instead.
 
 The degrees of freedom are \eqn{((p - k)^2 - (p + k))/2} for \eqn{p} variables and \eqn{k}
 factors: the \eqn{p(p + 1)/2} distinct correlations, less the \eqn{pk + p} free loadings
@@ -675,9 +683,14 @@ count of \emph{both} triangles, and so equals RMSR\eqn{/\sqrt{2}}; the two are n
 comparable.)
 
 The model chi-square is the
-Bartlett-corrected discrepancy (matching \code{\link[stats:factanal]{stats::factanal()}} for ML); the AIC, BIC, and
-ECVI are the minimum-fit-function (chi-square-based) forms \eqn{\chi^2 - 2\,df} and
-\eqn{\chi^2 - \log(N)\,df} for AIC and BIC, as in \code{\link[psych:fa]{psych::fa()}}, and
+Bartlett-corrected discrepancy (matching \code{\link[stats:factanal]{stats::factanal()}} for ML). For ULS it is that
+same maximum-likelihood (Wishart) discrepancy, evaluated at the ULS-fitted \eqn{\Sigma},
+as in \code{\link[psych:fa]{psych::fa()}}. It is not the least-squares criterion made into a test statistic,
+which is what \pkg{lavaan} reports as its standard ULS test, so the two are not
+comparable. The AIC, BIC, and
+ECVI are the minimum-fit-function (chi-square-based) forms \eqn{\chi^2 - 2\,df} for AIC,
+\eqn{\chi^2 - \log(N)\,df} for BIC (the form \code{\link[psych:fa]{psych::fa()}} reports as its \code{BIC};
+\pkg{psych} reports no AIC), and
 \eqn{(\chi^2 + 2\,q)/(N - 1)} with \eqn{q = p(p + 1)/2 - df} free parameters for ECVI. AIC
 and BIC can therefore be negative. All three are built on the reported
 (Bartlett-corrected) chi-square, so the ECVI differs slightly from the uncorrected
@@ -685,7 +698,10 @@ Browne-Cudeck form reported by \pkg{lavaan} and Mplus. The RMSEA, CFI, and TLI i
 place the model and baseline
 noncentrality on the uncorrected \eqn{N - 1} discrepancy scale on which these
 approximate-fit indices are defined, so the Bartlett small-sample correction does not
-enter those three.
+enter those three. On the unscaled paths the reported \code{chi} and \code{chi_null} therefore do not
+reproduce the reported CFI and TLI: those two are built on \eqn{F(N - 1)} and
+\eqn{-\log|R|(N - 1)}, the latter being the baseline \pkg{lavaan} reports as
+\code{baseline.chisq}. On the other paths the reported pair is the pair the indices use.
 
 Which indices are reported depends on the estimator:
 \itemize{
@@ -825,12 +841,13 @@ Grieder & Steiner (2022). Note that all \code{type} presets keep the EFAtools de
 Kaiser normalization (\code{normalize = TRUE}), whereas \code{\link[psych:fa]{psych::fa()}} does not
 normalize before its promax target rotation; set \code{normalize = FALSE} to
 reproduce the \code{\link[psych:fa]{psych::fa()}} promax result. What is left after that is the convergence
-noise of the underlying varimax base rather than an algorithmic difference -- it shrinks
-monotonically as \code{precision} is tightened -- but it is \emph{not} bounded by \code{precision}
-itself: the tolerance is on the varimax criterion, and near a flat optimum the
-corresponding gap in the loadings is far larger. On an awkward correlation matrix it can
-reach the second decimal at the default \code{precision = 1e-5}, so tighten \code{precision} if you
-need the comparison to be exact.
+noise of the two varimax bases rather than an algorithmic difference. It is \emph{not}
+bounded by \code{precision} alone: the tolerance is on the varimax criterion, and near a flat
+optimum the corresponding gap in the loadings is far larger. On an awkward correlation
+matrix it can reach the second decimal at the default \code{precision = 1e-5}. Each package
+converges its own base, so the difference is bounded by both tolerances: a lower
+\code{precision} takes it down only as far as the tolerance of \pkg{psych}'s base. Tighten
+that one too, with \code{eps} in \code{\link[psych:Promax]{psych::Promax()}}, if you need the comparison to be exact.
 
 The \code{varimax_type} argument can take two values, "svd", and "kaiser". "svd" uses
 singular value decomposition, by calling \code{\link[stats:varimax]{stats::varimax()}}. "kaiser"

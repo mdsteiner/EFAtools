@@ -48,7 +48,22 @@
 #     the knob it always claimed to pass on.
 #   * For any DELIBERATE behaviour change to an existing pathway, consciously decide
 #     whether to let it reach the old name or to pin the old behaviour inside the
-#     wrapper, and document that decision.
+#     wrapper, and document that decision. Consciously admitted under this rule: the
+#     `EKC()` `type` and `N_FACTORS()` `ekc_type` arguments are deprecated on their
+#     successors, so a legacy call that names either one now warns and gets a different
+#     number of factors. The change is let through to the old name rather than pinned,
+#     because the alternative -- returning the new number in silence -- is the one
+#     outcome a caller cannot detect. Both formals stay, with the lifecycle sentinel as
+#     their default so that forwarding it reads as "not supplied": a legacy call that
+#     never named the argument stays silent, and the wrapper body is unchanged. The
+#     returned object changes with them: `efa_ekc()` no longer records `type` in
+#     `settings`, so `EKC(...)$settings$type` is now NULL rather than "BvA2017".
+#     The successor raises the warning, so it names `efa_ekc(type)` even to a caller
+#     who wrote `EKC(type)`. Letting the wrapper name itself would mean warning in the
+#     wrapper and dropping the argument instead of forwarding it -- a second statement
+#     in the body, which the frozen-signature test rejects (it requires the body to be
+#     exactly one call that forwards every formal by name). The one-line forwarder is
+#     worth more than the sharper label; do not "fix" this without moving that test.
 
 # Reject the successor-only `estimator` name when it lands in a wrapper's `...`: the
 # wrappers with a frozen `method` formal splice their own `estimator = method` translation
@@ -174,7 +189,7 @@ EKC <- function(x, N = NA,
                            "complete.obs", "everything",
                            "na.or.complete"),
                 cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
-                type = "BvA2017") {
+                type = lifecycle::deprecated()) {
   efa_ekc(x, N = N, use = use, cor_method = cor_method, type = type)
 }
 
@@ -436,7 +451,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                       n_factors = 1, n_datasets = 1000,
                       percent = 95,
                       decision_rule = c("means", "percentile", "crawford"),
-                      ekc_type = c("BvA2017"),
+                      ekc_type = lifecycle::deprecated(),
                       n_datasets_nest = 1000, alpha_nest = .05,
                       show_progress = FALSE,
                       ...) {

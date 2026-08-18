@@ -12,9 +12,6 @@ https://doi.org/10.1037/met0000200
 Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
 Psychological Methods, 22, 450 – 466. https://doi.org/10.1037/met0000074
 
-Caron, P.-O. (2025). A Comparison of the Next Eigenvalue Sufficiency Test to Other Stopping Rules for the Number of Factors in Factor Analysis.
-Educational and Psychological Measurement, Online-first publication. https://doi.org/10.1177/00131644241308528
-
 Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
 determining the number of components to retain. Psychological Bulletin, 99,
 432–442. https://doi.org/10.1037/0033-2909.99.3.432
@@ -26,7 +23,7 @@ efa_ekc(
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
-  type = "BvA2017"
+  type = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -49,32 +46,30 @@ behaviour of product-moment correlations; with \code{"poly"} / \code{"tetra"} (a
 lesser degree, the rank-based methods) the reference series is therefore an
 approximation.}
 
-\item{type}{character. The calculation of EKC. type \code{"BvA2017"} is the original implementation; type \code{"AM2019"} differs from the original implementation but was used in simulation studies (Auerswald & Moshagen, 2019; Caron, 2025). See details.
-Use \code{type = c("BvA2017", "AM2019")} for both implementations. Make sure
-to report which version you used.}
+\item{type}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. It selected
+between two ways to compute the reference values. The \code{"AM2019"} reference values
+do not depend on the observed eigenvalues, so they do not apply the empirical
+correction that defines the criterion, and they are no longer computed.}
 }
 \value{
 An object of class \code{efa_retention} (see \code{\link[=print.efa_retention]{print.efa_retention()}} and
 \code{\link[=plot.efa_retention]{plot.efa_retention()}} for the print and plot methods). Its main fields are:
-\item{n_factors}{A named numeric vector with the suggested number of factors
-for each requested implementation (\code{"BvA2017"} and/or \code{"AM2019"}). Both
-implementations retain the factors up to the first observed eigenvalue that
-fails to exceed its reference value. If every eigenvalue exceeds its
-reference, so that no such crossing is found, all \emph{J} factors are retained --
-the same "all-exceed" convention parallel analysis (\code{\link[=efa_parallel]{efa_parallel()}}) uses.
-For a valid correlation matrix this boundary cannot be reached under
-\code{"AM2019"}, whose last reference value is floored at 1 while the smallest
-eigenvalue is at most 1.}
-\item{results}{A list with one record per implementation, each holding the
-eigenvalues, the reference eigenvalues, and the retained solution used for
-printing and plotting.}
+\item{n_factors}{A numeric vector of length one, named \code{"BvA2017"}, with the
+suggested number of factors. The factors up to the first observed eigenvalue
+that fails to exceed its reference value are retained. The "all-exceed"
+convention of parallel analysis (\code{\link[=efa_parallel]{efa_parallel()}}), which retains all \emph{J} factors
+when no such crossing is found, cannot be reached here: the reference values are
+never below 1, while the eigenvalues of a correlation matrix sum to \emph{J} and are
+sorted downwards, so the last of them is never above 1.}
+\item{results}{A list with one record, holding the eigenvalues, the reference
+eigenvalues, and the retained solution used for printing and plotting.}
 \item{settings}{A list with the settings used.}
 }
 \description{
 The empirical Kaiser criterion incorporates random sampling variations of the
-eigenvalues from the Kaiser-Guttman criterion (\code{\link[=efa_kgc]{efa_kgc()}}; see Auerswald & Moshagen
-, 2019; Braeken & van Assen, 2017). The code is based on Braeken & van Assen, (2017) and on Auerswald and Moshagen
-(2019).
+eigenvalues from the Kaiser-Guttman criterion (\code{\link[=efa_kgc]{efa_kgc()}}; see Auerswald &
+Moshagen, 2019; Braeken & van Assen, 2017). The implementation follows Braeken
+and van Assen (2017).
 }
 \details{
 The Kaiser-Guttman criterion was defined with the intend that a factor
@@ -95,29 +90,8 @@ factors model; and (b) clearly outperforms parallel analysis for the specific
 case of oblique factors, particularly whenever factor intercorrelation is
 moderate to high and the number of variables per factor is small, which is
 characteristic of many applications these days" (p.463-464).
-
-In EFAtools version <= 0.5.0 only the implementation of Auerswald and
-Moshagen (2019) was implemented (now available with
-\code{type = "AM2019"}). However, this implementation, that was probably also used in Caron (2025), differs from the
-original implementation by Braeken and van Assen (2017) in that it corrects by the reference values, i.e., without
-using the empirical eigenvalues used in the original implementation.
-Thanks to Luis Eduardo Garrido for pointing this out and to Johan Braeken for sharing
-sample code, based on which the original version is now implemented and used
-by default with \code{type = "BvA2017"}.
-
-While the adapted version performed relatively well
-in the simulation studies by Auerswald and Moshagen (2019) and Caron (2025),
-the theoretical derivations of the EKC as introduced by Braeken and van Assen (2017)
-may no longer hold. Currently we are unaware of studies comparing the two implementations,
-but based on our own brief comparisons across multiple datasets, the two implementations
-appear to often differ substantially regarding the number of factors suggested.
-
-As both implementations exist in different packages and studies, we provide both
-versions here. Be sure to state clearly which version you use when reporting your
-results to avoid confusion and ensure reproducibility.
 }
 \examples{
-# original implementation
 efa_ekc(test_models$baseline$cormat, N = 500)
 }
 \seealso{

@@ -171,7 +171,8 @@
 # Independence-model (baseline) chi-square of the null model (model-implied matrix =
 # identity), -log|R| * mult. With `corrected = TRUE` (default) mult is the Bartlett
 # multiplier N - 1 - (2p + 5)/6: this is Bartlett's test of sphericity, the reported
-# baseline statistic shared with BARTLETT() and the CFI/TLI baseline in .gof(). With
+# baseline statistic shared with BARTLETT(). It is not the CFI/TLI baseline -- .gof() builds
+# that one at (N - 1) directly (see chi_null_cfi there). With
 # `corrected = FALSE` mult is (N - 1), the uncorrected discrepancy scale on which the
 # RMSEA noncentrality is built (the 0-factor reference in HULL() and the null model in SMT()).
 .null_chisq <- function(R, N, ld = determinant(R, logarithm = TRUE),
@@ -533,7 +534,7 @@
     # matrix Sigma = LL' (unit diagonal), times (N - 1 - (2p + 5)/6 - (2q)/3). For ML this
     # equals the ML objective times the Bartlett multiplier (matching stats::factanal); for
     # ULS the same ML/Wishart discrepancy is evaluated at the ULS-fitted Sigma (matching
-    # psych::fa(fm = "minres")), rather than treating the raw least-squares residual sum of
+    # psych::fa(fm = "uls")), rather than treating the raw least-squares residual sum of
     # squares as the statistic. Its chi-square reference distribution is asymptotically exact
     # under ML and is used here as the conventional approximation for ULS. NA
     # for PAF, missing N, underidentified df, or a non-PD model-implied matrix (e.g. Heywood

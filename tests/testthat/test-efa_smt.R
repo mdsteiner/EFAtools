@@ -169,12 +169,22 @@ test_that("the chi-square sequence matches stats::factanal", {
 })
 
 test_that("an inadmissible selected solution raises a classed warning", {
+  # The warning names the number of factors each rule selected, so it renders counts the
+  # way the report does. A negative options(scipen) is set here rather than in a test of
+  # its own, so that the one fit covers both the condition and its text.
+  withr::local_options(scipen = -5)
+
   # On this matrix the chi-square and AIC rules both select a 6-factor model that
   # has Heywood cases, while the RMSEA rule selects an admissible 4-factor model.
-  expect_warning(smt_bad <- efa_smt(test_models$case_11b$cormat, N = 500),
-                 class = "efa_smt_inadmissible")
+  w <- expect_warning(smt_bad <- efa_smt(test_models$case_11b$cormat, N = 500),
+                      class = "efa_smt_inadmissible")
   expect_equal(smt_bad$n_factors[["chi"]], 6)
   expect_equal(smt_bad$n_factors[["AIC"]], 6)
+
+  # the AIC rule stores its count as a double, so it is the one that would render as
+  # "6e+00" were the message built with a bare paste0(); the pattern takes any exponent,
+  # because a count of ten or more carries a different one
+  expect_false(grepl("e[+-][0-9]", conditionMessage(w)))
 
   # a clean sequence stays silent
   expect_no_warning(efa_smt(test_models$baseline$cormat, N = 500),

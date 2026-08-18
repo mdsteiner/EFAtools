@@ -77,10 +77,6 @@ test_that("print.efa_retention output is stable for EKC", {
 
   ekc <- EKC(test_models$baseline$cormat, N = 500)
   expect_snapshot(print(ekc))
-
-  ekc_both <- EKC(test_models$baseline$cormat, N = 500,
-                  type = c("BvA2017", "AM2019"))
-  expect_snapshot(print(ekc_both))
 })
 
 test_that("print.efa_retention output is stable for HULL", {

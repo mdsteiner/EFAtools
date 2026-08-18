@@ -79,10 +79,12 @@
 #'  of factors varies slightly from run to run. Call [base::set.seed()] beforehand to make a
 #'  run reproducible; the result is then also independent of the parallel plan set via
 #'  [future::plan()], so it can be reproduced on a machine with a different number of
-#'  cores. The simulation is drawn in independently seeded blocks; a block that fails --
-#'  which happens when a simulated correlation matrix is singular, so that no eigenvalues
-#'  can be taken from it -- is redrawn on its own, leaving the blocks that succeeded with
-#'  the draws they already made.
+#'  cores. For `"PCA"` and `"SMC"` the simulation is drawn in independently seeded blocks;
+#'  a block that fails -- which happens when a simulated correlation matrix is singular, so
+#'  that no eigenvalues can be taken from it -- is redrawn on its own, leaving the blocks
+#'  that succeeded with the draws they already made. The `"EFA"` series instead redraws the
+#'  single dataset that could not be fitted; if that dataset still cannot be fitted, the
+#'  call stops with an error.
 #'
 #'  When both `"PCA"` and `"SMC"` are requested, the two are read off the *same* simulated
 #'  datasets rather than from two independent simulations: they differ only in the diagonal
@@ -425,8 +427,9 @@ efa_parallel <- function(x = NULL,
     "PARALLEL",
     results = unname(results),
     settings = settings,
-    subtitle = .eigen_subtitle(eigen_type,
-                               paste0(n_datasets, " simulated datasets")),
+    subtitle = .eigen_subtitle(
+      eigen_type,
+      paste0(.retention_count(n_datasets), " simulated datasets")),
     note = if (isTRUE(x_dat)) {
       paste0("Number of factors retained using the \"", decision_rule,
              "\" decision rule.")

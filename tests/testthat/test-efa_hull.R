@@ -260,12 +260,28 @@ test_that("a non-positive-definite input is smoothed and its hull flagged", {
   # efa_hull() derives J from a simulated parallel analysis, so seed it rather than
   # inheriting whatever state the preceding tests left (which differs between the
   # default and the slow gate).
+  #
+  # The inadmissibility warning names the number of factors that was selected, so it
+  # renders counts the way the report does. A negative options(scipen) is set here rather
+  # than in a test of its own, so that the one fit covers both the conditions and that
+  # text; the inner handler only reads the message and leaves the muffling to
+  # `.warn_classes()`.
+  withr::local_options(scipen = -5)
   set.seed(42)
-  classes <- .warn_classes(efa_hull(burt, N = 20, estimator = "ML"))
+  inadmissible <- NA_character_
+  classes <- .warn_classes(withCallingHandlers(
+    efa_hull(burt, N = 20, estimator = "ML"),
+    efa_hull_inadmissible = function(w) inadmissible <<- conditionMessage(w)))
 
   expect_true("efa_cor_smoothed" %in% classes)
   expect_true("efa_hull_few_solutions" %in% classes)
   expect_true("efa_hull_inadmissible" %in% classes)
+
+  # the hull stores its count as a double, so it would render as "1e+00" were the message
+  # built with a bare paste0(); the pattern takes any exponent, because a count of ten or
+  # more carries a different one
+  expect_false(is.na(inadmissible))
+  expect_false(grepl("e[+-][0-9]", inadmissible))
 })
 
 test_that("a hull with no finite goodness-of-fit value aborts", {

@@ -92,10 +92,6 @@ test_that("EKC eigen plot is visually stable", {
 
   ekc <- EKC(test_models$baseline$cormat, N = 500)
   vdiffr::expect_doppelganger("EKC eigen plot", plot(ekc))
-
-  ekc_both <- EKC(test_models$baseline$cormat, N = 500,
-                  type = c("BvA2017", "AM2019"))
-  vdiffr::expect_doppelganger("EKC eigen plot both types", plot(ekc_both))
 })
 
 test_that("HULL hull plot is visually stable", {

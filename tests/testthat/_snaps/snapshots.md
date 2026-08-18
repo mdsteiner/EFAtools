@@ -110,23 +110,7 @@
     Output
       -- Empirical Kaiser Criterion --------------------------------------------------
       
-      * Original implementation (Braeken & van Assen, 2017): 3
-      
-      i Multiple implementations of EKC exist; make sure to report which one you used
-      (see the efa_ekc help page for details).
-
----
-
-    Code
-      print(ekc_both)
-    Output
-      -- Empirical Kaiser Criterion --------------------------------------------------
-      
-      * Original implementation (Braeken & van Assen, 2017): 3
-      * Adapted implementation (Auerswald & Moshagen, 2019): 2
-      
-      i Multiple implementations of EKC exist; make sure to report which one you used
-      (see the efa_ekc help page for details).
+      * Braeken & van Assen (2017): 3
 
 # print.efa_retention output is stable for HULL
 
@@ -170,7 +154,7 @@
       8 suggestions from 4 criteria, ranging from 1 to 3 factors (most common: 3).
       
       Empirical Kaiser Criterion
-      * Original implementation (Braeken & van Assen, 2017): 3
+      * Braeken & van Assen (2017): 3
       
       Kaiser-Guttman criterion
       Eigenvalues found using PCA and SMC.
@@ -196,7 +180,7 @@
       4 suggestions from 3 criteria, ranging from 1 to 3 factors (most common: 3).
       
       Empirical Kaiser Criterion
-      * Original implementation (Braeken & van Assen, 2017): 3
+      * Braeken & van Assen (2017): 3
       
       Kaiser-Guttman criterion
       Eigenvalues found using PCA.

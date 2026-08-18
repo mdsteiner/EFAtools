@@ -28,8 +28,7 @@
   EKC = list(
     label = "Empirical Kaiser Criterion", needs_raw = FALSE,
     fun = function(x, ctl) {
-      efa_ekc(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method,
-          type = ctl$ekc_type)
+      efa_ekc(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method)
     }),
   HULL = list(
     label = "Hull method", needs_raw = FALSE, poly_ok = FALSE,
@@ -107,7 +106,7 @@
                            gof = if (estimator == "PAF") "CAF" else c("CAF", "CFI", "RMSEA"),
                            eigen_type_HULL = "SMC", eigen_type_other = "SMC",
                            n_factors = 1, n_datasets = 1000, percent = 95,
-                           decision_rule = "means", ekc_type = "BvA2017",
+                           decision_rule = "means",
                            n_datasets_nest = 1000, alpha_nest = .05,
                            estimate_control = NULL, dots = list()) {
   list(N = N, use = use, cor_method = cor_method,
@@ -117,7 +116,7 @@
        eigen_type_HULL = eigen_type_HULL,
        eigen_type_other = eigen_type_other, n_factors = n_factors,
        n_datasets = n_datasets, percent = percent,
-       decision_rule = decision_rule, ekc_type = ekc_type,
+       decision_rule = decision_rule,
        n_datasets_nest = n_datasets_nest, alpha_nest = alpha_nest,
        estimate_control = estimate_control, dots = dots)
 }
@@ -190,11 +189,30 @@
          if (is.null(detail)) "." else paste0("; ", detail, "."))
 }
 
+# Render a whole-number count (of factors, or of simulated datasets) for the report, a
+# condition message, or a plot label. The criteria differ in the storage mode they put in
+# their record: a count derived with cumprod() or which.min() - 1 comes out double, one
+# taken from an index integer. Under a negative options(scipen) a double is rendered in
+# scientific notation ("3e+00" instead of "3") by as.character() and paste0() alike, and
+# also by grid, which coerces a numeric plot label at draw time. A count is exempt from
+# that option because it is whole by construction; a genuinely continuous quantity (an
+# eigenvalue, a fit index) still honours it.
+#
+# scientific = FALSE pins the fixed notation whatever the option is set to. trim keeps a
+# vector of counts unpadded, so that the point labels of a hull with ten or more solutions
+# are not indented to the width of the widest of them.
+#
+# This covers the counts the criteria compute. A count that cli interpolates from a user
+# argument -- `{N}` in .assert_n_gt_vars() below -- does not come through here.
+.retention_count <- function(n) {
+  format(n, scientific = FALSE, trim = TRUE)
+}
+
 # Bullet lines (one per record) shared by format.efa_retention and
 # format.efa_retain.
 .retention_bullets <- function(results) {
   vapply(results, function(r) {
-    value <- if (is.na(r$n_factors)) "not applicable" else as.character(r$n_factors)
+    value <- if (is.na(r$n_factors)) "not applicable" else .retention_count(r$n_factors)
     paste0(r$label, ": ", value)
   }, character(1))
 }
@@ -321,8 +339,10 @@ plot.efa_retention <- function(x, ...) {
 
   highlights <- do.call(rbind, lapply(records, function(r) {
     if (is.null(r$highlight) || is.na(r$highlight) || r$highlight < 1) return(NULL)
+    # `factor` positions the point, `label` names it (see .retention_count())
     data.frame(variant = r$label, factor = r$highlight,
-               value = r$y[r$highlight], stringsAsFactors = FALSE)
+               value = r$y[r$highlight], label = .retention_count(r$highlight),
+               stringsAsFactors = FALSE)
   }))
 
   thresholds <- do.call(rbind, lapply(records, function(r) {
@@ -385,7 +405,7 @@ plot.efa_retention <- function(x, ...) {
     highlights$variant <- factor(highlights$variant, levels = variant_levels)
     p <- p +
       ggplot2::geom_point(data = highlights, shape = 1, size = 4, colour = "red") +
-      ggplot2::geom_text(data = highlights, ggplot2::aes(label = .data$factor),
+      ggplot2::geom_text(data = highlights, ggplot2::aes(label = .data$label),
                          colour = "red", vjust = -1)
   }
 
@@ -427,8 +447,9 @@ plot.efa_retention <- function(x, ...) {
   variant_levels <- hull_facet(vapply(results, function(r) r$label, character(1)))
 
   dat <- do.call(rbind, lapply(results, function(r) {
+    # `nfac` is only ever drawn as a text label (see .retention_count())
     data.frame(variant = hull_facet(r$label), df = r$x, fit = r$y,
-               nfac = r$point_labels, on_hull = r$on_hull,
+               nfac = .retention_count(r$point_labels), on_hull = r$on_hull,
                stringsAsFactors = FALSE)
   }))
   dat$variant <- factor(dat$variant, levels = variant_levels)

@@ -76,6 +76,41 @@
   }
 }
 
+# One deprecation warning for the retired option of the empirical Kaiser criterion reference
+# values. The two arguments that selected it (`efa_ekc(type)` and `efa_retain(ekc_type)`) share
+# it, so their wording cannot drift apart.
+#
+# `always = TRUE`: the fallback changes the number of factors the criterion suggests. A warning
+# that goes quiet after the first call of a session is too easy to miss.
+#
+# `user_env = globalenv()` tells lifecycle that the caller is a user, and it is load-bearing for
+# EVERY call, not only the ones that arrive through EKC() or N_FACTORS(). lifecycle reads
+# `user_env` to find out whether a user named the deprecated argument, or whether a package named
+# it in its own internals; only the second case is rate limited, and it also adds a footer that
+# tells the reader to report a bug against the package. The default resolves two frames out from
+# lifecycle's own, which is this helper's caller -- so it is efa_ekc() or efa_retain(), this
+# package, whichever route the call took. Without the override lifecycle would therefore ignore
+# `always` and misattribute the warning to EFAtools even for a direct call.
+#
+# The assertion is safe because nothing in the package passes either argument on, and the
+# superseded wrappers forward the lifecycle sentinel unless the caller named the argument. A call
+# that gets here is therefore always a user's.
+.deprecate_ekc_type <- function(what) {
+  lifecycle::deprecate_warn(
+    when = "1.1.0",
+    what = what,
+    always = TRUE,
+    details = c(
+      "i" = paste("The reference values of \"AM2019\" do not depend on the observed",
+                  "eigenvalues, so they do not apply the empirical correction that",
+                  "defines the criterion."),
+      "i" = paste("The criterion is now always computed as in Braeken and van Assen",
+                  "(2017), so the number of factors can differ from earlier results.")
+    ),
+    user_env = globalenv()
+  )
+}
+
 # Evaluate a block of argument checks and re-raise checkmate's assertion failures under
 # `efa_invalid_argument`. checkmate's assert_*() functions signal a plain `simpleError`,
 # which leaves an invalid argument as the one condition in the package that cannot be

@@ -90,10 +90,11 @@
 #'  simulated eigenvalues. `"percentile"`, uses the percentiles specified
 #'  in percent. `"crawford"` uses the 95th percentile for the first factor
 #'  and the mean afterwards (based on Crawford et al, 2010).
-#' @param ekc_type character. Passed to the `type` argument of [efa_ekc()].
-#'   Either `"BvA2017"` for the original implementation by Braeken and van Assen
-#'   (2017), or `"AM2019"` for the adapted implementation by Auerswald and Moshagen
-#'   (2019).
+#' @param ekc_type `r lifecycle::badge("deprecated")` Accepted and ignored. It selected
+#'   between two ways to compute the [efa_ekc()] reference values. The `"AM2019"`
+#'   reference values do not depend on the observed eigenvalues, so they do not apply
+#'   the empirical correction that defines the criterion, and they are no longer
+#'   computed.
 #' @param n_datasets_nest numeric. The number of datasets to simulate in [efa_nest()]. Default is 1000.
 #' @param alpha_nest numeric. The alpha level to use in [efa_nest()] (i.e., 1-alpha percentile of eigenvalues is used for reference values).
 #' @param show_progress logical. Whether a progress bar should be shown in the
@@ -249,7 +250,7 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                        n_factors = 1, n_datasets = 1000,
                        percent = 95,
                        decision_rule = c("means", "percentile", "crawford"),
-                       ekc_type = c("BvA2017"),
+                       ekc_type = lifecycle::deprecated(),
                        n_datasets_nest = 1000, alpha_nest = .05,
                        show_progress = FALSE,
                        estimate_control = NULL){
@@ -284,7 +285,7 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
   use <- .match_arg_ci(use)
   estimator <- .match_arg_ci(estimator)
   decision_rule <- .match_arg_ci(decision_rule)
-  ekc_type <- .match_arg_ci(ekc_type, c("BvA2017", "AM2019"), several.ok = TRUE)
+  if (lifecycle::is_present(ekc_type)) .deprecate_ekc_type("efa_retain(ekc_type)")
   checkmate::assert_number(alpha_nest, lower = 0, upper = 1)
   checkmate::assert_count(n_datasets_nest, na.ok = FALSE, positive = TRUE)
 
@@ -327,7 +328,7 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                         eigen_type_other = eigen_type_other,
                         n_factors = n_factors, n_datasets = n_datasets,
                         percent = percent, decision_rule = decision_rule,
-                        ekc_type = ekc_type, n_datasets_nest = n_datasets_nest,
+                        n_datasets_nest = n_datasets_nest,
                         alpha_nest = alpha_nest,
                         estimate_control = estimate_control, dots = list(...))
 
@@ -447,7 +448,6 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                    n_datasets = n_datasets,
                    percent = percent,
                    decision_rule = decision_rule,
-                   ekc_type = ekc_type,
                    n_datasets_nest = n_datasets_nest,
                    alpha_nest = alpha_nest,
                    estimate_control = estimate_control)
@@ -639,7 +639,7 @@ format.efa_retain <- function(x, ...) {
                    .screen_plural(n_crit, "criterion", "criteria"))
 
   if (min(nf) == max(nf)) {
-    return(paste0(counts, ", all suggesting ", nf[1], " ",
+    return(paste0(counts, ", all suggesting ", .retention_count(nf[1]), " ",
                   .screen_plural(nf[1], "factor", "factors"), "."))
   }
 
@@ -654,7 +654,8 @@ format.efa_retain <- function(x, ...) {
     if (length(m$values) == 1L) m$values else NULL
   }))
 
-  spread <- paste0(counts, ", ranging from ", min(nf), " to ", max(nf), " factors")
+  spread <- paste0(counts, ", ranging from ", .retention_count(min(nf)), " to ",
+                   .retention_count(max(nf)), " factors")
   if (is.null(votes)) return(paste0(spread, "."))
 
   # a most common value only means something once some value was chosen by more than one
@@ -665,7 +666,7 @@ format.efa_retain <- function(x, ...) {
   if (best$n == 1L) return(paste0(spread, "."))
 
   paste0(spread, " (most common: ",
-         .screen_and_list(as.character(best$values)), ").")
+         .screen_and_list(.retention_count(best$values)), ").")
 
 }
 

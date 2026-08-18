@@ -142,10 +142,12 @@ The reference eigenvalues are obtained from simulated data, so the suggested num
 of factors varies slightly from run to run. Call \code{\link[base:set.seed]{base::set.seed()}} beforehand to make a
 run reproducible; the result is then also independent of the parallel plan set via
 \code{\link[future:plan]{future::plan()}}, so it can be reproduced on a machine with a different number of
-cores. The simulation is drawn in independently seeded blocks; a block that fails --
-which happens when a simulated correlation matrix is singular, so that no eigenvalues
-can be taken from it -- is redrawn on its own, leaving the blocks that succeeded with
-the draws they already made.
+cores. For \code{"PCA"} and \code{"SMC"} the simulation is drawn in independently seeded blocks;
+a block that fails -- which happens when a simulated correlation matrix is singular, so
+that no eigenvalues can be taken from it -- is redrawn on its own, leaving the blocks
+that succeeded with the draws they already made. The \code{"EFA"} series instead redraws the
+single dataset that could not be fitted; if that dataset still cannot be fitted, the
+call stops with an error.
 
 When both \code{"PCA"} and \code{"SMC"} are requested, the two are read off the \emph{same} simulated
 datasets rather than from two independent simulations: they differ only in the diagonal

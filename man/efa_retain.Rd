@@ -33,7 +33,7 @@ efa_retain(
   n_datasets = 1000,
   percent = 95,
   decision_rule = c("means", "percentile", "crawford"),
-  ekc_type = c("BvA2017"),
+  ekc_type = lifecycle::deprecated(),
   n_datasets_nest = 1000,
   alpha_nest = 0.05,
   show_progress = FALSE,
@@ -157,10 +157,11 @@ simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
 in percent. \code{"crawford"} uses the 95th percentile for the first factor
 and the mean afterwards (based on Crawford et al, 2010).}
 
-\item{ekc_type}{character. Passed to the \code{type} argument of \code{\link[=efa_ekc]{efa_ekc()}}.
-Either \code{"BvA2017"} for the original implementation by Braeken and van Assen
-(2017), or \code{"AM2019"} for the adapted implementation by Auerswald and Moshagen
-(2019).}
+\item{ekc_type}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. It selected
+between two ways to compute the \code{\link[=efa_ekc]{efa_ekc()}} reference values. The \code{"AM2019"}
+reference values do not depend on the observed eigenvalues, so they do not apply
+the empirical correction that defines the criterion, and they are no longer
+computed.}
 
 \item{n_datasets_nest}{numeric. The number of datasets to simulate in \code{\link[=efa_nest]{efa_nest()}}. Default is 1000.}
 
