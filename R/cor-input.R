@@ -838,7 +838,12 @@
     cli::cli_abort(
       c("{.val {cor_method}} correlations are not supported by {.fn {fn}}.",
         "x" = why,
-        "i" = "Use {.val pearson}, {.val spearman}, or {.val kendall}."),
+        # Kendall's tau is deliberately absent: it is not on the Pearson scale the factor
+        # model parameterises (for bivariate-normal data tau = (2/pi) asin(rho)), so
+        # offering it as the remedy to a user who correctly reached for a polychoric
+        # correlation would steer an ordinal analysis onto the most attenuated metric of
+        # the three. Spearman is kept: it stays a correlation coefficient.
+        "i" = "Use {.val pearson} or {.val spearman}."),
       class = "efa_cor_method_unsupported", call = error_call)
   }
   invisible(NULL)

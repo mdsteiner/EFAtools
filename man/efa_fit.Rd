@@ -400,7 +400,13 @@ When raw data are supplied, \code{cor_method} selects how the correlation matrix
 (it is ignored when a correlation matrix is entered directly).
 \itemize{
 \item \strong{"pearson"} (default), \strong{"spearman"}, and \strong{"kendall"} are passed to
-\code{\link[stats:cor]{stats::cor()}} for continuous or rank data.
+\code{\link[stats:cor]{stats::cor()}}. The factor model parameterises a Pearson correlation, but a rank
+matrix is analysed on its own metric: it is not transformed to the Pearson scale.
+For bivariate-normal data the population values differ,
+\eqn{\rho_S = (6/\pi)\arcsin(\rho/2)} and \eqn{\tau = (2/\pi)\arcsin(\rho)}, so
+Kendall's tau in particular is not a Pearson correlation and gives the most
+attenuated loadings of the three. For ordinal items prefer \code{"poly"} / \code{"tetra"}
+below, which estimate the correlation of the underlying continuous variables.
 \item \strong{"poly"} / \strong{"tetra"} compute polychoric / tetrachoric correlations for ordinal /
 binary data, assuming an underlying bivariate-normal latent variable. They use a
 two-step estimator, matching \code{polycor::polychor()}. Every two-by-two response table

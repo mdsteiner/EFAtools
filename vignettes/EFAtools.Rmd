@@ -71,8 +71,9 @@ efa_screen(DOSPERT_sub, seed = 2)
 ```
 
 The overall KMO is meritorious and Bartlett's test is clearly significant, so the data are
-factorable. The near-zero determinant flags some multicollinearity, which is expected for a
-scale with strongly related items within each risk domain. More interesting are the last few
+factorable. The determinant looks small, but it is a product of 30 eigenvalues and falls as
+variables are added; the condition index (6.8) is the measure that does not move with the
+number of variables, and it shows no multicollinearity. More interesting are the last few
 sections: three items have a sparse response category, and both the Mardia and the
 Henze-Zirkler tests reject multivariate normality. A consequence is that normal-theory
 standard errors and fit indices may be biased, so robust (sandwich) or bootstrapped standard

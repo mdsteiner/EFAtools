@@ -301,6 +301,28 @@ test_that("the simulation-based criteria reject poly / tetra with a classed cond
                class = "efa_cor_method_unsupported")
 })
 
+test_that("the poly rejection does not steer an ordinal analysis to Kendall's tau", {
+  # The remedy is read by someone who reached for a polychoric correlation because the
+  # items are ordinal. Kendall's tau is not on the Pearson scale the factor model
+  # parameterises (for bivariate-normal data tau = (2/pi) asin(rho)), so it is the most
+  # attenuated of the three and must not be offered here. The message is rendered from
+  # every caller of the shared helper, so two of the five are checked: one continuous
+  # reference criterion and efa_smt(), which reaches it with its own reason text.
+  # `error =`, not `condition =`: these functions also emit an informational message about
+  # computing correlations from raw data, which a condition handler would catch instead.
+  remedy <- function(expr) {
+    cnd <- tryCatch(expr, error = function(e) e)
+    expect_s3_class(cnd, "efa_cor_method_unsupported")
+    cli::ansi_strip(paste(conditionMessage(cnd), collapse = " "))
+  }
+  for (msg in c(remedy(efa_parallel(DOSPERT_raw, cor_method = "poly")),
+                remedy(efa_smt(DOSPERT_raw, cor_method = "poly")))) {
+    expect_match(msg, "pearson", fixed = TRUE)
+    expect_match(msg, "spearman", fixed = TRUE)
+    expect_no_match(msg, "kendall", fixed = TRUE)
+  }
+})
+
 test_that("cor_method = 'poly' honours `use` for missing data", {
   g <- GRiPS_raw[stats::complete.cases(GRiPS_raw), ]
   gm <- g

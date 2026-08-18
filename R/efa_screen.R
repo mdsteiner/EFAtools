@@ -22,9 +22,14 @@
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
 #'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
 #'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
-#'   (a two-step estimator). Only `"poly"` and `"tetra"` accept factor or character
-#'   columns; the other three need numeric data. Default is
-#'   `"pearson"`.
+#'   (a two-step estimator). A Spearman or Kendall matrix is screened on its own
+#'   metric and is not transformed to the Pearson scale the factor model assumes;
+#'   Kendall's tau in particular is not a Pearson correlation. Only `"poly"` and
+#'   `"tetra"` accept ordered factors as well as numeric response codes; the other
+#'   three need numeric data. An unordered
+#'   factor or a character column is refused, because its categories carry no response
+#'   order and the alphabetical order of its levels is not a safe substitute. Default
+#'   is `"pearson"`.
 #' @param mcd_alpha numeric. The proportion of observations covered by the minimum
 #'   covariance determinant (MCD) subset used for the robust outlier diagnostics, in
 #'   \[0.5, 1\]. The default, `0.5`, gives the most robust (highest-breakdown) estimate;
@@ -51,25 +56,34 @@
 #'     diagnostics are still returned. A supplied `N` that is too small relative to
 #'     \eqn{p} for the correction \eqn{N - 1 - (2p + 5)/6} to be positive leaves the
 #'     statistic itself `NA`, also with a warning. See [efa_bartlett()].}
-#'   \item{Determinant}{The determinant of \eqn{R}. A value near zero signals
-#'     extreme multicollinearity or a (near-)singular matrix; as a rough guide, a
-#'     determinant below about 0.00001 is commonly taken as a sign of
-#'     multicollinearity (Field, 2018).}
+#'   \item{Determinant}{The determinant of \eqn{R}, reported as a number. It is the
+#'     product of the \eqn{p} eigenvalues of \eqn{R}, so it falls geometrically as
+#'     variables are added even when every eigenvalue stays far from zero: on a clean
+#'     one-factor pool with all loadings 0.5 it goes from 0.24 at \eqn{p = 10} to
+#'     6.7e-07 at \eqn{p = 60} while the condition index moves only from 2.1 to 4.6. A
+#'     fixed cut-off on it, such as the 0.00001 that is commonly quoted (Field, 2018),
+#'     is therefore a statement about the number of variables as much as about the
+#'     data, and this package does not use one. The multicollinearity verdict rests on
+#'     the condition index below.}
 #'   \item{Condition number}{The ratio of the largest to the smallest eigenvalue of
 #'     \eqn{R}. Large values indicate an ill-conditioned matrix with near-linear
 #'     dependencies among the variables. Its square root is the condition index: an
 #'     index above 30 is a conventional sign of strong multicollinearity, and 10 to
-#'     30 of moderate multicollinearity (Belsley, Kuh & Welsch, 1980).}
+#'     30 of moderate multicollinearity (Belsley, Kuh & Welsch, 1980). The index is a
+#'     ratio of eigenvalues, so unlike the determinant it does not move with \eqn{p} on
+#'     its own; it carries the multicollinearity verdict in the printed report and the
+#'     multicollinearity recommendation, which fires above 30.}
 #'   \item{SMC}{The squared multiple correlation of each variable with all the
 #'     others, \eqn{1 - 1/(R^{-1})_{ii}}. A low SMC flags a variable that shares
 #'     little variance with the rest of the set.}
 #'   \item{Variance and missing data}{The variance of each variable (over its
-#'     available values) and the percentage of missing values. Factor and character
+#'     available values) and the percentage of missing values. Ordered-factor
 #'     columns are recoded to their integer level codes, so `variance` and the
 #'     empty-category check below refer to those codes (the category counts
 #'     themselves are labelled by the original levels). Such columns reach the
 #'     correlation matrix only with `cor_method = "poly"` or `"tetra"`; a Pearson,
-#'     Spearman, or Kendall correlation of a factor or character frame is refused.
+#'     Spearman, or Kendall correlation of a factor frame is refused, as is any
+#'     correlation of an unordered factor or a character column.
 #'     These, and the
 #'     category tabulation below, are computed column by column from the supplied
 #'     data using every non-missing value, and so do not depend on `use`, which
@@ -98,9 +112,31 @@
 #'     maximum-likelihood (divisor-\eqn{n}) covariance, so Mardia's coefficients differ
 #'     from implementations using the unbiased divisor by a factor of
 #'     \eqn{(n / (n - 1))^3} for the skewness coefficient and \eqn{(n / (n - 1))^2} for
-#'     the kurtosis coefficient. A small p-value indicates
+#'     the kurtosis coefficient. The kurtosis coefficient is standardised with its exact
+#'     null moments, \eqn{p(p + 2)(n - 1) / (n + 1)} for the mean (Mardia, 1970) and
+#'     \eqn{8p(p + 2)(n - 3)(n - p - 1)(n - p + 1) / ((n + 1)^2 (n + 3)(n + 5))} for the
+#'     variance (Mardia, 1974). Both become the asymptotic pair \eqn{p(p + 2)} and
+#'     \eqn{8p(p + 2) / n} as the sample size increases. Most other implementations use
+#'     that asymptotic pair. It overstates both moments, by an amount that increases with
+#'     the ratio of variables to observations. With 40 variables and 200 observations it
+#'     rejects data from an exact multivariate normal more than half of the time at the
+#'     .05 level, where the exact moments hold the nominal rate. The skewness statistic
+#'     always carries Mardia's (1974) correction, which makes its expectation equal its
+#'     degrees of freedom at every sample size. Implementations that apply the correction
+#'     only below 20 observations leave the statistic biased low, and the bias increases
+#'     with the ratio of variables to observations until the test has no power. The
+#'     correction sets the mean exactly, but the chi-square approximation keeps an
+#'     inexact variance, so the skewness test holds a rejection rate near, but not exactly
+#'     at, its nominal level. A small p-value indicates
 #'     a departure from multivariate normality, a reason to prefer robust or ordinal
-#'     estimation over normal-theory maximum likelihood. Available only from raw data,
+#'     estimation over normal-theory maximum likelihood. The Henze-Zirkler p-value comes
+#'     from a lognormal approximation whose null variance falls geometrically with the
+#'     number of variables. Beyond roughly 50 to 60 variables (the exact point depends on
+#'     the sample size) that variance is no longer resolvable in double precision, and
+#'     the p-value would be exactly 0 or exactly 1 as a rounding-level residual decides,
+#'     even for data from an exact multivariate normal. It is then withheld, with a
+#'     warning, and the statistic alone is reported; the printed report says how many of
+#'     the available tests reject multivariate normality. Available only from raw data,
 #'     and skipped with a note if the complete-case covariance is singular.}
 #'   \item{Outliers}{Multivariate outliers flagged by their robust Mahalanobis
 #'     distance. A high-breakdown robust location and scatter are estimated from the
@@ -141,14 +177,19 @@
 #'   treated as continuous). `NULL` when a correlation matrix is supplied.}
 #' \item{normality}{Multivariate-normality diagnostics computed from the complete cases
 #'   of the raw data: a list with `mardia` (Mardia's multivariate skewness statistic
-#'   `skewness`, its degrees of freedom `skewness_df` and p-value `skewness_p`, a
-#'   `small_sample` flag recording whether the small-sample skewness correction was
-#'   applied, the standardised `kurtosis` statistic and its p-value `kurtosis_p`, and the
-#'   underlying coefficients `b1p` and `b2p`), `hz` (the Henze-Zirkler `statistic` and its
+#'   `skewness`, its degrees of freedom `skewness_df` and p-value `skewness_p`,
+#'   the standardised `kurtosis` statistic and its p-value `kurtosis_p` (both
+#'   `NA` when the exact null variance is zero, as at \eqn{n = p + 1}, where the kurtosis
+#'   coefficient is constant and gives no information), and the underlying coefficients
+#'   `b1p` and `b2p`), `hz` (the
+#'   Henze-Zirkler `statistic` and its
 #'   `p_value`), and `n_complete` (the number of complete cases used). When the
 #'   complete-case covariance is singular the tests are skipped and a classed note (of
-#'   class `efa_screen_no_mvn`) is returned instead, alongside a warning. `NULL` when a
-#'   correlation matrix is supplied.}
+#'   class `efa_screen_no_mvn`) is returned instead, alongside a warning. When the
+#'   Henze-Zirkler null approximation degenerates at many variables, `hz` keeps its
+#'   `statistic`, has an `NA` `p_value`, and carries a `message` and the class
+#'   `efa_screen_no_hz`, also alongside a warning; Mardia's tests are unaffected. `NULL`
+#'   when a correlation matrix is supplied.}
 #' \item{outliers}{Multivariate-outlier diagnostics from the complete cases of the raw
 #'   data: a list with `distances` (each complete case's robust Mahalanobis distance, named
 #'   by its row number in the supplied data), `cutoff` (the flagging threshold on the
@@ -638,9 +679,9 @@ efa_screen <- function(x, N = NA,
 
 # Mardia's (1970) multivariate skewness and kurtosis. b1p = (1/n^2) sum_ij d_ij^3 with
 # d_ij = x_i' S^-1 x_j (the Gram matrix D), accumulated in row-blocks; b2p = (1/n) sum_i
-# d_ii^2. The skewness statistic n b1p / 6 is chi-square with p(p+1)(p+2)/6 df and is
-# small-sample corrected (Mardia, 1974) for n < 20; the kurtosis (b2p - p(p+2)) is
-# standardised to N(0, 1). Ref: Mardia (1970, 1974).
+# d_ii^2. The skewness statistic n b1p / 6 is chi-square with p(p+1)(p+2)/6 df and always
+# carries Mardia's (1974) correction; b2p is standardised to N(0, 1) with its exact null
+# moments. Ref: Mardia (1970, 1974).
 .mardia <- function(XSinv, tXc, d2, n, p, block) {
 
   s3 <- 0
@@ -653,20 +694,50 @@ efa_screen <- function(x, N = NA,
   b2p <- sum(d2^2) / n
 
   chi_df <- p * (p + 1) * (p + 2) / 6
-  skew <- n * b1p / 6
-  small_sample <- n < 20L
-  # Mardia's (1974) small-sample correction for the skewness statistic.
-  if (small_sample) {
-    k <- (p + 1) * (n + 1) * (n + 3) / (n * ((n + 1) * (p + 1) - 6))
-    skew <- k * skew
-  }
+  # Mardia's (1974) correction k, eq. (5.5), which he gives "so that E(A') = f for all n"
+  # - not only for small samples. From his eq. (5.1) the uncorrected n b1p / 6 has
+  # expectation chi_df / k exactly, so without k the statistic is biased low, by a factor
+  # that grows with the ratio of variables to observations. The bias is a small fraction
+  # of chi_df, but the chi-square scale is sqrt(2 chi_df), so it reaches nearly 3 standard
+  # deviations at p = 60 and n = 150 and leaves the test with no power at all there.
+  # The correction fixes the mean exactly; the chi-square variance stays wrong by about
+  # -20% to +30%, with no published exact variance of b1p to correct it with, so the test
+  # keeps a rejection rate of roughly .04 to .08 against a nominal .05.
+  # Ref: Mardia (1974), eq. (5.1) and (5.5), and section 6, recommendation (1).
+  k <- (p + 1) * (n + 1) * (n + 3) / (n * ((n + 1) * (p + 1) - 6))
+  skew <- k * n * b1p / 6
 
-  kurt <- (b2p - p * (p + 2)) * sqrt(n / (8 * p * (p + 2)))
+  # b2p is standardised with its EXACT null moments under normality,
+  #   E[b2p]   = p(p + 2)(n - 1) / (n + 1)                  Mardia (1970), eq. (3.16)
+  #   Var[b2p] = 8p(p + 2)(n - 3)(n - p - 1)(n - p + 1) /
+  #              ((n + 1)^2 (n + 3)(n + 5))                 Mardia (1974), eq. (5.3)
+  # giving Mardia's (1974) statistic B', eq. (5.6). Both moments become the asymptotic
+  # pair p(p + 2) and 8p(p + 2)/n as n grows, which most other implementations use. That
+  # pair overstates both, by an amount that grows with the ratio of variables to
+  # observations. The overstated mean pushes the statistic down, so the two-sided test
+  # rejects data from an exact multivariate normal far too often: more than half the time
+  # at p = 40 and n = 200. The overstated variance works the opposite way, so the exact
+  # mean with the asymptotic variance - Mardia (1970), eq. (3.20) - is conservative
+  # instead, and rejects almost nothing at p = 50 and n = 100. At p = 1 the variance
+  # reduces to Fisher's (1930) univariate result, 24n(n - 2)(n - 3) / ((n + 1)^2 (n + 3)
+  # (n + 5)). b2p stays mildly right-skewed after standardisation, so the normal
+  # approximation splits the two tails unevenly (about 1.7% and 3.0% against a nominal
+  # 2.5% at p = 40 and n = 200, and closer with more observations); the two-sided level
+  # that the p-value reports holds at .05.
+  # The exact variance is 0 at n = p + 1, the smallest sample the caller admits, where
+  # the centred data span the whole space orthogonal to the mean, so b2p equals (n - 1)^2
+  # with probability 1 and the statistic does not exist.
+  kurt_var <- 8 * p * (p + 2) * (n - 3) * (n - p - 1) * (n - p + 1) /
+    ((n + 1)^2 * (n + 3) * (n + 5))
+  kurt <- if (kurt_var > 0) {
+    (b2p - p * (p + 2) * (n - 1) / (n + 1)) / sqrt(kurt_var)
+  } else {
+    NA_real_
+  }
 
   list(skewness = skew,
        skewness_df = chi_df,
        skewness_p = stats::pchisq(skew, chi_df, lower.tail = FALSE),
-       small_sample = small_sample,
        kurtosis = kurt,
        kurtosis_p = 2 * stats::pnorm(abs(kurt), lower.tail = FALSE),
        b1p = b1p, b2p = b2p)
@@ -676,7 +747,8 @@ efa_screen <- function(x, N = NA,
 # distance between the empirical and normal characteristic functions, evaluated with the
 # smoothing parameter b. The three-term statistic reuses the pairwise Mahalanobis
 # distances D_jk = d_jj + d_kk - 2 G_jk (G the Gram matrix, accumulated in row-blocks);
-# under normality it is approximately lognormal with the parameters (mu, si2) below.
+# under normality it is approximately lognormal with the parameters (mu, si2) below. That
+# approximation degenerates at many variables, where the p-value is withheld (see below).
 # Ref: Henze & Zirkler (1990).
 .hz <- function(XSinv, tXc, d2, n, p, block) {
 
@@ -706,6 +778,30 @@ efa_screen <- function(x, N = NA,
     4 * wb^(-p / 2) * (1 + 3 * p * b2^2 / (2 * wb) + p * (p + 2) * b2^4 / (2 * wb^2))
   pmu <- log(sqrt(mu^4 / (si2 + mu^2)))
   psi <- sqrt(log((si2 + mu^2) / mu^2))
+
+  # The lognormal null approximation breaks down at many variables. As p grows si2 falls
+  # geometrically while mu goes to 1, so si2 + mu^2 rounds to mu^2, psi rounds to 0, and
+  # the z-score (log(HZ) - pmu) / psi becomes -Inf or +Inf: the p-value is then exactly 0
+  # or exactly 1, decided by a rounding-level residual, even on data from an exact
+  # multivariate normal. The p-value is thus withheld when si2 is no longer resolvable
+  # against mu^2, the point at which the reparameterisation loses its input. This is a
+  # property of the null moments alone, so where it applies follows n and p and is not a
+  # fixed ratio of them. Writing the ratio in cancellation-free form moves the point but
+  # does not remove it, because HZ saturates at mu as well. The statistic stays correct
+  # and is still reported; only its p-value is unavailable.
+  if (!is.finite(psi) || si2 <= mu^2 * .Machine$double.eps) {
+    reason <- paste("The lognormal null distribution of the Henze-Zirkler statistic has",
+                    "no resolvable spread at", p, "variables, so the statistic cannot be",
+                    "turned into a p-value.")
+    cli::cli_warn(
+      c("The Henze-Zirkler p-value is not available.", "i" = reason),
+      class = "efa_screen_no_hz"
+    )
+    return(structure(
+      list(statistic = HZ, p_value = NA_real_, message = reason),
+      class = "efa_screen_no_hz"
+    ))
+  }
 
   list(statistic = HZ,
        p_value = stats::pnorm((log(HZ) - pmu) / psi, lower.tail = FALSE))

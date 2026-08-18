@@ -55,10 +55,18 @@ format.efa_screen <- function(x, digits = 3, ...) {
   # that several sections and the recommendations share.
   kmo <- x$kmo$KMO
   bart_sig <- .screen_is_sig(x$bartlett$p_value)
-  mvn_nonnormal <- raw && !inherits(x$normality, "efa_screen_no_mvn") &&
-    (.screen_is_sig(x$normality$mardia$skewness_p) ||
-       .screen_is_sig(x$normality$mardia$kurtosis_p) ||
-       .screen_is_sig(x$normality$hz$p_value))
+  # The multivariate-normality verdict is a count over the tests that are available. The
+  # Henze-Zirkler p-value is withheld when its null approximation degenerates at many
+  # variables, so the set is not always all three. `mvn_nonnormal` gates the
+  # recommendations as before; the counts let the verdict sentence separate one marginal
+  # rejection from a unanimous one.
+  mvn_p <- if (raw && !inherits(x$normality, "efa_screen_no_mvn")) {
+    c(x$normality$mardia$skewness_p, x$normality$mardia$kurtosis_p,
+      x$normality$hz$p_value)
+  }
+  mvn_n_avail <- sum(!is.na(mvn_p))
+  mvn_n_rej <- sum(vapply(mvn_p, .screen_is_sig, logical(1)))
+  mvn_nonnormal <- mvn_n_rej > 0L
 
   cli::cli_format_method({
 
@@ -109,21 +117,19 @@ format.efa_screen <- function(x, digits = 3, ...) {
     # -- Multicollinearity -----------------------------------------------------
     .print_efa_rule("Multicollinearity")
 
-    # Multicollinearity thresholds computed once here (a near-zero determinant, Field
-    # 2018; a condition index above 30, Belsley-Kuh-Welsch 1980) drive both the section
-    # verdicts and the consolidated recommendation, so the cut-offs live in one place.
+    # The determinant is the product of the p eigenvalues of R, so it shrinks
+    # geometrically as variables are added even when every eigenvalue stays far from
+    # zero. A fixed cut-off on it (below 0.00001; Field, 2018) is therefore a statement
+    # about the number of variables as much as about the data: it fires on wide but
+    # well-conditioned item pools and contradicts the condition index printed directly
+    # under it. The determinant is reported as a number only, and the condition index
+    # (above 30; Belsley-Kuh-Welsch, 1980) carries this section's verdict and the
+    # consolidated recommendation, so the one cut-off lives in one place.
     det_R <- x$determinant
-    det_low <- !is.na(det_R) && det_R < 1e-5
     dstr <- format(det_R, digits = digits, scientific = FALSE)
-    if (det_low) {
-      cli::cli_alert_danger(
-        "Determinant: {dstr}. Multicollinearity likely (a value near 0 signals it; Field, 2018).",
-        wrap = TRUE)
-    } else {
-      cli::cli_alert_success(
-        "Determinant: {dstr}. No concern (a value near 0 signals multicollinearity; Field, 2018).",
-        wrap = TRUE)
-    }
+    cli::cli_alert_info(
+      "Determinant: {dstr}. It falls as variables are added, so the condition index below carries the verdict.",
+      wrap = TRUE)
 
     cond <- x$condition
     cstr <- formatC(cond, format = "f", digits = digits)
@@ -173,17 +179,35 @@ format.efa_screen <- function(x, digits = 3, ...) {
         .screen_mvn_line(.screen_is_sig(md$skewness_p),
                          paste0("Mardia's skewness: \U03C7\U00B2(", md$skewness_df, ") = ",
                                 round(md$skewness, 2), ", p", .screen_p_str(md$skewness_p), "."))
-        .screen_mvn_line(.screen_is_sig(md$kurtosis_p),
-                         paste0("Mardia's kurtosis: z = ", round(md$kurtosis, 2),
-                                ", p", .screen_p_str(md$kurtosis_p), "."))
-        .screen_mvn_line(.screen_is_sig(nm$hz$p_value),
-                         paste0("Henze-Zirkler: HZ = ", round(nm$hz$statistic, 2),
-                                ", p", .screen_p_str(nm$hz$p_value), "."))
-        if (isTRUE(md$small_sample)) {
-          cli::cli_text("(Mardia's skewness uses the small-sample correction for n < 20.)")
+        # An undefined kurtosis statistic is neither a pass nor a rejection, so it gets
+        # an info alert, as a withheld Henze-Zirkler p-value does below.
+        if (is.na(md$kurtosis)) {
+          cli::cli_alert_info(
+            "Mardia's kurtosis: not available at this number of complete cases.")
+        } else {
+          .screen_mvn_line(.screen_is_sig(md$kurtosis_p),
+                           paste0("Mardia's kurtosis: z = ", round(md$kurtosis, 2),
+                                  ", p", .screen_p_str(md$kurtosis_p), "."))
         }
-        cli::cli_text(if (isTRUE(mvn_nonnormal)) "These data depart from multivariate normality."
-                      else "These data are consistent with multivariate normality.")
+        # A withheld Henze-Zirkler p-value is neither a pass nor a rejection, so it gets
+        # an info alert rather than the success/danger pair the other two lines use.
+        if (inherits(nm$hz, "efa_screen_no_hz")) {
+          cli::cli_alert_info(
+            paste0("Henze-Zirkler: HZ = ", round(nm$hz$statistic, 2),
+                   ", p not available at this number of variables."))
+        } else {
+          .screen_mvn_line(.screen_is_sig(nm$hz$p_value),
+                           paste0("Henze-Zirkler: HZ = ", round(nm$hz$statistic, 2),
+                                  ", p", .screen_p_str(nm$hz$p_value), "."))
+        }
+        cli::cli_text(if (isTRUE(mvn_nonnormal)) {
+          paste0("These data depart from multivariate normality: ", mvn_n_rej, " of the ",
+                 mvn_n_avail, " tests ", .screen_plural(mvn_n_rej, "rejects", "reject"),
+                 " it.")
+        } else {
+          paste0("These data are consistent with multivariate normality: none of the ",
+                 mvn_n_avail, " tests rejects it.")
+        })
         # The tests use the complete cases, which under non-ignorable missingness are not
         # a random subsample: with missing data the verdict above is a statement about a
         # subset, so say which one. Silent when every row is complete.
@@ -234,7 +258,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
     # -- Recommendations -------------------------------------------------------
     .print_efa_rule("Recommendations")
     recs <- .screen_recommendations(x, raw, kmo, bart_sig, mvn_nonnormal,
-                                    det_low || ci_strong, digits)
+                                    ci_strong, digits)
     # cli treats each bullet as a glue/cli template, so double any braces coming from
     # user variable names to render them literally (as .efa_emit_bullets does).
     msg <- gsub("}", "}}", gsub("{", "{{", recs$message, fixed = TRUE), fixed = TRUE)
@@ -396,12 +420,14 @@ format.efa_screen <- function(x, digits = 3, ...) {
                     "uninformative here and rely on the KMO."))
   }
 
-  # Multicollinearity: a near-zero determinant (Field, 2018) or a high condition index
-  # (Belsley, Kuh & Welsch, 1980), decided once by the caller from the same thresholds
-  # used for the section verdicts.
+  # Multicollinearity: a high condition index (Belsley, Kuh & Welsch, 1980), decided once
+  # by the caller from the same threshold used for the section verdict. A high index does
+  # not have to come from one redundant pair - a set of items that is together nearly
+  # linearly dependent gives the same result - so the remedy names both.
   if (isTRUE(multicollinear)) {
-    push("!", paste("A near-zero determinant or high condition number indicates multicollinearity;",
-                    "look for redundant or linearly dependent items (r > .8) and consider removing them."))
+    push("!", paste("A high condition index indicates multicollinearity; look for a redundant item",
+                    "pair (r > .8) or a larger set of items that is nearly linearly dependent, and",
+                    "consider removing some of them."))
   }
 
   if (raw) {

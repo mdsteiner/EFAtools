@@ -78,9 +78,14 @@ of returning \code{NA} correlations. Default is \code{"pairwise.complete.obs"}.}
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations of ordinal / binary data
-(a two-step estimator). Only \code{"poly"} and \code{"tetra"} accept factor or character
-columns; the other three need numeric data. Default is
-\code{"pearson"}.}
+(a two-step estimator). A Spearman or Kendall matrix is screened on its own
+metric and is not transformed to the Pearson scale the factor model assumes;
+Kendall's tau in particular is not a Pearson correlation. Only \code{"poly"} and
+\code{"tetra"} accept ordered factors as well as numeric response codes; the other
+three need numeric data. An unordered
+factor or a character column is refused, because its categories carry no response
+order and the alphabetical order of its levels is not a safe substitute. Default
+is \code{"pearson"}.}
 
 \item{mcd_alpha}{numeric. The proportion of observations covered by the minimum
 covariance determinant (MCD) subset used for the robust outlier diagnostics, in
@@ -116,14 +121,19 @@ empty string \code{""} for a categorical variable with none, and \code{NA} for a
 treated as continuous). \code{NULL} when a correlation matrix is supplied.}
 \item{normality}{Multivariate-normality diagnostics computed from the complete cases
 of the raw data: a list with \code{mardia} (Mardia's multivariate skewness statistic
-\code{skewness}, its degrees of freedom \code{skewness_df} and p-value \code{skewness_p}, a
-\code{small_sample} flag recording whether the small-sample skewness correction was
-applied, the standardised \code{kurtosis} statistic and its p-value \code{kurtosis_p}, and the
-underlying coefficients \code{b1p} and \code{b2p}), \code{hz} (the Henze-Zirkler \code{statistic} and its
+\code{skewness}, its degrees of freedom \code{skewness_df} and p-value \code{skewness_p},
+the standardised \code{kurtosis} statistic and its p-value \code{kurtosis_p} (both
+\code{NA} when the exact null variance is zero, as at \eqn{n = p + 1}, where the kurtosis
+coefficient is constant and gives no information), and the underlying coefficients
+\code{b1p} and \code{b2p}), \code{hz} (the
+Henze-Zirkler \code{statistic} and its
 \code{p_value}), and \code{n_complete} (the number of complete cases used). When the
 complete-case covariance is singular the tests are skipped and a classed note (of
-class \code{efa_screen_no_mvn}) is returned instead, alongside a warning. \code{NULL} when a
-correlation matrix is supplied.}
+class \code{efa_screen_no_mvn}) is returned instead, alongside a warning. When the
+Henze-Zirkler null approximation degenerates at many variables, \code{hz} keeps its
+\code{statistic}, has an \code{NA} \code{p_value}, and carries a \code{message} and the class
+\code{efa_screen_no_hz}, also alongside a warning; Mardia's tests are unaffected. \code{NULL}
+when a correlation matrix is supplied.}
 \item{outliers}{Multivariate-outlier diagnostics from the complete cases of the raw
 data: a list with \code{distances} (each complete case's robust Mahalanobis distance, named
 by its row number in the supplied data), \code{cutoff} (the flagging threshold on the
@@ -169,25 +179,34 @@ test is skipped with a warning, \verb{$bartlett} is \code{NULL}, and the remaini
 diagnostics are still returned. A supplied \code{N} that is too small relative to
 \eqn{p} for the correction \eqn{N - 1 - (2p + 5)/6} to be positive leaves the
 statistic itself \code{NA}, also with a warning. See \code{\link[=efa_bartlett]{efa_bartlett()}}.}
-\item{Determinant}{The determinant of \eqn{R}. A value near zero signals
-extreme multicollinearity or a (near-)singular matrix; as a rough guide, a
-determinant below about 0.00001 is commonly taken as a sign of
-multicollinearity (Field, 2018).}
+\item{Determinant}{The determinant of \eqn{R}, reported as a number. It is the
+product of the \eqn{p} eigenvalues of \eqn{R}, so it falls geometrically as
+variables are added even when every eigenvalue stays far from zero: on a clean
+one-factor pool with all loadings 0.5 it goes from 0.24 at \eqn{p = 10} to
+6.7e-07 at \eqn{p = 60} while the condition index moves only from 2.1 to 4.6. A
+fixed cut-off on it, such as the 0.00001 that is commonly quoted (Field, 2018),
+is therefore a statement about the number of variables as much as about the
+data, and this package does not use one. The multicollinearity verdict rests on
+the condition index below.}
 \item{Condition number}{The ratio of the largest to the smallest eigenvalue of
 \eqn{R}. Large values indicate an ill-conditioned matrix with near-linear
 dependencies among the variables. Its square root is the condition index: an
 index above 30 is a conventional sign of strong multicollinearity, and 10 to
-30 of moderate multicollinearity (Belsley, Kuh & Welsch, 1980).}
+30 of moderate multicollinearity (Belsley, Kuh & Welsch, 1980). The index is a
+ratio of eigenvalues, so unlike the determinant it does not move with \eqn{p} on
+its own; it carries the multicollinearity verdict in the printed report and the
+multicollinearity recommendation, which fires above 30.}
 \item{SMC}{The squared multiple correlation of each variable with all the
 others, \eqn{1 - 1/(R^{-1})_{ii}}. A low SMC flags a variable that shares
 little variance with the rest of the set.}
 \item{Variance and missing data}{The variance of each variable (over its
-available values) and the percentage of missing values. Factor and character
+available values) and the percentage of missing values. Ordered-factor
 columns are recoded to their integer level codes, so \code{variance} and the
 empty-category check below refer to those codes (the category counts
 themselves are labelled by the original levels). Such columns reach the
 correlation matrix only with \code{cor_method = "poly"} or \code{"tetra"}; a Pearson,
-Spearman, or Kendall correlation of a factor or character frame is refused.
+Spearman, or Kendall correlation of a factor frame is refused, as is any
+correlation of an unordered factor or a character column.
 These, and the
 category tabulation below, are computed column by column from the supplied
 data using every non-missing value, and so do not depend on \code{use}, which
@@ -216,9 +235,31 @@ kurtosis, and the Henze-Zirkler (1990) omnibus test. Both use the
 maximum-likelihood (divisor-\eqn{n}) covariance, so Mardia's coefficients differ
 from implementations using the unbiased divisor by a factor of
 \eqn{(n / (n - 1))^3} for the skewness coefficient and \eqn{(n / (n - 1))^2} for
-the kurtosis coefficient. A small p-value indicates
+the kurtosis coefficient. The kurtosis coefficient is standardised with its exact
+null moments, \eqn{p(p + 2)(n - 1) / (n + 1)} for the mean (Mardia, 1970) and
+\eqn{8p(p + 2)(n - 3)(n - p - 1)(n - p + 1) / ((n + 1)^2 (n + 3)(n + 5))} for the
+variance (Mardia, 1974). Both become the asymptotic pair \eqn{p(p + 2)} and
+\eqn{8p(p + 2) / n} as the sample size increases. Most other implementations use
+that asymptotic pair. It overstates both moments, by an amount that increases with
+the ratio of variables to observations. With 40 variables and 200 observations it
+rejects data from an exact multivariate normal more than half of the time at the
+.05 level, where the exact moments hold the nominal rate. The skewness statistic
+always carries Mardia's (1974) correction, which makes its expectation equal its
+degrees of freedom at every sample size. Implementations that apply the correction
+only below 20 observations leave the statistic biased low, and the bias increases
+with the ratio of variables to observations until the test has no power. The
+correction sets the mean exactly, but the chi-square approximation keeps an
+inexact variance, so the skewness test holds a rejection rate near, but not exactly
+at, its nominal level. A small p-value indicates
 a departure from multivariate normality, a reason to prefer robust or ordinal
-estimation over normal-theory maximum likelihood. Available only from raw data,
+estimation over normal-theory maximum likelihood. The Henze-Zirkler p-value comes
+from a lognormal approximation whose null variance falls geometrically with the
+number of variables. Beyond roughly 50 to 60 variables (the exact point depends on
+the sample size) that variance is no longer resolvable in double precision, and
+the p-value would be exactly 0 or exactly 1 as a rounding-level residual decides,
+even for data from an exact multivariate normal. It is then withheld, with a
+warning, and the statistic alone is reported; the printed report says how many of
+the available tests reject multivariate normality. Available only from raw data,
 and skipped with a note if the complete-case covariance is singular.}
 \item{Outliers}{Multivariate outliers flagged by their robust Mahalanobis
 distance. A high-breakdown robust location and scatter are estimated from the

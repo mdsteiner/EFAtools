@@ -16,8 +16,8 @@
       
       -- Multicollinearity -----------------------------------------------------------
       
-      v Determinant: <num>. No concern (a value near 0 signals multicollinearity;
-      Field, 2018).
+      i Determinant: <num>. It falls as variables are added, so the condition index
+      below carries the verdict.
       v Condition number: <num> (condition index <num>). No concern (index below 10;
       Belsley, Kuh & Welsch, 1980).
       
@@ -67,8 +67,8 @@
       
       -- Multicollinearity -----------------------------------------------------------
       
-      v Determinant: <num>. No concern (a value near 0 signals multicollinearity;
-      Field, 2018).
+      i Determinant: <num>. It falls as variables are added, so the condition index
+      below carries the verdict.
       v Condition number: <num> (condition index <num>). No concern (index below 10;
       Belsley, Kuh & Welsch, 1980).
       
@@ -89,7 +89,7 @@
       x Mardia's skewness: χ²(120) = <num>, p < <num>.
       x Mardia's kurtosis: z = <num>, p < <num>.
       x Henze-Zirkler: HZ = <num>, p < <num>.
-      These data depart from multivariate normality.
+      These data depart from multivariate normality: 3 of the 3 tests reject it.
       
       -- Outliers --------------------------------------------------------------------
       
@@ -135,8 +135,8 @@
       
       -- Multicollinearity -----------------------------------------------------------
       
-      v Determinant: <num>. No concern (a value near 0 signals multicollinearity;
-      Field, 2018).
+      i Determinant: <num>. It falls as variables are added, so the condition index
+      below carries the verdict.
       v Condition number: <num> (condition index <num>). No concern (index below 10;
       Belsley, Kuh & Welsch, 1980).
       
@@ -188,8 +188,8 @@
       
       -- Multicollinearity ---------------------------------------
       
-      v Determinant: <num>. No concern (a value near 0 signals
-      multicollinearity; Field, 2018).
+      i Determinant: <num>. It falls as variables are added, so
+      the condition index below carries the verdict.
       v Condition number: <num> (condition index <num>). No
       concern (index below 10; Belsley, Kuh & Welsch, 1980).
       

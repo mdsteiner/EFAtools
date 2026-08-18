@@ -317,13 +317,12 @@ test_that("a wide-span integer code is flagged empty without enumerating its ran
 test_that("multivariate normality diagnostics are present on the raw path", {
   nm <- scr_raw$normality
   expect_named(nm, c("mardia", "hz", "n_complete"))
-  expect_named(nm$mardia, c("skewness", "skewness_df", "skewness_p", "small_sample",
+  expect_named(nm$mardia, c("skewness", "skewness_df", "skewness_p",
                             "kurtosis", "kurtosis_p", "b1p", "b2p"))
   expect_named(nm$hz, c("statistic", "p_value"))
 
-  # GRiPS is complete, so every row feeds the tests and no small-sample correction applies
+  # GRiPS is complete, so every row feeds the tests
   expect_equal(nm$n_complete, nrow(GRiPS_raw))
-  expect_false(nm$mardia$small_sample)
 
   # statistics finite and p-values in [0, 1]
   expect_true(all(is.finite(c(nm$mardia$skewness, nm$mardia$kurtosis, nm$hz$statistic))))
@@ -335,27 +334,127 @@ test_that("multivariate normality diagnostics are present on the raw path", {
   expect_null(scr_cor$normality)
 })
 
+test_that("the Henze-Zirkler p-value is withheld where its null approximation degenerates", {
+  # The lognormal null variance si2 falls geometrically with the number of variables
+  # while the null mean mu goes to 1, so si2 + mu^2 rounds to mu^2 and the z-score
+  # divides by a zero psi. Without the guard the p-value is then exactly 0 or exactly 1,
+  # decided by a rounding-level residual, on data from an exact multivariate normal.
+  set.seed(4)
+  X <- matrix(stats::rnorm(150 * 60), 150, 60)
+
+  expect_warning(nm <- EFAtools:::.screen_normality(X), class = "efa_screen_no_hz")
+  expect_s3_class(nm$hz, "efa_screen_no_hz")
+  expect_true(is.na(nm$hz$p_value))
+  # only the null approximation fails: the statistic and Mardia's tests are unaffected
+  expect_true(is.finite(nm$hz$statistic))
+  expect_true(is.finite(nm$mardia$skewness_p))
+  expect_true(is.finite(nm$mardia$kurtosis_p))
+
+  # and the report neither passes nor rejects on it, and counts the tests that remain
+  local_reproducible_output()
+  colnames(X) <- paste0("v", seq_len(60))
+  expect_warning(scr <- efa_screen(X, seed = 1), class = "efa_screen_no_hz")
+  txt <- cli::ansi_strip(paste(format(scr), collapse = " "))
+  expect_match(txt, "p not available at this number of variables", fixed = TRUE)
+  expect_match(txt, "of the 2 tests", fixed = TRUE)
+})
+
+test_that("the multivariate normality verdict counts the tests that reject", {
+  local_reproducible_output()
+  # GRiPS departs from normality on all three tests, so the verdict names all three; the
+  # count is what separates a unanimous rejection from a single marginal one.
+  expect_match(cli::ansi_strip(paste(format(scr_raw), collapse = " ")),
+               "3 of the 3 tests reject it", fixed = TRUE)
+  # a clean multivariate normal sample takes the other branch, which names the
+  # denominator too (all three p-values here are above .96, so the fixture is not tied)
+  set.seed(381)
+  clean <- matrix(stats::rnorm(200 * 5), 200, 5)
+  colnames(clean) <- paste0("v", seq_len(5))
+  expect_match(cli::ansi_strip(paste(format(efa_screen(clean, seed = 1)), collapse = " ")),
+               "consistent with multivariate normality: none of the 3 tests rejects it",
+               fixed = TRUE)
+})
+
 test_that("Mardia's skewness/kurtosis match psych after the divisor rescaling", {
   skip_on_cran()
   skip_if_not_installed("psych")
 
   X <- as.matrix(iris[, 1:4])
   n <- nrow(X)
-  p <- ncol(X)
   md <- scr_iris$normality$mardia
   m <- psych::mardia(X, plot = FALSE)
 
   # efa_screen uses the biased (divisor-n) covariance; psych::mardia uses cov()
-  # (divisor n - 1). The two are related exactly by (n / (n - 1))^k, so the
-  # coefficients agree after rescaling.
+  # (divisor n - 1). The two are related exactly by (n / (n - 1))^j, so the COEFFICIENTS
+  # agree after rescaling. The two statistics built on them do not, by design: psych
+  # standardises b2p with the asymptotic null moments where efa_screen uses the exact
+  # ones, and psych drops Mardia's skewness correction above 20 observations where
+  # efa_screen keeps it. Both divergences have their own tests below.
   expect_equal(md$b1p, m$b1p * (n / (n - 1))^3, tolerance = 1e-6)
   expect_equal(md$b2p, m$b2p * (n / (n - 1))^2, tolerance = 1e-6)
-  expect_equal(md$skewness, m$skew * (n / (n - 1))^3, tolerance = 1e-6)
-  expect_false(md$small_sample)
+})
 
-  # kurtosis is the standardised (b2p - p(p + 2))
-  expect_equal(md$kurtosis, (md$b2p - p * (p + 2)) * sqrt(n / (8 * p * (p + 2))),
-               tolerance = 1e-10)
+test_that("Mardia's kurtosis is standardised with Mardia's (1974) exact null moments", {
+  md <- scr_iris$normality$mardia
+  n <- nrow(iris)
+  p <- 4L
+
+  kurt_mean <- p * (p + 2) * (n - 1) / (n + 1)
+  kurt_var <- 8 * p * (p + 2) * (n - 3) * (n - p - 1) * (n - p + 1) /
+    ((n + 1)^2 * (n + 3) * (n + 5))
+  expect_equal(md$kurtosis, (md$b2p - kurt_mean) / sqrt(kurt_var), tolerance = 1e-10)
+})
+
+test_that("Mardia's kurtosis holds its nominal level on exact multivariate normal data", {
+  # The exact null moments matter most when the number of variables is large relative to
+  # the sample size. The asymptotic pair p(p + 2) and 8p(p + 2)/n that most other
+  # implementations use overstates both: at n = 50 and p = 20 it puts the statistic at
+  # about -2.1 on average with a standard deviation near 0.54, and rejects data from an
+  # exact multivariate normal about 59% of the time at the .05 level. Correcting the mean
+  # alone leaves the standard deviation at 0.54 and turns that into a test that almost
+  # never rejects, so all three checks below are needed to pin both corrections.
+  set.seed(20240817)
+  n <- 50L
+  p <- 20L
+  md <- lapply(seq_len(300L), function(i) {
+    EFAtools:::.screen_normality(matrix(stats::rnorm(n * p), n, p))$mardia
+  })
+  z <- vapply(md, `[[`, numeric(1), "kurtosis")
+  pv <- vapply(md, `[[`, numeric(1), "kurtosis_p")
+
+  expect_lt(abs(mean(z)), 0.25)
+  expect_gt(stats::sd(z), 0.85)
+  expect_lt(stats::sd(z), 1.20)
+  # the reported p-value drives the level, so assert it rather than rebuilding it
+  expect_lt(mean(pv < .05), 0.12)
+  # and it is the two-sided normal tail of the reported statistic
+  expect_equal(pv, 2 * stats::pnorm(abs(z), lower.tail = FALSE), tolerance = 1e-12)
+})
+
+test_that("Mardia's kurtosis is NA when its exact null variance is zero", {
+  # At n = p + 1 the centred data span the whole space orthogonal to the mean, so b2p
+  # equals (n - 1)^2 with probability 1 and carries no information; its exact null
+  # variance is 0 and the standardised statistic does not exist.
+  set.seed(1)
+  n <- 8L
+  p <- 7L
+  nrm <- EFAtools:::.screen_normality(matrix(stats::rnorm(n * p), n, p))
+
+  expect_equal(nrm$mardia$b2p, (n - 1)^2, tolerance = 1e-8)
+  expect_true(is.na(nrm$mardia$kurtosis))
+  expect_true(is.na(nrm$mardia$kurtosis_p))
+  # the skewness test is unaffected
+  expect_true(is.finite(nrm$mardia$skewness_p))
+
+  # the printed report calls it unavailable rather than showing it as a pass, and drops
+  # it from the denominator of the verdict count
+  set.seed(4)
+  Xn <- matrix(stats::rnorm(12 * 11), 12, 11)
+  colnames(Xn) <- paste0("v", seq_len(11))
+  txt <- cli::ansi_strip(paste(suppressWarnings(format(efa_screen(Xn, seed = 1))),
+                               collapse = " "))
+  expect_match(txt, "Mardia's kurtosis: not available", fixed = TRUE)
+  expect_match(txt, "of the 2 tests", fixed = TRUE)
 })
 
 test_that("the Henze-Zirkler statistic and p-value match the reference value on iris", {
@@ -366,7 +465,7 @@ test_that("the Henze-Zirkler statistic and p-value match the reference value on 
   expect_equal(scr_iris$normality$hz$p_value / 4.1413116299e-19, 1, tolerance = 1e-6)
 })
 
-test_that("the Mardia skewness statistic is small-sample corrected for n < 20", {
+test_that("the corrected Mardia skewness statistic matches psych below 20 observations", {
   skip_on_cran()
   skip_if_not_installed("psych")
 
@@ -375,10 +474,46 @@ test_that("the Mardia skewness statistic is small-sample corrected for n < 20", 
   nrm <- EFAtools:::.screen_normality(Xs)
   ms <- psych::mardia(Xs, plot = FALSE)
 
-  expect_true(nrm$mardia$small_sample)
-  # with n < 20 the reported statistic is Mardia's (1974) small-sample correction,
-  # matching psych's small.skew after the divisor rescaling
+  # below 20 observations psych also applies the correction, as `small.skew`, so the two
+  # agree after the divisor rescaling
   expect_equal(nrm$mardia$skewness, ms$small.skew * (15 / 14)^3, tolerance = 1e-6)
+})
+
+test_that("Mardia's skewness correction applies at every sample size", {
+  # Mardia's (1974) correction k, eq. (5.5), is what makes the statistic's expectation
+  # equal its degrees of freedom; it is not a small-sample device. psych and most other
+  # implementations apply it only below 20 observations, so above that the two diverge by
+  # exactly k. Here n = 60, far above any small-sample threshold.
+  set.seed(4)
+  n <- 60L
+  p <- 6L
+  X <- matrix(stats::rnorm(n * p), n, p)
+  nrm <- EFAtools:::.screen_normality(X)
+  m <- psych::mardia(X, plot = FALSE)
+
+  k <- (p + 1) * (n + 1) * (n + 3) / (n * ((n + 1) * (p + 1) - 6))
+  expect_gt(k, 1)
+  # psych's uncorrected `skew` is our statistic divided by k, after the divisor rescaling
+  expect_equal(nrm$mardia$skewness, k * m$skew * (n / (n - 1))^3, tolerance = 1e-6)
+  # and matches psych's own corrected form, which psych computes but does not use here
+  expect_equal(nrm$mardia$skewness, m$small.skew * (n / (n - 1))^3, tolerance = 1e-6)
+})
+
+test_that("the corrected Mardia skewness statistic is centred on its degrees of freedom", {
+  # The correction makes E(statistic) = df exactly at every n. Without it the statistic is
+  # biased low by the factor k: at n = 50 and p = 20 its expectation is df / k = 1444.7
+  # against df = 1540, which is 1.72 chi-square standard deviations below, and the test
+  # then almost never rejects.
+  set.seed(20240818)
+  n <- 50L
+  p <- 20L
+  df <- p * (p + 1) * (p + 2) / 6
+  s <- vapply(seq_len(200L), function(i) {
+    EFAtools:::.screen_normality(matrix(stats::rnorm(n * p), n, p))$mardia$skewness
+  }, numeric(1))
+
+  # mean within 0.5 chi-square sd of the df; the uncorrected statistic sits 1.72 sd below
+  expect_lt(abs(mean(s) - df) / sqrt(2 * df), 0.5)
 })
 
 test_that("normality tests abort on a correlation matrix and on a singular covariance", {
@@ -822,6 +957,42 @@ test_that("a near-singular matrix still produces the full report", {
   expect_s3_class(scr, "efa_screen")
   expect_lt(scr$determinant, 1e-10)
   expect_gt(scr$condition, 30)
+})
+
+test_that("the multicollinearity verdict follows the condition index, not the determinant", {
+  local_reproducible_output()
+
+  # A clean one-factor population with every loading 0.5: every off-diagonal correlation
+  # is exactly 0.25 and the smallest eigenvalue exactly 0.75 at every p, so this pool is
+  # no worse conditioned at 60 variables than at 10 (index 4.58). The determinant is the
+  # product of the p eigenvalues, so it still falls below the 0.00001 that is commonly
+  # quoted - a cut-off on it flags a pool with nothing wrong with it.
+  p <- 60
+  L <- matrix(0.5, p, 1)
+  R60 <- L %*% t(L)
+  diag(R60) <- 1
+  dimnames(R60) <- list(paste0("v", seq_len(p)), paste0("v", seq_len(p)))
+  scr_wide <- efa_screen(R60, N = 500)
+  expect_lt(scr_wide$determinant, 1e-5)
+  expect_lt(sqrt(scr_wide$condition), 10)
+
+  txt <- cli::ansi_strip(paste(format(scr_wide), collapse = " "))
+  # the determinant is still reported as a number, but carries no verdict of its own
+  expect_match(txt, "Determinant: 0.0000006", fixed = TRUE)
+  expect_match(txt, "so the condition index below carries the verdict", fixed = TRUE)
+  expect_no_match(txt, "Multicollinearity likely", fixed = TRUE)
+  # and no recommendation sends the reader after redundant items that do not exist
+  expect_no_match(txt, "nearly linearly dependent", fixed = TRUE)
+
+  # A genuinely ill-conditioned matrix still gets the verdict and the recommendation.
+  set.seed(5)
+  near2 <- data.frame(a = rnorm(120), b = rnorm(120), c = rnorm(120))
+  near2$copy_of_a <- near2$a + rnorm(120, sd = 1e-7)
+  scr_ill <- suppressWarnings(efa_screen(near2, seed = 1))
+  expect_gt(sqrt(scr_ill$condition), 30)
+  txt_ill <- cli::ansi_strip(paste(format(scr_ill), collapse = " "))
+  expect_match(txt_ill, "Strong multicollinearity", fixed = TRUE)
+  expect_match(txt_ill, "A high condition index indicates multicollinearity", fixed = TRUE)
 })
 
 # singular / non-positive-definite inputs
