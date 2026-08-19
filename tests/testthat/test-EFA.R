@@ -500,6 +500,29 @@ test_that("EFA rejects n_factors below 1 and a missing n_factors", {
   expect_error(EFA(cm, N = 500), class = "efa_missing_n_factors")
 })
 
+test_that("a whole retention object as n_factors names the component that holds the counts", {
+  # The companion mistake to omitting n_factors. The shared argument assertion answered with
+  # the class the value is not ("Must be of type 'count', not 'efa_retain/N_FACTORS'"), never
+  # with the component to take the count from. Both retention classes reach the guard.
+  cm <- test_models$baseline$cormat
+  bad_n_factors <- function(nf) {
+    e <- tryCatch(efa_fit(cm, n_factors = nf, N = 500),
+                  efa_n_factors_object = function(e) e)
+    expect_s3_class(e, "efa_n_factors_object")
+    conditionMessage(e)
+  }
+
+  ret <- suppressWarnings(suppressMessages(
+    efa_retain(cm, N = 500, criteria = c("EKC", "MAP"), suitability = FALSE)))
+  expect_snapshot(cat(bad_n_factors(ret)))
+  # A single criterion reporting a single variant is the singular branch of the count.
+  expect_snapshot(cat(bad_n_factors(suppressMessages(efa_ekc(cm, N = 500)))))
+
+  # `$n_factors` carries one count per criterion (or per variant), so a single element of it
+  # is the value the message asks for, and it is accepted.
+  expect_s3_class(efa_fit(cm, n_factors = ret$n_factors[["MAP_TR4"]], N = 500), "efa")
+})
+
 test_that("print.efa output is stable (PAF, promax)", {
   local_reproducible_output()
 

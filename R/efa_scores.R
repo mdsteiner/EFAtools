@@ -177,7 +177,10 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
 
   if (!inherits(f, c("EFA", "matrix", "LOADINGS"))) {
     cli::cli_abort(
-      "{.arg f} must be an {.cls efa} object (from {.fn efa_fit}), a matrix, or an {.cls efa_loadings} object.",
+      c("{.arg f} must be an {.cls efa} object (from {.fn efa_fit}), a matrix, or an {.cls efa_loadings} object.",
+        "i" = "From an {.cls efa_average} object, use the averaged loading matrix in
+               {.code $loadings$average}, with the averaged factor correlations in
+               {.code $Phi$average} for an oblique solution."),
       class = "efa_scores_bad_f"
     )
   }

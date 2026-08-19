@@ -712,6 +712,20 @@ format.summary.efa <- function(x, ...) {
     lines <- c(lines, paste0("df: ",
       .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE)))
     .efa_emit_lines(lines)
+    # DWLS has no unscaled chi-square: the statistic exists only in the scaled-and-shifted
+    # form the robust covariance supplies, so without se = "sandwich" the three lines above
+    # are the whole of the fit output and nothing else says why. Name what is missing with
+    # the wording shared with the other routes that lose the same block. The note is held to
+    # a model that a scaled statistic would apply to: with df = 0 the caveat above already
+    # covers it, and a non-finite df is not a DWLS matter. PAF gets no such line -- it has no
+    # discrepancy function to test, so no setting restores the block for it.
+    if (identical(estimator, "DWLS") && !identical(spec$se, "sandwich") &&
+        is.finite(df) && df > 0) {
+      chisq_block <- .fit_unavailable_text("chisq_block")
+      cli::cli_text("")
+      cli::cli_text("{.emph Note:} With {.code estimator = \"DWLS\"}, {chisq_block}; refit
+                     with {.code se = \"sandwich\"} for the scaled chi-square.")
+    }
     return(invisible(NULL))
   }
 

@@ -125,5 +125,17 @@ test_that("the svd varimax path tolerates a zero-communality row (Kaiser normali
   }
 })
 
+test_that("the SPSS varimax non-convergence warning names the tolerance alone", {
+  # The Kaiser sweep runs a budget of 1000 iterations that is fixed in the algorithm, so
+  # `maxit` is no remedy here and only `precision` is named. The branch is a backstop -- the
+  # sweep drives the change in the simplicity criterion to exactly zero on every input tried,
+  # so no correlation matrix reaches it -- and the warning is raised directly to make sure the
+  # text it would show is the text recorded here.
+  w <- tryCatch(.warn_rotation_no_convergence(FALSE, 1000L, tunable_maxit = FALSE),
+                efa_rotation_no_convergence = function(w) w)
+  expect_s3_class(w, "efa_rotation_no_convergence")
+  expect_snapshot(cat(conditionMessage(w)))
+})
+
 rm(unrot, vari, unrot_1, vari_1, vari_psych, vari_spss)
 

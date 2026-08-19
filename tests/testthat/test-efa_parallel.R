@@ -224,6 +224,17 @@ test_that("errors are thrown correctly", {
   expect_error(efa_parallel(test_models$baseline$cormat, N = 18), class = "efa_n_too_small")
 })
 
+test_that("the n_vars override names the input instead of assuming raw data", {
+  # The override runs for any non-NULL `x`, so a correlation matrix reaches it as well. The
+  # message used to call that input "raw data", which is the one thing a correlation matrix
+  # is not. The handler exits at the warning, so no reference datasets are simulated.
+  w <- tryCatch(
+    efa_parallel(test_models$baseline$cormat, N = 500, n_vars = 18, n_datasets = 20),
+    efa_nvars_from_data = function(w) w)
+  expect_s3_class(w, "efa_nvars_from_data")
+  expect_snapshot(cat(conditionMessage(w)))
+})
+
 test_that("parallel-analysis simulation counts must be positive", {
   # all four are refused at the R boundary with the package's argument class,
   # rather than reaching the simulation and answering from an empty reference

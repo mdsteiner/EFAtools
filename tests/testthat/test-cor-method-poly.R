@@ -198,6 +198,19 @@ test_that(".warn_acov_degenerate flags an unusable asymptotic variance and passe
   expect_warning(.warn_acov_degenerate(c(0.01, 12, 0.02)), class = "efa_acov_degenerate")
 })
 
+test_that("the degenerate-variance warning reads correctly for one and for several pairs", {
+  # Every bullet pluralises on the number of affected pairs, so both branches are recorded. The
+  # first bullet opens with cli::qty(); a space after that call renders as a second space behind
+  # the bullet marker, which is why it has none.
+  degenerate_msg <- function(v) {
+    w <- tryCatch(.warn_acov_degenerate(v), efa_acov_degenerate = function(w) w)
+    expect_s3_class(w, "efa_acov_degenerate")
+    conditionMessage(w)
+  }
+  expect_snapshot(cat(degenerate_msg(c(`v1-v2` = 0.01, `v1-v3` = -1))))
+  expect_snapshot(cat(degenerate_msg(c(`v1-v2` = NA_real_, `v1-v3` = -1))))
+})
+
 test_that("both acov requests screen the same pair-labelled asymptotic variances", {
   # .prepare_cor_input() screens the variances once, before either consumer touches them, so a
   # degenerate pair is reported identically whether it reaches the DWLS weights (acov = "diag")

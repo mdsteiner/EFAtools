@@ -228,8 +228,8 @@ efa_parallel <- function(x = NULL,
 
       if (!is.na(n_vars)) {
         cli::cli_warn(
-          c("Both {.arg n_vars} and raw data were supplied.",
-            "i" = "Taking {.arg n_vars} from the data."),
+          c("Both {.arg n_vars} and {.arg x} were supplied.",
+            "i" = "Taking {.arg n_vars} from {.arg x}."),
           class = "efa_nvars_from_data"
         )
       }

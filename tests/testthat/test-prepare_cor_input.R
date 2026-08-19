@@ -431,6 +431,20 @@ test_that("a singular matrix aborts unless the check is disabled", {
   expect_error(suppressMessages(efa_fit(sing_cor, n_factors = 2, N = sing_N)),
                class = "efa_cor_singular")
 
+  # The two causes take different bullets. Here the rank deficiency is in the variables, so
+  # the message hands the reader on to the function that names them.
+  expect_snapshot(error = TRUE, .prepare_cor_input(sing_cor, N = sing_N))
+
+  # A sample no larger than the number of variables is the other cause, and no variable is at
+  # fault: the matrix is taken about the sample means, so its rank is at most N - 1 and the
+  # numbers are the whole diagnosis. The boundary is N <= p, so the equality case takes this
+  # branch too -- with N = p, efa_screen() would report an exact linear combination that is an
+  # artefact of the sample size rather than a property of the variables.
+  expect_snapshot(error = TRUE,
+                  suppressMessages(.prepare_cor_input(GRiPS_raw[1:4, ])))
+  expect_snapshot(error = TRUE,
+                  suppressMessages(.prepare_cor_input(GRiPS_raw[1:8, ])))
+
   # check_singular = FALSE skips the abort. Whether the smoothing branch is entered at all is a
   # property of the build rather than of the data: for an exactly rank-deficient matrix the
   # smallest computed eigenvalue IS the eigensolver's rounding, so its sign -- and with it the

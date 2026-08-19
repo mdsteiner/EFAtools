@@ -974,7 +974,10 @@ efa_reliability <- function(model = NULL,
   } else {
     cli::cli_abort(
       c("Invalid {.arg model}.",
-        "i" = "Enter a {.cls lavaan}, {.fn psych::schmid}, {.cls SL}, or {.cls EFA} object, a bifactor loading matrix, or specify {.arg var_names}, {.arg g_load}, {.arg s_load}, and {.arg u2}."),
+        "i" = "Enter a {.cls lavaan}, {.fn psych::schmid}, {.cls SL}, or {.cls EFA} object, a bifactor loading matrix, or specify {.arg var_names}, {.arg g_load}, {.arg s_load}, and {.arg u2}.",
+        "i" = "From an {.cls efa_average} object, use the averaged loading matrix in
+               {.code $loadings$average}, with {.code $Phi$average} as {.arg Phi} and
+               {.code $orig_R} as {.arg cormat}."),
       class = "efa_reliability_invalid_model"
     )
   }

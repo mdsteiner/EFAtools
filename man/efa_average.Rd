@@ -224,7 +224,8 @@ range of the final communality estimates across the factor solutions.}
 \item{loadings}{A list with the average, standard deviation, minimum, maximum,
 and range of the final loadings across the factor solutions. If rotation was
 "none", the unrotated loadings, otherwise the rotated loadings (pattern
-coefficients).}
+coefficients). \code{average} is a cell-wise summary of the solutions and not itself
+a fitted solution (see Details).}
 \item{Phi}{A list with the average, standard deviation, minimum, maximum, and
 range of the factor intercorrelations across factor solutions obtained with
 oblique rotations.}

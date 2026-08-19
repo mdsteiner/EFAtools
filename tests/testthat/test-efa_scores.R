@@ -558,4 +558,24 @@ test_that("FACTOR_SCORES keeps its legacy output shape and Thurstone alias", {
   expect_equal(fs_thu$weights, es_reg$weights, ignore_attr = TRUE)
 })
 
+test_that("the f error names the averaged matrix an efa_average object carries", {
+  # An efa_average object is rejected while "a matrix" is listed as acceptable, and its
+  # averaged loadings are exactly that. The message now says where they are.
+  avg <- suppressWarnings(suppressMessages(
+    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                estimator = c("PAF", "ULS"), rotation = "promax", type = "EFAtools",
+                start_method = "psych", show_progress = FALSE)))
+
+  e <- tryCatch(efa_scores(GRiPS_raw, f = avg), efa_scores_bad_f = function(e) e)
+  expect_s3_class(e, "efa_scores_bad_f")
+  expect_snapshot(cat(conditionMessage(e)))
+
+  # The component the message names is accepted. Supplied on its own it carries no factor
+  # correlations, which efa_scores() reports itself (efa_scores_phi_null), so the message
+  # does not have to.
+  expect_s3_class(
+    suppressMessages(efa_scores(test_models$baseline$cormat, f = avg$loadings$average)),
+    "efa_scores")
+})
+
 rm(efa_ob, efa_or, efa_grips, fs_ob_cor, fs_grips)

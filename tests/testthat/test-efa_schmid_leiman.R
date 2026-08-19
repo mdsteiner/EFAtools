@@ -522,3 +522,23 @@ if (requireNamespace("lavaan", quietly = TRUE)) {
      lav_fit_bifactor)
 }
 
+
+test_that("the input error names the averaged matrix an efa_average object carries", {
+  # An efa_average object is rejected while "a matrix" is listed as acceptable, and its
+  # averaged loadings are exactly that. The message now says where they are, together with
+  # the averaged factor correlations, which this transformation always needs.
+  avg <- suppressWarnings(suppressMessages(
+    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                estimator = c("PAF", "ULS"), rotation = "promax", type = "EFAtools",
+                start_method = "psych", show_progress = FALSE)))
+
+  e <- tryCatch(efa_schmid_leiman(avg), efa_sl_bad_input = function(e) e)
+  expect_s3_class(e, "efa_sl_bad_input")
+  expect_snapshot(cat(conditionMessage(e)))
+
+  # The components the message names are accepted.
+  expect_s3_class(
+    suppressWarnings(suppressMessages(
+      efa_schmid_leiman(avg$loadings$average, Phi = avg$Phi$average))),
+    "efa_schmid_leiman")
+})

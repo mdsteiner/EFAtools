@@ -415,6 +415,44 @@ test_that("b_boot below two is rejected", {
   )
 })
 
+test_that("a ci at either end of the unit interval is rejected", {
+  # The bound is open at both ends, on every SE path. The analytic paths read the level as
+  # z = qnorm(1 - (1 - ci) / 2): at ci = 1 that is infinite and each Wald bound came back
+  # -Inf/Inf, at ci = 0 it is zero and each interval collapsed onto the point estimate. Both
+  # passed silently, because the assertion took the closed interval the documentation described.
+  cm <- test_models$baseline$cormat
+
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "ML", se = "information", ci = 1),
+    class = "efa_ci_out_of_bounds"
+  )
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "ML", se = "information", ci = 0),
+    class = "efa_ci_out_of_bounds"
+  )
+  # The guard sits in the argument checks, so it fires whatever the SE path -- including none.
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", se = "np-boot", ci = 1),
+    class = "efa_ci_out_of_bounds"
+  )
+  # It owns the whole range, so a level outside the unit interval reports the same rule.
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "ML", se = "information", ci = 1.5),
+    class = "efa_ci_out_of_bounds"
+  )
+  # A non-number stays with the shared argument assertion.
+  expect_error(
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "ML", se = "information", ci = NA),
+    class = "efa_invalid_argument"
+  )
+
+  # A level inside the interval still passes.
+  expect_no_error(
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "ML", rotation = "none",
+            se = "information", ci = .99)
+  )
+})
+
 test_that("fewer than two surviving replicates is flagged as unreliable", {
   # The input bound cannot see this one: b_boot is legal, but the replicates fail at run time and
   # leave a single usable draw behind. Without a condition the object returns all-NA SEs and a

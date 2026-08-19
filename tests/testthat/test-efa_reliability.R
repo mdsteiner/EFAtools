@@ -1816,4 +1816,26 @@ test_that("the correlated-factors context line follows the printed columns", {
   expect_false(any(grepl("equals its total omega", txt_c)))
 })
 
+test_that("the model error names the averaged matrix an efa_average object carries", {
+  # An efa_average object is rejected while "a bifactor loading matrix" is listed as
+  # acceptable, and its averaged loadings are a matrix. The message now says where they are.
+  avg <- suppressWarnings(suppressMessages(
+    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+                estimator = c("PAF", "ULS"), rotation = "promax", type = "EFAtools",
+                start_method = "psych", show_progress = FALSE)))
+
+  e <- tryCatch(efa_reliability(avg), efa_reliability_invalid_model = function(e) e)
+  expect_s3_class(e, "efa_reliability_invalid_model")
+  expect_snapshot(cat(conditionMessage(e)))
+
+  # The component the message names clears this gate: what it meets next is the content
+  # check for a correlated-factors pattern, which names `Phi` and `cormat` itself.
+  e2 <- tryCatch(efa_reliability(avg$loadings$average), error = function(e) e)
+  expect_false(inherits(e2, "efa_reliability_invalid_model"))
+  expect_s3_class(
+    suppressWarnings(efa_reliability(avg$loadings$average, Phi = avg$Phi$average,
+                                     cormat = avg$orig_R)),
+    "efa_reliability")
+})
+
 rm(efa_mod, sl_mod, fc, auto, flip, cormat_flipped, efa_flipped, sl_flipped)

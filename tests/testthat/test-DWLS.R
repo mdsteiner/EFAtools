@@ -53,6 +53,41 @@ test_that("the chi-square block is NA but the descriptive indices are reported",
   expect_type(DWLS_test$fit_indices$Fm, "double")
 })
 
+test_that("the reduced Model Fit block says why the chi-square block is missing", {
+  # Without se = "sandwich" a DWLS report ends at CAF, SRMR and df, with nothing saying that
+  # the statistic exists in scaled form and how to get it. Six items and one factor keep the
+  # polychoric matrix small; df = 9 keeps the model overidentified, which is the case the note
+  # is held to.
+  x <- DOSPERT_raw[stats::complete.cases(DOSPERT_raw), 1:6][1:500, ]
+  fit_dwls <- function(...) {
+    suppressWarnings(suppressMessages(
+      efa_fit(x, n_factors = 1, cor_method = "poly", estimator = "dwls",
+              rotation = "none", ...)))
+  }
+  # Collapsed, because the note wraps to the console width and the fragment spans the break.
+  shown <- function(obj, fun = print) {
+    paste(cli::ansi_strip(utils::capture.output(fun(obj))), collapse = " ")
+  }
+  note <- "refit with `se = \"sandwich\"` for the scaled chi-square"
+
+  plain <- fit_dwls()
+  expect_true(is.na(plain$fit_indices$chi))
+  expect_true(grepl(note, shown(plain), fixed = TRUE))
+  # summary() renders the same section, so the note reaches both reports.
+  expect_true(grepl(note, shown(summary(plain)), fixed = TRUE))
+
+  # With the robust covariance the statistic is there, so the note must not appear.
+  robust <- fit_dwls(se = "sandwich")
+  expect_false(is.na(robust$fit_indices$chi))
+  expect_false(grepl(note, shown(robust), fixed = TRUE))
+
+  # PAF reaches the same reduced block, but no setting restores a chi-square for it.
+  paf <- suppressWarnings(suppressMessages(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
+            rotation = "none")))
+  expect_false(grepl(note, shown(paf), fixed = TRUE))
+})
+
 test_that("the DWLS gradient matches finite differences", {
   # the analytic gradient -2 (W o (R - LL')) L of the weighted off-diagonal objective,
   # checked against central differences on a random fixture

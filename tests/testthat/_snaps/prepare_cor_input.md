@@ -164,3 +164,30 @@
       x Its diagonal is all ones and every entry lies in [-1, 1], but `x[i, j]` and `x[j, i]` differ.
       i Supply the raw observations the correlation matrix was computed from.
 
+# a singular matrix aborts unless the check is disabled
+
+    Code
+      .prepare_cor_input(sing_cor, N = sing_N)
+    Condition
+      Error:
+      ! The correlation matrix is singular; no further analyses are performed.
+      i Use `efa_screen()`, which reports the variables responsible.
+
+---
+
+    Code
+      suppressMessages(.prepare_cor_input(GRiPS_raw[1:4, ]))
+    Condition
+      Error:
+      ! The correlation matrix is singular; no further analyses are performed.
+      i With N = 4 and 8 variables the correlation matrix cannot have full rank. N must be larger than the number of variables.
+
+---
+
+    Code
+      suppressMessages(.prepare_cor_input(GRiPS_raw[1:8, ]))
+    Condition
+      Error:
+      ! The correlation matrix is singular; no further analyses are performed.
+      i With N = 8 and 8 variables the correlation matrix cannot have full rank. N must be larger than the number of variables.
+

@@ -1,3 +1,11 @@
+# the input error names where a fitted solution keeps its loadings
+
+    Code
+      cat(conditionMessage(e))
+    Output
+      `x` (<efa/EFA>) and `y` (<efa/EFA>) must be numeric vectors or matrices.
+      i From an <efa> solution, use `$rot_loadings`, or `$unrot_loadings` if it was fitted without a rotation.
+
 # print output is stable
 
     Code

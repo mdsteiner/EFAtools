@@ -85,3 +85,11 @@
       F2 <num> <num> <num>
       F3 <num> <num> <num>
 
+# the f error names the averaged matrix an efa_average object carries
+
+    Code
+      cat(conditionMessage(e))
+    Output
+      `f` must be an <efa> object (from `efa_fit()`), a matrix, or an <efa_loadings> object.
+      i From an <efa_average> object, use the averaged loading matrix in `$loadings$average`, with the averaged factor correlations in `$Phi$average` for an oblique solution.
+

@@ -1,3 +1,19 @@
+# a whole retention object as n_factors names the component that holds the counts
+
+    Code
+      cat(bad_n_factors(ret))
+    Output
+      `n_factors` must be a single count, not an <efa_retain> object.
+      i Its `$n_factors` holds 3 suggested counts; supply one of them.
+
+---
+
+    Code
+      cat(bad_n_factors(suppressMessages(efa_ekc(cm, N = 500))))
+    Output
+      `n_factors` must be a single count, not an <efa_retention> object.
+      i Its `$n_factors` holds 1 suggested count; supply it.
+
 # print.efa output is stable (PAF, promax)
 
     Code

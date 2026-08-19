@@ -88,7 +88,7 @@
     bad <- nms[n_cat < 2L]
     cli::cli_abort(
       c("Polychoric correlations need at least two response categories per variable.",
-        "x" = "{cli::qty(bad)} Variable{?s} {.val {bad}} {?is/are} constant."),
+        "x" = "{cli::qty(bad)}Variable{?s} {.val {bad}} {?is/are} constant."),
       class = "efa_cor_constant_col", call = error_call)
   }
 
@@ -98,7 +98,7 @@
     bad <- nms[n_cat > 2L]
     cli::cli_abort(
       c("Tetrachoric correlations require binary variables (at most two categories).",
-        "x" = "{cli::qty(bad)} Variable{?s} {.val {bad}} {?has/have} more than two categories."),
+        "x" = "{cli::qty(bad)}Variable{?s} {.val {bad}} {?has/have} more than two categories."),
       class = "efa_cor_not_binary", call = error_call)
   }
 
@@ -129,7 +129,7 @@
     pairs <- paste0(nms[bad[, 1L]], "-", nms[bad[, 2L]])
     cli::cli_abort(
       c("The polychoric correlation could not be computed for {cli::qty(pairs)} variable pair{?s} {.val {pairs}}.",
-        "i" = "{cli::qty(pairs)} {?This pair has/These pairs have} no overlapping complete observations."),
+        "i" = "{cli::qty(pairs)}{?This pair has/These pairs have} no overlapping complete observations."),
       class = "efa_cor_na", call = error_call)
   }
 
@@ -159,7 +159,7 @@
     n_zc <- sum(res$zero_corrected)
     cap <- .cap_label_list(labels[res$zero_corrected])
     cli::cli_warn(
-      c("{n_zc} binary variable pair{?s} {?has/have} a response combination that never occurs, so a continuity correction of {.val {0.5}} was applied before estimating {?its/their} correlation.",
+      c("{n_zc} binary variable pair{?s} {?has/have} a response combination that never occurs, so a continuity correction of {.val {0.5}} was applied before estimating {cli::qty(n_zc)}{?its/their} correlation.",
         "x" = "Affected {cli::qty(n_zc)}pair{?s}: {.val {cap$shown}}{cap$rest}.",
         "i" = "Every two-by-two table with an empty cell is reproduced exactly by a correlation of 1 (or -1), so without the correction the estimate would be the boundary value whatever the underlying correlation. The correction adds {.val {0.5}} to the empty cell while preserving the table margins, as {.pkg lavaan} and {.pkg psych} do by default.",
         "i" = "The corrected correlation is a point estimate only: no asymptotic variance or standard error is available for {cli::qty(n_zc)} {?this pair/these pairs}."),

@@ -71,8 +71,11 @@
 #'  Must be at least 2, the smallest number from which a standard error is defined.
 #'  Under `cor_method = "fiml"` each bootstrap sample re-runs the EM moment
 #'  estimation, so a smaller value may be advisable.
-#' @param ci numeric. The confidence interval to create from the bootstrap samples.
-#'  Must be between 0 and 1. Default is .95 for 95% CIs.
+#' @param ci numeric. The level of the confidence intervals: the percentile intervals from
+#'  the bootstrap samples under `se = "np-boot"`, and the analytic Wald intervals under
+#'  `se = "information"` and `se = "sandwich"`, the corrected two-stage intervals of
+#'  `cor_method = "fiml"` included. Must be greater than 0 and smaller than 1. Default is
+#'  .95 for 95% CIs.
 #' @param seed numeric. An optional seed for the random-number generator, governing every
 #'  stochastic part of the fit: the rotation's random starts on the point estimate (the
 #'  criterion-based rotations draw `random_starts` random starts; see *Rotations*) and,
@@ -922,6 +925,22 @@ efa_fit <- function(x, n_factors, N = NA,
     )
   }
 
+  # The companion mistake to omitting n_factors: handing over the whole retention object. The
+  # shared assertion below names the class the value is not, never the component that holds
+  # the counts, so name it here. Both retention classes carry that component: `efa_retain()`
+  # one count per criterion, a single criterion one per variant it reports (two for MAP, three
+  # for the eigenvalue-based ones). Only a one-variant criterion therefore yields a value the
+  # assertion would take, so the number is reported and the reader is asked to choose.
+  if (inherits(n_factors, c("efa_retain", "efa_retention"))) {
+    n_suggested <- length(n_factors$n_factors)
+    cli::cli_abort(
+      c("{.arg n_factors} must be a single count, not an {.cls {class(n_factors)[[1]]}} object.",
+        "i" = "Its {.code $n_factors} holds {n_suggested} suggested count{?s}; supply
+               {?it/one of them}."),
+      class = "efa_n_factors_object"
+    )
+  }
+
   estimator <- .match_arg_ci(estimator)
   # "MINRES" is a synonym for "ULS" (same estimator); resolve it once here so the
   # rest of efa_fit() and the reported settings use the single canonical name.
@@ -1168,7 +1187,21 @@ efa_fit <- function(x, n_factors, N = NA,
         class = "efa_b_boot_too_small"
       )
     }
-    checkmate::assert_number(ci, lower = 0, upper = 1)
+    checkmate::assert_number(ci)
+    # Both ends of the level are open. Every path turns `ci` into a quantile of the sampling
+    # distribution: the analytic paths into z = qnorm(1 - (1 - ci) / 2), the bootstrap into the
+    # matching percentile pair. At ci = 1 that quantile is infinite and each analytic Wald bound
+    # comes back -Inf/Inf; at ci = 0 it is zero and each interval collapses onto the point
+    # estimate. Neither value is a confidence level, and both used to pass without a condition.
+    if (ci <= 0 || ci >= 1) {
+      cli::cli_abort(
+        c("{.arg ci} must be greater than 0 and smaller than 1.",
+          "x" = "You supplied {.arg ci} = {ci}.",
+          "i" = "At 1 every analytic bound is infinite, and at 0 every interval has zero width.
+                 The default is {.val {0.95}}."),
+        class = "efa_ci_out_of_bounds"
+      )
+    }
     checkmate::assert_int(seed, null.ok = TRUE)
   })
 

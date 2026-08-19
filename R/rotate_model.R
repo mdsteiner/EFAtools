@@ -29,10 +29,19 @@
 
 # Warn when a native gradient-projection rotation did not reach the convergence tolerance
 # within `maxit` iterations, mirroring the warning the GPArotation engines emit so that the
-# native and GPArotation-backed rotations behave the same way on a non-convergent fit.
-.warn_rotation_no_convergence <- function(converged, maxit) {
+# native and GPArotation-backed rotations behave the same way on a non-convergent fit. The
+# remedy names the knobs that move the outcome; `tunable_maxit` is FALSE for the SPSS varimax
+# sweep, whose iteration budget is fixed in the algorithm, so there the tolerance is named alone.
+.warn_rotation_no_convergence <- function(converged, maxit, tunable_maxit = TRUE) {
   if (!isTRUE(converged)) {
-    cli::cli_warn("The rotation did not converge within {maxit} iterations.",
+    remedy <- if (tunable_maxit) {
+      "In {.fn rotate_control}, increase {.arg maxit} for more iterations, or {.arg precision}
+       for a weaker tolerance."
+    } else {
+      "In {.fn rotate_control}, increase {.arg precision} for a weaker tolerance."
+    }
+    cli::cli_warn(c("The rotation did not converge within {maxit} iteration{?s}.",
+                    "i" = remedy),
                   class = "efa_rotation_no_convergence")
   }
 }

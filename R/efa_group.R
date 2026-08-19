@@ -390,9 +390,13 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
       fit_g <- tryCatch(
         do.call(efa_fit, fit_args),
         error = function(e) {
+          # The cause is carried by `parent`, which rlang prints in full under "Caused by
+          # error:" with its own bullets intact. Repeating conditionMessage() here as a
+          # single bullet would both duplicate it and flatten it: a parent that raises more
+          # than one bullet -- most of efa_fit()'s input guards do -- has its own markers
+          # rendered inside this one, mid-sentence.
           cli::cli_abort(
-            c("The {.fn efa_fit} fit failed for group {.val {group_names[[g]]}}.",
-              "x" = conditionMessage(e)),
+            "The {.fn efa_fit} fit failed for group {.val {group_names[[g]]}}.",
             class = "efa_group_fit_failed", parent = e
           )
         }

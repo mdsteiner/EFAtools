@@ -316,6 +316,36 @@ test_that("a constant column is rejected with a classed condition", {
   expect_error(.polychoric(gx), class = "efa_cor_constant_col")
 })
 
+test_that("the category guards read correctly for one and for several variables", {
+  # Both bullets open with cli::qty() and then name the offending variables, so one variable
+  # must read "Variable ... is" and several "Variables ... are". A space after the qty() call
+  # renders as a second space behind the bullet marker, which is why neither branch has one.
+  base <- cbind(a = rep(0:2, length.out = 60L), b = rep(0:1, length.out = 60L),
+                c = rep(0:2, length.out = 60L))
+
+  constant_msg <- function(x) {
+    e <- tryCatch(.polychoric(x), efa_cor_constant_col = function(e) e)
+    expect_s3_class(e, "efa_cor_constant_col")
+    conditionMessage(e)
+  }
+  one_const <- base
+  one_const[, "a"] <- 1L
+  two_const <- one_const
+  two_const[, "b"] <- 2L
+  expect_snapshot(cat(constant_msg(one_const)))
+  expect_snapshot(cat(constant_msg(two_const)))
+
+  binary_msg <- function(x) {
+    e <- tryCatch(.polychoric(x, binary_only = TRUE), efa_cor_not_binary = function(e) e)
+    expect_s3_class(e, "efa_cor_not_binary")
+    conditionMessage(e)
+  }
+  one_wide <- base
+  one_wide[, "c"] <- rep(0:1, length.out = 60L)
+  expect_snapshot(cat(binary_msg(one_wide)))
+  expect_snapshot(cat(binary_msg(base)))
+})
+
 test_that("a single variable is rejected at the R level with a classed condition", {
   # The C++ backend keeps the same check, but it raises an unclassed Rcpp error, so the
   # abort must happen in the wrapper.
@@ -350,6 +380,25 @@ test_that("a pair with no overlapping complete cases is rejected with a classed 
   # column 3 overlaps both so only the 1-2 entry is NA.
   m <- cbind(c(v6, na6), c(na6, v6), rep(1:3, 4L))
   expect_error(.polychoric(m), class = "efa_cor_na")
+})
+
+test_that("the uncomputable-pair error reads correctly for one and for several pairs", {
+  # The bullet opens with cli::qty(); a space after that call renders as a second space
+  # behind the bullet marker, so it has none, and both plural branches are recorded here.
+  na_msg <- function(x) {
+    e <- tryCatch(.polychoric(x), efa_cor_na = function(e) e)
+    expect_s3_class(e, "efa_cor_na")
+    conditionMessage(e)
+  }
+  n <- 200L
+  half <- rep(0:1, length.out = n)
+  # `a` and `b` are never observed on the same row, so that pair is uncomputable; `c` overlaps
+  # both. `d` follows `a`'s missingness pattern, which makes a second uncomputable pair.
+  a <- half; a[1:100] <- NA
+  b <- half; b[101:200] <- NA
+  d <- half; d[1:100] <- NA
+  expect_snapshot(cat(na_msg(data.frame(a = a, b = b, c = half))))
+  expect_snapshot(cat(na_msg(data.frame(a = a, b = b, d = d, c = half))))
 })
 
 test_that("the boundary estimate of a Frechet-bound pair attains the maximum likelihood", {
@@ -671,6 +720,14 @@ test_that("the continuity-correction warning names the offending pairs and caps 
   guttman <- vapply(1:7, function(k) as.integer((0:279L) %% 8L >= k), integer(280L))
   colnames(guttman) <- paste0("i", 1:7)
   expect_snapshot(cat(zero_cell_msg(guttman)))
+
+  # Two monotone binary items give exactly one corrected pair, which is the singular branch of
+  # every plural in the message. The correction constant is interpolated as a number, and a
+  # number sets the pluralisation quantity for everything after it, so the last plural of the
+  # opening line used to read "their correlation" over a single pair.
+  one <- cbind(a = as.integer((0:199L) %% 4L >= 1L),
+               b = as.integer((0:199L) %% 4L >= 2L))
+  expect_snapshot(cat(zero_cell_msg(one)))
 
   # The pairs are corrected, not bounded, and none of them carries a variance.
   res <- suppressWarnings(.polychoric(guttman, acov = "diag"))

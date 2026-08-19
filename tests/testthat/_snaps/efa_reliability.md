@@ -57,3 +57,12 @@
       F2 <num> <num> <num> <num>
       F3 <num> <num> <num> <num>
 
+# the model error names the averaged matrix an efa_average object carries
+
+    Code
+      cat(conditionMessage(e))
+    Output
+      Invalid `model`.
+      i Enter a <lavaan>, `psych::schmid()`, <SL>, or <EFA> object, a bifactor loading matrix, or specify `var_names`, `g_load`, `s_load`, and `u2`.
+      i From an <efa_average> object, use the averaged loading matrix in `$loadings$average`, with `$Phi$average` as `Phi` and `$orig_R` as `cormat`.
+

@@ -172,8 +172,12 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
   if(!inherits(x, c("EFA", "fa", "lavaan", "matrix", "LOADINGS", "loadings"))){
 
-    cli::cli_abort("{.arg x} must be an {.cls EFA}, {.cls fa}, or {.cls lavaan} object, a matrix, or a {.cls LOADINGS}/{.cls loadings} object.",
-                   class = "efa_sl_bad_input")
+    cli::cli_abort(
+      c("{.arg x} must be an {.cls EFA}, {.cls fa}, or {.cls lavaan} object, a matrix, or a {.cls LOADINGS}/{.cls loadings} object.",
+        "i" = "From an {.cls efa_average} object, use the averaged loading matrix in
+               {.code $loadings$average}, with the averaged factor correlations in
+               {.code $Phi$average}."),
+      class = "efa_sl_bad_input")
 
   }
 

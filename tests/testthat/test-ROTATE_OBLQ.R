@@ -109,6 +109,20 @@ test_that("maxit bounds every optimization the multistart solver runs", {
   )
 })
 
+test_that("the non-convergence warning names the knobs that move the outcome", {
+  skip_on_cran()
+
+  # Both knobs are reachable on this path: the iteration budget through `maxit` and the
+  # convergence tolerance through `precision`. The warning used to report only the budget it
+  # had exhausted, leaving the reader to find either of them.
+  w <- tryCatch(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
+            rotation = "geominQ", maxit = 1),
+    efa_rotation_no_convergence = function(w) w)
+  expect_s3_class(w, "efa_rotation_no_convergence")
+  expect_snapshot(cat(conditionMessage(w)))
+})
+
 test_that("settings are returned correctly", {
   expect_named(obli$settings, c("normalize", "precision", "order_type", "k", "randomStarts", "rotation_diagnostics"))
   expect_named(obli_1$settings, c("normalize", "precision", "order_type", "k", "randomStarts"))

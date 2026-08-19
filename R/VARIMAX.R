@@ -63,7 +63,8 @@
 
   }
 
-  .warn_rotation_no_convergence(abs(SV_now - SV_old) <= precision, 1000L)
+  .warn_rotation_no_convergence(abs(SV_now - SV_old) <= precision, 1000L,
+                                tunable_maxit = FALSE)
 
   if (isTRUE(normalize)) {
     x <- x * w

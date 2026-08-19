@@ -1,3 +1,51 @@
+# the category guards read correctly for one and for several variables
+
+    Code
+      cat(constant_msg(one_const))
+    Output
+      Polychoric correlations need at least two response categories per variable.
+      x Variable "a" is constant.
+
+---
+
+    Code
+      cat(constant_msg(two_const))
+    Output
+      Polychoric correlations need at least two response categories per variable.
+      x Variables "a" and "b" are constant.
+
+---
+
+    Code
+      cat(binary_msg(one_wide))
+    Output
+      Tetrachoric correlations require binary variables (at most two categories).
+      x Variable "a" has more than two categories.
+
+---
+
+    Code
+      cat(binary_msg(base))
+    Output
+      Tetrachoric correlations require binary variables (at most two categories).
+      x Variables "a" and "c" have more than two categories.
+
+# the uncomputable-pair error reads correctly for one and for several pairs
+
+    Code
+      cat(na_msg(data.frame(a = a, b = b, c = half)))
+    Output
+      The polychoric correlation could not be computed for variable pair "a-b".
+      i This pair has no overlapping complete observations.
+
+---
+
+    Code
+      cat(na_msg(data.frame(a = a, b = b, d = d, c = half)))
+    Output
+      The polychoric correlation could not be computed for variable pairs "a-b" and "b-d".
+      i These pairs have no overlapping complete observations.
+
 # the sparse-cell warning names the offending pairs and caps the list
 
     Code
@@ -65,4 +113,14 @@
       x Affected pairs: "i1-i2", "i1-i3", "i1-i4", "i1-i5", "i1-i6", and 16 more.
       i Every two-by-two table with an empty cell is reproduced exactly by a correlation of 1 (or -1), so without the correction the estimate would be the boundary value whatever the underlying correlation. The correction adds 0.5 to the empty cell while preserving the table margins, as lavaan and psych do by default.
       i The corrected correlation is a point estimate only: no asymptotic variance or standard error is available for these pairs.
+
+---
+
+    Code
+      cat(zero_cell_msg(one))
+    Output
+      1 binary variable pair has a response combination that never occurs, so a continuity correction of 0.5 was applied before estimating its correlation.
+      x Affected pair: "a-b".
+      i Every two-by-two table with an empty cell is reproduced exactly by a correlation of 1 (or -1), so without the correction the estimate would be the boundary value whatever the underlying correlation. The correction adds 0.5 to the empty cell while preserving the table margins, as lavaan and psych do by default.
+      i The corrected correlation is a point estimate only: no asymptotic variance or standard error is available for this pair.
 

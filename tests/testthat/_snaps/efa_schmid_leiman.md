@@ -37,3 +37,11 @@
       Prop Comm Var <num> <num> <num> <num>
       Cum Prop Comm Var <num> <num> <num> <num>
 
+# the input error names the averaged matrix an efa_average object carries
+
+    Code
+      cat(conditionMessage(e))
+    Output
+      `x` must be an <EFA>, <fa>, or <lavaan> object, a matrix, or a <LOADINGS>/<loadings> object.
+      i From an <efa_average> object, use the averaged loading matrix in `$loadings$average`, with the averaged factor correlations in `$Phi$average`.
+

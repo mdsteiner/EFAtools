@@ -1,3 +1,14 @@
+# a failing group names the group and hands the cause on unaltered
+
+    Code
+      cat(conditionMessage(e))
+    Output
+      The `efa_fit()` fit failed for group "a".
+      Caused by error:
+      ! `estimator = "DWLS"` requires a polychoric asymptotic covariance.
+      x You supplied a correlation matrix, so no asymptotic covariance can be estimated.
+      i Supply raw ordinal data with `cor_method = "poly"` or `"tetra"`.
+
 # print and format render the efa_group report
 
     Code

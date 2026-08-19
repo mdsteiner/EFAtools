@@ -171,8 +171,13 @@ efa_compare <- function(x,
 
   } else {
 
-    cli::cli_abort("{.arg x} ({.cls {class(x)}}) and {.arg y} ({.cls {class(y)}}) must be numeric vectors or matrices.",
-                   class = "efa_compare_bad_input")
+    # A fitted solution is the commonest thing to hand over here, so name the component that
+    # holds its loadings rather than leaving the reader to find it.
+    cli::cli_abort(
+      c("{.arg x} ({.cls {class(x)}}) and {.arg y} ({.cls {class(y)}}) must be numeric vectors or matrices.",
+        "i" = "From an {.cls efa} solution, use {.code $rot_loadings}, or {.code $unrot_loadings}
+               if it was fitted without a rotation."),
+      class = "efa_compare_bad_input")
 
   }
 

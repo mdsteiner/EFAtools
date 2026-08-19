@@ -281,7 +281,7 @@
 
   cli::cli_warn(
     c("The polychoric asymptotic covariance is unavailable for {cli::qty(pairs)} variable pair{?s} {.val {cap$shown}}{cap$rest}.",
-      "x" = "{cli::qty(pairs)} {?This pair was/These pairs were} either estimated with a continuity correction for a response combination that never occurs -- which repairs the correlation but leaves it without a variance -- or {?is/are} not identified well enough to have a usable one (e.g. a perfectly ordered or near-empty response table).",
+      "x" = "{cli::qty(pairs)}{?This pair was/These pairs were} either estimated with a continuity correction for a response combination that never occurs -- which repairs the correlation but leaves it without a variance -- or {?is/are} not identified well enough to have a usable one (e.g. a perfectly ordered or near-empty response table).",
       "i" = "Any robust/sandwich standard error involving {cli::qty(pairs)} {?it/them} is withheld. A DWLS fit refuses the data outright when the variance is missing or non-positive, and down-weights {cli::qty(pairs)} {?it/them} out of the solution when it is merely far too large.",
       "i" = "Fitting with {.code estimator = \"ULS\"} avoids the weights entirely; collapsing rare response categories in the variables involved resolves the under-identified cases."),
     class = "efa_acov_degenerate"
@@ -752,14 +752,36 @@
   # (it is refused before any smoothing is attempted). The smoothing threshold stays at a bare
   # eps because it is pinned to psych::cor.smooth()'s own trigger, not to a rank tolerance.
   ev <- eigen(R, symmetric = TRUE, only.values = TRUE)$values
+  # The number of variables sets the rank tolerance below and is reported by the abort that
+  # tolerance triggers, so both read the one value.
+  p_R <- ncol(R)
 
   # Check if the correlation matrix is invertible, if it is not, stop with message
   if (check_singular &&
-      min(abs(ev)) / max(abs(ev)) < ncol(R) * .Machine$double.eps) {
+      min(abs(ev)) / max(abs(ev)) < p_R * .Machine$double.eps) {
     # The offending matrix travels with the condition, so a caller that wants to name
     # the culprits (efa_screen() reports the perfectly correlated pairs) does not have
     # to recompute a correlation matrix this function has already built.
-    cli::cli_abort("The correlation matrix is singular; {singular_tail}.",
+    #
+    # Two different causes reach this point, and they have different remedies. A sample no
+    # larger than the number of variables makes a full-rank correlation matrix arithmetically
+    # impossible -- the matrix is taken about the sample means, so its rank is at most N - 1 --
+    # and no variable is at fault; naming the two numbers is the whole of the diagnosis. The
+    # bound is N <= p rather than N < p because the centering costs that one degree of freedom.
+    # For any larger N the deficiency is in the variables themselves, which is what
+    # efa_screen() reads off this same matrix: it names the perfectly correlated pairs, and
+    # says so when the redundancy is a combination of several variables instead.
+    # isTRUE() rather than a test on N: this abort is reached from every entry point, and
+    # several of them do not constrain N at all (N_policy = "none" leaves it NA). An absent,
+    # missing, or multi-valued N must fall through to the general hint rather than turn a
+    # classed condition into an unclassed comparison error.
+    hint <- if (isTRUE(N <= p_R)) {
+      "With N = {N} and {p_R} variables the correlation matrix cannot have full rank.
+       N must be larger than the number of variables."
+    } else {
+      "Use {.fn efa_screen}, which reports the variables responsible."
+    }
+    cli::cli_abort(c("The correlation matrix is singular; {singular_tail}.", "i" = hint),
                    class = "efa_cor_singular", R = R, call = error_call)
   }
 

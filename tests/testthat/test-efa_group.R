@@ -597,6 +597,21 @@ test_that("efa_group guards its inputs with classed conditions", {
                class = "efa_unused_dots")
 })
 
+test_that("a failing group names the group and hands the cause on unaltered", {
+  # The re-label carries the cause as the condition's parent, which rlang renders in full
+  # under "Caused by error:" with its own bullets intact. Repeating the parent's message as a
+  # bullet of this one used to flatten it: every marker of a multi-bullet cause -- most of
+  # efa_fit()'s input guards raise one -- was rendered inline, mid-sentence.
+  e <- tryCatch(efa_group(list(a = cmat, b = cmat), n_factors = 3, N = 500,
+                          estimator = "DWLS"),
+                efa_group_fit_failed = function(e) e)
+  expect_s3_class(e, "efa_group_fit_failed")
+  # The cause keeps its own class, so a caller can still dispatch on it.
+  expect_s3_class(e$parent, "efa_dwls_no_acov")
+  # ... and it is still readable from the message, which rlang builds from the whole chain.
+  expect_snapshot(cat(conditionMessage(e)))
+})
+
 test_that("efa_group forwards genuine efa_fit arguments and rotation extras", {
   # the guard above must not refuse what the per-group fits legitimately consume
   expect_s3_class(

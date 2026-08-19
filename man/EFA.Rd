@@ -169,8 +169,11 @@ Must be at least 2, the smallest number from which a standard error is defined.
 Under \code{cor_method = "fiml"} each bootstrap sample re-runs the EM moment
 estimation, so a smaller value may be advisable.}
 
-\item{ci}{numeric. The confidence interval to create from the bootstrap samples.
-Must be between 0 and 1. Default is .95 for 95\% CIs.}
+\item{ci}{numeric. The level of the confidence intervals: the percentile intervals from
+the bootstrap samples under \code{se = "np-boot"}, and the analytic Wald intervals under
+\code{se = "information"} and \code{se = "sandwich"}, the corrected two-stage intervals of
+\code{cor_method = "fiml"} included. Must be greater than 0 and smaller than 1. Default is
+.95 for 95\% CIs.}
 
 \item{random_starts}{numeric. The number of random starts to use in the
 rotation to guard against local minima. Default is 100.}

@@ -425,6 +425,22 @@ test_that("errors etc. are thrown correctly", {
 
 })
 
+test_that("the input error names where a fitted solution keeps its loadings", {
+  # A whole efa_fit() object is the commonest thing to hand over here. The error listed the
+  # classes it accepts and left the reader to find the loading table inside the object.
+  fit <- suppressWarnings(suppressMessages(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
+            rotation = "promax")))
+
+  e <- tryCatch(efa_compare(fit, fit), efa_compare_bad_input = function(e) e)
+  expect_s3_class(e, "efa_compare_bad_input")
+  expect_snapshot(cat(conditionMessage(e)))
+
+  # The component the message names is accepted.
+  expect_s3_class(efa_compare(fit$rot_loadings, fit$rot_loadings, plot = FALSE),
+                  "efa_compare")
+})
+
 test_that("efa_compare is NA-safe and honours na.rm (vector and matrix)", {
   # NA-containing input used to crash in .decimals ("missing value where
   # TRUE/FALSE needed") before efa_compare could return; the documented na.rm
