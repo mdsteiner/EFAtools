@@ -179,7 +179,7 @@ test_that("only correlation mode needs a correlation matrix, general factor or n
   # general factor, not that a correlation matrix is required.
   res <- efa_reliability(model = NULL, var_names = paste0("V", 1:6), g_load = rep(0, 6),
                          s_load = s, u2 = u2, variance = "sums_load")
-  tot <- res$value[res$coefficient == "omega_total" & res$factor == "g"]
+  tot <- res$value[res$coefficient == "omega_total" & res$factor == "total"]
   expect_equal(tot, sum(tcrossprod(s)) / (sum(tcrossprod(s)) + sum(u2)))
   expect_identical(attr(res, "settings"),
                    list(variance = "sums_load", no_general = TRUE))
@@ -200,7 +200,7 @@ test_that("Phi without pattern makes manual components a correlated-factors solu
   dimnames(R) <- list(rownames(L), rownames(L))
   manual <- function(...) efa_reliability(NULL, var_names = rownames(L),
                                           g_load = rep(0, 6), s_load = L, u2 = u2, ...)
-  get <- function(x) x$value[x$coefficient == "omega_total" & x$factor == "g"]
+  get <- function(x) x$value[x$coefficient == "omega_total" & x$factor == "total"]
 
   expect_equal(get(manual(cormat = R, Phi = Phi)), sum(common) / sum(R))
   # Without it, the orthogonal reading -- materially different, so the test is not vacuous.
@@ -540,19 +540,26 @@ test_that("an oblique EFA is scored as a correlated-factors model (no general fa
   expect_false(any(res$coefficient == "omega_hierarchical"))
   expect_false(any(res$coefficient == "ECV"))
   expect_false(any(res$coefficient == "PUC"))
-  # The synthetic all-zero general-factor column also leaves the whole-scale (g) row's
+  # The first row is the composite of every variable, not a general factor the solution
+  # does not have, so it is labelled for that and takes its own level. Labelled "g" at
+  # level "general" it would state a general factor, and would collide with a group factor
+  # a user names "g".
+  expect_true(any(res$factor == "total" & res$level == "total"))
+  expect_false(any(res$factor == "g"))
+  expect_false(any(res$level == "general"))
+  # The synthetic all-zero general-factor column also leaves the whole-scale (total) row's
   # omega subscale and H index undefined; they are dropped (H of an all-zero loading
   # vector would otherwise print a misleading 0). Group factors keep their own omega
   # subscale and H.
-  expect_false(any(res$coefficient == "omega_subscale" & res$factor == "g"))
-  expect_false(any(res$coefficient == "H" & res$factor == "g"))
-  expect_true(any(res$coefficient == "omega_subscale" & res$factor != "g"))
-  expect_true(any(res$coefficient == "H" & res$factor != "g"))
+  expect_false(any(res$coefficient == "omega_subscale" & res$factor == "total"))
+  expect_false(any(res$coefficient == "H" & res$factor == "total"))
+  expect_true(any(res$coefficient == "omega_subscale" & res$factor != "total"))
+  expect_true(any(res$coefficient == "H" & res$factor != "total"))
   # The whole-scale omega total and alpha, and each group factor's omega/H, remain.
-  expect_true(any(res$coefficient == "omega_total" & res$factor == "g"))
-  expect_true(any(res$coefficient == "alpha" & res$factor == "g"))
+  expect_true(any(res$coefficient == "omega_total" & res$factor == "total"))
+  expect_true(any(res$coefficient == "alpha" & res$factor == "total"))
   spec <- .rel_adapt_efa(efa_mod, type = "psych")
-  expect_equal(res$value[res$coefficient == "omega_total" & res$factor == "g"],
+  expect_equal(res$value[res$coefficient == "omega_total" & res$factor == "total"],
                sum(spec$s_load %*% spec$Phi %*% t(spec$s_load)) / sum(spec$cormat))
 })
 
@@ -603,7 +610,7 @@ test_that("sums_load on an oblique EFA is scored, and accounts for the factor co
 
   spec <- .rel_adapt_efa(efa_mod, type = "psych")
   common <- spec$s_load %*% spec$Phi %*% t(spec$s_load)
-  tot <- res$value[res$coefficient == "omega_total" & res$factor == "g"]
+  tot <- res$value[res$coefficient == "omega_total" & res$factor == "total"]
   expect_equal(tot, sum(common) / (sum(common) + sum(spec$u2)))
 
   # The factor correlations are genuinely in there: ignoring them, as summing the squared
@@ -805,7 +812,7 @@ test_that("an ordinary loading matrix with its Phi is scored as a correlated-fac
   expect_identical(attr(res, "settings"), list(variance = "correlation",
                                                no_general = TRUE))
   # Labels come from the matrix itself.
-  expect_setequal(unique(res$factor), c("g", "F1", "F2", "F3"))
+  expect_setequal(unique(res$factor), c("total", "F1", "F2", "F3"))
 
   # Without Phi nothing says the columns are correlated factors, so the matrix is still
   # refused rather than read as a bifactor one.
@@ -813,12 +820,13 @@ test_that("an ordinary loading matrix with its Phi is scored as a correlated-fac
   # Phi is not reported as ignored on this route -- it is what the route reads.
   expect_no_warning(efa_reliability(L, Phi = Phi, cormat = cm),
                     class = "efa_reliability_args_ignored")
-  # Stripped of its class the same matrix is a bifactor one, whose group factors are
-  # orthogonal by construction: reading its first column as an ordinary factor because a
-  # second argument was given would be a silent reinterpretation, and dropping Phi would
-  # score a different solution than the one asked for. Refused instead, so neither happens.
-  expect_error(efa_reliability(unclass(L), Phi = Phi, cormat = cm),
-               class = "efa_reliability_phi_with_general")
+  # Stripped of its class the same matrix is still the pattern it was: the class does not
+  # survive subsetting the matrix or reordering its rows, while Phi does, and Phi is what
+  # says the columns are correlated factors. Read as one, and so giving the same result,
+  # under a warning, since the bifactor reading reports coefficients this one does not.
+  expect_warning(bare <- efa_reliability(unclass(L), Phi = Phi, cormat = cm),
+                 class = "efa_reliability_phi_as_pattern")
+  expect_equal(bare, res)
 
   # The uniquenesses are derived from the loadings under Phi, and a supplied set overrides
   # them, as on the bare bifactor matrix route. Shown in the model-implied convention,
@@ -836,25 +844,42 @@ test_that("an ordinary loading matrix with its Phi is scored as a correlated-fac
                class = "efa_reliability_bad_phi")
 })
 
-test_that("Phi with a matrix read as a hierarchy is refused, as it is through the components", {
+test_that("Phi settles the reading of a matrix that states none, and is refused where it is stated", {
   L <- unclass(efa_mod$rot_loadings)
   cm <- test_models$baseline$cormat
+  Phi <- efa_mod$Phi
   Phi2 <- matrix(c(1, .4, .4, 1), 2, 2)
   cls <- "efa_reliability_phi_with_general"
 
-  # A matrix without the loading class is a bifactor one: its first column is the general
-  # factor, and a general factor together with correlated group factors does not give the
-  # variance decomposition these coefficients report. The components route already refuses
-  # that combination; the matrix route now refuses the same solution under the same class,
-  # instead of dropping Phi and returning the hierarchy's coefficients.
-  expect_error(efa_reliability(L, Phi = Phi2, cormat = cm), class = cls)
+  # A matrix that carries no loading class states nothing about its columns, and the class
+  # is not evidence of a hierarchy: subsetting a pattern matrix or reordering its rows drops
+  # it while Phi survives. Phi is the evidence, since the group factors of a hierarchy are
+  # orthogonal and have no factor correlations to supply, so the matrix is read as the
+  # pattern it can only be -- and the reading is reported, because the bifactor one defines
+  # coefficients the correlated-factors one does not.
+  expect_warning(res <- efa_reliability(L, Phi = Phi, cormat = cm),
+                 class = "efa_reliability_phi_as_pattern")
+  expect_setequal(res$coefficient, c("omega_total", "omega_subscale", "alpha", "H"))
+
+  # A Phi that cannot be the correlation matrix of those columns is named on its own, not
+  # under a warning about a reading that is then abandoned.
+  expect_error(efa_reliability(L, Phi = Phi2, cormat = cm),
+               class = "efa_reliability_bad_phi")
+  expect_no_warning(try(efa_reliability(L, Phi = Phi2, cormat = cm), silent = TRUE),
+                    class = "efa_reliability_phi_as_pattern")
+
+  # The components route names its general factor, so there a general factor together with
+  # correlated group factors is a contradiction the arguments state outright, and it stays
+  # refused rather than reinterpreted.
   expect_error(efa_reliability(NULL, var_names = rownames(L), g_load = L[, 1],
                                s_load = L[, -1, drop = FALSE], u2 = 1 - rowSums(L^2),
                                Phi = Phi2, variance = "sums_load"),
                class = cls)
 
-  # The loading table of a Schmid-Leiman solution is read as a hierarchy too, so it takes
-  # the same refusal.
+  # The loading table of a Schmid-Leiman solution states that it is a hierarchy, so the
+  # combination contradicts itself and takes the same refusal. Named for the reading rather
+  # than for the shape of Phi: no Phi of any shape belongs with one.
+  expect_error(efa_reliability(sl_mod$sl, Phi = Phi, cormat = cm), class = cls)
   expect_error(efa_reliability(sl_mod$sl, Phi = Phi2, cormat = cm), class = cls)
 
   # The refusal is the matrix routes only. A fitted solution carries its own factor
@@ -883,7 +908,7 @@ test_that("the matrix route carries the factor correlations into the coefficient
   Phi <- efa_mod$Phi
   cm <- test_models$baseline$cormat
   res <- efa_reliability(L, Phi = Phi, cormat = cm)
-  tot <- res$value[res$coefficient == "omega_total" & res$factor == "g"]
+  tot <- res$value[res$coefficient == "omega_total" & res$factor == "total"]
   common <- unclass(L) %*% Phi %*% t(unclass(L))
 
   expect_equal(tot, sum(common) / sum(cm))
@@ -1113,8 +1138,8 @@ test_that("a lavaan correlated-factors fit is scored as the oblique solution it 
   # The correlated-factors menu: the coefficients a solution with no general factor does
   # not define are omitted, not returned as the zeros the arithmetic would give.
   expect_setequal(res$coefficient, c("omega_total", "omega_subscale", "alpha", "H"))
-  expect_false(any(res$coefficient == "omega_subscale" & res$factor == "g"))
-  expect_false(any(res$coefficient == "H" & res$factor == "g"))
+  expect_false(any(res$coefficient == "omega_subscale" & res$factor == "total"))
+  expect_false(any(res$coefficient == "H" & res$factor == "total"))
   expect_true(all(is.na(res$group)))
   expect_identical(attr(res, "settings"), list(variance = "sums_load",
                                                no_general = TRUE))
@@ -1124,7 +1149,7 @@ test_that("a lavaan correlated-factors fit is scored as the oblique solution it 
   std <- suppressWarnings(lavaan::lavInspect(fit, "std",
                                              drop.list.single.group = FALSE))[[1]]
   common <- std$lambda %*% std$psi %*% t(std$lambda)
-  expect_equal(res$value[res$coefficient == "omega_total" & res$factor == "g"],
+  expect_equal(res$value[res$coefficient == "omega_total" & res$factor == "total"],
                sum(common) / (sum(common) + sum(diag(std$theta))))
   # Ignoring the factor correlations would give a materially different value, so the
   # identity above is not one the orthogonal reading would also satisfy.
@@ -1515,6 +1540,28 @@ test_that("a lavaan multiple-group fit yields one labelled block per group", {
                class = "efa_reliability_group_names")
 })
 
+test_that("every block of a multiple-group correlated-factors fit labels its own whole-scale row", {
+  skip_if_not_installed("lavaan")
+  # The whole-scale row is relabelled per block, so a fit with no general factor must
+  # carry the correlated-factors labelling in every group and not only in the first.
+  mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+          F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+          F3 =~ V13 + V14 + V15 + V16 + V17 + V18'
+  fit <- suppressWarnings(lavaan::cfa(mod,
+    sample.cov = list(test_models$baseline$cormat, test_models$baseline$cormat),
+    sample.nobs = c(500, 500), estimator = "ml"))
+  res <- suppressMessages(efa_reliability(fit, group_names = c("Young", "Old")))
+
+  for (grp in c("Young", "Old")) {
+    block <- res[res$group == grp & res$coefficient == "omega_total", ]
+    expect_identical(block$level, c("total", "group", "group", "group"))
+    expect_identical(block$factor, c("total", "F1", "F2", "F3"))
+  }
+  # No block keeps the general-factor labelling of a solution that has one.
+  expect_false(any(res$level == "general"))
+  expect_false(any(res$factor == "g"))
+})
+
 test_that("a multiple-group single-factor fit yields one single-factor block per group", {
   skip_if_not_installed("lavaan")
   # The only path that assembles several single-factor matrices into one result: each block
@@ -1565,7 +1612,7 @@ test_that("efa_reliability is invariant across the oblique rotations", {
   # matrix alone while every per-factor row disappears. The whole-scale omega total is
   # rotation-invariant, so all oblique rotations must reach the same one.
   ref <- efa_reliability(efa_mod)
-  g_tot <- function(x) x$value[x$coefficient == "omega_total" & x$factor == "g"]
+  g_tot <- function(x) x$value[x$coefficient == "omega_total" & x$factor == "total"]
 
   res_list <- lapply(.oblq_rotations, function(rot) {
     fit <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
@@ -1584,7 +1631,7 @@ test_that("efa_reliability is invariant across the oblique rotations", {
   # An oblimin fit additionally keeps the full per-factor structure of a promax fit
   # of the same extraction.
   res_obl <- res_list[["oblimin"]]
-  expect_setequal(res_obl$factor, c("g", "F1", "F2", "F3"))
+  expect_setequal(res_obl$factor, c("total", "F1", "F2", "F3"))
   for (cf in c("omega_subscale", "H")) {
     expect_setequal(res_obl$factor[res_obl$coefficient == cf], c("F1", "F2", "F3"))
   }
@@ -1712,7 +1759,7 @@ test_that("print output is stable", {
                                         coefficients = c("omega_total", "alpha"))),
                   transform = scrub_num)
 
-  # oblique EFA (no general factor): the g row omits omega subscale and H, which print
+  # oblique EFA (no general factor): the total row omits omega subscale and H, which print
   # blank rather than as "NA", and the context line separates tot from sub.
   expect_snapshot(print(efa_reliability(efa_mod)), transform = scrub_num)
 })

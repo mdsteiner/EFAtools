@@ -18,9 +18,15 @@
 
 * Post-fitting stages in `efa_average()` now use progress output that avoids stray blank lines in rendered documents and check logs.
 
+* `efa_group()` now gives the note that correlations are computed from the raw data once for the whole call. It came from every inner `efa_fit()` call, so one fact about one input was stated once per group.
+
 * The `efa_group()` report now notes when all factors are rated "equal" despite substantial loading differences. Tucker's congruence does not detect proportional differences in loading magnitude.
 
 * Wide `efa_group()` output is now wrapped or split into blocks to fit the console.
+
+* `efa_group()` now declares `se` as an argument. A supplied value is dropped with the documented warning that points to `b_boot`. Before, `se` was matched to `seed` and stopped the call with an error about an argument the caller had not used.
+
+* `efa_group()` now warns when `delta` is given together with `rotation = "geominT"` or `"geominQ"`. The two rotations have a criterion parameter of the same name, which the `efa_group()` argument hides. The warning gives the reading applied -- the salience threshold of the flag table -- and points to `rotate_control(delta = ...)` for the criterion parameter. The documentation of `delta` and `...` now states this as well.
 
 * The elementwise differences of `efa_compare()` are signed, and the table is now headed by the direction of the subtraction, named with `x_labels`. The line counting differing indicator-to-factor correspondences wraps to the console width.
 
@@ -80,6 +86,8 @@
 
 ## Missing Data and Multiple Imputation
 
+* `efa_mi()` now gives the note that correlations are computed from the raw data once for the whole call. It came from every inner `efa_fit()` call, so one fact about one input was stated once per imputation.
+
 * The `rmsr_upper` argument of `efa_mi()` is deprecated and ignored because it never changed the reported RMSR. `EFA_POOLED()` continues to accept it without a warning.
 
 * Printed `efa_mi()` output now identifies CFI and TLI as averages across imputations rather than indices calculated from separately pooled model and baseline statistics.
@@ -118,6 +126,10 @@
 
 ## Reliability and Factor Scores
 
+* `efa_reliability()` now documents which composite its coefficients describe for an ordinal solution: one fitted to polychoric or tetrachoric correlations, and a `lavaan` fit that declares its indicators `ordered`. The loadings, uniquenesses, and correlation matrix are then on the latent-response metric, so the coefficients give the reliability of the unit-weighted sum of the latent responses, not of the ordinal sum score computed from the answers. The Green and Yang (2009) omega for the ordinal score itself is named as the alternative. Only the documentation changes; the coefficients are the same.
+
+* The whole-scale row of an `efa_reliability()` table is now labelled `factor = "total"` at `level = "total"` for a correlated-factors solution -- an oblique `efa_fit()` or `efa_mi()` solution, or a `lavaan` fit whose variables each load on one factor. It was labelled `factor = "g"` at `level = "general"`, which stated a general factor such a solution does not define, directly under a note saying it has none. The row describes the composite of every variable, and its coefficients are unchanged. This changes the returned data frame and every printed table for these solutions; a solution that does have a general factor, and a single-factor one, are unchanged. A group factor that a user names `"g"` now keeps its own label and its own row.
+
 * `efa_reliability()` and `OMEGA()` now compute every omega total from the model-implied common variance of the composite, counting what it receives from every factor its variables load on, so subscale totals change for any solution with cross-loadings.
 
 * With `variance = "correlation"`, the whole-scale omega total of `efa_reliability()` and `OMEGA()` is now the model-implied common variance of all variables over their observed total variance, rather than that total variance less the unique variances.
@@ -134,7 +146,9 @@
 
 * The out-of-range warning of `efa_reliability()` and `OMEGA()` now also covers `variance = "sums_load"`.
 
-* `efa_reliability()` now refuses a `Phi` supplied with a matrix it reads as a hierarchy -- a bifactor loading matrix, or the loading table of an `efa_schmid_leiman()` solution -- instead of dropping it and returning that hierarchy's coefficients. Such a matrix has its general factor in the first column and uncorrelated group factors, so there is nothing for `Phi` to describe, and the same combination supplied through the components was already an error. The pattern matrix of an oblique solution, which carries the loading class `efa_fit()` gives it, still reads `Phi` as its factor intercorrelations.
+* `efa_reliability()` no longer drops a `Phi` supplied with a loading matrix and returns a hierarchy's coefficients. A `Phi` given with a matrix of two or more factors now makes the pair a correlated-factors solution, whatever class the matrix carries: the group factors of a hierarchy are uncorrelated and have no factor intercorrelations to supply, so the pair can only be an oblique pattern and its factor correlations. The reading no longer depends on the loading class `efa_fit()` gives its loadings, which subsetting a matrix or reordering its rows drops while `Phi` survives, so a pattern matrix that has been through either is still scored as the solution it came from. Because a hierarchy also defines omega hierarchical, the ECV, and the PUC, which a correlated-factors solution does not, a matrix that carries no loading class warns that it was read as a pattern. A matrix supplied without `Phi` is unchanged, and is read as a bifactor one whose general factor is its first column.
+
+* `efa_reliability()` now refuses a `Phi` supplied with the loading table of an `efa_schmid_leiman()` solution, instead of dropping it and returning that solution's coefficients. Such a table states that it is a hierarchy, so the combination contradicts itself, as it already did when supplied through the components.
 
 * `efa_reliability()` and `OMEGA()` now count the residual covariances of a `lavaan` fit in the model-implied composite variances. A fit with a freed covariance between two variables previously divided by the residual variances alone, which overstated the omegas and understated the standardized alpha of every composite holding such a pair. Fits whose residual covariance matrix is diagonal are unchanged.
 
@@ -158,6 +172,8 @@
 
 * A `cormat` supplied to `efa_reliability()` in another variable order than the solution is now reordered to it instead of yielding wrong subscale coefficients.
 
+* `efa_schmid_leiman()` now documents how its group factors are ordered and labelled, which also covers `SL()`, its superseded wrapper. A solution given as a loading matrix has its first-order factors sorted by the number in their column labels; a second-order `lavaan` solution keeps the order the model declares. Either way the columns are relabelled `"F1"` to `"Fk"` by position and the input's own factor names are dropped, so the group factors of the returned solution can be in a different order from the input solution's, and from those of `psych::schmid()`. An indicator-to-factor map is matched by position, so one built in the input solution's order can fail to line up; build it from the returned `sl` matrix. The behaviour is unchanged; only the documentation is new.
+
 * `efa_schmid_leiman()` and `SL()` no longer silence the second-order factor analysis, so its Heywood and non-convergence warnings are now shown.
 
 * `efa_schmid_leiman()` and `SL()` now reject a solution with a single first-order factor, which has nothing to orthogonalise, instead of failing inside the second-order factor analysis with an error about the intercorrelation matrix.
@@ -167,6 +183,8 @@
 * `efa_reliability()` now points out that `fac_names` is not used for a `lavaan` fit, whose factor labels come from the model syntax, and that `group_names` is only used for a `lavaan` multiple-group fit, instead of dropping either without a word.
 
 * `efa_scores(method = "Anderson")` and `FACTOR_SCORES(method = "Anderson")` now warn when the fitted factors are correlated, because Anderson-Rubin scores are uncorrelated even when the fitted factors are not.
+
+* `efa_scores()` and `FACTOR_SCORES()` now check a correlation matrix given in `x` against the model in `f`, and align it to the model variables, as they already did for raw data. A fitted solution carries the correlations it was estimated from, so a correlation matrix in `x` does not give the weights there; left unchecked, a matrix of any size and of entirely different variables returned the fitted solution's weights as though it had produced them. A matrix that does not carry one row and column for each model variable, or that is labelled with other variables, is now an error, and a matrix whose row order differs from the model's is reordered to it.
 
 * `efa_scores()` and `FACTOR_SCORES()` now reject scoring data in which a model variable is constant, infinite, or observed fewer than twice, naming it, instead of standardising it into `NaN` scores for every case.
 

@@ -15,6 +15,7 @@ efa_group(
   seed = NULL,
   delta = 0.1,
   invariance = FALSE,
+  se = NULL,
   ...
 )
 }
@@ -63,18 +64,34 @@ table: an item's loading on a factor is flagged for a group pair when the groups
 aligned loadings differ by at least \code{delta} in absolute value. This is a descriptive
 salience heuristic, not a significance test; common alternatives are \code{0.15} and \code{0.20}.
 The threshold applies to whatever loading metric the chosen rotation produces (pattern
-coefficients for an oblique rotation). \code{0} flags every cell. Default is \code{0.1}.}
+coefficients for an oblique rotation). \code{0} flags every cell. Default is \code{0.1}.
+
+The geomin rotations take a criterion parameter of the same name. A \code{delta} given
+directly is always this salience threshold and never reaches the rotation; give the
+geomin parameter as \code{rotate_control(delta = ...)}. With \code{rotation = "geominT"} or
+\code{"geominQ"}, a supplied \code{delta} gives a warning that says which of the two applies.}
 
 \item{invariance}{logical. Whether to add an approximate-invariance verdict per factor and
 group pair from the Lorenzo-Seva and ten Berge (2006) congruence bands (see \emph{Value}).
 Default is \code{FALSE}.}
+
+\item{se}{Not used. \code{efa_group()} itself sets the standard-error method of the
+per-group \code{\link[=efa_fit]{efa_fit()}} calls, so a supplied value is dropped with a warning. Ask for
+bootstrap confidence intervals of the between-group congruences with \code{b_boot}.
+Default is \code{NULL}.}
 
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} for every group (for
 example \code{estimator}, \code{rotation}, or \code{cor_method}). The \code{\link[=estimate_control]{estimate_control()}} and
 \code{\link[=rotate_control]{rotate_control()}} objects are accepted through \code{...} as well, although they are not
 declared formals: pass them as \verb{estimate_control =} / \verb{rotate_control =} exactly
 as you would to \code{\link[=efa_fit]{efa_fit()}}. A name that is neither an \code{\link[=efa_fit]{efa_fit()}} argument nor a
-rotation-engine extra is rejected.}
+rotation-engine extra is rejected.
+
+A rotation-engine extra that has the same name as an \code{efa_group()} argument cannot
+reach the rotation through \code{...}, because the argument takes the name first. This
+applies to the geomin criterion parameter \code{delta}: pass it as
+\code{rotate_control(delta = ...)}, which reaches both the per-group fits and the shared
+alignment frame.}
 }
 \value{
 An object of class \code{efa_group}, a list containing:
@@ -113,7 +130,9 @@ factor giving the matched Tucker congruence (\code{phi}), its bootstrap CI lower
 the Lorenzo-Seva and ten Berge (2006) similarity bands: \code{phi >= 0.95} is "equal" and
 \verb{[0.85, 0.95)} is "fair"; congruences \verb{< 0.85}, below their bands, are labelled
 "incongruent". The verdict is read from \code{phi_lower} when a bootstrap is available
-(conservative) and from \code{phi} otherwise. Tucker's congruence is invariant to a
+(conservative) and from \code{phi} otherwise. A wide interval therefore lowers the verdict:
+\code{phi} = 0.989 with \code{phi_lower} = 0.726 is labelled "incongruent", because the band is
+applied to the lower bound. Tucker's congruence is invariant to a
 proportional rescaling of a factor's loadings, so a factor can be graded "equal"
 even when one group's loadings on it are uniformly stronger; read the verdict
 alongside \code{diffs}. \code{NULL} when \code{invariance = FALSE}.}

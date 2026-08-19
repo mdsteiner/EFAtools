@@ -51,8 +51,8 @@
       
       -- Reliability coefficients ----------------------------------------------------
       
-           tot   sub  alpha    H
-      g <num> <num>
+              tot   sub  alpha    H
+      total <num> <num>
       F1 <num> <num> <num> <num>
       F2 <num> <num> <num> <num>
       F3 <num> <num> <num> <num>

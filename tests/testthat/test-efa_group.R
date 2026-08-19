@@ -794,20 +794,98 @@ test_that("a correlation-matrix input skips the bootstrap with a warning", {
 })
 
 
-test_that("an se passed through ... is dropped with a classed warning", {
+test_that("a supplied se is dropped with a classed warning", {
   # efa_group manages the SE method itself (bootstrap via b_boot); a stray se must not
   # trigger an unrequested, unseeded per-group bootstrap or leave payload in out$efa.
-  # `seed` is passed explicitly so `se` is not partial-matched to the `seed` formal and
-  # actually reaches `...`.
+  # `se` is a declared formal, so it reaches this path whether or not `seed` is given:
+  # every formal precedes `...`, so a dots-only `se` is partially matched to `seed` and
+  # aborts in the `seed` check instead.
   g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
   expect_warning(
     mg <- suppressMessages(
-      efa_group(GRiPS_raw, groups = g, n_factors = 1, se = "np-boot", seed = 1)),
+      efa_group(GRiPS_raw, groups = g, n_factors = 1, se = "np-boot")),
     class = "efa_group_se_ignored"
   )
   expect_null(mg$efa$g1$SE)
   expect_null(mg$efa$g1$replicates)
   expect_named(mg$congruence, c("matrices", "matched", "degenerate"))
+
+  # An explicit `seed` forces exact matching, and a requested bootstrap makes efa_group
+  # set `se` for its own replicate fits; both still drop the supplied value.
+  expect_warning(
+    suppressMessages(
+      efa_group(GRiPS_raw, groups = g, n_factors = 1, se = "np-boot", seed = 1)),
+    class = "efa_group_se_ignored"
+  )
+  expect_warning(
+    mg_boot <- suppressMessages(
+      efa_group(GRiPS_raw, groups = g, n_factors = 1, se = "np-boot", b_boot = 2,
+                seed = 1)),
+    class = "efa_group_se_ignored"
+  )
+  expect_null(mg_boot$efa$g1$SE)
+  expect_null(mg_boot$efa$g1$replicates)
+  expect_identical(mg_boot$settings$b_boot, 2L)
+})
+
+
+test_that("a delta given with a geomin rotation reports which reading was applied", {
+  # `delta` names both the salience threshold and the geomin criterion parameter, and the
+  # formal takes the name. The criterion parameter can therefore only be set through
+  # rotate_control(); the warning gives the reading applied and the route to the other one.
+  expect_warning(
+    mg <- suppressMessages(
+      efa_group(wj_trio, n_factors = 3, N = wj_trio_N, rotation = "geominT",
+                delta = 0.001, seed = 1)),
+    class = "efa_group_delta_ambiguous"
+  )
+  expect_identical(mg$settings$delta, 0.001)
+
+  # The reading the warning states: the flag threshold moves, the rotation does not.
+  base <- suppressMessages(
+    efa_group(wj_trio, n_factors = 3, N = wj_trio_N, rotation = "geominT", seed = 1))
+  expect_equal(mg$loadings, base$loadings)
+  expect_true(all(mg$diffs$n_flagged > base$diffs$n_flagged))
+
+  # The other reading, which only rotate_control() can express, does move the rotation.
+  rc <- suppressMessages(
+    efa_group(wj_trio, n_factors = 3, N = wj_trio_N, rotation = "geominT", seed = 1,
+              rotate_control = rotate_control(delta = 0.001)))
+  expect_identical(rc$settings$delta, 0.1)
+  # Movement, not its size: the criterion optimum at this delta is ill-conditioned, so the
+  # threshold only has to clear numerical noise (~1e-8), not the 0.024 measured here.
+  expect_gt(max(abs(unlist(rc$loadings) - unlist(base$loadings))), 1e-3)
+
+  # Silent where the two readings cannot be confused: a rotation without a `delta`
+  # criterion parameter, and a `delta` left at its default.
+  expect_no_warning(
+    suppressMessages(
+      efa_group(wj_trio, n_factors = 3, N = wj_trio_N, rotation = "varimax",
+                delta = 0.001, seed = 1)),
+    class = "efa_group_delta_ambiguous"
+  )
+  expect_no_warning(
+    suppressMessages(
+      efa_group(wj_trio, n_factors = 3, N = wj_trio_N, rotation = "geominT", seed = 1)),
+    class = "efa_group_delta_ambiguous"
+  )
+})
+
+
+test_that("the raw-data correlation note is given once, not once per group", {
+  # Every group is cut from one `x`, so the note the per-group efa_fit() calls raise states
+  # one fact about one input. It stays a catchable classed condition.
+  g <- rep(c("g1", "g2", "g3"), length.out = nrow(GRiPS_raw))
+  n_notes <- 0L
+  withCallingHandlers(
+    efa_group(GRiPS_raw, groups = g, n_factors = 1),
+    efa_cor_from_data = function(cnd) {
+      n_notes <<- n_notes + 1L
+      invokeRestart("muffleMessage")
+    },
+    message = function(cnd) invokeRestart("muffleMessage")
+  )
+  expect_identical(n_notes, 1L)
 })
 
 

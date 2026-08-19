@@ -494,6 +494,21 @@ test_that("efa_mi validates its arguments with classed conditions", {
   )
 })
 
+test_that("the raw-data correlation note is given once, not once per imputation", {
+  # The imputations are versions of one data set, so the note the per-imputation efa_fit()
+  # calls raise states one fact about the input. It stays a catchable classed condition.
+  n_notes <- 0L
+  withCallingHandlers(
+    efa_mi(grips_list, n_factors = 1, estimator = "ML"),
+    efa_cor_from_data = function(cnd) {
+      n_notes <<- n_notes + 1L
+      invokeRestart("muffleMessage")
+    },
+    message = function(cnd) invokeRestart("muffleMessage")
+  )
+  expect_identical(n_notes, 1L)
+})
+
 test_that("a failing component fit names its imputation and keeps the original condition", {
   local_reproducible_output()
 

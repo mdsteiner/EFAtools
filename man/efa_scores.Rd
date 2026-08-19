@@ -37,11 +37,16 @@ efa_scores(
 }
 \arguments{
 \item{x}{data.frame or matrix. Raw data (needed to obtain factor scores) or a
-correlation matrix (yields weights and diagnostics only). When raw data carry
+correlation matrix (yields weights and diagnostics only). A correlation matrix
+gives the correlations the weights are derived from only where \code{f} is a loading
+matrix. An \code{\link[=efa_fit]{efa_fit()}} object carries the correlations it was fitted on, and
+those are used instead, so supply \code{rho} to derive the weights from another
+matrix. \code{x} describes the model variables either way. When raw data carry
 column names, they are matched to the model variables by name (any extra
 columns are ignored, and a model variable missing from \code{x} is an error).
 A named correlation matrix is likewise matched to the loading rows by name;
-its row and column names must use the same order. Unnamed input is matched
+its row and column names must use the same order, and it must carry one row and
+column for each model variable. Unnamed input is matched
 by position.
 
 Raw data are scored as supplied: no imputation is performed, so a case with a

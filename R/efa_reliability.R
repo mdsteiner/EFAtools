@@ -27,7 +27,8 @@
 #' the reliability of an optimally weighted composite; low values indicate a
 #' factor that is not well defined by its indicators.
 #'
-#' All of them describe the raw unit-weighted sum of the variables as supplied. A
+#' All of them describe the raw unit-weighted sum of the variables the solution was
+#' fitted on. A
 #' variable keyed against the rest therefore subtracts from that sum's true score
 #' variance instead of adding to it, and the coefficients collapse -- correctly for
 #' the sum that was scored, but in a way that reads as a poor scale. The variables
@@ -35,6 +36,20 @@
 #' scored; a solution whose variables are not all keyed in the same direction is
 #' warned about instead, and such variables should be reverse-coded before the
 #' solution is fitted (Flora, 2020).
+#'
+#' The variables that sum is over are not always the answers the respondents gave.
+#' Polychoric and tetrachoric correlations describe the continuous latent responses
+#' that are assumed to underlie ordinal answers, and so does a `lavaan` fit that
+#' declares its indicators `ordered`. The loadings, the uniquenesses and the
+#' correlation matrix are then all on that latent-response metric, and so are the
+#' coefficients. They give the reliability of the unit-weighted sum of the latent
+#' responses, which is not observed. They do not give the reliability of the ordinal
+#' sum score the user computes from the answers. The two quantities differ, and they
+#' differ most where the answers use few categories or are strongly skewed.
+#' Green and Yang (2009) give the alternative: an omega for the ordinal sum score
+#' itself, computed from the fitted model and its thresholds. This package does not
+#' compute it. Pearson correlations raise no such distinction, their metric being
+#' the answers as scored.
 #'
 #' Every omega total -- for the whole scale and for each subscale composite -- is
 #' the true score variance the fitted model attributes to that composite, counting
@@ -93,8 +108,12 @@
 #'
 #' An oblique [efa_fit()] object is scored as the correlated-factors model it is
 #' (having no general factor, it omits the bifactor indices -- omega hierarchical,
-#' ECV, and PUC), and a bare loading matrix is read as a raw bifactor solution
-#' (general factor in the first column). A one-factor [efa_fit()] solution is scored
+#' ECV, and PUC). It still reports a whole-scale row, which describes the composite of
+#' every variable: that row is labelled `"total"`, not `"g"`, there being no general
+#' factor for it to be. A bare loading matrix is read as a raw bifactor solution
+#' (general factor in the first column), whose whole-scale row is the general factor
+#' and keeps the label `"g"`.
+#' A one-factor [efa_fit()] solution is scored
 #' from its unrotated loadings, having nothing to rotate, and needs no oblique
 #' rotation as a solution with more factors does; a one-column loading matrix (with or
 #' without the loading class an [efa_fit()] solution's loadings carry), a
@@ -111,16 +130,22 @@
 #' itself it carries no correlation matrix, so supply `cormat` to score it against
 #' the observed correlations rather than the model-implied ones. The loading matrix of
 #' an ordinary factor solution is not a bifactor matrix and is rejected -- unless it is
-#' supplied with `Phi` and carries the loading class [efa_fit()] gives it, which makes the
+#' supplied with `Phi`, which makes the
 #' pair a correlated-factors solution: it is then
 #' scored as the solution it came from is, with the uniquenesses derived from the
 #' loadings under `Phi` unless `u2` is given. Unlike the solution itself the pair carries
 #' no correlation matrix, and none is reconstructed for it, so `variance = "correlation"`
 #' needs one in `cormat` and errors without it; `variance = "sums_load"` needs none.
 #' The matrix to pass is the pattern, which is what `Phi` accompanies; a
-#' structure matrix carries the same loading class and would be read as a pattern. A matrix
-#' without that class is a bifactor one. The group factors of a hierarchy are uncorrelated, so
-#' `Phi` given with a bifactor or Schmid-Leiman matrix is an error and not an argument that is
+#' structure matrix would be read as a pattern. `Phi` decides that reading on its own,
+#' whether or not the matrix still carries the loading class [efa_fit()] gives it: the
+#' class does not survive subsetting a matrix or reordering its rows, while `Phi` stays,
+#' and the group factors of a hierarchy are uncorrelated and have no factor correlations
+#' to supply. A matrix given no `Phi` is a bifactor one, its first column the general
+#' factor, unless it is an ordinary factor solution's loading matrix, which is rejected as
+#' above. Because the two readings report different coefficients, a matrix that carries no
+#' loading class and is read as a pattern warns that it was. A Schmid-Leiman table states
+#' that it is a hierarchy, so `Phi` with one is an error and not an argument that is
 #' dropped. The
 #' rejection applies to a matrix of two or more factors: one of a single factor is read
 #' as that factor, there being no hierarchy to mistake it for and no factor
@@ -184,7 +209,10 @@
 #'   correlation matrix and so is the way to score a bare loading matrix or
 #'   manual components given without one. `lavaan` input fixes the convention: its
 #'   composite variances are always model-implied, and count any freed residual
-#'   covariance as well as the residual variances.
+#'   covariance as well as the residual variances. Neither convention changes the
+#'   metric the coefficients are on: with polychoric or tetrachoric correlations, or
+#'   an `ordered` `lavaan` fit, both describe the latent-response composite rather
+#'   than the ordinal sum score (see Details).
 #' @param var_names character. Subtest names in the row order of the loadings.
 #'   Only needed when `model` is `NULL`.
 #' @param fac_names character. An optional vector of group-factor names in the
@@ -210,7 +238,10 @@
 #'   `var_names`, which only labels the output; without them the variables are matched
 #'   by position, so supply the matrix in the row order of the loadings. If `NULL`, it
 #'   is taken from the input object or reconstructed from `pattern` and `Phi` where
-#'   possible.
+#'   possible. Supply the matrix on the same metric as the loadings: a polychoric or
+#'   tetrachoric matrix keeps the coefficients on the latent-response metric, and a
+#'   Pearson matrix given with loadings fitted to a polychoric one mixes the two
+#'   (see Details).
 #' @param pattern matrix. Pattern coefficients from a separate oblique solution, used
 #'   with `Phi` to reconstruct a correlation matrix when `model` is `NULL`. Supply it for
 #'   a Schmid-Leiman input, whose `s_load` holds the orthogonalized group loadings rather
@@ -225,25 +256,30 @@
 #'   must carry no general factor; for a single group factor that leaves only the 1 by 1
 #'   identity, which is accepted and changes nothing, the components being scored as the
 #'   single factor they are either way. `NULL` (default) means uncorrelated group factors, as
-#'   a Schmid-Leiman or bifactor solution has. Supplied with the loading matrix of an
-#'   oblique solution -- which carries the loading class [efa_fit()] gives it -- it is that
-#'   solution's factor intercorrelations, and is what makes the matrix a correlated-factors
-#'   solution rather than a rejected pattern matrix. Supplied with a matrix read as a
-#'   hierarchy, a bifactor loading matrix or the loading table of an [efa_schmid_leiman()]
-#'   solution, it is an error: such a matrix has its general factor in the first column and
-#'   group factors that are uncorrelated by construction, so there is nothing for it to
-#'   describe, and the same combination given through the components is refused in the same
-#'   terms. With a fitted solution in `model` it is ignored, with a warning, that solution
-#'   carrying its own.
+#'   a Schmid-Leiman or bifactor solution has. Supplied with a loading matrix of two or
+#'   more factors in `model`, it is that matrix's factor intercorrelations, and makes the
+#'   pair a correlated-factors solution rather than a rejected pattern matrix. It does this
+#'   whether or not the matrix carries the loading class [efa_fit()] gives its loadings, a
+#'   class that subsetting a matrix or reordering its rows drops. A matrix that carries no
+#'   such class is read as a bifactor one when no `Phi` accompanies it, so one that is read
+#'   as a pattern warns that it was. Supplied with the loading table of an
+#'   [efa_schmid_leiman()] solution, it is an error: such a table states that it is a
+#'   hierarchy, whose group factors are uncorrelated by construction, so there is nothing
+#'   for it to describe, and the same combination given through the components is refused in
+#'   the same terms. With a fitted solution in `model` it is ignored, with a warning, that
+#'   solution carrying its own.
 #'
 #' @returns An object of class `efa_reliability`: a long-format data frame with
 #'   one row per computed coefficient, with columns
 #'   \item{coefficient}{the coefficient name (e.g. `"omega_total"`).}
-#'   \item{level}{`"general"` for the general-factor row, `"group"` otherwise. A
+#'   \item{level}{`"general"` for the general-factor row, `"total"` for the
+#'     whole-scale row of a correlated-factors solution, `"group"` otherwise. A
 #'     single-factor solution has only the general-factor row.}
 #'   \item{factor}{the factor label (`"g"` for the general factor of a solution with
 #'     group factors; the one factor of a single-factor solution takes its own name,
-#'     or `"F1"` where the input gives it none).}
+#'     or `"F1"` where the input gives it none). A correlated-factors solution has no
+#'     general factor, so its first row is labelled `"total"`: it describes the
+#'     composite of every variable rather than a factor of the model.}
 #'   \item{group}{the group label, or `NA` for a single ungrouped solution.}
 #'   \item{value}{the coefficient value.}
 #'   Structurally undefined cells (for example ECV and PUC on a group factor) are
@@ -270,6 +306,9 @@
 #'   coefficient omega is right? A tutorial on using R to obtain better reliability
 #'   estimates. Advances in Methods and Practices in Psychological Science, 3,
 #'   484-501.
+#' @source Green, S. B., & Yang, Y. (2009). Reliability of summed item scores using
+#'   structural equation modeling: An alternative to coefficient alpha. Psychometrika,
+#'   74, 155-167.
 #' @source Zinbarg, R. E., Revelle, W., Yovel, I., & Li, W. (2005). Cronbach's
 #'   alpha, Revelle's beta, and McDonald's omega H: Their relations with each
 #'   other and two alternative conceptualizations of reliability. Psychometrika,
@@ -633,6 +672,43 @@ efa_reliability <- function(model = NULL,
 }
 
 
+# Read a loading matrix and its factor intercorrelations as one correlated-factors
+# solution, returning the normalized reliability spec. Shared by the two matrix routes
+# that reach this reading, so a pattern matrix gives the same coefficients whether or not
+# it still carries the loading class.
+.rel_read_pattern <- function(model, Phi, u2, factor_map, cormat, fac_names) {
+  # The loadings and any supplied uniquenesses get the checks the bifactor-matrix route
+  # applies, and for the same reasons.
+  .assert_args({
+    checkmate::assert_numeric(model, any.missing = FALSE, finite = TRUE)
+    if (!is.null(u2)) {
+      checkmate::assert_numeric(u2, any.missing = FALSE, finite = TRUE,
+                                len = nrow(model))
+    }
+  })
+  L <- as.matrix(unclass(model))
+  # Checked here because the uniquenesses are derived from it just below, which needs
+  # it conformable with the loadings; .rel_adapt_manual() checks it again on its own.
+  .rel_check_phi(Phi, ncol(L))
+  # 1 - diag(L Phi L'), the communalities the oblique pattern implies under these
+  # factor correlations, unless the caller supplied uniquenesses of their own. The
+  # same expression the oblique `efa_fit()` route uses, so both reach the same ones.
+  if (is.null(u2)) u2 <- 1 - diag(L %*% Phi %*% t(L))
+  var_names <- rownames(L)
+  if (is.null(var_names)) var_names <- paste0("V", seq_len(nrow(L)))
+  if (is.null(fac_names)) {
+    fac_names <- colnames(L)
+    if (is.null(fac_names)) fac_names <- paste0("F", seq_len(ncol(L)))
+  }
+  # `pattern` is reported as ignored for any `model`, so it is not passed on: here
+  # `Phi` describes the loading matrix that was given, not a separate solution.
+  .rel_adapt_manual(g_load = rep(0, nrow(L)), s_load = L, u2 = u2,
+                    var_names = var_names, factor_corres = factor_map,
+                    type = "psych", cormat = cormat, Phi = Phi,
+                    fac_names = fac_names)
+}
+
+
 # Dispatch a non-lavaan input to its front-end adapter, returning the normalized
 # reliability spec. Mirrors OMEGA()'s model dispatch, adding the oblique EFA and
 # raw bifactor-matrix paths that OMEGA does not expose. The internal adapters take a
@@ -659,7 +735,12 @@ efa_reliability <- function(model = NULL,
         class = "efa_reliability_bad_matrix"
       )
     }
-    if (inherits(model, c("efa_sl_loadings", "SLLOADINGS"))) {
+    # Recorded before the Schmid-Leiman branch below replaces `model` with its factor
+    # columns, which drops the class that says so. A Schmid-Leiman table states that it is
+    # a hierarchy; a matrix that carries no loading class merely fails to state anything,
+    # which is not the same evidence, and the two are told apart where `Phi` arrives.
+    declared_hierarchy <- inherits(model, c("efa_sl_loadings", "SLLOADINGS"))
+    if (declared_hierarchy) {
       # A Schmid-Leiman loading table is a bifactor matrix plus the communality and
       # uniqueness columns it prints. Score it as such, dropping those two -- they would
       # otherwise be read as two more group factors -- and taking the uniquenesses from
@@ -696,37 +777,12 @@ efa_reliability <- function(model = NULL,
       # the correlations of the factors it belongs to -- and is scored as one, through the
       # same components the manual route takes for such a solution. Without it nothing says
       # the columns are correlated factors rather than a hierarchy, so a matrix of two or
-      # more factors is refused and the hierarchy asked for instead.
+      # more factors is refused and the hierarchy asked for instead. The class states that
+      # the matrix is such a solution's pattern, so reading it as one overrides nothing and
+      # is not reported, where the same reading of a matrix that states nothing is.
       if (!is.null(Phi)) {
-        # The loadings and any supplied uniquenesses get the checks the bare-matrix route
-        # below applies, and for the same reasons.
-        .assert_args({
-          checkmate::assert_numeric(model, any.missing = FALSE, finite = TRUE)
-          if (!is.null(u2)) {
-            checkmate::assert_numeric(u2, any.missing = FALSE, finite = TRUE,
-                                      len = nrow(model))
-          }
-        })
-        L <- as.matrix(unclass(model))
-        # Checked here because the uniquenesses are derived from it just below, which needs
-        # it conformable with the loadings; .rel_adapt_manual() checks it again on its own.
-        .rel_check_phi(Phi, ncol(L))
-        # 1 - diag(L Phi L'), the communalities the oblique pattern implies under these
-        # factor correlations, unless the caller supplied uniquenesses of their own. The
-        # same expression the oblique `efa_fit()` route uses, so both reach the same ones.
-        if (is.null(u2)) u2 <- 1 - diag(L %*% Phi %*% t(L))
-        var_names <- rownames(L)
-        if (is.null(var_names)) var_names <- paste0("V", seq_len(nrow(L)))
-        if (is.null(fac_names)) {
-          fac_names <- colnames(L)
-          if (is.null(fac_names)) fac_names <- paste0("F", seq_len(ncol(L)))
-        }
-        # `pattern` is reported as ignored for any `model`, so it is not passed on: here
-        # `Phi` describes the loading matrix that was given, not a separate solution.
-        return(.rel_adapt_manual(g_load = rep(0, nrow(L)), s_load = L, u2 = u2,
-                                 var_names = var_names, factor_corres = factor_map,
-                                 type = "psych", cormat = cormat, Phi = Phi,
-                                 fac_names = fac_names))
+        return(.rel_read_pattern(model, Phi = Phi, u2 = u2, factor_map = factor_map,
+                                 cormat = cormat, fac_names = fac_names))
       }
       # A single column is the one case in which there is nothing to confuse: one factor is
       # no hierarchy, and a solution with one factor has no factor intercorrelations to
@@ -763,29 +819,59 @@ efa_reliability <- function(model = NULL,
         class = "efa_reliability_cormat_as_model"
       )
     }
-    # Everything still here is read as a hierarchy: a bare bifactor loading matrix, or the
-    # loading table of a Schmid-Leiman solution reduced to its factor columns above. Its
-    # general factor is the first column and its group factors are orthogonal by
-    # construction, so there are no correlated group factors for `Phi` to be the correlation
-    # matrix of, and the general and group parts would no longer partition the composite.
-    # .rel_adapt_manual() refuses that combination under this class already; refusing it here
-    # too keeps one solution from being scored two ways according to whether its loading
-    # class survived the handling that got it here -- an attribute that `[`, `rbind()` and a
-    # round-trip through a data frame all drop, while the argument stays.
+    # Everything still here is read as a hierarchy unless `Phi` says otherwise: a bare
+    # bifactor loading matrix, or the loading table of a Schmid-Leiman solution reduced to
+    # its factor columns above. Read as one, its general factor is the first column and its
+    # group factors are orthogonal by construction, so there are no correlated group factors
+    # for `Phi` to be the correlation matrix of, and the general and group parts would no
+    # longer partition the composite.
+    # A Schmid-Leiman table states that it is a hierarchy, so the combination contradicts
+    # itself and is refused, as it is through the components. A matrix that carries no
+    # loading class states nothing: the class is not a reliable signal here, since `[`,
+    # `rbind()` and a round-trip through a data frame all drop it while the argument stays,
+    # so a caller who subsets an oblique pattern and keeps its `Phi` holds a complete
+    # correlated-factors solution in two objects. `Phi` settles the reading for that matrix
+    # -- the group factors of a hierarchy are orthogonal and have no factor correlations to
+    # supply -- so it is read as the pattern it can only be. The reading is reported rather
+    # than taken quietly, because the two give different coefficients: a hierarchy also
+    # defines omega hierarchical, the ECV and the PUC, which a correlated-factors solution
+    # does not, and a caller who meant the bifactor reading would otherwise see them absent
+    # with nothing to say why.
     #
     # One column is the exception this route makes throughout: one factor is not a hierarchy,
     # and the only correlation matrix its factor can have is the 1 by 1 identity, which says
     # nothing either way. It is checked and then changes nothing, as on the classed route.
     if (!is.null(Phi)) {
-      if (ncol(model) > 1L) {
+      # Before the conformability check, so a Schmid-Leiman table is told that its own
+      # reading refuses `Phi` rather than that this `Phi` is the wrong shape: no `Phi` of
+      # any shape belongs with one, and naming the shape would send the caller to fix it.
+      if (ncol(model) > 1L && declared_hierarchy) {
         cli::cli_abort(
-          c("{.arg Phi} describes correlated group factors, which a Schmid-Leiman or bifactor loading matrix does not have.",
+          c("{.arg Phi} describes correlated group factors, which the loading table of a Schmid-Leiman solution does not have.",
             "i" = "To score the pattern matrix of an oblique solution, pass the {.fn efa_fit} object, or supply the components: the pattern in {.arg s_load}, a {.arg g_load} that is zero throughout, and {.arg u2} and {.arg var_names}, with this {.arg Phi}.",
             "i" = "To reconstruct a correlation matrix for a hierarchy instead, supply its components together with the {.arg pattern} of the separate oblique solution {.arg Phi} belongs to.",
             "i" = "Otherwise drop {.arg Phi}: the group factors of a hierarchy are uncorrelated."),
           class = "efa_reliability_phi_with_general"
         )
       }
+      if (ncol(model) > 1L) {
+        # Read first, report after. Everything the reading can refuse -- a `Phi` that
+        # cannot be these columns' correlation matrix, a missing or infinite loading or
+        # uniqueness -- is named on its own that way, rather than under a warning about a
+        # reading that is then abandoned. The spec is built before the warning and returned
+        # after it, so the two cannot come apart.
+        spec <- .rel_read_pattern(model, Phi = Phi, u2 = u2, factor_map = factor_map,
+                                  cormat = cormat, fac_names = fac_names)
+        cli::cli_warn(
+          c("{.arg model} is read as the pattern matrix of a correlated-factors solution, because {.arg Phi} gives its factor correlations.",
+            "i" = "Every column is a group factor, so the coefficients a general factor defines -- omega hierarchical, the ECV, and the PUC -- are not reported.",
+            "i" = "Drop {.arg Phi} to read the first column as a general factor and score the matrix as a bifactor one."),
+          class = "efa_reliability_phi_as_pattern"
+        )
+        return(spec)
+      }
+      # One column is not a hierarchy and has no correlated group factors, so it falls
+      # through to the bifactor route below; the check is all that applies to it.
       .rel_check_phi(Phi, ncol(model))
     }
     # Uniquenesses reach this route either from the caller, overriding the ones the adapter

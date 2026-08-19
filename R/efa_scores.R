@@ -59,11 +59,16 @@
 #' variables rather than an estimate of a common factor.
 #'
 #' @param x data.frame or matrix. Raw data (needed to obtain factor scores) or a
-#'   correlation matrix (yields weights and diagnostics only). When raw data carry
+#'   correlation matrix (yields weights and diagnostics only). A correlation matrix
+#'   gives the correlations the weights are derived from only where `f` is a loading
+#'   matrix. An [efa_fit()] object carries the correlations it was fitted on, and
+#'   those are used instead, so supply `rho` to derive the weights from another
+#'   matrix. `x` describes the model variables either way. When raw data carry
 #'   column names, they are matched to the model variables by name (any extra
 #'   columns are ignored, and a model variable missing from `x` is an error).
 #'   A named correlation matrix is likewise matched to the loading rows by name;
-#'   its row and column names must use the same order. Unnamed input is matched
+#'   its row and column names must use the same order, and it must carry one row and
+#'   column for each model variable. Unnamed input is matched
 #'   by position.
 #'
 #'   Raw data are scored as supplied: no imputation is performed, so a case with a
@@ -336,6 +341,17 @@ efa_scores <- function(x, f, Phi = NULL, rho = NULL,
       }
       x <- x[, model_vars, drop = FALSE]
     }
+  } else {
+    # A correlation matrix `x` describes the same model axis, and takes the checks the
+    # scoring matrix takes, whether or not it ends up being that matrix: a fitted `f`
+    # carries the correlations the model was estimated from, so `x` is not read for the
+    # weights there, and left unchecked a matrix of the wrong size or of entirely
+    # different variables returned the fitted solution's weights as though it had produced
+    # them. Aligned as well as checked, so the branch below that does read it gets the
+    # model's variable order, as the raw branch above does. Coerced first because `x` also
+    # takes a data frame, which a correlation matrix is as readily given as.
+    x <- .align_correlation_axis(as.matrix(x), n = nrow(Lambda),
+                                 target_names = rownames(Lambda), arg = "x")
   }
 
   # A model variable that carries no usable spread cannot be scored: a constant column

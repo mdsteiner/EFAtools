@@ -165,6 +165,54 @@ test_that("classed conditions fire as expected", {
                                 method = "Anderson")))
 })
 
+test_that("a correlation matrix in `x` is checked against the model it is scored with", {
+  cm <- test_models$baseline$cormat
+
+  # A fitted solution carries the correlations it was estimated from, so `x` is not read
+  # for the weights. Unchecked, a matrix of any size and of entirely different variables
+  # returned the fitted solution's weights as though it had produced them.
+  five <- matrix(.2, 5, 5)
+  diag(five) <- 1
+  dimnames(five) <- list(paste0("X", 1:5), paste0("X", 1:5))
+  expect_error(suppressMessages(efa_scores(five, f = efa_ob)),
+               class = "efa_scores_matrix_dim")
+
+  # The right size, but the variables of some other model.
+  foreign <- cm
+  dimnames(foreign) <- list(paste0("Q", 1:18), paste0("Q", 1:18))
+  expect_error(suppressMessages(efa_scores(foreign, f = efa_ob)),
+               class = "efa_scores_matrix_names")
+
+  # Named on one axis only, which identifies neither by name nor by position: refused
+  # here as it is for `rho`, rather than passed over as it was when `x` went unchecked.
+  half <- cm
+  colnames(half) <- NULL
+  expect_error(suppressMessages(efa_scores(half, f = efa_ob)),
+               class = "efa_scores_matrix_names")
+
+  # Where `f` is a loading matrix the solution carries no correlations, so `x` is the
+  # scoring matrix. Named for the model and aligned to it there, so a permuted matrix is
+  # reordered rather than scored against the wrong variables. (With a fitted `f` the same
+  # pair agrees whatever the order, `x` not being read, so the model axis is what this
+  # can be asserted on.)
+  L <- unclass(efa_ob$rot_loadings)
+  p <- c(4:18, 1:3)
+  expect_equal(suppressMessages(efa_scores(cm[p, p], f = L, Phi = efa_ob$Phi)),
+               suppressMessages(efa_scores(cm, f = L, Phi = efa_ob$Phi)))
+
+  # The inputs the check must not turn away: a data frame, which `x` is documented to
+  # take, and a wholly unnamed matrix, which is matched by position.
+  expect_equal(suppressMessages(efa_scores(as.data.frame(cm), f = efa_ob)),
+               suppressMessages(efa_scores(cm, f = efa_ob)))
+  unnamed <- cm
+  dimnames(unnamed) <- NULL
+  expect_s3_class(suppressMessages(efa_scores(unnamed, f = efa_ob)), "efa_scores")
+
+  # The wrapper forwards to the same check, so it is refused there too.
+  expect_error(suppressMessages(FACTOR_SCORES(five, f = efa_ob)),
+               class = "efa_scores_matrix_dim")
+})
+
 test_that("loadings with missing or duplicate factor names are relabelled F1..Fm", {
   L <- unclass(efa_or$unrot_loadings)          # NULL colnames
   colnames(L) <- c("F1", "F1", "F2")           # duplicate factor labels

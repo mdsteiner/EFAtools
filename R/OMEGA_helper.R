@@ -582,12 +582,21 @@
 
 # Warn when the variables of a solution are not all keyed in the same direction -- most
 # often a scale whose reverse-worded items were never reverse-coded. Every coefficient
-# computed here describes the raw unit-weighted sum of the variables as supplied, so a
+# computed here describes the raw unit-weighted sum of the variables the solution was fitted
+# on, so a
 # variable keyed against the rest subtracts from that sum's true score variance instead of
 # adding to it and the coefficients collapse: correct for the sum that was scored, but
 # reading as a poor scale rather than as a missing step. The variables are deliberately not
 # reflected first, as psych::omega does, because reflection describes a different composite
 # than the one the coefficients are defined on (Flora, 2020).
+#
+# "The variables the solution was fitted on" is meant literally: fitted to polychoric or
+# tetrachoric correlations, or to an `ordered` lavaan fit, the composite is of the latent
+# responses assumed to underlie the ordinal answers, not of the answers themselves, and the
+# keying rule below reads that composite. The distinction does not change the rule -- a
+# variable works against the sum on either metric -- but it does change what the reported
+# coefficients are the reliability OF. See the Details of efa_reliability() and Green and
+# Yang (2009) for the ordinal-score alternative, which is not computed here.
 #
 # `common` is the model-implied common variance Lambda Psi Lambda' of the variables, whose
 # total sum(common) = 1' Lambda Psi Lambda' 1 is the composite's true score variance. Under
@@ -1217,7 +1226,8 @@
 # The general-factor decomposition is not identified without a general factor: omega
 # hierarchical and ECV are structurally zero, and PUC ("percent of uncontaminated
 # correlations") presupposes a general factor for the cross-factor correlations to be
-# uncontaminated of. On the whole-scale (g) row the omega subscale and H index are
+# uncontaminated of. On the whole-scale row -- still labelled "g" here, and relabelled
+# "total" by .reliability_result() -- the omega subscale and H index are
 # further artifacts of the synthetic all-zero general-factor column rather than
 # coefficients (the H of an all-zero loading vector is 0, and the whole-scale subscale
 # omega does not partition the composite without a general factor). What remains is what
@@ -1509,6 +1519,17 @@
     # name "g" at level "group". Vectorized over the row index so a matrix with no rows
     # yields no levels, matching the empty coefficient and factor columns below.
     row_level <- ifelse(seq_along(factors) == 1L, "general", "group")
+
+    # A correlated-factors solution has no general factor to put in that row. The core
+    # still builds it, and it holds the coefficients of the composite of every variable,
+    # which is what a zero general loading leaves it describing. Label the row for what it
+    # is: called "g" at level "general" it states a general factor the solution does not
+    # define, and it would carry the label of a group factor a user names "g" as well.
+    # Positional for the same reason the level is.
+    if (isTRUE(settings$no_general) && length(factors) > 0L) {
+      factors[1L] <- "total"
+      row_level[1L] <- "total"
+    }
 
     data.frame(
       coefficient = rep(keep$coefficient, each = length(factors)),

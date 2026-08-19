@@ -218,10 +218,7 @@ rotation, and standard-error options are passed through `...` — aligns the sol
 common factor space (rotation is only identified up to reflection and permutation, so the
 imputations must be matched before averaging), and pools them.
 
-<!-- message = FALSE here only: efa_fit() notes that it is computing correlations from raw
-data once per imputation, and five identical notes add nothing. -->
-
-```{r, eval = mice_ok, message = FALSE}
+```{r, eval = mice_ok}
 efa_pooled <- efa_mi(dat_list, n_factors = 3, estimator = "ml", rotation = "oblimin")
 efa_pooled
 ```
@@ -310,9 +307,7 @@ arguments to `efa_fit()`, this is the ordinal fit above applied to each imputati
 with predictive mean matching, which resamples observed values and so respects the response
 scale.
 
-<!-- message = FALSE here only: the same per-imputation note as above. -->
-
-```{r, eval = mice_ok, message = FALSE}
+```{r, eval = mice_ok}
 imp_ord <- mice::mice(as.data.frame(d_ord_miss), m = 5, method = "pmm",
                       printFlag = FALSE, seed = 123)
 dat_ord <- lapply(seq_len(imp_ord$m), function(i) mice::complete(imp_ord, i))

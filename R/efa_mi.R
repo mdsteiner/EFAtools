@@ -593,18 +593,23 @@ efa_mi <- function(data_list,
   # leaves a long `data_list` to be bisected by hand. The original condition is kept as
   # the parent so its own diagnosis stays visible.
   fits <- vector("list", m_imp)
-  for (d in seq_len(m_imp)) {
-    fits[[d]] <- tryCatch(
-      do.call(efa_fit, c(list(x = data_list[[d]]), efa_args)),
-      error = function(e) {
-        cli::cli_abort(
-          c("Imputation {d} could not be fitted.",
-            "i" = "Inspect {.code data_list[[{d}]]}, then re-fit or replace it."),
-          class = "efa_pooled_fit_failed", parent = e
-        )
-      }
-    )
-  }
+  # The imputations are versions of one data set, so the per-fit "computing correlations
+  # from the raw data" note states one fact about the input; report it once instead of once
+  # per imputation.
+  .cor_note_once(
+    for (d in seq_len(m_imp)) {
+      fits[[d]] <- tryCatch(
+        do.call(efa_fit, c(list(x = data_list[[d]]), efa_args)),
+        error = function(e) {
+          cli::cli_abort(
+            c("Imputation {d} could not be fitted.",
+              "i" = "Inspect {.code data_list[[{d}]]}, then re-fit or replace it."),
+            class = "efa_pooled_fit_failed", parent = e
+          )
+        }
+      )
+    }
+  )
   # `fits` is returned to the user, so it keeps whatever names `data_list` carried.
   names(fits) <- names(data_list)
 

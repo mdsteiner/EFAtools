@@ -59,12 +59,21 @@ format.efa_reliability <- function(x, digits = 3, ...) {
                 drop = FALSE]
     if (nrow(keep) == 0L) return(NULL)
     sk <- sub[sub$coefficient %in% keep$coefficient, , drop = FALSE]
-    facs <- unique(sk$factor)
-    mat <- matrix(NA_real_, length(facs), nrow(keep),
+    # Rows are keyed on the level and the factor together, and filled by index rather than
+    # by label. The label alone does not identify a row: the whole-scale row carries one of
+    # its own ("g" for a hierarchy, "total" for a correlated-factors solution) and a group
+    # factor may be named the same, in which case indexing by label would write both into
+    # one row and print the group factor's value as the whole scale's. The rendered labels
+    # are still the factor names, so a collision shows as two rows of one name rather than
+    # as a silently dropped value.
+    key <- paste(sk$level, sk$factor, sep = "\r")
+    rows <- unique(key)
+    facs <- sk$factor[match(rows, key)]
+    mat <- matrix(NA_real_, length(rows), nrow(keep),
                   dimnames = list(facs, keep$label))
     for (i in seq_len(nrow(keep))) {
-      ri <- sk[sk$coefficient == keep$coefficient[i], , drop = FALSE]
-      mat[ri$factor, keep$label[i]] <- ri$value
+      hit <- sk$coefficient == keep$coefficient[i]
+      mat[match(key[hit], rows), keep$label[i]] <- sk$value[hit]
     }
     mat
   }
@@ -130,8 +139,9 @@ format.efa_reliability <- function(x, digits = 3, ...) {
 
       # The tidy result carries no NA values (the builder drops them), so any NA hole in
       # the reconstructed factor-by-coefficient grid is a coefficient that is undefined for
-      # that factor (e.g. omega subscale / H on the whole-scale g row of a correlated-factors
-      # solution). Print those blank rather than as "NA", as OMEGA's printer does.
+      # that factor (e.g. omega subscale / H on the whole-scale "total" row of a
+      # correlated-factors solution). Print those blank rather than as "NA", as OMEGA's
+      # printer does.
       rel <- build_mat(sub, "reliability")
       if (!is.null(rel)) {
         .print_efa_rule("Reliability coefficients")

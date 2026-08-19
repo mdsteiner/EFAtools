@@ -74,6 +74,8 @@ and from the SPSS implementation from Wolff & Preising (2005). Other arguments
 from \code{\link[=efa_fit]{efa_fit()}} can be used to control the procedure to find the
 second-order loadings more flexibly. The function can also be used on a
 second-order confirmatory factor analysis (CFA) solution from lavaan.
+The group factors of the returned solution are sorted and relabelled, so their
+column order can differ from the input solution's (see Details).
 }
 \details{
 The SL transformation (also called SL orthogonalization) is a procedure with
@@ -87,6 +89,40 @@ hierarchical data structure based on factor intercorrelations explicit. One
 major advantage of SL transformation is that it enables variance
 partitioning between higher-order and first-order factors, including the
 calculation of McDonald's omegas (see \code{\link[=efa_reliability]{efa_reliability()}}).
+
+Where the first-order factors come from a loading matrix -- an \code{\link[=efa_fit]{efa_fit()}} or a
+\code{\link[psych:fa]{psych::fa()}} solution, or a pattern matrix supplied with \code{Phi} -- they are sorted
+by the number in their column labels, so that \code{"F10"} follows \code{"F2"} rather than
+\code{"F1"}. The sort needs a number in every column label; columns that carry no
+labels, or a label without a number, keep the order they arrive in. A second-order
+\code{lavaan} solution is not sorted at all: its first-order factors keep the order the
+model declares them in.
+
+The columns are then labelled \code{"F1"} to \code{"Fk"} by position, on every route, and the
+input solution's own factor names are not carried over. A factor a \code{lavaan} model
+calls \code{"F3"} can therefore come back as \code{"F1"}. Where the sort applies it is
+independent of how the input orders its factors, so the group
+factors of the returned \code{sl} matrix can also be in a different order from the columns
+they came from. A \code{\link[psych:fa]{psych::fa()}} solution shows this most readily: it orders its
+columns by their sums of squared loadings, but keeps each factor's own number in its
+label, so those numbers arrive out of order. A
+solution whose columns are \code{"PA2"}, \code{"PA3"}, \code{"PA1"} comes back with those same
+three factors sorted as \code{PA1}, \code{PA2}, \code{PA3} and labelled \code{"F1"}, \code{"F2"}, \code{"F3"}.
+The first group factor of the result is then the third column of the input. The
+same holds against \code{\link[psych:schmid]{psych::schmid()}}, whose columns keep the input order: the two
+solutions agree column for column only after one of them is permuted to the
+other's order. An \code{\link[=efa_fit]{efa_fit()}} solution already labels its factors \code{"F1"} to \code{"Fk"}
+in that order, so nothing moves for one; the reordering shows itself for a
+\code{\link[psych:fa]{psych::fa()}} solution, and for a pattern matrix supplied with labels of its own.
+
+Read the group factors from the returned matrix, therefore, rather than from the
+input. An indicator-to-factor map is matched to the group factors by position, so
+one built in the input solution's column order lines up only where the columns did
+not move; where they did, \code{\link[=efa_reliability]{efa_reliability()}} or \code{\link[=OMEGA]{OMEGA()}} scores each composite
+against the wrong factor. Build such a map from the \code{"F1"} to \code{"Fk"} columns of the
+returned \code{sl} matrix instead, which is right on every route. The \code{fac_names} of
+\code{\link[=efa_reliability]{efa_reliability()}} are matched by position in the same way, so names given in the
+input solution's order label the wrong subscales, and do so without any sign.
 }
 \examples{
 ## Use with an output from the EFAtools::efa_fit function, both with type EFAtools

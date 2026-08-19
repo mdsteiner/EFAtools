@@ -122,6 +122,56 @@ test_that("the general factor is the first row, whatever it is labelled", {
   expect_identical(collide$level[collide$factor == "g"], rep("group", 2L))
 })
 
+test_that("a solution with no general factor labels its whole-scale row for what it is", {
+  # The core builds the first row for every solution, but a correlated-factors one has no
+  # general factor to put there: the row holds the coefficients of the composite of every
+  # variable. Labelled "g" at level "general" it would state a general factor the solution
+  # does not define, so `no_general` relabels it. Read by position, as the level is, so a
+  # group factor a user names "g" keeps its own label and level.
+  mat_ng <- matrix(c(0.88, 0.77, 0.76, 0.75, 0.87, 0.76, 0.75, 0.74), nrow = 4,
+                   dimnames = list(c("g", "F1", "F2", "g"), c("tot", "alpha")))
+  ng <- .reliability_result(mat_ng, settings = list(variance = "correlation",
+                                                    no_general = TRUE))
+  expect_identical(ng$factor[ng$coefficient == "omega_total"],
+                   c("total", "F1", "F2", "g"))
+  expect_identical(ng$level[ng$coefficient == "omega_total"],
+                   c("total", "group", "group", "group"))
+  # The values are untouched: only the label of the first row moves.
+  expect_identical(ng$value[ng$coefficient == "omega_total"],
+                   c(0.88, 0.77, 0.76, 0.75))
+
+  # The same matrix without the setting keeps the general-factor labelling, so the branch
+  # is driven by the solution and not by the row's name.
+  g_row <- .reliability_result(mat_ng, settings = list(variance = "correlation",
+                                                       no_general = FALSE))
+  expect_identical(g_row$factor[g_row$coefficient == "omega_total"],
+                   c("g", "F1", "F2", "g"))
+  expect_identical(g_row$level[g_row$coefficient == "omega_total"],
+                   c("general", "group", "group", "group"))
+})
+
+test_that("a group factor sharing the whole-scale row's label keeps its own printed row", {
+  local_reproducible_output()
+  # The whole-scale row carries a label of its own -- "g" for a hierarchy, "total" for a
+  # correlated-factors solution -- and a group factor may be named the same. The printed
+  # table is keyed on the level and the factor together for that reason: keyed on the
+  # label alone, both rows would be written into one and the group factor's value would be
+  # printed as the whole scale's.
+  mat <- matrix(c(0.88, 0.77, 0.76, 0.87, 0.76, 0.75), nrow = 3,
+                dimnames = list(c("g", "total", "F2"), c("tot", "alpha")))
+  res <- .reliability_result(mat, settings = list(variance = "correlation",
+                                                  no_general = TRUE))
+  # Both rows survive the reshape, at their own levels.
+  tot <- res[res$coefficient == "omega_total", ]
+  expect_identical(tot$level, c("total", "group", "group"))
+  expect_identical(tot$factor, c("total", "total", "F2"))
+
+  # And both reach the printed table, the whole-scale value among them.
+  out <- format(res)
+  expect_match(out, "\\.880", all = FALSE)
+  expect_match(out, "\\.770", all = FALSE)
+})
+
 test_that("the correlated-factors note agrees with the table it introduces", {
   local_reproducible_output()
   # The note states whether the two omega columns coincide, so it has to be decided from

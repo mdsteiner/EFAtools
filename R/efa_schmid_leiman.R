@@ -8,6 +8,8 @@
 #' from [efa_fit()] can be used to control the procedure to find the
 #' second-order loadings more flexibly. The function can also be used on a
 #' second-order confirmatory factor analysis (CFA) solution from lavaan.
+#' The group factors of the returned solution are sorted and relabelled, so their
+#' column order can differ from the input solution's (see Details).
 #'
 #' @param x object of class [efa_fit()], class [psych::fa()],
 #' class `lavaan::lavaan()`, a matrix, or an `efa_loadings`/`loadings` object. If class [efa_fit()] or
@@ -46,6 +48,40 @@
 #' major advantage of SL transformation is that it enables variance
 #' partitioning between higher-order and first-order factors, including the
 #' calculation of McDonald's omegas (see [efa_reliability()]).
+#'
+#' Where the first-order factors come from a loading matrix -- an [efa_fit()] or a
+#' [psych::fa()] solution, or a pattern matrix supplied with `Phi` -- they are sorted
+#' by the number in their column labels, so that `"F10"` follows `"F2"` rather than
+#' `"F1"`. The sort needs a number in every column label; columns that carry no
+#' labels, or a label without a number, keep the order they arrive in. A second-order
+#' `lavaan` solution is not sorted at all: its first-order factors keep the order the
+#' model declares them in.
+#'
+#' The columns are then labelled `"F1"` to `"Fk"` by position, on every route, and the
+#' input solution's own factor names are not carried over. A factor a `lavaan` model
+#' calls `"F3"` can therefore come back as `"F1"`. Where the sort applies it is
+#' independent of how the input orders its factors, so the group
+#' factors of the returned `sl` matrix can also be in a different order from the columns
+#' they came from. A [psych::fa()] solution shows this most readily: it orders its
+#' columns by their sums of squared loadings, but keeps each factor's own number in its
+#' label, so those numbers arrive out of order. A
+#' solution whose columns are `"PA2"`, `"PA3"`, `"PA1"` comes back with those same
+#' three factors sorted as `PA1`, `PA2`, `PA3` and labelled `"F1"`, `"F2"`, `"F3"`.
+#' The first group factor of the result is then the third column of the input. The
+#' same holds against [psych::schmid()], whose columns keep the input order: the two
+#' solutions agree column for column only after one of them is permuted to the
+#' other's order. An [efa_fit()] solution already labels its factors `"F1"` to `"Fk"`
+#' in that order, so nothing moves for one; the reordering shows itself for a
+#' [psych::fa()] solution, and for a pattern matrix supplied with labels of its own.
+#'
+#' Read the group factors from the returned matrix, therefore, rather than from the
+#' input. An indicator-to-factor map is matched to the group factors by position, so
+#' one built in the input solution's column order lines up only where the columns did
+#' not move; where they did, [efa_reliability()] or [OMEGA()] scores each composite
+#' against the wrong factor. Build such a map from the `"F1"` to `"Fk"` columns of the
+#' returned `sl` matrix instead, which is right on every route. The `fac_names` of
+#' [efa_reliability()] are matched by position in the same way, so names given in the
+#' input solution's order label the wrong subscales, and do so without any sign.
 #'
 #' @return A list of class `c("efa_schmid_leiman", "SL")` containing the following
 #' \item{orig_R}{Original correlation matrix.}
@@ -425,11 +461,11 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 }
 
 # Column order of the first-order factors. The loadings are sorted by the factor
-# number embedded in the column labels so that, e.g., "F10" follows "F2" rather
-# than "F1". Factor columns are not always labelled (the GPArotation-based
-# rotations return unnamed loadings) and labels need not carry a number, so fall
-# back to the order the columns already have unless the labels yield a complete
-# permutation of seq_len(n).
+# number in the column labels, so that, e.g., "F10" follows "F2" and not "F1".
+# The sort needs one label for each factor, and a digit in each label. If one of
+# these two conditions is not true, the columns keep the order they have. The
+# loadings from `efa_fit()` and `psych::fa()` always have labels; a loading
+# matrix that comes directly from the user can have no labels.
 .sl_factor_order <- function(nms, n) {
 
   # covers unlabelled columns too: length(NULL) is 0, so absent labels take the

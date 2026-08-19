@@ -110,15 +110,30 @@
 #'   salience heuristic, not a significance test; common alternatives are `0.15` and `0.20`.
 #'   The threshold applies to whatever loading metric the chosen rotation produces (pattern
 #'   coefficients for an oblique rotation). `0` flags every cell. Default is `0.1`.
+#'
+#'   The geomin rotations take a criterion parameter of the same name. A `delta` given
+#'   directly is always this salience threshold and never reaches the rotation; give the
+#'   geomin parameter as `rotate_control(delta = ...)`. With `rotation = "geominT"` or
+#'   `"geominQ"`, a supplied `delta` gives a warning that says which of the two applies.
 #' @param invariance logical. Whether to add an approximate-invariance verdict per factor and
 #'   group pair from the Lorenzo-Seva and ten Berge (2006) congruence bands (see *Value*).
 #'   Default is `FALSE`.
+#' @param se Not used. `efa_group()` itself sets the standard-error method of the
+#'   per-group [efa_fit()] calls, so a supplied value is dropped with a warning. Ask for
+#'   bootstrap confidence intervals of the between-group congruences with `b_boot`.
+#'   Default is `NULL`.
 #' @param ... Additional arguments passed to [efa_fit()] for every group (for
 #'   example `estimator`, `rotation`, or `cor_method`). The [estimate_control()] and
 #'   [rotate_control()] objects are accepted through `...` as well, although they are not
 #'   declared formals: pass them as `estimate_control =` / `rotate_control =` exactly
 #'   as you would to [efa_fit()]. A name that is neither an [efa_fit()] argument nor a
 #'   rotation-engine extra is rejected.
+#'
+#'   A rotation-engine extra that has the same name as an `efa_group()` argument cannot
+#'   reach the rotation through `...`, because the argument takes the name first. This
+#'   applies to the geomin criterion parameter `delta`: pass it as
+#'   `rotate_control(delta = ...)`, which reaches both the per-group fits and the shared
+#'   alignment frame.
 #'
 #' @returns An object of class `efa_group`, a list containing:
 #' \item{loadings}{A named list of the aligned per-group loading matrices. Their
@@ -156,7 +171,9 @@
 #'   the Lorenzo-Seva and ten Berge (2006) similarity bands: `phi >= 0.95` is "equal" and
 #'   `[0.85, 0.95)` is "fair"; congruences `< 0.85`, below their bands, are labelled
 #'   "incongruent". The verdict is read from `phi_lower` when a bootstrap is available
-#'   (conservative) and from `phi` otherwise. Tucker's congruence is invariant to a
+#'   (conservative) and from `phi` otherwise. A wide interval therefore lowers the verdict:
+#'   `phi` = 0.989 with `phi_lower` = 0.726 is labelled "incongruent", because the band is
+#'   applied to the lower bound. Tucker's congruence is invariant to a
 #'   proportional rescaling of a factor's loadings, so a factor can be graded "equal"
 #'   even when one group's loadings on it are uniformly stronger; read the verdict
 #'   alongside `diffs`. `NULL` when `invariance = FALSE`.}
@@ -222,7 +239,7 @@
 #'
 efa_group <- function(x, groups = NULL, n_factors, N = NA,
                       reference_group = NULL, b_boot = 0L, ci = 0.95,
-                      seed = NULL, delta = 0.1, invariance = FALSE, ...) {
+                      seed = NULL, delta = 0.1, invariance = FALSE, se = NULL, ...) {
 
   # Both guards read `...names()` and so run before the dots are forced: a rejected name
   # is reported as such even when its value would itself have errored.
@@ -259,6 +276,10 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   if (!is.null(seed)) checkmate::assert_number(seed, finite = TRUE)
   checkmate::assert_number(delta, lower = 0, finite = TRUE)
   checkmate::assert_flag(invariance)
+  # `delta` names two different things: this salience threshold and the geomin criterion
+  # parameter. The formal takes the name, so the caller's intention cannot be read off the
+  # call; recorded here and reported below, once the rotation is resolved.
+  delta_supplied <- !missing(delta)
 
   # Resolve the input into a named list of per-group data sets, tagging whether
   # they are raw data or correlation matrices (which cannot be bootstrapped).
@@ -340,45 +361,49 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   # strictly serially in a fixed group order: each group advances the shared (seeded)
   # RNG stream, so group g+1's resampling depends on group g -- do not parallelise it.
   #
-  # efa_group controls the SE method itself, so an `se` passed through `...` is dropped
-  # (with a note): otherwise it would trigger an unrequested, unseeded per-group
-  # bootstrap or leave SE/replicate payload in out$efa. Congruence intervals are
-  # requested with `b_boot`, not `se`.
-  boot_efa_args <- efa_args
-  if ("se" %in% names(boot_efa_args)) {
+  # efa_group controls the SE method itself, so a supplied `se` is dropped with a warning:
+  # otherwise it would trigger an unrequested, unseeded per-group bootstrap or leave
+  # SE/replicate payload in out$efa. Congruence intervals are requested with `b_boot`, not
+  # `se`. `se` is a declared formal only so that this path is reachable: every formal
+  # precedes `...`, so R partially matches `se` to `seed` and a dots-only `se` would abort
+  # in the `seed` check with a message naming an argument the caller never wrote.
+  if (!is.null(se)) {
     cli::cli_warn(
       "{.arg se} is ignored by {.fn efa_group}; use {.arg b_boot} for congruence confidence intervals.",
       class = "efa_group_se_ignored"
     )
-    boot_efa_args$se <- NULL
   }
   boot_cubes <- if (do_boot) stats::setNames(vector("list", m), group_names)
 
   fits <- vector("list", m)
   names(fits) <- group_names
-  for (g in seq_len(m)) {
-    fit_args <- c(list(x = group_data[[g]], n_factors = n_factors, N = Ns_in[[g]]),
-                  boot_efa_args)
-    if (do_boot) {
-      fit_args <- c(fit_args,
-                    list(se = "np-boot", b_boot = b_boot, ci = ci, seed = NULL))
-    }
-    fit_g <- tryCatch(
-      do.call(efa_fit, fit_args),
-      error = function(e) {
-        cli::cli_abort(
-          c("The {.fn efa_fit} fit failed for group {.val {group_names[[g]]}}.",
-            "x" = conditionMessage(e)),
-          class = "efa_group_fit_failed", parent = e
-        )
+  # All groups come from one `x`, so the per-fit "computing correlations from the raw data"
+  # note states one fact about one input; report it once instead of once per group.
+  .cor_note_once(
+    for (g in seq_len(m)) {
+      fit_args <- c(list(x = group_data[[g]], n_factors = n_factors, N = Ns_in[[g]]),
+                    efa_args)
+      if (do_boot) {
+        fit_args <- c(fit_args,
+                      list(se = "np-boot", b_boot = b_boot, ci = ci, seed = NULL))
       }
-    )
-    if (do_boot) {
-      boot_cubes[[g]] <- fit_g$replicates$unrot_loadings
-      fit_g <- .efa_strip_boot(fit_g)
+      fit_g <- tryCatch(
+        do.call(efa_fit, fit_args),
+        error = function(e) {
+          cli::cli_abort(
+            c("The {.fn efa_fit} fit failed for group {.val {group_names[[g]]}}.",
+              "x" = conditionMessage(e)),
+            class = "efa_group_fit_failed", parent = e
+          )
+        }
+      )
+      if (do_boot) {
+        boot_cubes[[g]] <- fit_g$replicates$unrot_loadings
+        fit_g <- .efa_strip_boot(fit_g)
+      }
+      fits[[g]] <- fit_g
     }
-    fits[[g]] <- fit_g
-  }
+  )
 
   # The estimator and rotation are common (one `...` applied to every group), so
   # read them from the first fit. `settings$rotation` is always populated.
@@ -386,6 +411,21 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   rotation <- settings1$rotation
   rotation_type <- if (is.null(rotation)) "none" else .rotation_family(rotation)
   oblique <- rotation_type == "oblique" && n_factors >= 2L
+
+  # The geomin rotations take a criterion parameter that is also called `delta`. It cannot
+  # arrive through the dots, because the salience-threshold formal takes the name first, so
+  # the geomin criterion silently stayed at its default. Report which of the two readings
+  # was applied and how to get the other one.
+  if (delta_supplied && !is.null(rotation) && rotation %in% c("geominT", "geominQ")) {
+    cli::cli_warn(
+      c("{.arg delta} is the salience threshold of the flag table, not the
+         {.val {rotation}} criterion parameter.",
+        "i" = "The flag threshold is {delta}. The rotation criterion parameter is not
+               changed by it.",
+        "i" = "To set the criterion parameter, pass {.code rotate_control(delta = ...)}."),
+      class = "efa_group_delta_ambiguous"
+    )
+  }
 
   # Loadings as plain matrices (efa_fit returns them classed as efa_loadings/LOADINGS).
   unrot_loadings <- lapply(fits, function(f) .change_class(f$unrot_loadings, "matrix"))

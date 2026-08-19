@@ -4,7 +4,6 @@
       efa_mi(raw, n_factors = 1, estimator = "PAF", rotation = "none")
     Message
       i `x` is not a correlation matrix; computing correlations from the raw data.
-      i `x` is not a correlation matrix; computing correlations from the raw data.
     Condition
       Error in `efa_mi()`:
       ! Imputation 2 could not be fitted.

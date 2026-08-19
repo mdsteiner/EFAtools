@@ -27,6 +27,10 @@ coefficient omega is right? A tutorial on using R to obtain better reliability
 estimates. Advances in Methods and Practices in Psychological Science, 3,
 484-501.
 
+Green, S. B., & Yang, Y. (2009). Reliability of summed item scores using
+structural equation modeling: An alternative to coefficient alpha. Psychometrika,
+74, 155-167.
+
 Zinbarg, R. E., Revelle, W., Yovel, I., & Li, W. (2005). Cronbach's
 alpha, Revelle's beta, and McDonald's omega H: Their relations with each
 other and two alternative conceptualizations of reliability. Psychometrika,
@@ -119,7 +123,10 @@ composite variance from the loadings and the uniquenesses, which needs no
 correlation matrix and so is the way to score a bare loading matrix or
 manual components given without one. \code{lavaan} input fixes the convention: its
 composite variances are always model-implied, and count any freed residual
-covariance as well as the residual variances.}
+covariance as well as the residual variances. Neither convention changes the
+metric the coefficients are on: with polychoric or tetrachoric correlations, or
+an \code{ordered} \code{lavaan} fit, both describe the latent-response composite rather
+than the ordinal sum score (see Details).}
 
 \item{var_names}{character. Subtest names in the row order of the loadings.
 Only needed when \code{model} is \code{NULL}.}
@@ -150,7 +157,10 @@ own -- for manually supplied components, the row names of \code{s_load} rather t
 \code{var_names}, which only labels the output; without them the variables are matched
 by position, so supply the matrix in the row order of the loadings. If \code{NULL}, it
 is taken from the input object or reconstructed from \code{pattern} and \code{Phi} where
-possible.}
+possible. Supply the matrix on the same metric as the loadings: a polychoric or
+tetrachoric matrix keeps the coefficients on the latent-response metric, and a
+Pearson matrix given with loadings fitted to a polychoric one mixes the two
+(see Details).}
 
 \item{pattern}{matrix. Pattern coefficients from a separate oblique solution, used
 with \code{Phi} to reconstruct a correlation matrix when \code{model} is \code{NULL}. Supply it for
@@ -167,26 +177,31 @@ correlation matrix of as many factors as \code{s_load} has columns, and the comp
 must carry no general factor; for a single group factor that leaves only the 1 by 1
 identity, which is accepted and changes nothing, the components being scored as the
 single factor they are either way. \code{NULL} (default) means uncorrelated group factors, as
-a Schmid-Leiman or bifactor solution has. Supplied with the loading matrix of an
-oblique solution -- which carries the loading class \code{\link[=efa_fit]{efa_fit()}} gives it -- it is that
-solution's factor intercorrelations, and is what makes the matrix a correlated-factors
-solution rather than a rejected pattern matrix. Supplied with a matrix read as a
-hierarchy, a bifactor loading matrix or the loading table of an \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}
-solution, it is an error: such a matrix has its general factor in the first column and
-group factors that are uncorrelated by construction, so there is nothing for it to
-describe, and the same combination given through the components is refused in the same
-terms. With a fitted solution in \code{model} it is ignored, with a warning, that solution
-carrying its own.}
+a Schmid-Leiman or bifactor solution has. Supplied with a loading matrix of two or
+more factors in \code{model}, it is that matrix's factor intercorrelations, and makes the
+pair a correlated-factors solution rather than a rejected pattern matrix. It does this
+whether or not the matrix carries the loading class \code{\link[=efa_fit]{efa_fit()}} gives its loadings, a
+class that subsetting a matrix or reordering its rows drops. A matrix that carries no
+such class is read as a bifactor one when no \code{Phi} accompanies it, so one that is read
+as a pattern warns that it was. Supplied with the loading table of an
+\code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} solution, it is an error: such a table states that it is a
+hierarchy, whose group factors are uncorrelated by construction, so there is nothing
+for it to describe, and the same combination given through the components is refused in
+the same terms. With a fitted solution in \code{model} it is ignored, with a warning, that
+solution carrying its own.}
 }
 \value{
 An object of class \code{efa_reliability}: a long-format data frame with
 one row per computed coefficient, with columns
 \item{coefficient}{the coefficient name (e.g. \code{"omega_total"}).}
-\item{level}{\code{"general"} for the general-factor row, \code{"group"} otherwise. A
+\item{level}{\code{"general"} for the general-factor row, \code{"total"} for the
+whole-scale row of a correlated-factors solution, \code{"group"} otherwise. A
 single-factor solution has only the general-factor row.}
 \item{factor}{the factor label (\code{"g"} for the general factor of a solution with
 group factors; the one factor of a single-factor solution takes its own name,
-or \code{"F1"} where the input gives it none).}
+or \code{"F1"} where the input gives it none). A correlated-factors solution has no
+general factor, so its first row is labelled \code{"total"}: it describes the
+composite of every variable rather than a factor of the model.}
 \item{group}{the group label, or \code{NA} for a single ungrouped solution.}
 \item{value}{the coefficient value.}
 Structurally undefined cells (for example ECV and PUC on a group factor) are
@@ -225,7 +240,8 @@ matrix and so reflects the fitted model rather than the data. The H index is
 the reliability of an optimally weighted composite; low values indicate a
 factor that is not well defined by its indicators.
 
-All of them describe the raw unit-weighted sum of the variables as supplied. A
+All of them describe the raw unit-weighted sum of the variables the solution was
+fitted on. A
 variable keyed against the rest therefore subtracts from that sum's true score
 variance instead of adding to it, and the coefficients collapse -- correctly for
 the sum that was scored, but in a way that reads as a poor scale. The variables
@@ -233,6 +249,20 @@ are not reflected first, which would describe a different sum than the one
 scored; a solution whose variables are not all keyed in the same direction is
 warned about instead, and such variables should be reverse-coded before the
 solution is fitted (Flora, 2020).
+
+The variables that sum is over are not always the answers the respondents gave.
+Polychoric and tetrachoric correlations describe the continuous latent responses
+that are assumed to underlie ordinal answers, and so does a \code{lavaan} fit that
+declares its indicators \code{ordered}. The loadings, the uniquenesses and the
+correlation matrix are then all on that latent-response metric, and so are the
+coefficients. They give the reliability of the unit-weighted sum of the latent
+responses, which is not observed. They do not give the reliability of the ordinal
+sum score the user computes from the answers. The two quantities differ, and they
+differ most where the answers use few categories or are strongly skewed.
+Green and Yang (2009) give the alternative: an omega for the ordinal sum score
+itself, computed from the fitted model and its thresholds. This package does not
+compute it. Pearson correlations raise no such distinction, their metric being
+the answers as scored.
 
 Every omega total -- for the whole scale and for each subscale composite -- is
 the true score variance the fitted model attributes to that composite, counting
@@ -291,8 +321,12 @@ the general factor is to the single factor of a unidimensional model.
 
 An oblique \code{\link[=efa_fit]{efa_fit()}} object is scored as the correlated-factors model it is
 (having no general factor, it omits the bifactor indices -- omega hierarchical,
-ECV, and PUC), and a bare loading matrix is read as a raw bifactor solution
-(general factor in the first column). A one-factor \code{\link[=efa_fit]{efa_fit()}} solution is scored
+ECV, and PUC). It still reports a whole-scale row, which describes the composite of
+every variable: that row is labelled \code{"total"}, not \code{"g"}, there being no general
+factor for it to be. A bare loading matrix is read as a raw bifactor solution
+(general factor in the first column), whose whole-scale row is the general factor
+and keeps the label \code{"g"}.
+A one-factor \code{\link[=efa_fit]{efa_fit()}} solution is scored
 from its unrotated loadings, having nothing to rotate, and needs no oblique
 rotation as a solution with more factors does; a one-column loading matrix (with or
 without the loading class an \code{\link[=efa_fit]{efa_fit()}} solution's loadings carry), a
@@ -309,16 +343,22 @@ hierarchical one. The loading table of an
 itself it carries no correlation matrix, so supply \code{cormat} to score it against
 the observed correlations rather than the model-implied ones. The loading matrix of
 an ordinary factor solution is not a bifactor matrix and is rejected -- unless it is
-supplied with \code{Phi} and carries the loading class \code{\link[=efa_fit]{efa_fit()}} gives it, which makes the
+supplied with \code{Phi}, which makes the
 pair a correlated-factors solution: it is then
 scored as the solution it came from is, with the uniquenesses derived from the
 loadings under \code{Phi} unless \code{u2} is given. Unlike the solution itself the pair carries
 no correlation matrix, and none is reconstructed for it, so \code{variance = "correlation"}
 needs one in \code{cormat} and errors without it; \code{variance = "sums_load"} needs none.
 The matrix to pass is the pattern, which is what \code{Phi} accompanies; a
-structure matrix carries the same loading class and would be read as a pattern. A matrix
-without that class is a bifactor one. The group factors of a hierarchy are uncorrelated, so
-\code{Phi} given with a bifactor or Schmid-Leiman matrix is an error and not an argument that is
+structure matrix would be read as a pattern. \code{Phi} decides that reading on its own,
+whether or not the matrix still carries the loading class \code{\link[=efa_fit]{efa_fit()}} gives it: the
+class does not survive subsetting a matrix or reordering its rows, while \code{Phi} stays,
+and the group factors of a hierarchy are uncorrelated and have no factor correlations
+to supply. A matrix given no \code{Phi} is a bifactor one, its first column the general
+factor, unless it is an ordinary factor solution's loading matrix, which is rejected as
+above. Because the two readings report different coefficients, a matrix that carries no
+loading class and is read as a pattern warns that it was. A Schmid-Leiman table states
+that it is a hierarchy, so \code{Phi} with one is an error and not an argument that is
 dropped. The
 rejection applies to a matrix of two or more factors: one of a single factor is read
 as that factor, there being no hierarchy to mistake it for and no factor
