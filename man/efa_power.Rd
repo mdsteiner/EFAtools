@@ -74,7 +74,8 @@ positive.}
 solved for.}
 
 \item{group}{numeric. The number of groups. Default is \code{1}. \code{N} is the total
-across all \code{group} groups, not the size of each one. See \emph{Details}.}
+across all \code{group} groups, not the size of each one, and a solved \code{N} is a
+multiple of \code{group}. See \emph{Details}.}
 
 \item{Lambda}{matrix. Simulation mode. A \code{p} by \code{k_true} population loading matrix.
 Supply this (optionally with \code{Phi}/\code{Psi}) to build a factor-model population;
@@ -148,9 +149,10 @@ An object of class \code{efa_power}. For \code{mode = "rmsea"}, a list containin
 \item{power}{The power of the test at \code{N} (the achieved power, which for a
 solved sample size is at least the target).}
 \item{N}{The total sample size across groups: the supplied \code{N}, or the solved
-required sample size.}
+required sample size (a multiple of \code{group}).}
 \item{N_per_group}{The per-group sample size \code{N / group}, equal to \code{N} when
-\code{group} is \code{1}.}
+\code{group} is \code{1}. A whole number for a solved \code{N}; for a supplied \code{N} that is not
+a multiple of \code{group} it is the fraction that the noncentrality uses.}
 \item{crit}{The critical chi-square value the fit statistic is compared against.}
 \item{ncp}{The noncentrality parameters under the null (\code{H0}, from \code{eps0}) and
 the alternative (\code{H1}, from \code{eps1}).}
@@ -231,6 +233,13 @@ smallest \code{N} reaching \code{power}) is found by bisection. \code{N} is the 
 sample size across groups: with \code{group > 1} the noncentrality above carries the
 \code{1 / group} factor, so a fixed total spread over more groups buys less power.
 The corresponding per-group sample size \code{N / group} is returned as \code{N_per_group}.
+
+The \code{1 / group} factor makes all \code{group} groups the same size, so a required
+total is rounded up to the next multiple of \code{group}. A solved \code{N_per_group} is thus
+a whole number of persons, and the reported \code{power} is the power at a total that a
+study can collect. With \code{group = 2} and \code{df = 102}, for example, the required total
+is 260, or 130 per group. Bisection on the total alone gives 259, which asks for
+129.5 persons in each group.
 }
 
 \section{Simulation mode}{

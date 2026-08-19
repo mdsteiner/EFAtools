@@ -67,7 +67,7 @@ plot.efa_average <- function(x, ...) {
     ggplot2::facet_grid(rows = ggplot2::vars(.data$row_ind),
                         cols = ggplot2::vars(.data$col_ind),
                         switch = "y") +
-    ggplot2::theme_minimal() +
+    .gg_theme() +
     ggplot2::ggtitle(paste0("Minimum, Maximum, and ",
                                 ifelse(averaging == "mean", "Mean", "Median"),
                                 " Loadings")) +
@@ -79,7 +79,6 @@ plot.efa_average <- function(x, ...) {
           axis.text.y = ggplot2::element_blank(),
           axis.line.x = ggplot2::element_line(color = "black", linewidth = 0.2),
           axis.ticks.x = ggplot2::element_line(color = "black", linewidth = 0.2),
-          plot.title = ggplot2::element_text(face = "bold", hjust = 0.5),
           panel.grid.minor.y = ggplot2::element_blank(),
           panel.grid.major.y = ggplot2::element_blank(),
           panel.spacing.y = ggplot2::unit(0, "mm"),

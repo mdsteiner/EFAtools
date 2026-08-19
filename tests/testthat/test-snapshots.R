@@ -4,9 +4,15 @@
 # text are snapshotted; methods that print computed decimals (e.g. KMO,
 # Bartlett's chi-square) are omitted, since those digits can drift across BLAS
 # and platforms and would make the baselines flaky.
+#
+# Only the criteria that simulate -- PARALLEL, NEST and HULL -- carry
+# skip_if_not_slow(). They cost about an order of magnitude more than all the
+# deterministic blocks together, which is what the gate is for. The rest run by
+# default: gating a block that costs a tenth of a second only hides a baseline
+# from the runs that would catch it drifting. Gate a new block here only if it
+# simulates or otherwise joins the expensive group.
 
 test_that("print.efa_retention output is stable for SMT", {
-  skip_if_not_slow()
   local_reproducible_output()
 
   smt <- SMT(test_models$baseline$cormat, N = 500)
@@ -18,7 +24,6 @@ test_that("print.efa_retention output is stable for SMT", {
 })
 
 test_that("print.efa_retention output is stable for SCREE", {
-  skip_if_not_slow()
   local_reproducible_output()
 
   scree <- SCREE(test_models$baseline$cormat)
@@ -29,7 +34,6 @@ test_that("print.efa_retention output is stable for SCREE", {
 })
 
 test_that("print.efa_retention output is stable for CD", {
-  skip_if_not_slow()
   local_reproducible_output()
 
   # CD is stochastic; seed and use a small simulation for a stable, fast snapshot
@@ -53,7 +57,6 @@ test_that("print.efa_retention output is stable for PARALLEL", {
 })
 
 test_that("print.efa_retention output is stable for KGC", {
-  skip_if_not_slow()
   local_reproducible_output()
 
   kgc <- KGC(test_models$baseline$cormat)
@@ -72,7 +75,6 @@ test_that("print.efa_retention output is stable for NEST", {
 })
 
 test_that("print.efa_retention output is stable for EKC", {
-  skip_if_not_slow()
   local_reproducible_output()
 
   ekc <- EKC(test_models$baseline$cormat, N = 500)
@@ -91,7 +93,6 @@ test_that("print.efa_retention output is stable for HULL", {
 })
 
 test_that("print.efa_retention output is stable for MAP", {
-  skip_if_not_slow()
   local_reproducible_output()
 
   map <- MAP(test_models$baseline$cormat)
@@ -99,7 +100,6 @@ test_that("print.efa_retention output is stable for MAP", {
 })
 
 test_that("print.efa_retain output is stable", {
-  skip_if_not_slow()
   local_reproducible_output()
 
   # deterministic criteria only (no simulations); suitability = FALSE keeps

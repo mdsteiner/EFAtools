@@ -51,6 +51,13 @@
 #' `1 / group` factor, so a fixed total spread over more groups buys less power.
 #' The corresponding per-group sample size `N / group` is returned as `N_per_group`.
 #'
+#' The `1 / group` factor makes all `group` groups the same size, so a required
+#' total is rounded up to the next multiple of `group`. A solved `N_per_group` is thus
+#' a whole number of persons, and the reported `power` is the power at a total that a
+#' study can collect. With `group = 2` and `df = 102`, for example, the required total
+#' is 260, or 130 per group. Bisection on the total alone gives 259, which asks for
+#' 129.5 persons in each group.
+#'
 #' # Simulation mode
 #'
 #' The population is passed to [efa_simulate()], which draws `n_datasets` samples of size
@@ -111,7 +118,8 @@
 #'   `NULL` while giving `N` to compute power. Exactly one of `N` and `power` is
 #'   solved for.
 #' @param group numeric. The number of groups. Default is `1`. `N` is the total
-#'   across all `group` groups, not the size of each one. See *Details*.
+#'   across all `group` groups, not the size of each one, and a solved `N` is a
+#'   multiple of `group`. See *Details*.
 #' @param Lambda matrix. Simulation mode. A `p` by `k_true` population loading matrix.
 #'   Supply this (optionally with `Phi`/`Psi`) to build a factor-model population;
 #'   structure recovery is available only with this form. Passed to [efa_simulate()].
@@ -171,9 +179,10 @@
 #' \item{power}{The power of the test at `N` (the achieved power, which for a
 #'   solved sample size is at least the target).}
 #' \item{N}{The total sample size across groups: the supplied `N`, or the solved
-#'   required sample size.}
+#'   required sample size (a multiple of `group`).}
 #' \item{N_per_group}{The per-group sample size `N / group`, equal to `N` when
-#'   `group` is `1`.}
+#'   `group` is `1`. A whole number for a solved `N`; for a supplied `N` that is not
+#'   a multiple of `group` it is the fraction that the noncentrality uses.}
 #' \item{crit}{The critical chi-square value the fit statistic is compared against.}
 #' \item{ncp}{The noncentrality parameters under the null (`H0`, from `eps0`) and
 #'   the alternative (`H1`, from `eps1`).}
@@ -400,16 +409,29 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   list(power = pow, crit = crit, ncp0 = ncp0, ncp1 = ncp1)
 }
 
-# Smallest integer sample size reaching `target` power. Power rises monotonically
-# with N (from about `alpha` toward 1), so double an upper bound until it clears
-# the target, then bisect. `cap` bounds the search: an alternative RMSEA too close
-# to the null (or a target power too high) can otherwise never be reached.
+# Smallest total sample size reaching `target` power that a design with `group` equal
+# groups can have. Power rises monotonically with N (from about `alpha` toward 1), so
+# double an upper bound until it clears the target, then bisect. `cap` bounds the search:
+# an alternative RMSEA too close to the null (or a target power too high) can otherwise
+# never be reached.
 .efa_power_solve_N <- function(df, eps0, eps1, alpha, group, type, target,
                                cap = 1e7) {
   powfun <- function(N) .efa_power_rmsea(N, df, eps0, eps1, alpha, group, type)$power
 
+  # The noncentrality divides the total by `group`, so the design has `group` groups of
+  # equal size and only a total that is a multiple of `group` is possible. Power increases
+  # with the total, so the smallest possible total is the bisected one rounded up to the
+  # next multiple. Without this step a total of, say, 259 over two groups asks for 129.5
+  # persons in each group, which is not a sample size.
+  design_N <- function(N) as.integer(ceiling(N / group) * group)
+
+  # Rounding up happens after the search, so the search itself must stop at the largest
+  # collectable total within `cap`; otherwise a returned total could pass the bound that
+  # the abort message below states (10000002 for `group` = 3 at the default cap).
+  cap <- floor(cap / group) * group
+
   lo <- 1
-  if (powfun(lo) >= target) return(1L)
+  if (powfun(lo) >= target) return(design_N(1))
   # Double the upper bound, clamped to `cap`, until it clears the target. Probing
   # `cap` itself before giving up keeps the reachable ceiling equal to the documented
   # bound (a plain `hi * 2` would abort once past the last power of two below `cap`).
@@ -427,7 +449,7 @@ efa_power <- function(mode = c("rmsea", "simulation"),
     mid <- floor((lo + hi) / 2)
     if (powfun(mid) >= target) hi <- mid else lo <- mid
   }
-  as.integer(hi)
+  design_N(hi)
 }
 
 
@@ -856,6 +878,9 @@ format.efa_power <- function(x, digits = 3, ...) {
     # per-group figure outright.
     # A sample size, not a coefficient: format it as a count rather than through
     # .efa_num(), whose fixed `digits` would render 100 as "100.000".
+    # A solved `N` is a multiple of `group`, so the per-group figure is a whole number.
+    # A supplied `N` is the caller's own total and is never changed: when it does not
+    # divide by `group`, the fraction the noncentrality uses is shown as it is.
     # An object serialized before `N_per_group` existed carries `group` but not the field;
     # its `N` was per-group back then, so no note can be derived from it -- omit the note
     # rather than erroring in round(NULL) or dividing a per-group N by `group` again.

@@ -51,10 +51,39 @@ test_that("the solved N is the total across groups, split by N_per_group", {
   # grows linearly in `group` while the per-group requirement stays near-constant.
   g1 <- efa_power(df = 102, power = 0.80, group = 1)
   g2 <- efa_power(df = 102, power = 0.80, group = 2)
+  g3 <- efa_power(df = 102, power = 0.80, group = 3)
   expect_equal(g1$N, 130L)
-  expect_equal(g2$N, 259L)
-  expect_equal(g2$N_per_group, 129.5)
+  expect_equal(g2$N, 260L)
+  expect_equal(g3$N, 390L)
   expect_equal(g1$N_per_group, 130)
+  expect_equal(g2$N_per_group, 130)
+  expect_equal(g3$N_per_group, 130)
+})
+
+test_that("a solved N is a total that a study can collect", {
+  # All groups have the same size, so a required total must divide by `group`; a total
+  # of 259 over two groups would ask for 129.5 persons in each. Rounding the total up
+  # keeps the reported power the power at the total that is reported. `N_per_group` is
+  # `N / group`, so the modulus is the whole property -- no separate whole-number check.
+  for (g in 1:4) {
+    x <- efa_power(df = 102, power = 0.80, group = g)
+    expect_equal(x$N %% g, 0)
+    expect_gte(x$power, 0.80)
+    # Still the smallest such total: one person less in each group misses the target.
+    expect_lt(efa_power(df = 102, N = x$N - g, group = g)$power, 0.80)
+  }
+
+  # A target below `alpha` is reached at any size, which returns one person per group
+  # rather than a total of one shared out over `group` groups.
+  floor_g2 <- efa_power(df = 102, power = 0.01, group = 2)
+  expect_equal(floor_g2$N, 2L)
+  expect_equal(floor_g2$N_per_group, 1)
+  expect_equal(efa_power(df = 102, power = 0.01, group = 1)$N, 1L)
+
+  # A supplied N is the caller's own total and is reported unchanged, fraction and all.
+  odd <- efa_power(df = 102, N = 259L, group = 2)
+  expect_equal(odd$N, 259L)
+  expect_equal(odd$N_per_group, 129.5)
 })
 
 test_that("the solved total matches semTools::findRMSEAsamplesize per group", {
@@ -63,6 +92,12 @@ test_that("the solved total matches semTools::findRMSEAsamplesize per group", {
   # findRMSEAsamplesize() searches the same noncentrality but reports the per-group
   # figure (its last line divides the solved total by `group`), so its value is the
   # N_per_group counterpart of the total efa_power() returns.
+  #
+  # It divides without rounding, so for a total that does not divide by `group` it
+  # returns a fraction of a person (129.5 at df = 102 with two groups). efa_power()
+  # rounds the total up to the next multiple of `group` instead, because all `group`
+  # groups have the same size. The two therefore agree up to that one step, and the
+  # oracle is compared as ceiling(): a definitional offset, not a numerical one.
   # Compared as named vectors so a failure names the group count that broke.
   groups <- c(1, 2, 3)
   ref <- vapply(groups, function(g) {
@@ -77,8 +112,8 @@ test_that("the solved total matches semTools::findRMSEAsamplesize per group", {
   }, numeric(1))
   names(ref) <- names(pw) <- names(tot) <- paste0("group", groups)
 
-  expect_equal(pw, ref, tolerance = 1e-8)
-  expect_equal(tot, ref * groups, tolerance = 1e-8, ignore_attr = "names")
+  expect_equal(pw, ceiling(ref), tolerance = 1e-8)
+  expect_equal(tot, ceiling(ref) * groups, tolerance = 1e-8, ignore_attr = "names")
 })
 
 test_that("output has the expected class and structure", {

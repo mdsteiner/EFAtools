@@ -289,8 +289,9 @@ efa_power(p = 18, k = 3, N = 200, type = "notclose")
 ```
 
 For a multiple-group model, `group` divides the noncentrality across groups. The reported `N` is
-the *total* across groups -- 259 in all, about 130 per group -- and `N_per_group` carries that
-per-group figure:
+the *total* across groups -- 260 in all, 130 per group -- and `N_per_group` carries that per-group
+figure. All groups have the same size, so a required total is rounded up to the next multiple of
+`group`:
 
 ```{r}
 pw_2g <- efa_power(p = 18, k = 3, power = 0.80, group = 2)

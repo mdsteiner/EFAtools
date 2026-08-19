@@ -421,8 +421,7 @@ plot.efa_retention <- function(x, ...) {
   p +
     ggplot2::scale_x_continuous(breaks = seq_len(max(dat$factor))) +
     ggplot2::labs(x = "Factor", y = y_label, title = x$criterion[["label"]]) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", hjust = 0.5))
+    .gg_theme()
 
 }
 
@@ -481,7 +480,6 @@ plot.efa_retention <- function(x, ...) {
   p +
     ggplot2::labs(x = "Degrees of freedom", y = "Goodness of fit",
                   title = x$criterion[["label"]]) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", hjust = 0.5))
+    .gg_theme()
 
 }

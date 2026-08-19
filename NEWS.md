@@ -32,6 +32,8 @@
 
 * `efa_average()` now documents that every solution in the grid is fitted with the eigenvalue-based factor ordering, including under a named `type`, and what the settings of the single `efa_fit()` object record when the grid collapses to one combination.
 
+* The `plot()` method of `efa_compare()` now uses the same theme as every other plot of the package. Before, it had a different frame, grid, and type size, which was visible when its panel was put next to another one in the same report.
+
 ## Data Screening
 
 * The multivariate-outlier check in `efa_screen()` now correctly handles robust subsets with singular covariance matrices instead of discarding the best solution.
@@ -109,6 +111,8 @@
 * Rare response combinations in strongly correlated pairs are now handled more accurately, preventing such pairs from unnecessarily blocking `DWLS` estimation or robust standard errors.
 
 ## Power Analysis
+
+* A sample size that `efa_power()` solves for with `group > 1` is now a multiple of `group`, so `N_per_group` is a whole number of persons and the achieved power is the power at a total that a study can collect. Before, a required total of 259 across two groups was reported as 129.5 per group. A supplied `N` is still reported unchanged.
 
 * In simulation mode, `efa_power()` now warns when a requested factor-retention criterion never produces a suggestion and reports an `NA` hit rate over zero valid replicates.
 

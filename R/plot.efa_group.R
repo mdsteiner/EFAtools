@@ -100,8 +100,7 @@ plot.efa_group <- function(x, type = c("congruence", "differences"), ...) {
     ggplot2::scale_colour_viridis_d(end = 0.8) +
     ggplot2::labs(x = "Factor", y = "Tucker's congruence",
                   title = "Factor congruence across groups", colour = "Group pair") +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", hjust = 0.5))
+    .gg_theme()
 }
 
 # Heatmap of the signed cross-group loading differences (item by factor), one panel per
@@ -135,6 +134,5 @@ plot.efa_group <- function(x, type = c("congruence", "differences"), ...) {
                   title = "Cross-group loading differences",
                   subtitle = paste0("Outlined cells: |difference| >= ",
                                     .efa_group_delta_str(x$settings$delta))) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", hjust = 0.5))
+    .gg_theme()
 }

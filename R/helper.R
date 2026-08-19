@@ -237,6 +237,15 @@
   list(PCA = eigen_R_PCA, SMC = eigen_R_SMC, EFA = eigen_R_EFA)
 }
 
+# The common look of every plot the package returns: `theme_minimal()` with a bold,
+# centred title. Defined once so that panels from different functions agree when a user
+# puts them together in one report. Callers add only the settings that are specific to
+# their plot (for example, a hidden legend) after this.
+.gg_theme <- function() {
+  ggplot2::theme_minimal() +
+    ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", hjust = 0.5))
+}
+
 # Fall back to `y` when `x` is NULL. Defined here because the base R version was
 # only added in R 4.4.0, below the package's minimum.
 `%||%` <- function(x, y) if (is.null(x)) y else x

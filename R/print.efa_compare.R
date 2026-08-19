@@ -98,38 +98,29 @@ format.efa_compare <- function(x, digits = NULL, m_red = NULL, range_red = NULL,
   if (is.null(round_red)) round_red <- x$settings$round_red else checkmate::assert_number(round_red)
   if (is.null(print_diff)) print_diff <- x$settings$print_diff else checkmate::assert_flag(print_diff)
 
-  # Style each statistic green when it clears its reduction threshold and red otherwise
-  # (so a smaller difference reads as a closer match). The values keep their decimal
-  # padding, so the lines are emitted verbatim below. They are differences between
-  # loadings, i.e. bounded coefficients, so they follow the package's number convention
-  # and drop the leading zero; the two decimal *counts* below are integers and do not.
-  if (isTRUE(mean_abs_diff <= m_red)) {
-    mean_out <- .efa_style(.efa_num(mean_abs_diff, digits), c("green", "bold"))
-  } else {
-    mean_out <- .efa_style(.efa_num(mean_abs_diff, digits), c("red", "bold"))
+  # The report colours each figure the same way: green when it clears its threshold and
+  # red when it does not, so a smaller difference reads as a closer match. `isTRUE()`
+  # keeps a figure red when the comparison gives NA.
+  ok_style <- function(v, ok) {
+    .efa_style(v, if (isTRUE(ok)) c("green", "bold") else c("red", "bold"))
   }
 
-  if (isTRUE(median_abs_diff <= m_red)) {
-    median_out <- .efa_style(.efa_num(median_abs_diff, digits), c("green", "bold"))
-  } else {
-    median_out <- .efa_style(.efa_num(median_abs_diff, digits), c("red", "bold"))
-  }
+  # The statistics keep their decimal padding, so the lines are emitted verbatim below.
+  # They are differences between loadings, i.e. bounded coefficients, so they follow the
+  # package's number convention and drop the leading zero; the two decimal *counts* below
+  # are integers and do not.
+  mean_out <- ok_style(.efa_num(mean_abs_diff, digits), mean_abs_diff <= m_red)
+  median_out <- ok_style(.efa_num(median_abs_diff, digits), median_abs_diff <= m_red)
 
-  if (isTRUE(max_abs_diff <= range_red)) {
-    max_out <- .efa_style(.efa_num(max_abs_diff, digits), c("green", "bold"))
-    min_out <- .efa_style(.efa_num(min_abs_diff, digits), c("green", "bold"))
-  } else {
-    max_out <- .efa_style(.efa_num(max_abs_diff, digits), c("red", "bold"))
-    min_out <- .efa_style(.efa_num(min_abs_diff, digits), c("red", "bold"))
-  }
+  # The minimum and the maximum are printed as one bracketed range and are coloured as
+  # one: both follow the test on the maximum, the wider end. The minimum is never larger,
+  # so a green maximum always makes a green minimum correct as well.
+  min_out <- ok_style(.efa_num(min_abs_diff, digits), max_abs_diff <= range_red)
+  max_out <- ok_style(.efa_num(max_abs_diff, digits), max_abs_diff <= range_red)
 
-  if (is.na(are_equal)) {
-    equal_out <- .efa_style("none", c("red", "bold"))
-  } else if (are_equal < round_red) {
-    equal_out <- .efa_style(are_equal, c("red", "bold"))
-  } else {
-    equal_out <- .efa_style(are_equal, c("green", "bold"))
-  }
+  # No agreeing decimal place at all is reported as "none" rather than as a count.
+  equal_out <- ok_style(if (is.na(are_equal)) "none" else are_equal,
+                        !is.na(are_equal) && are_equal >= round_red)
 
   cli::cli_format_method({
     .print_efa_rule("Summary statistics")
@@ -164,15 +155,12 @@ format.efa_compare <- function(x, digits = NULL, m_red = NULL, range_red = NULL,
     # to agree. Green when they do agree (0 differing), red otherwise -- mirroring the
     # "smaller difference reads as a closer match" colouring of the statistics above.
     if (isTRUE(corres) && !is.na(diff_corres) && is.matrix(diff) && ncol(diff) > 1L) {
-      corres_style <- function(v) {
-        .efa_style(v, if (v == 0) c("green", "bold") else c("red", "bold"))
-      }
       # The longest line of the report. Emitted verbatim so a styled count is never split
       # from the rule it belongs to, but packed to the console width between the two counts.
       cli::cli_verbatim(.efa_wrap_chunks(c(
         "Differing", "indicator-to-factor", "correspondences:",
-        paste0(corres_style(diff_corres), " (highest loading),"),
-        paste0(corres_style(diff_corres_cross),
+        paste0(ok_style(diff_corres, diff_corres == 0), " (highest loading),"),
+        paste0(ok_style(diff_corres_cross, diff_corres_cross == 0),
                " (all |loadings| >= ", format(thresh), ")"))))
     }
 

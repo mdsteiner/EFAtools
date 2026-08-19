@@ -180,6 +180,5 @@ plot.efa_power <- function(x, n = NULL, df = NULL, eps1 = NULL, ...) {
     ggplot2::labs(x = n_lab, y = "Power",
                   title = paste0("Power for the RMSEA test of ", fit_lbl),
                   subtitle = sub) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", hjust = 0.5))
+    .gg_theme()
 }

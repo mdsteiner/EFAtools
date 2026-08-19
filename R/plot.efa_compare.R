@@ -70,17 +70,14 @@ plot.efa_compare <- function(x, plot_red = NULL, ...) {
     ggplot2::geom_jitter(alpha = .5, width = 0.05, height = 0, size = 2) +
     ggplot2::scale_color_manual(values = c("acceptable difference" = "black",
                                            "large difference" = "red")) +
-    ggplot2::theme_bw() +
     ggplot2::labs(
       subtitle = paste("Threshold for difference coloring:", plot_red),
       x = "Compared Variables",
       y = "Absolute Difference"
     ) +
-    ggplot2::theme(
-      legend.position = "none",
-      strip.text = ggplot2::element_text(size = 11, face = "bold"),
-      axis.text = ggplot2::element_text(size = 11),
-      axis.title = ggplot2::element_text(size = 13, face = "bold")
-    )
+    .gg_theme() +
+    # The subtitle gives the threshold that decides the two point colours, so a legend
+    # adds nothing.
+    ggplot2::theme(legend.position = "none")
 
 }
