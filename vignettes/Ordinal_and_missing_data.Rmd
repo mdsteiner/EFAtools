@@ -189,6 +189,17 @@ was obtained by two-stage FIML. Standard errors are available here too: for `est
 or `"ULS"`, `se = "information"` or `"sandwich"` return the corrected two-stage standard
 errors, and `se = "np-boot"` works with any estimator.
 
+FIML estimates the model from every case, but it does not fill in the missing values. Any step
+that needs complete rows is therefore still complete-case. `efa_scores(d_miss, f = efa_fiml)`,
+for example, scores only the complete cases and warns that the rest are `NA`:
+
+```{r}
+sum(complete.cases(d_miss))    # cases a score can be formed for
+```
+
+Use the `efa_mi()` route below if you want case-level scores for every respondent. Each imputed
+dataset is complete, so scoring it with the pooled loadings covers all 250 cases.
+
 The correction itself needs a well-behaved saturated covariance. When that cannot be formed —
 typically in a small sample with a high proportion of missing values, or with near-collinear
 items — `efa_fit()` warns and keeps the plain two-stage likelihood-ratio statistic instead of

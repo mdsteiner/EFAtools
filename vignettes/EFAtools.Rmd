@@ -81,15 +81,24 @@ errors are preferable, and Bartlett's test should be read with caution. For a fu
 treatment you would move to polychoric correlations with a categorical least-squares
 estimator.
 
-On the outlier section: The robust distances come from a minimum
-covariance determinant (MCD) estimate, whose random subset search is the reason
-`efa_screen()` takes a `seed`. The MCD assumes roughly elliptical data, and on markedly
-non-normal data like these, large robust distances are common. This is why almost half of
-the observations end up flagged (On such heavily discretised data the most robust 50%
-subset can also turn out singular, in which case `efa_screen()` falls back to classical
-Mahalanobis distances and labels the output accordingly). The flagged cases are therefore
-better understood as evidence of that non-normality than as genuine outliers to remove.
-Inspect them (via `$outliers$flagged`) rather than deleting them automatically.
+The outlier section reports something other than the usual case, and it says so. The
+diagnostic normally measures each case against a high-breakdown location and scatter. It
+estimates those from a minimum covariance determinant (MCD) subset, which here must cover 265
+of the 500 cases. For these data no usable subset of that size exists. The DOSPERT items have
+seven categories, and 318 respondents give the lowest answer on `ethR_2`. That is more than
+the subset needs, so the search can fill it from those respondents alone. The item is then
+constant inside the subset, and the covariance of the subset is singular (an *exact fit*).
+Ten of the 30 items are degenerate in this way.
+
+`efa_screen()` falls back to classical Mahalanobis distances. It names the reason and labels
+the distances it reports. A classical covariance uses every observation, outliers included, so
+the outliers inflate the scatter that measures them. The diagnostic is no longer
+high-breakdown and it tends to under-flag. Read the 60 flagged cases as a lower bound, and as
+a sign of the non-normality the tests above report, rather than as a list of cases to remove.
+The MCD does not run, so its random subset search does not run either and `seed` changes
+nothing here. `seed` matters only when the robust estimate is available, as in the ordinal
+example in the [EFA with ordinal and missing data](Ordinal_and_missing_data.html) vignette.
+Inspect the flagged cases (via `$outliers$flagged`) rather than deleting them automatically.
 
 If you only want the two classic factorability tests, they are also available on their own.
 Bartlett's test of sphericity checks whether the correlation matrix differs from an identity
@@ -166,16 +175,21 @@ ret <- efa_retain(DOSPERT_sub,
 ret
 ```
 
-The printed summary is text only, so the scree test's suggestion to inspect the plot needs an
-explicit call. `plot()` on the result draws the figure for every criterion that has one:
+`plot()` on the result draws the figure for every criterion that has one:
 
 ```{r}
 plot(ret)
 ```
 
-Omitting `criteria` runs the full suite, including the hull method, the next eigenvalue
-sufficiency test, and comparison data; the latter is computationally expensive and can be
-slow on larger data sets, which is why we leave it out here.
+Omitting `criteria` does not run every criterion listed above. The default is a subset of six:
+comparison data, the empirical Kaiser criterion, the hull method, the minimum average partial
+test, the next eigenvalue sufficiency test, and parallel analysis. The Kaiser-Guttman
+criterion, the scree test, and the sequential model tests are outside that subset, and
+`criteria =` is how you ask for them. The call above therefore differs from the default in
+both directions. It adds the Kaiser-Guttman criterion and the sequential model tests, and it
+drops comparison data, the hull method, and the next eigenvalue sufficiency test. We leave
+comparison data out because it is computationally expensive and can be slow on larger data
+sets.
 
 This is the situation one would rather avoid, but it does happen: the criteria disagree, with
 suggestions ranging from four to well above ten factors. When there is no clear convergence,
@@ -201,10 +215,12 @@ principal axis factoring (PAF), maximum likelihood (ML), or unweighted least squ
 also known as MINRES); diagonally weighted least squares (DWLS) is additionally available
 for ordinal data analysed with polychoric or tetrachoric correlations (see the
 [EFA with ordinal and missing data](Ordinal_and_missing_data.html) vignette). For rotation
-the package offers varimax and promax as well as a range
-of further orthogonal and oblique rotations (e.g., quartimax, equamax, oblimin, quartimin,
-geomin, bentler, bifactor, and simplimax), all computed by rotation engines built into the
-package.
+the package offers varimax and promax as well as a range of further rotations: quartimax and
+equamax are orthogonal; oblimin, quartimin, and simplimax are oblique; and geomin, bentler,
+and bifactor come in both an orthogonal form (`geominT`, `bentlerT`, `bifactorT`) and an
+oblique one (`geominQ`, `bentlerQ`, `bifactorQ`). The suffix is part of the name: `geomin` on
+its own matches both forms and is rejected. All are computed by rotation engines built into
+the package.
 
 An EFA with PAF and no rotation is as simple as:
 
@@ -269,12 +285,17 @@ average loading of every indicator.
 
 ## Factor Scores with `efa_scores()`
 
-If you need factor scores, `efa_scores()` estimates them directly from an `efa_fit()` solution, and reports score-quality diagnostics (determinacy,
-univocality, and the Guttman indeterminacy index):
+If you need factor scores, `efa_scores()` estimates them directly from an `efa_fit()` solution
+and reports score-quality diagnostics. Printing the object gives the determinacy of each score
+and the Guttman indeterminacy index. `summary()` adds the factor weights, the score
+intercorrelations, and a score validity/univocality matrix. The off-diagonals of that matrix
+are the univocality — how strongly each score correlates with the *other* factors:
 
 ```{r}
 fac_scores <- efa_scores(DOSPERT_sub, f = efa_dospert)
 fac_scores
+
+summary(fac_scores)
 ```
 
 ## Schmid-Leiman Transformation and McDonald's Omegas

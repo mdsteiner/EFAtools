@@ -18,8 +18,8 @@ knitr::opts_chunk$set(
 `efa_screen()`, `efa_retain()`, `efa_fit()`, and so on. Earlier releases used uppercase
 names instead (`EFA()`, `N_FACTORS()`, `OMEGA()`, ...). The uppercase names have **not** been
 removed — they still work — but the `efa_*` functions are now the recommended interface. This
-vignette explains the change, gives the full old-to-new mapping, and walks through the one
-migration that involves more than a rename: `EFA()` to `efa_fit()`.
+vignette explains the change, gives the full old-to-new mapping, and walks through the
+migration with the largest change to the argument list: `EFA()` to `efa_fit()`.
 
 ```{r}
 library(EFAtools)
@@ -103,9 +103,9 @@ identical(KMO(cor_mat)$KMO, efa_kmo(cor_mat)$KMO)
 
 ## Migrating from `EFA()` to `efa_fit()`
 
-`EFA()` to `efa_fit()` is the only migration that changes an argument list. `EFA()`
-exposed every estimation and rotation setting as a flat argument, which made for a long and
-somewhat unwieldy signature. `efa_fit()` keeps the **primary** choices as top-level
+`EFA()` to `efa_fit()` is the migration with the largest change to the argument list.
+`EFA()` exposed every estimation and rotation setting as a flat argument, which made for a
+long and somewhat unwieldy signature. `efa_fit()` keeps the **primary** choices as top-level
 arguments — `x`, `n_factors`, `N`, `estimator`, `rotation`, `se`, `cor_method`, `use`,
 `b_boot`, `ci`, and `seed` — and collects the **tuning** knobs into two small control
 objects built by `estimate_control()` and `rotate_control()`.
