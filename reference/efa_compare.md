@@ -42,34 +42,30 @@ efa_compare(
 
   character. Whether and how elements / columns should be reordered. If
   "congruence" (default), the columns of `y` are matched to those of `x`
-  by an optimal one-to-one assignment that maximizes Tucker's congruence
-  coefficient, so each factor is matched exactly once; with a single
-  column this reduces to matching its sign. It applies to matrices only,
-  and warns when `x` and `y` are vectors. If "names", the columns of a
-  matrix – or the elements of a vector – are put in alphabetical order
-  of their names; the rows of a matrix are assumed to be aligned already
-  and are left untouched. If "none", no reordering is done.
+  by a joint one-to-one assignment that maximizes the total Tucker's
+  congruence coefficient (a standard measure of similarity between two
+  loading vectors) across all columns at once, and each matched column's
+  sign is flipped if needed. This way, mismatched factor order or sign
+  between two solutions does not distort the comparison. It applies to
+  matrices only, and warns when `x` and `y` are vectors. If "names", the
+  columns of a matrix – or the elements of a vector – are put in
+  alphabetical order of their names; the rows of a matrix are assumed to
+  be aligned already and are left untouched. If "none", no reordering is
+  done.
 
 - corres:
 
   logical. Whether factor correspondences should be compared if a matrix
-  is entered.
+  is entered. Default is TRUE.
 
 - thresh:
 
-  numeric. The threshold to classify a pattern coefficient as
+  numeric. The threshold at or above which a loading is classified as
   substantial. Default is .3.
 
 - digits:
 
-  numeric. Number of decimals to print in the output. Default is 4. Like
-  `m_red`, `range_red`, `round_red`, and `print_diff`, it is recorded in
-  `settings` but governs only the printed report, so it can be
-  overridden per call in
-  [`print.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_compare.md)
-  without recomputing the comparison. `plot_red` is a drawing setting
-  and is overridden the same way in
-  [`plot.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_compare.md).
+  numeric. Number of decimals to print in the output. Default is 4.
 
 - m_red:
 
@@ -81,16 +77,16 @@ efa_compare(
 
   numeric. Number above which the min and max should be printed in red
   (i.e., if .001 is used, min and max will be in red if the max is
-  larger than .001, otherwise it will be displayed in green. Default is
-  .001). Note that the color of min also depends on max, that is min
-  will be displayed in the same color as max.
+  larger than .001, otherwise it will be displayed in green). Default is
+  .001. Note that the color of min also depends on max, that is min will
+  be displayed in the same color as max.
 
 - round_red:
 
-  numeric. Number above which the max decimals to round to where all
-  corresponding elements of x and y are still equal are displayed in red
-  (i.e., if 3 is used, the number will be in red if it is smaller than
-  3, otherwise it will be displayed in green). Default is 3.
+  numeric. The number of agreeing decimals below which the report
+  highlights the agreement in red (i.e., if 3 is used, the value is
+  shown in red when the compared numbers agree to fewer than 3 decimals,
+  otherwise in green). Default is 3.
 
 - print_diff:
 
@@ -127,8 +123,7 @@ efa_compare(
 
 ## Value
 
-A list of class `efa_compare` containing summary statistics on the
-differences of x and y.
+A list of class `efa_compare` with the following components:
 
 - diff:
 
@@ -188,6 +183,17 @@ differences of x and y.
 - settings:
 
   List of the settings used.
+
+## Details
+
+`digits`, `m_red`, `range_red`, `round_red`, `print_diff`, and
+`plot_red` only control how the result is displayed; each is stored in
+the returned object's `settings` and can be overridden later without
+recomputing the comparison – `digits`, `m_red`, `range_red`,
+`round_red`, and `print_diff` in a call to
+[`print.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_compare.md),
+and `plot_red` in a call to
+[`plot.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_compare.md).
 
 ## See also
 

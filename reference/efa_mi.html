@@ -81,9 +81,10 @@ correlation matrix. See argument <code>x</code> in <code><a href="efa_fit.html">
 
 
 <dt id="arg-p">p<a class="anchor" aria-label="anchor" href="#arg-p"></a></dt>
-<dd><p>Numeric in \((0, 1)\). One minus the confidence level used for
-pooled Wald-type bootstrap/MI confidence intervals when bootstrap replicates
-are available. For example, <code>p = .05</code> gives 95% intervals.</p></dd>
+<dd><p>Numeric in \((0, 1)\). One minus the confidence level for the
+pooled confidence intervals, whichever <code>se</code> method produced them
+(<code>"information"</code>, <code>"np-boot"</code>, or <code>"sandwich"</code>). For example, <code>p = .05</code>
+gives 95% intervals.</p></dd>
 
 
 <dt id="arg-target-method">target_method<a class="anchor" aria-label="anchor" href="#arg-target-method"></a></dt>
@@ -104,8 +105,8 @@ gauge), <code>"procrustes"</code> (orthogonal Procrustes to the first imputation
 
 
 <dt id="arg-fit-pool-method">fit_pool_method<a class="anchor" aria-label="anchor" href="#arg-fit-pool-method"></a></dt>
-<dd><p>Character. Currently only <code>"D2"</code> is implemented
-for chi-square-type fit. If no chi-square is available, only residual-based
+<dd><p>Character. Only <code>"D2"</code> is implemented for pooling
+chi-square-type fit. If no chi-square is available, only residual-based
 fit and descriptive quantities are returned. See <em>Pooling the model chi-square and
 fit indices</em> in Details.</p></dd>
 
@@ -131,15 +132,11 @@ cross-product <code>S</code> are derived from the imputations and cannot be set 
 
 
 <dt id="arg-rmsr-upper">rmsr_upper<a class="anchor" aria-label="anchor" href="#arg-rmsr-upper"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Accepted and ignored. It
-selected between computing RMSR from the unique off-diagonal residual correlations
-and from the full off-diagonal matrix. The two element sets hold each residual pair
-once and twice respectively, so their sums and counts double together and the mean
-square is the same number whenever the residual matrix is symmetric, which the pooled
-residuals always are. RMSR is therefore always the root mean square of the unique
-off-diagonal residuals; SRMR, which divides the same sum by the number of
-non-redundant elements, is reported alongside it. Supplying it to <code>efa_mi()</code>
-signals a deprecation warning; the superseded <code><a href="EFA_POOLED.html">EFA_POOLED()</a></code> accepts it silently.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Deprecated and ignored.
+<code>efa_mi()</code> now always computes RMSR the same way, from the unique
+off-diagonal residuals; SRMR is reported alongside it. Supplying it to
+<code>efa_mi()</code> signals a deprecation warning; the superseded <code><a href="EFA_POOLED.html">EFA_POOLED()</a></code>
+accepts it silently.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -182,10 +179,8 @@ an unrotated analytic pool reports <code>uniquenesses</code> instead.</p></dd>
 under those names and in that order. <code>pool_method</code> records the rule the model
 chi-square was pooled with (<code>"D2"</code>); it is <code>NA</code> on the <code>se = "sandwich"</code> (MI2S)
 path, which fits once on the pooled inputs and reports that fit's own scaled
-statistic rather than pooling several. That path also carries the quantities a
-scaled statistic comes with – <code>Fm</code>, <code>chi_unscaled</code>, <code>chi_scaled_type</code>,
-<code>chi_scaling</code>, <code>chi_shift</code>, <code>chi_mean_adjusted</code>, <code>chi_mean_var</code>, and
-<code>df_mean_var</code> – after the common block, so the two schemas are not identical.</p></dd>
+statistic rather than pooling several. On that path a few extra scaled-statistic
+fields are appended after the common block, for advanced diagnostics.</p></dd>
 
 <dt>standardized_residuals</dt>
 <dd><p>The pooled residuals divided by their pooled
@@ -207,7 +202,7 @@ communality family is keyed by its canonical name here, without the <code>SE</co
 alias, so each family is counted once in the printed FMI/RIV summary. Each per-family
 entry is a list with <code>RIV</code> (relative increase in variance), <code>FMI</code> (the
 fraction of missing information, reported as Rubin's asymptotic
-\(\lambda = RIV / (1 + RIV)\), equal to <code>lavaan.mi</code>'s <code>fmi</code>), and <code>df</code>; the
+\(\lambda = RIV / (1 + RIV)\)), and <code>df</code>; the
 rotated families on the analytic path additionally carry a <code>method</code> string
 recording the gauge alignment used (<code>"gauge_invariant"</code> for communalities and
 <code>"signed_permutation_approx"</code> for rotated loadings and, for oblique rotations,
@@ -243,8 +238,7 @@ affected: the pooled chi-square is floored at zero and its p-value is 1 in that
 case. <code>chi_cfi</code> and <code>chi_null_cfi</code> are the
 pooled model and baseline <strong>chi-squares</strong> on the common \(N - 1\)
 noncentrality scale. <code>chi_cfi</code> is the statistic the reported RMSEA is formed
-from; the pair is also the basis on which <code>lavaan.mi</code>/<code>semTools</code> form pooled
-incremental indices, so the reference CFI is
+from; the pair also gives a reference CFI formed the conventional way,
 <code>1 - (chi_cfi - df) / (chi_null_cfi - df_null)</code> (and analogously for TLI) –
 a different quantity from the reported CFI/TLI, which average the
 per-imputation indices.</p></dd>
@@ -253,8 +247,10 @@ per-imputation indices.</p></dd>
 <dd><p>Admissibility and convergence of the component fits, kept on
 the pooled object so a saved solution carries the record independently of <code>fits</code>: <code>m</code>
 (the number of imputations that entered the pool), <code>heywood_imputations</code> (the indices
-of the fits with at least one flagged variable), <code>n_heywood_items</code> (the number of
-flagged variables per imputation), <code>nonconverged</code> (the indices whose extraction
+of the fits with at least one Heywood case – an improper solution where a variable's
+communality is at or above 1, or its uniqueness is fixed at the estimation
+boundary), <code>n_heywood_items</code> (the number of flagged variables per imputation),
+<code>nonconverged</code> (the indices whose extraction
 reported a non-zero convergence code), and <code>iter</code> (the iterations each extraction
 used). Averaging aligned solutions pulls boundary communalities back inside the
 admissible range, so a pooled matrix with no Heywood case can still rest on component
@@ -337,17 +333,19 @@ centroid target by Generalized Procrustes Analysis (Gower 1975; van Ginkel &amp;
 Kroonenberg 2014; Lorenzo-Seva &amp; Van Ginkel 2016), starting from the <em>medoid</em>
 imputation's rotated solution – the one closest in aligned squared distance to
 all the others. <code>"consensus"</code> is supported for orthogonal rotations only.</p>
-<p>The two differ in the rotational gauge the pooled solution ends up in, and so
+<p>Factor loadings are only unique up to rotation; "gauge" here means which
+particular rotation, or orientation, a solution is expressed in. The two
+methods differ in the rotational gauge the pooled solution ends up in, and so
 in how it responds to the order of <code>data_list</code>. The GPA iteration moves its
 target toward the centroid but keeps the gauge of the solution it started from,
 so starting it at the medoid – a property of the set, not of the list order –
 makes the pooled rotated solution invariant to that order, as the pooled
 unrotated solution already is. <code>"first_target"</code> anchors on the first imputation
-by construction: an atypical first imputation fixes the orientation for every
-other one, and permuting <code>data_list</code> moves the pooled pattern, by a few
-hundredths of a loading unit on a mildly heterogeneous set and by more when the
-imputations disagree substantially (the factor correlations of an oblique
-solution move with it). Where the two anchors coincide – and, more generally,
+by construction, so an atypical first imputation fixes the orientation for
+every other one. Permuting <code>data_list</code> therefore moves the pooled pattern –
+by a few hundredths of a loading unit when imputations are similar, more when
+they disagree. For oblique rotations, the factor correlations move with it.
+Where the two anchors coincide – and, more generally,
 where the imputations agree – the two methods give effectively the same pooled
 estimate and <code>"consensus"</code> is simply the more expensive; where they do not, the
 pooled patterns differ by the rotation between the two gauges. Passing <code>start</code>
@@ -358,25 +356,23 @@ order dependent again.</p>
 and sign changes, <code>"procrustes"</code> aligns them to the first imputation by
 orthogonal Procrustes rotation, and <code>"none"</code> averages them as returned by
 <code><a href="efa_fit.html">efa_fit()</a></code>.</p>
-<p>The default anchors that matching on the <em>medoid</em> imputation – the one closest
-in aligned squared distance to all the others – rather than on whichever
-imputation happens to come first, so the pooled <em>unrotated</em> solution does not
-depend on the order of <code>data_list</code>. The rotated solution is aligned separately,
-against a reference chosen by <code>target_method</code>, and still depends on that
-reference. The pooled matrix is then returned in the same gauge every
-component fit uses, by restoring the constraint that identifies the unrotated
-solution: diagonal \(L'L\) for a principal-axis extraction, diagonal
-\(L' \Psi^{-1} L\) for maximum likelihood (Anderson &amp; Rubin 1956; Lawley &amp;
-Maxwell 1971). Which one
-applies is read off the component fits themselves, and a solution in neither
-gauge – an improper one, say – is left as aligned. Without this step the
-average of several aligned solutions sits in a gauge no single fit uses and
-cannot be compared element-by-element with an <code><a href="efa_fit.html">efa_fit()</a></code> solution. The
-rotation is orthogonal and
-common to all imputations, so communalities, the total variance accounted for,
-the model-implied correlation matrix, the residuals and RMSR are unchanged by
-it; only the split of variance across factors moves. <code>"procrustes"</code> and
-<code>"none"</code> keep their first-imputation anchor and are returned as aligned.</p>
+<p>The default anchors the matching on the <em>medoid</em> imputation (defined above)
+rather than on whichever imputation happens to come first, so the pooled
+<em>unrotated</em> solution does not depend on the order of <code>data_list</code>. The rotated
+solution is aligned separately, against a reference chosen by <code>target_method</code>,
+and still depends on that reference.</p>
+<p>The pooled unrotated matrix is then returned in the same gauge as a single
+<code><a href="efa_fit.html">efa_fit()</a></code> fit. Its identifying constraint differs by extraction method – a
+principal-axis extraction and a maximum-likelihood extraction fix the
+rotation differently (Anderson &amp; Rubin 1956; Lawley &amp; Maxwell 1971) – and is
+read off each component fit automatically, so the pooled matrix can be
+compared element-by-element with an <code><a href="efa_fit.html">efa_fit()</a></code> solution. A solution that
+meets neither constraint – an improper one, say – is left as aligned. The
+correction is a common orthogonal rotation, so communalities, the total
+variance accounted for, the model-implied correlation matrix, the residuals,
+and RMSR are unchanged; only the split of variance across factors moves.
+<code>"procrustes"</code> and <code>"none"</code> keep their first-imputation anchor and are
+returned as aligned.</p>
 </div>
 
 <div class="section">
@@ -403,21 +399,16 @@ show SRMR only.</p>
 AIC/BIC) are pooled with the D2 rule (Li, Meng, Raghunathan &amp;
 Rubin, 1991), not arithmetically averaged. RMSEA is pooled by the same rule but
 from a second D2 pool of the per-imputation discrepancies taken on the
-uncorrected \(N - 1\) scale, because RMSEA places the model noncentrality on
-the scale on which it is defined, so the Bartlett small-sample correction enters
-only the chi-square test and not this approximate-fit index (as in
-<code><a href="efa_fit.html">efa_fit()</a></code>). The printed RMSEA therefore does not reconcile by hand with the
-printed chi-square; the statistic it is formed from is <code>chi_cfi</code> in
-<code>mi_diagnostics</code>. Because D2 shrinks the pooled
-chi-square in proportion to the between-imputation variability, the pooled RMSEA
-can fall below the mean of the per-imputation RMSEAs (as it does in
-<code>lavaan.mi</code>); read it together with the per-imputation fit. The incremental
-indices CFI (Bentler, 1990) and TLI (Tucker &amp; Lewis, 1973) are instead the
-average of the per-imputation indices, which keeps them consistent with the
-component fits and avoids the out-of-range values that separately pooling the
-model and baseline noncentralities (as <code>lavaan.mi</code>/<code>semTools</code> do) can produce;
-the separately pooled model and baseline chi-squares those indices would be
-formed from remain available in <code>mi_diagnostics</code>.
+uncorrected \(N - 1\) scale. The printed RMSEA therefore does not reconcile
+by hand with the printed chi-square; the statistic it is formed from is
+<code>chi_cfi</code> in <code>mi_diagnostics</code>. Because D2 shrinks the pooled chi-square in
+proportion to the between-imputation variability, the pooled RMSEA can fall
+below the mean of the per-imputation RMSEAs; read it together with the
+per-imputation fit. The incremental indices CFI (Bentler, 1990) and TLI
+(Tucker &amp; Lewis, 1973) are instead the average of the per-imputation indices,
+which keeps them consistent with the component fits and avoids out-of-range
+values; the separately pooled model and baseline chi-squares those indices
+would be formed from remain available in <code>mi_diagnostics</code>.
 AIC and BIC, if returned, are chi-square-derived descriptive quantities and are
 not likelihood-based MI information criteria. They are reported only where the
 component fits report them: whenever a component withholds them – any
@@ -448,7 +439,7 @@ intervals is set by <code>p</code>, not by the component <code><a href="efa_fit.
 returned by each fit are pooled element-wise with Rubin's rules
 (\(T = Ubar + (1 + 1/m) B\)), with Wald intervals on the plain Rubin (1987)
 degrees of freedom (the analytic loadings are asymptotically normal, so the
-Barnard-Rubin (1999) adjustment reduces to this form, matching <code>lavaan.mi</code>). NA
+Barnard-Rubin (1999) adjustment reduces to this form). NA
 propagation is fail-closed: if any imputation is NA at an element, all pooled
 outputs for that element are NA. When a rotation was requested, the rotated
 loadings, communalities, and (for oblique rotations) factor correlations and
@@ -461,9 +452,8 @@ canonical-gauge rotation, and so propagates the same covariance; where a fit
 does not carry it, the unrotated standard errors are returned as <code>NA</code> rather
 than aborting, and the remaining families still pool.</p>
 <p>A rotated-loading standard error is conditional on the rotation criterion
-(Archer &amp; Jennrich 1973; Jennrich 1973, 1974; Zhang, Preacher, &amp; Jennrich
-2012; Zhang &amp; Preacher 2015). For both orthogonal
-and oblique rotations the within-imputation variance is therefore each fit's own
+used (see References). For both orthogonal and oblique rotations the
+within-imputation variance is therefore each fit's own
 criterion-aware delta-method rotated SE (the quantity <code><a href="efa_fit.html">efa_fit()</a></code> returns), reused
 after a signed-permutation alignment to the MI target, and the
 between-imputation variance is the sample variance of the aligned rotated
@@ -482,10 +472,9 @@ uncertainty, cross-check with <code>se = "np-boot"</code>.</p>
 continuous-Pearson asymptotic covariance), pooling follows the two-stage,
 pooled-inputs approach (Chung &amp; Cai 2019; Sriutaisuk, Liu, Chung, Kim &amp; Gu
 2025): the correlation matrix and the asymptotic covariance of its off-diagonal
-entries are Rubin-pooled across imputations,
-$$\tilde\Gamma = \Gamma_W + \left(1 + \frac{1}{m}\right)\Gamma_B,$$
-and a single <code>EFA</code> model is fitted to the pooled correlation with
-\(\tilde\Gamma\) as the robust meat (its diagonal as the weights for
+entries are Rubin-pooled across imputations, and a single <code>EFA</code> model is
+fitted to the pooled correlation with the pooled covariance, \(\tilde\Gamma\),
+as the robust meat (its diagonal as the weights for
 <code>estimator = "DWLS"</code>). Because there is only one fit and one rotational gauge, this
 route bypasses the per-imputation alignment: <code>target_method</code> and
 <code>align_unrotated</code> do not apply. The fitted object carries native scaled-shifted
@@ -506,33 +495,11 @@ continuous-Pearson case uses the same recipe but is less benchmarked.</p>
     <h2 id="conditions">Conditions<a class="anchor" aria-label="anchor" href="#conditions"></a></h2>
 
 
-<p>All conditions are classed (prefix <code>efa_pooled_</code>, or <code>efa_consensus_</code> for the
-consensus target; the dots validation shared with <code><a href="efa_fit.html">efa_fit()</a></code> signals
-<code>efa_flat_knob_in_dots</code> and <code>efa_renamed_arg</code>) so they can be caught by
-class. The ones most likely to be encountered:</p><ul><li><p><strong>Inputs.</strong> <code>efa_pooled_min_fits</code> (at least two fits are required);
-<code>efa_pooled_fit_failed</code> (an imputation could not be fitted; the message names it
-and carries the <code><a href="efa_fit.html">efa_fit()</a></code> condition as its parent);
-<code>efa_pooled_mixed_se</code> (the component fits recorded different <code>se</code> methods,
-which a single <code>se</code> argument can still produce: <code><a href="efa_fit.html">efa_fit()</a></code> cannot bootstrap a
-correlation matrix and records <code>se = "none"</code> for it, so one correlation matrix
-among raw datasets under <code>se = "np-boot"</code> is the way this is usually reached).</p></li>
-<li><p><strong>Alignment.</strong> <code>efa_consensus_oblique_unsupported</code> (<code>target_method = "consensus"</code> is orthogonal-only); <code>efa_pooled_bad_procrustes_args</code>
-(<code>procrustes_args</code> may only carry <code><a href="efa_procrustes.html">efa_procrustes()</a></code> algorithm controls).</p></li>
-<li><p><strong>Standard errors.</strong> <code>efa_pooled_se_unavailable</code> (a warning: pooled SEs could
-not be produced, so only point estimates are returned); <code>efa_pooled_no_vcov</code>
-and <code>efa_pooled_unreliable_vcov</code> (the analytic <code>"procrustes"</code> path needs a
-reliable <code>vcov_unrot_loadings</code> on every fit);
-<code>efa_pooled_unrotated_se_unreliable</code> and <code>efa_pooled_rotated_se_unreliable</code>
-(warnings: an imputation carried NA-filled analytic standard errors, so the
-corresponding pooled block is returned as <code>NA</code>).</p></li>
-<li><p><strong>Two-stage (<code>se = "sandwich"</code>).</strong> <code>efa_pooled_mi2s_inputs_inconsistent</code>
-(every imputation must use <code>se = "sandwich"</code> with the same <code>cor_method</code>);
-<code>efa_pooled_mi2s_n_too_small</code> (a warning below 20 imputations);
-<code>efa_pooled_mi2s_acov_not_psd</code> (the pooled covariance is indefinite – use
-more imputations); <code>efa_pooled_mi2s_alignment_ignored</code> (a warning that the
-alignment arguments do not apply here).</p></li>
-</ul><p>The remaining conditions concern partial or insufficient bootstrap replicates
-and unequal sample sizes across imputations.</p>
+<p>Errors and warnings raised by <code>efa_mi()</code> are classed, with an <code>efa_pooled_</code>
+prefix (<code>efa_consensus_</code> for the consensus target) – except the dots validation
+shared with <code><a href="efa_fit.html">efa_fit()</a></code>, which signals <code>efa_flat_knob_in_dots</code> or <code>efa_renamed_arg</code>
+– so they can be caught programmatically. The message shown explains what went
+wrong and, where relevant, how to fix it.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -545,21 +512,21 @@ loadings. <em>Psychometrika</em>, 38(4), 581-592.</p>
 multiple imputation. <em>Biometrika</em>, 86(4), 948-955.</p>
 <p>Bentler, P. M. (1990). Comparative fit indexes in structural models.
 <em>Psychological Bulletin</em>, 107(2), 238-246.</p>
-<p>Chan, K. W., &amp; Meng, X.-L. (2022). Multiple improvements of multiple
-imputation likelihood ratio tests. <em>Statistica Sinica</em>, 32, 1489-1514.</p>
 <p>Chung, S., &amp; Cai, L. (2019). Alternative multiple imputation inference for
 categorical structural equation modeling. <em>Multivariate Behavioral
 Research</em>, 54(3), 323-337.</p>
 <p>Gower, J. C. (1975). Generalized Procrustes analysis. <em>Psychometrika</em>,
 40(1), 33-51.</p>
-<p>Li, K. H., Meng, X.-L., Raghunathan, T. E., &amp; Rubin, D. B. (1991).
-Significance levels from repeated p-values with multiply-imputed data.
-<em>Statistica Sinica</em>, 1(1), 65-92.</p>
 <p>Jennrich, R. I. (1973). Standard errors for obliquely rotated factor
 loadings. <em>Psychometrika</em>, 38(4), 593-604.</p>
 <p>Jennrich, R. I. (1974). Simplified formulae for standard errors in
 maximum-likelihood factor analysis. <em>British Journal of Mathematical and
 Statistical Psychology</em>, 27(1), 122-131.</p>
+<p>Lawley, D. N., &amp; Maxwell, A. E. (1971). <em>Factor analysis as a statistical
+method</em> (2nd ed.). Butterworths.</p>
+<p>Li, K. H., Meng, X.-L., Raghunathan, T. E., &amp; Rubin, D. B. (1991).
+Significance levels from repeated p-values with multiply-imputed data.
+<em>Statistica Sinica</em>, 1(1), 65-92.</p>
 <p>Lorenzo-Seva, U., &amp; Van Ginkel, J. R. (2016). Multiple imputation of missing
 values in exploratory factor analysis of multidimensional scales. <em>Anales de
 Psicologia</em>, 32(2), 596-608.</p>

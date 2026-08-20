@@ -103,9 +103,10 @@ the components of a factor model (<code>Lambda</code>, and optionally
 the factor intercorrelations <code>Phi</code> and the unique variances
 <code>Psi</code>), or as a ready population correlation matrix
 <code>R</code>. With the model components, the population correlation is
-assembled as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>=</mo><mi mathvariant="normal">Λ</mi><mi mathvariant="normal">Φ</mi><msup><mi mathvariant="normal">Λ</mi><mo>′</mo></msup><mo>+</mo><mi mathvariant="normal">Ψ</mi></mrow><annotation encoding="application/x-tex">R = \Lambda \Phi \Lambda' + \Psi</annotation></semantics></math>
-and standardized; when <code>Psi</code> is left unset it is filled in
+built from the loadings and factor correlations you supplied, plus the
+unique variances (the standard factor-analysis equation,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>=</mo><mi mathvariant="normal">Λ</mi><mi mathvariant="normal">Φ</mi><msup><mi mathvariant="normal">Λ</mi><mo>′</mo></msup><mo>+</mo><mi mathvariant="normal">Ψ</mi></mrow><annotation encoding="application/x-tex">R = \Lambda \Phi \Lambda' + \Psi</annotation></semantics></math>),
+then standardized; when <code>Psi</code> is left unset it is filled in
 with the unique variances that make the population a correlation
 matrix.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -170,8 +171,10 @@ on; the achieved fit is computed with the same formulas
 <span><span class="co">#&gt; CFI: target --, achieved .936</span></span></code></pre></div>
 <p>Three methods are available through <code>model_error</code>.
 <code>"CB"</code> (Cudeck &amp; Browne, 1992; the default) matches the
-target RMSEA to numerical precision and keeps the factor model the exact
-minimizer, so the CFI follows as a derived quantity:</p>
+target RMSEA to numerical precision and keeps the factor model as the
+best-fitting solution for the data, so the fitted loadings stay exactly
+right; the CFI then comes out wherever that implies – it cannot be
+targeted directly:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>rmsea <span class="op">=</span> <span class="va">sim_me</span><span class="op">$</span><span class="va">model_error</span><span class="op">$</span><span class="va">rmsea</span>, cfi <span class="op">=</span> <span class="va">sim_me</span><span class="op">$</span><span class="va">model_error</span><span class="op">$</span><span class="va">cfi</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     rmsea       cfi </span></span>
@@ -197,10 +200,10 @@ rather than guaranteed:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_simulate.html">efa_simulate</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">500</span>, Lambda <span class="op">=</span> <span class="va">Lambda</span>, Phi <span class="op">=</span> <span class="va">Phi</span>, model_error <span class="op">=</span> <span class="st">"WB"</span>,</span>
 <span>             target_rmsea <span class="op">=</span> <span class="fl">0.05</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span><span class="op">$</span><span class="va">model_error</span><span class="op">$</span><span class="va">rmsea</span></span>
 <span><span class="co">#&gt; [1] 0.06530353</span></span></code></pre></div>
-<p>Model error needs a factor-model population (there is no specified
-model to misfit against a bare <code>R</code>) with residual degrees of
-freedom and an exact factor structure (a diagonal <code>Psi</code>); it
-is orthogonal to the marginal, ordinal, and missing-data options
+<p>Model error needs a factor-model population – there is no model to
+misfit against a bare <code>R</code> – with degrees of freedom left over
+(a saturated model has none) and a diagonal <code>Psi</code>. It can be
+freely combined with the marginal, ordinal, and missing-data options
 below.</p>
 </div>
 <div class="section level3">
@@ -223,10 +226,9 @@ skewness and (excess) kurtosis, via two methods.
 <p><code>marginals = "IG"</code> is the independent-generator method
 (Foldnes &amp; Olsson, 2016), which covers non-normal distributions the
 Vale-Maurelli family cannot. Not every (skewness, kurtosis) pair is
-attainable – every distribution needs excess kurtosis of at least
-<code>skewness^2 - 2</code>, and each method covers a smaller region
-still – so an unreachable request is rejected with an informative
-error.</p>
+mathematically possible, and each method covers only part of the
+possible region, so an unreachable request is rejected with an
+informative error.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sim_ig</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_simulate.html">efa_simulate</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">500</span>, Lambda <span class="op">=</span> <span class="va">Lambda</span>, Phi <span class="op">=</span> <span class="va">Phi</span>, marginals <span class="op">=</span> <span class="st">"IG"</span>,</span>
 <span>                       skewness <span class="op">=</span> <span class="fl">1</span>, kurtosis <span class="op">=</span> <span class="fl">2</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
@@ -277,11 +279,13 @@ target correlation. That is the guarantee you want when the downstream
 analysis will use polychoric correlations
 (<code>efa_fit(..., cor_method = "poly")</code>), because the estimated
 correlation matrix then targets the true population rather than the
-attenuated one. Because the guarantee rests on normality, the mode
-refuses to combine with the non-normal marginals above – which is the
-point of asking for it: under <code>marginals = "normal"</code> the draw
-itself is the same one <code>"thresholds"</code> makes, so what you gain
-is the check, not a different sampler.</p>
+attenuated one. Because the guarantee rests on normality, this mode
+requires <code>marginals = "normal"</code> and refuses the
+non-normal-marginal options above. The draw itself is then identical to
+what <code>match = "thresholds"</code> produces – what
+<code>"polychoric"</code> adds is the guarantee that the population
+value is exactly recovered, not a different way of generating the
+data.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sim_poly</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_simulate.html">efa_simulate</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">500</span>, Lambda <span class="op">=</span> <span class="va">Lambda</span>, Phi <span class="op">=</span> <span class="va">Phi</span>, categories <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>                         match <span class="op">=</span> <span class="st">"polychoric"</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
@@ -373,8 +377,7 @@ random-number stream untouched.</p>
 <p>The fastest power analysis needs no simulation at all.
 <code><a href="../reference/efa_power.html">efa_power()</a></code> (in its default <code>mode = "rmsea"</code>)
 implements the RMSEA power framework of MacCallum, Browne, and Sugawara
-(1996), which refers the fit statistic to a noncentral chi-square
-distribution. Two tests are available. Under the <strong>test of close
+(1996). Two tests are available. Under the <strong>test of close
 fit</strong>, the null hypothesis is that the fit is close (RMSEA ≤
 <code>eps0</code>, conventionally <code>.05</code>), and power is the
 probability of rejecting that null when the true fit is worse
@@ -421,12 +424,13 @@ by the ordering of <code>eps0</code>/<code>eps1</code>):</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Power = .876</span> at N = 200.</span></span>
 <span><span class="co">#&gt; Critical value χ²(102) = 121.042 · noncentrality H0 = 50.745, H1 = 2.030.</span></span></code></pre></div>
-<p>For a multiple-group model, <code>group</code> divides the
-noncentrality across groups. The reported <code>N</code> is the
-<em>total</em> across groups – 260 in all, 130 per group – and
-<code>N_per_group</code> carries that per-group figure. All groups have
-the same size, so a required total is rounded up to the next multiple of
-<code>group</code>:</p>
+<p>For a multiple-group model, <code>group</code> divides the sample
+size evenly across groups, so power is computed as though a fixed total
+<code>N</code> were spread thinner the more groups there are. The
+reported <code>N</code> is the <em>total</em> across groups – 260 in
+all, 130 per group – and <code>N_per_group</code> carries that per-group
+figure. All groups have the same size, so a required total is rounded up
+to the next multiple of <code>group</code>:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pw_2g</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_power.html">efa_power</a></span><span class="op">(</span>p <span class="op">=</span> <span class="fl">18</span>, k <span class="op">=</span> <span class="fl">3</span>, power <span class="op">=</span> <span class="fl">0.80</span>, group <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">pw_2g</span></span>
@@ -468,7 +472,10 @@ the replicates, reports three things: the <strong>hit-rate</strong> of
 each retention criterion (how often it recovers the true factor count),
 <strong>structure recovery</strong> (how often the fitted loadings match
 the population pattern by Tucker congruence), and the
-<strong>convergence</strong> and Heywood-case rate of the fit.</p>
+<strong>convergence</strong> and Heywood-case rate of the fit (a Heywood
+case is an impossible solution, where an item’s unique variance is
+estimated at zero or below – equivalently, its communality reaches 100%
+or more).</p>
 <p>By default the population fits the model exactly, which – as in
 <code><a href="../reference/efa_simulate.html">efa_simulate()</a></code> – is optimistic. The printed summary says
 so:</p>
@@ -530,9 +537,9 @@ fitted loadings the exact minimizer):</p>
 <p>A few things to read off the output. The hit-rate is reported per
 criterion, and per <em>variant</em> where a criterion has several (the
 minimum-average-partial test reports its squared and fourth-power
-variants, for example); its denominator is the number of replicates on
-which the criterion returned a definite count, so a criterion that
-errored or was undecided on some replicates is not silently penalised.
+variants, for example). Its denominator is the number of replicates on
+which the criterion returned a definite count. A criterion that errored
+or was undecided on some replicates is therefore not silently penalised.
 Structure recovery is available only for a factor-model population (a
 bare <code>R</code> carries no loadings to recover); a replicate counts
 as recovered when its matched-factor Tucker congruence reaches

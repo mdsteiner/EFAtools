@@ -89,10 +89,12 @@ factor analysis output to compare to x.</p></dd>
 
 <dt id="arg-reorder">reorder<a class="anchor" aria-label="anchor" href="#arg-reorder"></a></dt>
 <dd><p>character. Whether and how elements / columns should be
-reordered. If "congruence" (default), the columns of <code>y</code> are matched to those
-of <code>x</code> by an optimal one-to-one assignment that maximizes Tucker's congruence
-coefficient, so each factor is matched exactly once; with a single column this
-reduces to matching its sign. It applies to matrices only, and warns when <code>x</code>
+reordered. If "congruence" (default), the columns of <code>y</code> are matched to those of
+<code>x</code> by a joint one-to-one assignment that maximizes the total Tucker's congruence
+coefficient (a standard measure of similarity between two loading vectors) across
+all columns at once, and each matched column's sign is flipped if needed. This way,
+mismatched factor order or sign between two solutions does not distort the
+comparison. It applies to matrices only, and warns when <code>x</code>
 and <code>y</code> are vectors. If "names", the columns of a matrix – or the elements of
 a vector – are put in alphabetical order of their names; the rows of a matrix
 are assumed to be aligned already and are left untouched. If "none", no
@@ -101,19 +103,15 @@ reordering is done.</p></dd>
 
 <dt id="arg-corres">corres<a class="anchor" aria-label="anchor" href="#arg-corres"></a></dt>
 <dd><p>logical. Whether factor correspondences should be compared if a
-matrix is entered.</p></dd>
+matrix is entered. Default is TRUE.</p></dd>
 
 
 <dt id="arg-thresh">thresh<a class="anchor" aria-label="anchor" href="#arg-thresh"></a></dt>
-<dd><p>numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.</p></dd>
+<dd><p>numeric. The threshold at or above which a loading is classified as substantial. Default is .3.</p></dd>
 
 
 <dt id="arg-digits">digits<a class="anchor" aria-label="anchor" href="#arg-digits"></a></dt>
-<dd><p>numeric. Number of decimals to print in the output. Default is 4.
-Like <code>m_red</code>, <code>range_red</code>, <code>round_red</code>, and <code>print_diff</code>, it is recorded in
-<code>settings</code> but governs only the printed report, so it can be overridden per call
-in <code><a href="print.efa_compare.html">print.efa_compare()</a></code> without recomputing the comparison. <code>plot_red</code> is a
-drawing setting and is overridden the same way in <code><a href="plot.efa_compare.html">plot.efa_compare()</a></code>.</p></dd>
+<dd><p>numeric. Number of decimals to print in the output. Default is 4.</p></dd>
 
 
 <dt id="arg-m-red">m_red<a class="anchor" aria-label="anchor" href="#arg-m-red"></a></dt>
@@ -125,16 +123,16 @@ in red (i.e., if .001 is used, the mean will be in red if it is larger than
 <dt id="arg-range-red">range_red<a class="anchor" aria-label="anchor" href="#arg-range-red"></a></dt>
 <dd><p>numeric. Number above which the min and max should be printed
 in red (i.e., if .001 is used, min and max will be in red if the max is larger
-than .001, otherwise it will be displayed in green. Default is .001). Note that
+than .001, otherwise it will be displayed in green). Default is .001. Note that
 the color of min also depends on max, that is min will be displayed in the
 same color as max.</p></dd>
 
 
 <dt id="arg-round-red">round_red<a class="anchor" aria-label="anchor" href="#arg-round-red"></a></dt>
-<dd><p>numeric. Number above which the max decimals to round to where
-all corresponding elements of x and y are still equal are displayed in red
-(i.e., if 3 is used, the number will be in red if it is smaller than
-3, otherwise it will be displayed in green). Default is 3.</p></dd>
+<dd><p>numeric. The number of agreeing decimals below which the
+report highlights the agreement in red (i.e., if 3 is used, the value is
+shown in red when the compared numbers agree to fewer than 3 decimals,
+otherwise in green). Default is 3.</p></dd>
 
 
 <dt id="arg-print-diff">print_diff<a class="anchor" aria-label="anchor" href="#arg-print-diff"></a></dt>
@@ -169,8 +167,7 @@ in red. Default is .01.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list of class <code>efa_compare</code> containing summary statistics on the
-differences of x and y.</p>
+    <p>A list of class <code>efa_compare</code> with the following components:</p>
 <dl><dt>diff</dt>
 <dd><p>The vector or matrix containing the differences between x and y.</p></dd>
 
@@ -219,6 +216,14 @@ conditions as <code>diff_corres</code>.</p></dd>
 <dd><p>List of the settings used.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><code>digits</code>, <code>m_red</code>, <code>range_red</code>, <code>round_red</code>, <code>print_diff</code>, and <code>plot_red</code>
+only control how the result is displayed; each is stored in the returned object's
+<code>settings</code> and can be overridden later without recomputing the comparison –
+<code>digits</code>, <code>m_red</code>, <code>range_red</code>, <code>round_red</code>, and <code>print_diff</code> in a call to
+<code><a href="print.efa_compare.html">print.efa_compare()</a></code>, and <code>plot_red</code> in a call to <code><a href="plot.efa_compare.html">plot.efa_compare()</a></code>.</p>
+    </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="efa_fit.html">efa_fit()</a></code> for the solutions being compared, and <code><a href="efa_procrustes.html">efa_procrustes()</a></code> to rotate

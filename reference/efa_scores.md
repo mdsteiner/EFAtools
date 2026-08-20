@@ -1,11 +1,10 @@
 # Estimate factor scores and score-quality diagnostics for an EFA model
 
-Computes factor-score weights (and, from raw data, the factor scores
-themselves) natively for an
+Computes factor-score weights, and (from raw data) the factor scores
+themselves, for an
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-solution or a directly supplied loading matrix, together with the
-score-quality diagnostics that describe how well the estimated scores
-represent the factors: the score intercorrelations, the determinacy
+solution or a directly supplied loading matrix. It also returns
+score-quality diagnostics: the score intercorrelations, the determinacy
 (validity) and univocality of each score, and Guttman's indeterminacy
 index. Factor scores are returned only when raw data are supplied; a
 correlation matrix yields the weights and diagnostics alone.
@@ -51,19 +50,19 @@ Grice, J. W. (2001). Computing and evaluating factor scores.
 - x:
 
   data.frame or matrix. Raw data (needed to obtain factor scores) or a
-  correlation matrix (yields weights and diagnostics only). A
-  correlation matrix gives the correlations the weights are derived from
-  only where `f` is a loading matrix. An
+  correlation matrix (yields weights and diagnostics only). When `f` is
+  a directly supplied loading matrix, a correlation-matrix `x` also
+  supplies the correlations the weights are derived from; when `f` is an
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  object carries the correlations it was fitted on, and those are used
-  instead, so supply `rho` to derive the weights from another matrix.
-  `x` describes the model variables either way. When raw data carry
-  column names, they are matched to the model variables by name (any
-  extra columns are ignored, and a model variable missing from `x` is an
-  error). A named correlation matrix is likewise matched to the loading
-  rows by name; its row and column names must use the same order, and it
-  must carry one row and column for each model variable. Unnamed input
-  is matched by position.
+  object, its own fitted correlations are used instead (supply `rho` to
+  derive the weights from another matrix). `x` describes the model
+  variables either way. When raw data carry column names, they are
+  matched to the model variables by name (any extra columns are ignored,
+  and a model variable missing from `x` is an error). A named
+  correlation matrix is likewise matched to the loading rows by name;
+  its row and column names must use the same order, and it must carry
+  one row and column for each model variable. Unnamed input is matched
+  by position.
 
   Raw data are scored as supplied: no imputation is performed, so a case
   with a missing value on any model variable receives `NA` scores (and
@@ -118,10 +117,8 @@ An object of class `efa_scores`, a list containing:
 
 - r.scores:
 
-  The `m` by `m` correlations of the factor-score estimates. Like
-  `score_cor` and `determinacy`, these describe the standardized
-  combination `scale(x) %*% W`, which for `method = "components"` is not
-  the scale the returned `scores` are on.
+  The `m` by `m` correlations of the factor-score estimates (see Details
+  for the `"components"`-method scale caveat).
 
 - score_cor:
 
@@ -142,50 +139,48 @@ An object of class `efa_scores`, a list containing:
 
 ## Details
 
-The `p` by `m` weight matrix `W` (standardized scores are
-`scale(X) %*% W`) is computed from the structure matrix
-`S = Lambda %*% Phi`, the model uniquenesses `Psi = diag(1 - h2)`, and
-the scoring correlation matrix `R` according to `method`:
+Each method combines the loadings with some or all of the factor
+correlations and the scoring correlation matrix into weights in a
+different way:
 
 - `"regression"`:
 
-  Thurstone's (1935) regression scores, `W = R^-1 S`.
+  Thurstone's (1935) regression scores.
 
 - `"Bartlett"`:
 
-  Bartlett's (1937) conditionally unbiased scores.
+  Bartlett's (1937) scores.
 
 - `"Anderson"`:
 
-  Anderson & Rubin's (1956) uncorrelated, unit-variance scores; defined
-  for orthogonal factors only.
+  Anderson & Rubin's (1956) scores.
 
 - `"tenBerge"`:
 
-  ten Berge, Krijnen, Wansbeek & Shapiro's (1999) scores, which preserve
-  the factor intercorrelations.
+  ten Berge, Krijnen, Wansbeek & Shapiro's (1999) scores.
 
 - `"Harman"`:
 
-  Harman's (1976) idealized-variable scores.
+  Harman's (1976) scores, based on an idealized variable (a hypothetical
+  variable that would correlate perfectly with the factor).
 
 - `"components"`:
 
-  component scores, `W = Lambda`. These are formed from the raw,
-  uncentered data (`X %*% W`) rather than the standardized data, so
-  unlike the other methods they are on the scale of the input variables.
-  The diagnostics below describe the standardized combination
-  `scale(X) %*% W`, and therefore differ from the realized correlations
-  of the returned scores whenever the variables have unequal variances.
+  Component scores. These are formed from the raw, uncentered data
+  (`X %*% W`) rather than the standardized data, so unlike the other
+  methods they are on the scale of the input variables. The diagnostics
+  below describe the standardized combination `scale(X) %*% W`, and
+  therefore differ from the realized correlations of the returned scores
+  whenever the variables have unequal variances.
 
 The determinacy (validity) of a score is its correlation with the factor
 it estimates, computed from the returned weights; for regression scores
 it is the multiple correlation between the factor and the observed
 variables (Guttman, 1955; Grice, 2001). The off-diagonal score-factor
 correlations give the univocality (the correlation of a score with the
-*other* factors), and `2 rho^2 - 1` is Guttman's (1955) indeterminacy
-index, the minimum correlation between two equally valid sets of scores.
-For a `method` other than `"regression"` both quantities are specific to
+*other* factors). Guttman's (1955) indeterminacy index, `2 rho^2 - 1`,
+is the minimum correlation between two equally valid sets of scores. For
+a `method` other than `"regression"` both quantities are specific to
 those scores: the determinacy is the method's own score-factor
 correlation (never larger than the regression value), and the reported
 `guttman` follows from it.

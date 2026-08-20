@@ -145,8 +145,8 @@ closes with a set of recommendations.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Determinant: 0.00000634. It falls as variables are added, so the condition</span></span>
 <span><span class="co">#&gt; index below carries the verdict.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition number: 46.561 (condition index 6.824). No concern (index below 10;</span></span>
-<span><span class="co">#&gt; Belsley, Kuh &amp; Welsch, 1980).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition number: 46.561 (condition index 6.824). An index of 10 or less is</span></span>
+<span><span class="co">#&gt; rarely of interest (Belsley, 1991).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Per-variable diagnostics</span> ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -215,29 +215,28 @@ closes with a set of recommendations.</p>
 <span><span class="co">#&gt;   consider collapsing it into an adjacent category.</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 60 observations were flagged as potential multivariate outliers; inspect them</span></span>
 <span><span class="co">#&gt;   (see `$outliers$flagged`) before down-weighting or excluding.</span></span></code></pre></div>
-<p>The overall KMO is meritorious and Bartlett’s test is clearly
+<p>KMO measures, on a 0-1 scale, how well each variable is predicted by
+the others, and Bartlett’s test checks that the correlations are not all
+zero. The overall KMO is meritorious and Bartlett’s test is clearly
 significant, so the data are factorable. The determinant looks small,
 but it is a product of 30 eigenvalues and falls as variables are added;
 the condition index (6.8) is the measure that does not move with the
-number of variables, and it shows no multicollinearity. More interesting
-are the last few sections: three items have a sparse response category,
-and both the Mardia and the Henze-Zirkler tests reject multivariate
-normality. A consequence is that normal-theory standard errors and fit
-indices may be biased, so robust (sandwich) or bootstrapped standard
-errors are preferable, and Bartlett’s test should be read with caution.
-For a fully ordinal treatment you would move to polychoric correlations
-with a categorical least-squares estimator.</p>
+number of variables, and it is well below the value of 30 that flags a
+near linear dependency. More interesting are the last few sections:
+three items have a sparse response category, and both the Mardia and the
+Henze-Zirkler tests reject multivariate normality. A consequence is that
+normal-theory standard errors and fit indices may be biased, so robust
+(sandwich) or bootstrapped standard errors are preferable, and
+Bartlett’s test should be read with caution. For a fully ordinal
+treatment you would move to polychoric correlations with a diagonally
+weighted least-squares (DWLS) estimator.</p>
 <p>The outlier section reports something other than the usual case, and
 it says so. The diagnostic normally measures each case against a
-high-breakdown location and scatter. It estimates those from a minimum
-covariance determinant (MCD) subset, which here must cover 265 of the
-500 cases. For these data no usable subset of that size exists. The
-DOSPERT items have seven categories, and 318 respondents give the lowest
-answer on <code>ethR_2</code>. That is more than the subset needs, so
-the search can fill it from those respondents alone. The item is then
-constant inside the subset, and the covariance of the subset is singular
-(an <em>exact fit</em>). Ten of the 30 items are degenerate in this
-way.</p>
+high-breakdown location and scatter, estimated from a minimum covariance
+determinant (MCD) subset found by a randomized search. For these data
+the search keeps landing on a subset where one item is constant (several
+DOSPERT items have a very common lowest response), so the covariance is
+singular and no valid subset exists.</p>
 <p><code><a href="../reference/efa_screen.html">efa_screen()</a></code> falls back to classical Mahalanobis
 distances. It names the reason and labels the distances it reports. A
 classical covariance uses every observation, outliers included, so the
@@ -252,11 +251,9 @@ when the robust estimate is available, as in the ordinal example in the
 data</a> vignette. Inspect the flagged cases (via
 <code>$outliers$flagged</code>) rather than deleting them
 automatically.</p>
-<p>If you only want the two classic factorability tests, they are also
-available on their own. Bartlett’s test of sphericity checks whether the
-correlation matrix differs from an identity matrix (it should be
-significant), and the KMO criterion summarises how strongly each
-variable is predicted by the others:</p>
+<p>Bartlett’s test and the KMO criterion, introduced above, are also
+available as standalone functions if you only want the two classic
+factorability tests:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Bartlett's test of sphericity</span></span>
 <span><span class="fu"><a href="../reference/efa_bartlett.html">efa_bartlett</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span><span class="op">)</span></span>
@@ -413,21 +410,18 @@ criterion that has one:</p>
 <p>Omitting <code>criteria</code> does not run every criterion listed
 above. The default is a subset of six: comparison data, the empirical
 Kaiser criterion, the hull method, the minimum average partial test, the
-next eigenvalue sufficiency test, and parallel analysis. The
-Kaiser-Guttman criterion, the scree test, and the sequential model tests
-are outside that subset, and <code>criteria =</code> is how you ask for
-them. The call above therefore differs from the default in both
-directions. It adds the Kaiser-Guttman criterion and the sequential
-model tests, and it drops comparison data, the hull method, and the next
-eigenvalue sufficiency test. We leave comparison data out because it is
-computationally expensive and can be slow on larger data sets.</p>
+next eigenvalue sufficiency test, and parallel analysis. The call above
+instead adds the Kaiser-Guttman criterion and the sequential model
+tests, and drops comparison data (slow on larger data sets), the hull
+method, and the next eigenvalue sufficiency test.</p>
 <p>This is the situation one would rather avoid, but it does happen: the
 criteria disagree, with suggestions ranging from four to well above ten
 factors. When there is no clear convergence, the choice becomes partly a
 matter of judgement. We proceed with six factors, consistent with the
 minimum average partial test and the RMSEA-based sequential model test
-above (note that this DOSPERT version assumes 5 factors, 6 factors
-splits the financial risk items into two factors).</p>
+above (this version of the DOSPERT scale is usually modeled with five
+factors; the sixth factor here splits the financial-risk items into
+two).</p>
 <p>All criteria except comparison data (which needs raw data) can also
 be applied to a correlation matrix, in which case the sample size must
 be supplied. On a cleaner data set the criteria often agree:</p>
@@ -474,10 +468,11 @@ MINRES); diagonally weighted least squares (DWLS) is additionally
 available for ordinal data analysed with polychoric or tetrachoric
 correlations (see the <a href="Ordinal_and_missing_data.html">EFA with
 ordinal and missing data</a> vignette). For rotation the package offers
-varimax and promax as well as a range of further rotations: quartimax
-and equamax are orthogonal; oblimin, quartimin, and simplimax are
-oblique; and geomin, bentler, and bifactor come in both an orthogonal
-form (<code>geominT</code>, <code>bentlerT</code>,
+varimax and promax as well as a range of further rotations (orthogonal
+rotations keep the factors uncorrelated, oblique ones let them
+correlate): quartimax and equamax are orthogonal; oblimin, quartimin,
+and simplimax are oblique; and geomin, bentler, and bifactor come in
+both an orthogonal form (<code>geominT</code>, <code>bentlerT</code>,
 <code>bifactorT</code>) and an oblique one (<code>geominQ</code>,
 <code>bentlerQ</code>, <code>bifactorQ</code>). The suffix is part of
 the name: <code>geomin</code> on its own matches both forms and is
@@ -954,9 +949,9 @@ ULS, and ML with a promax rotation:</p>
 <span><span class="co">#&gt; SRMR: .03 (.00) [.03; .03]</span></span></code></pre></div>
 <p>Left unrestricted, the defaults sweep the different implementations
 of principal axis factoring and promax rotation instead, which is
-considerably more work; see <code><a href="../reference/efa_average.html">?efa_average</a></code> for the settings
-that can be varied and for <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>, which shows the minimum,
-maximum, and average loading of every indicator.</p>
+considerably more work. See <code><a href="../reference/efa_average.html">?efa_average</a></code> for the settings
+that can be varied, and for <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>, which shows the
+minimum, maximum, and average loading of every indicator.</p>
 </div>
 <div class="section level2">
 <h2 id="factor-scores-with-efa_scores">Factor Scores with <code>efa_scores()</code><a class="anchor" aria-label="anchor" href="#factor-scores-with-efa_scores"></a>
@@ -1200,25 +1195,22 @@ a theoretical assignment — pass a <code>factor_map</code> matrix:</p>
 factors <strong>by position</strong>, so the assignment has to be read
 off the solution rather than assumed: a column naming the wrong set of
 items yields a well-formed but meaningless subscale omega instead of an
-error. Comparing the two tables, the health row (F4) moves clearly:
-three of the six health items load higher on the ethical factor than on
-the health one, so pinning all six to F4 roughly halves the variance its
-own group factor accounts for. Its omega total falls less, because those
-three items still bring in the true score variance they receive from the
-ethical factor — omega subscale counts a factor’s own contribution,
-omega total everything the composite receives.</p>
+error. Comparing the two tables, the health row (F4) drops more in omega
+subscale than in omega total, because three of its six items actually
+load higher on the ethical factor and still contribute their true-score
+variance to the total through that factor.</p>
 <p>Which coefficient to report depends on the question being asked.
-Omega hierarchical asks whether a total score can be read as a measure
-of a single construct; omega subscale asks whether a subscale score
-carries anything beyond the general factor; the H index asks whether a
-factor is well defined by its indicators; and ECV together with PUC ask
-whether a unidimensional model would be defensible at all. Alpha is
-reported alongside them because it is still widely expected, but it
-assumes essentially tau-equivalent items — equal true-score
-contributions — whereas factor analysis yields congeneric solutions, for
-which alpha is only a lower bound. For a multidimensional scale such as
-the DOSPERT it is therefore rarely the coefficient to report, and the
-omegas answer the question alpha is usually asked to answer. See
+Omega hierarchical asks whether a total score measures a single
+construct. Omega subscale asks whether a subscale carries anything
+beyond the general factor. The H index asks whether a factor is well
+defined by its indicators. ECV and PUC together ask whether a
+unidimensional model would be defensible at all. Alpha is reported
+alongside them because it is still widely expected, but it assumes
+essentially tau-equivalent items — equal true-score contributions —
+whereas factor analysis yields congeneric solutions, for which alpha is
+only a lower bound. For a multidimensional scale such as the DOSPERT it
+is therefore rarely the coefficient to report, and the omegas answer the
+question alpha is usually asked to answer. See
 <code><a href="../reference/efa_reliability.html">?efa_reliability</a></code> for the definition of each coefficient and
 the references behind it.</p>
 </div>

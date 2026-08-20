@@ -3,8 +3,8 @@
 Plots every factor-retention criterion in the
 [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
 result that has a plottable outcome (see
-[`plot.efa_retention()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_retention.md));
-criteria without a plot (e.g.
+[`plot.efa_retention()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_retention.md)).
+Criteria without a plot (e.g.
 [`efa_map()`](https://mdsteiner.github.io/EFAtools/reference/efa_map.md)
 or
 [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md))

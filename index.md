@@ -33,12 +33,11 @@ The `efa_*` functions cover the steps of an EFA workflow:
 - **Screening and suitability**:
   [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
   checks the data for multivariate normality, outliers, and suitability
-  for factor analysis.
+  for factor analysis. Kaiser-Meyer-Olkin criterion and Bartlett’s test
+  of sphericity can also be run separately with
   [`efa_kmo()`](https://mdsteiner.github.io/EFAtools/reference/efa_kmo.md)
   and
-  [`efa_bartlett()`](https://mdsteiner.github.io/EFAtools/reference/efa_bartlett.md)
-  run the Kaiser-Meyer-Olkin criterion and Bartlett’s test of sphericity
-  separately.
+  [`efa_bartlett()`](https://mdsteiner.github.io/EFAtools/reference/efa_bartlett.md).
 - **Factor retention**:
   [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
   runs several factor retention criteria with a single call. They are
@@ -60,7 +59,7 @@ The `efa_*` functions cover the steps of an EFA workflow:
   and
   [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
   configure the estimation and rotation settings.
-- **Rotation and transformation**:
+- **Special rotation and transformation**:
   [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)
   rotates a solution onto a target.
   [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
@@ -92,7 +91,7 @@ The `efa_*` functions cover the steps of an EFA workflow:
   [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
   performs analytic and simulation-based power analysis.
 
-The uppercase names
+The uppercase names of the older package versions
 ([`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md),
 [`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md),
 …) still work and keep their arguments. Use the `efa_*` names for new
@@ -244,10 +243,10 @@ resamples. For the loadings and factor correlations, the intervals are
 centred on the point estimate. For the indices derived from the
 chi-square (RMSEA, AIC, BIC, ECVI), the intervals are located above the
 point estimate, because each resample carries the sample’s own misfit
-plus fresh sampling noise. If a point estimate falls below its own lower
-bound, this shift is the reason, not a miscomputed interval. CFI and TLI
-are unaffected because they are ratios: their baseline chi-square shifts
-together with the model chi-square.
+plus fresh sampling noise. So a point estimate can fall below its own
+lower bound in some cases. CFI and TLI are unaffected because they are
+ratios: their baseline chi-square shifts together with the model
+chi-square.
 
 ``` r
 

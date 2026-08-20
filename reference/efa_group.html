@@ -128,12 +128,12 @@ single value in <code>(0, 1)</code>. Default is <code>0.95</code>.</p></dd>
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>numeric or <code>NULL</code>. An optional seed making the analysis reproducible. It
-covers the per-group fits – whose rotation may draw random starts – whether or not
-a bootstrap is run, and additionally makes the bootstrap independent of the number of
-parallel workers (the replicate fits run with
-<a href="https://future.apply.futureverse.org/reference/future_lapply.html" class="external-link">future_lapply()</a>, for which a parallel plan can be
-set via <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>). When supplied, the caller's random-number stream is
-restored afterwards, leaving no side effect. Default is <code>NULL</code>.</p></dd>
+covers the per-group fits, some of whose rotations draw random starts, whether or not a
+bootstrap is run. With a bootstrap, it also makes the result independent of how many
+parallel workers are used (bootstrap replicates run with
+<a href="https://future.apply.futureverse.org/reference/future_lapply.html" class="external-link">future_lapply()</a>, configurable via <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>). The
+caller's random-number stream is restored afterwards, leaving no side effect. Default is
+<code>NULL</code>.</p></dd>
 
 
 <dt id="arg-delta">delta<a class="anchor" aria-label="anchor" href="#arg-delta"></a></dt>
@@ -169,11 +169,9 @@ example <code>estimator</code>, <code>rotation</code>, or <code>cor_method</code
 declared formals: pass them as <code>estimate_control =</code> / <code>rotate_control =</code> exactly
 as you would to <code><a href="efa_fit.html">efa_fit()</a></code>. A name that is neither an <code><a href="efa_fit.html">efa_fit()</a></code> argument nor a
 rotation-engine extra is rejected.</p>
-<p>A rotation-engine extra that has the same name as an <code>efa_group()</code> argument cannot
-reach the rotation through <code>...</code>, because the argument takes the name first. This
-applies to the geomin criterion parameter <code>delta</code>: pass it as
-<code>rotate_control(delta = ...)</code>, which reaches both the per-group fits and the shared
-alignment frame.</p></dd>
+<p>A rotation-engine extra that shares a name with an <code>efa_group()</code> argument cannot reach
+the rotation through <code>...</code>, because the argument takes the name first (for example
+geomin's <code>delta</code>; see <code>delta</code> above).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -241,11 +239,10 @@ diagnostics, e.g. <code>heywood</code>).</p></dd>
 <dt>alignment</dt>
 <dd><p>The alignment result: the consensus object (see
 <code><a href="efa_procrustes.html">efa_procrustes()</a></code>), or a list with the reference group, the target, and the
-per-group Procrustes results. On the consensus path this is the raw record of
-the Generalized Procrustes iteration, so its <code>target</code> and <code>aligned_loadings</code>
-are in the orientation that iteration converged to, before the gauge described
-under <em>Alignment</em> is applied; the gauged matrices are <code>target</code> and <code>loadings</code>
-above.</p></dd>
+per-group Procrustes results. On the consensus path, this is the raw Procrustes
+iteration output: its <code>target</code>/<code>aligned_loadings</code> are in a different (pre-gauge)
+orientation than the gauged <code>target</code>/<code>loadings</code> returned above. Use <code>target</code>/<code>loadings</code>
+above for comparisons.</p></dd>
 
 <dt>settings</dt>
 <dd><p>A list of the settings used, including the per-group <code>N</code>, the
@@ -270,16 +267,15 @@ per-group data sets in <code>x</code> (with <code>groups</code> left <code>NULL<
 data frames or correlation matrices (supply <code>N</code>), but not a mix of the two.
 All groups must contain the same items in the same order; a different item set
 or order is an error rather than being silently reordered.</p>
-<p>Every group is fitted at the same <code>n_factors</code> (a common-\(k\) multigroup
-model). Extra arguments in <code>...</code> (for example <code>estimator</code>, <code>rotation</code>, <code>cor_method</code>, or an
-<code><a href="estimate_control.html">estimate_control()</a></code> / <code><a href="estimate_control.html">rotate_control()</a></code> carrying the tuning knobs) are forwarded
-unchanged to each <code><a href="efa_fit.html">efa_fit()</a></code> call, so the estimator and rotation are common to all
-groups.</p>
-<p>The \(k\)-factor model must be identified for the shared item set: its
-degrees of freedom \(((p - k)^2 - (p + k)) / 2\) must be non-negative. Unlike
-a single <code><a href="efa_fit.html">efa_fit()</a></code> fit – which only warns on an under-identified model – a
-multigroup fit aborts, because a shared alignment target across an
-under-identified group is not interpretable.</p>
+<p>Every group is fitted at the same <code>n_factors</code>. Extra arguments in <code>...</code> (for example
+<code>estimator</code>, <code>rotation</code>, <code>cor_method</code>, or an <code><a href="estimate_control.html">estimate_control()</a></code> / <code><a href="estimate_control.html">rotate_control()</a></code>
+carrying the tuning knobs) are forwarded unchanged to each <code><a href="efa_fit.html">efa_fit()</a></code> call, so the
+estimator and rotation are common to all groups.</p>
+<p>The requested number of factors must be small enough, relative to the number of items,
+for the <code>n_factors</code>-factor model to be identified for the shared item set. Unlike a single
+<code><a href="efa_fit.html">efa_fit()</a></code> fit – which only warns on an under-identified model – a multigroup fit aborts
+when this fails, because a shared alignment target across an under-identified group is not
+interpretable.</p>
 </div>
 
 <div class="section">
@@ -290,22 +286,18 @@ under-identified group is not interpretable.</p>
 per-group solutions must be brought into a common orientation before their
 loadings can be compared. Two strategies are available and are chosen
 automatically:</p><ul><li><p><strong>Consensus</strong> (the default for orthogonal rotations and for unrotated
-solutions): a symmetric Generalized Procrustes Analysis target is built
-across all groups (Gower, 1975), and every group's loadings are rotated to
-it. The consensus frame is only identified up to a global rotation of its
-factors, so it is then rotated into a fixed gauge and the same transform is
-applied to every group. The gauge is the simple structure of the rotation
-that was requested, evaluated on the consensus target itself, so the shared
-loadings are in the same kind of frame as the per-group solutions they
-summarise. Where no criterion identifies a frame – an unrotated solution,
-and a <code>"bifactorT"</code> request with two factors, whose criterion is identically
-zero with a single group factor – the principal-axes orientation of the
-target is used instead. Either way the columns are ordered by decreasing sum
-of squares and signed by their column sums, and the shared orientation, and
-hence every reported congruence, difference, and flag, does not depend on the
-order in which the groups are supplied – up to the convergence tolerance of
-the consensus iteration, which is set tight enough that the residual is
-several orders of magnitude below the precision the loadings are reported to.</p></li>
+solutions): a symmetric target is built across all groups using Generalized Procrustes
+Analysis (Gower, 1975), and every group's loadings are rotated to it. Because this
+target's own orientation is arbitrary, it is then rotated once more into a fixed
+convention (called the gauge), and the same transform is applied to every group. The
+gauge uses the same simple-structure criterion as the requested rotation, applied to the
+target itself, so the shared loadings are in the same kind of frame as the per-group
+solutions they summarise. Where no rotation criterion identifies a unique frame (an
+unrotated solution, or a two-factor <code>bifactorT</code> request), the target's principal-axes
+orientation is used instead. Either way the columns are ordered by decreasing sum of
+squares and signed by their column sums, and the shared orientation – and hence every
+reported congruence, difference, and flag – does not depend on the order the groups are
+supplied, to well beyond the precision loadings are reported at.</p></li>
 <li><p><strong>Reference</strong>: every group's loadings are aligned by Procrustes rotation to
 one reference group's loadings, which are kept fixed. This path is used when
 <code>reference_group</code> is given, and is used automatically for oblique rotations
@@ -323,14 +315,11 @@ of the returned <code>target</code>.</p>
 
 <p>Because the per-group loadings share one orientation, they can be compared cell by cell.
 <code>efa_group()</code> reports a per-pair summary of their differences (<code>diffs</code>) and a per-item,
-per-factor flag table (<code>flags</code>) marking cells whose absolute difference reaches <code>delta</code>.
-<code>delta</code> is a <em>descriptive salience heuristic</em>, not a significance test; a bootstrap
-(<code>b_boot &gt; 0</code>) additionally reports whether each difference's confidence interval excludes
-zero. With <code>invariance = TRUE</code>, a per-factor verdict grades the matched Tucker congruence
-by the Lorenzo-Seva and ten Berge (2006) similarity bands – "equal" (<code>&gt;= .95</code>) and "fair"
-(<code>[.85, .95)</code>) – labelling weaker congruences "incongruent"; when a bootstrap is available
-the verdict uses the congruence CI lower bound, so a factor is judged "equal" only if even
-the lower bound clears the band.</p>
+per-factor flag table (<code>flags</code>) marking cells whose absolute difference reaches <code>delta</code>; a
+bootstrap (<code>b_boot &gt; 0</code>) additionally reports, for every cell, whether its difference's
+confidence interval excludes zero. With <code>invariance = TRUE</code>, each factor and group pair also gets an
+approximate-invariance verdict based on the matched Tucker congruence (see <em>Value</em> for the
+similarity bands and how a bootstrap is used).</p>
 </div>
 
     </div>

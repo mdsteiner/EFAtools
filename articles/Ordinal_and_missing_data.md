@@ -41,8 +41,7 @@ We draw 400 responses on a four-category scale. Because the latent data
 are normal, cutting them at the standard-normal category thresholds
 already leaves the population *polychoric* correlation of the
 discretised data equal to the target correlation; `match = "polychoric"`
-records that this is what we are after, and would reject the request had
-we asked for non-normal marginals.
+records that this is what we are after.
 
 ``` r
 
@@ -82,8 +81,8 @@ efa_screen(d_ord, seed = 42)
 #> 
 #> ℹ Determinant: 0.0357. It falls as variables are added, so the condition index
 #> below carries the verdict.
-#> ✔ Condition number: 7.919 (condition index 2.814). No concern (index below 10;
-#> Belsley, Kuh & Welsch, 1980).
+#> ✔ Condition number: 7.919 (condition index 2.814). An index of 10 or less is
+#> rarely of interest (Belsley, 1991).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
@@ -135,22 +134,22 @@ The sampling adequacy (KMO) and sphericity checks confirm the data are
 factorable. The telling parts are the multivariate-normality section and
 the recommendations: Mardia’s kurtosis and the Henze-Zirkler test reject
 normality, and the recommendations flag that every item has fewer than
-five response categories. Together these spell out the consequence —
-with few categories and non-normal data, a polychoric correlation with a
+five response categories. Together, these point to the same conclusion.
+With few categories and non-normal data, a polychoric correlation with a
 categorical estimator such as DWLS is less biased than normal-theory
-maximum likelihood, and the normal-theory standard errors and fit
-indices are better replaced by robust (sandwich) versions.
+maximum likelihood. The normal-theory standard errors and fit indices
+are also better replaced by robust (sandwich) versions.
 
 ### Polychoric Correlations, DWLS, and Robust Standard Errors
 
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
 computes the polychoric correlation when `cor_method = "poly"` and fits
 it with diagonally weighted least squares when `estimator = "DWLS"` —
-the estimator recommended for ordinal data, which weights each
-correlation residual by the inverse asymptotic variance of the
-corresponding polychoric correlation. Requesting `se = "sandwich"` adds
-robust standard errors and a scaled (Satorra-Bentler) chi-square that
-stay valid under the non-normality these data show.
+the estimator recommended for ordinal data because it accounts for how
+precisely each polychoric correlation is estimated. Requesting
+`se = "sandwich"` adds robust standard errors and a scaled
+(Satorra-Bentler) chi-square that stay valid under the non-normality
+these data show.
 
 ``` r
 
@@ -326,10 +325,8 @@ normal latent variable underlies each item, and it needs an adequate
 sample size and reasonably populated response-category combinations.
 When categories are very sparse (rare responses, small samples), the
 polychoric asymptotic covariance behind the DWLS weights and the robust
-standard errors becomes unreliable —
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-warns when empty category combinations are present — and collapsing rare
-categories can help.
+standard errors becomes unreliable, and collapsing rare categories can
+help.
 
 ## Missing Data
 
@@ -343,19 +340,18 @@ likelihood, and a multiple-imputation route via
 
 We simulate 250 continuous cases with about 15% of values missing at
 random, where each item’s missingness depends on another item’s value.
-By default
+By default,
 [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
-holes every column, so each item’s MAR predictor would itself be partly
-missing: the mechanism is then MAR given the *complete* data, but not
-ignorable for an analyst who sees only the observed data, and estimators
-that are consistent under ignorable MAR keep a residual bias — a
-property of the generator rather than of the estimators, growing with
-`missing_prop` and `missing_strength`.
+would make each item’s missingness depend on another item that is itself
+partly missing — a kind of missingness the two routes below are not
+designed for. Rather than failing outright, they run with a residual
+bias that grows as `missing_prop` and `missing_strength` increase.
 
-`missing_vars` avoids that. Here the first nine items carry the missing
-values and each is driven by one of the last nine, which stay complete.
-Every predictor is therefore fully observed, which is ignorably MAR —
-exactly the assumption the two routes below rely on.
+`missing_vars` and `missing_predictor` avoid that. Here the first nine
+items carry the missing values and each is driven by one of the last
+nine, which stay complete. Every predictor is therefore fully observed,
+satisfying the *ignorable* MAR assumption the two routes below rely on –
+not just MAR, but MAR with no incomplete predictor left unaccounted for.
 
 ``` r
 
@@ -477,9 +473,9 @@ proportion of missing values, or with near-collinear items —
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
 warns and keeps the plain two-stage likelihood-ratio statistic instead
 of discarding the test. Such a fit is never presented as corrected: the
-printed chi-square line is labelled **uncorrected**, the object carries
-`fit_indices$chi_scaled_type == "uncorrected.lrt"`, and the accompanying
-*p*-value, CFI, TLI, and RMSEA should be read as indicative only.
+printed chi-square line is labelled **uncorrected**, and the
+accompanying *p*-value, CFI, TLI, and RMSEA should be read as indicative
+only.
 
 ### Multiple Imputation with `efa_mi()`
 
@@ -585,19 +581,18 @@ efa_pooled
 
 The pooled loadings recover the three factors. Point estimates are
 averaged across the imputations after alignment. The model chi-square,
-and the AIC/BIC derived from it, are pooled with the D2 rule — which is
-why the printout labels the pooled chi-square as a D2 statistic with its
-own reference distribution. RMSEA is pooled by the same rule, but from
-the discrepancies on the uncorrected N - 1 scale on which it is defined,
-so it does not reconcile by hand with the printed chi-square. The
-incremental CFI and TLI are instead averaged across the per-imputation
-fits. Requesting standard errors in the call (for example
-`se = "information"` or `se = "np-boot"`) additionally pools them with
-Rubin’s rules, so the between-imputation variability inflates the pooled
-standard errors. Because multiple imputation propagates the extra
-uncertainty from the missing data, its pooled fit statistics are not
-directly comparable with the single FIML fit above; read them together
-with the per-imputation fits stored in the returned object.
+and the AIC/BIC derived from it, are pooled with the same rule as RMSEA,
+but applied to a different discrepancy scale — which is why the printout
+labels the pooled chi-square **D2-pooled**, and why you should not
+expect it to reconcile by hand with the pooled RMSEA. The incremental
+CFI and TLI are instead averaged across the per-imputation fits.
+Requesting standard errors in the call (for example `se = "information"`
+or `se = "np-boot"`) additionally pools them with Rubin’s rules, so the
+between-imputation variability inflates the pooled standard errors.
+Because multiple imputation propagates the extra uncertainty from the
+missing data, its pooled fit statistics are not directly comparable with
+the single FIML fit above; read them together with the per-imputation
+fits stored in the returned object.
 
 Which route to prefer is largely practical. FIML is a single, efficient
 fit and is the simpler default when the analysis model is the whole

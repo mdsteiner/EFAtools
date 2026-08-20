@@ -82,13 +82,13 @@
 <p>The <code>efa_*</code> functions cover the steps of an EFA workflow:</p>
 <ul>
 <li>
-<strong>Screening and suitability</strong>: <code><a href="reference/efa_screen.html">efa_screen()</a></code> checks the data for multivariate normality, outliers, and suitability for factor analysis. <code><a href="reference/efa_kmo.html">efa_kmo()</a></code> and <code><a href="reference/efa_bartlett.html">efa_bartlett()</a></code> run the Kaiser-Meyer-Olkin criterion and Bartlett’s test of sphericity separately.</li>
+<strong>Screening and suitability</strong>: <code><a href="reference/efa_screen.html">efa_screen()</a></code> checks the data for multivariate normality, outliers, and suitability for factor analysis. Kaiser-Meyer-Olkin criterion and Bartlett’s test of sphericity can also be run separately with <code><a href="reference/efa_kmo.html">efa_kmo()</a></code> and <code><a href="reference/efa_bartlett.html">efa_bartlett()</a></code>.</li>
 <li>
 <strong>Factor retention</strong>: <code><a href="reference/efa_retain.html">efa_retain()</a></code> runs several factor retention criteria with a single call. They are also available on their own: <code><a href="reference/efa_cd.html">efa_cd()</a></code>, <code><a href="reference/efa_ekc.html">efa_ekc()</a></code>, <code><a href="reference/efa_hull.html">efa_hull()</a></code>, <code><a href="reference/efa_kgc.html">efa_kgc()</a></code>, <code><a href="reference/efa_map.html">efa_map()</a></code>, <code><a href="reference/efa_nest.html">efa_nest()</a></code>, <code><a href="reference/efa_parallel.html">efa_parallel()</a></code>, <code><a href="reference/efa_scree.html">efa_scree()</a></code>, and <code><a href="reference/efa_smt.html">efa_smt()</a></code>.</li>
 <li>
 <strong>Fitting</strong>: <code><a href="reference/efa_fit.html">efa_fit()</a></code> fits the factor model. <code><a href="reference/estimate_control.html">estimate_control()</a></code> and <code><a href="reference/estimate_control.html">rotate_control()</a></code> configure the estimation and rotation settings.</li>
 <li>
-<strong>Rotation and transformation</strong>: <code><a href="reference/efa_procrustes.html">efa_procrustes()</a></code> rotates a solution onto a target. <code><a href="reference/efa_schmid_leiman.html">efa_schmid_leiman()</a></code> transforms an oblique solution into a hierarchical one.</li>
+<strong>Special rotation and transformation</strong>: <code><a href="reference/efa_procrustes.html">efa_procrustes()</a></code> rotates a solution onto a target. <code><a href="reference/efa_schmid_leiman.html">efa_schmid_leiman()</a></code> transforms an oblique solution into a hierarchical one.</li>
 <li>
 <strong>Reliability</strong>: <code><a href="reference/efa_reliability.html">efa_reliability()</a></code> computes reliability and common-variance coefficients for a factor solution.</li>
 <li>
@@ -106,7 +106,7 @@
 <li>
 <strong>Power</strong>: <code><a href="reference/efa_power.html">efa_power()</a></code> performs analytic and simulation-based power analysis.</li>
 </ul>
-<p>The uppercase names (<code><a href="reference/EFA.html">EFA()</a></code>, <code><a href="reference/N_FACTORS.html">N_FACTORS()</a></code>, …) still work and keep their arguments. Use the <code>efa_*</code> names for new code.</p>
+<p>The uppercase names of the older package versions (<code><a href="reference/EFA.html">EFA()</a></code>, <code><a href="reference/N_FACTORS.html">N_FACTORS()</a></code>, …) still work and keep their arguments. Use the <code>efa_*</code> names for new code.</p>
 <p>The following vignettes and articles cover these in detail:</p>
 <ul>
 <li>
@@ -223,7 +223,7 @@
 <h4 id="raw-data-input">Raw-Data Input<a class="anchor" aria-label="anchor" href="#raw-data-input"></a>
 </h4>
 <p>With raw data, you can use every feature: sandwich and bootstrap standard errors, DWLS estimation with polychoric correlations, and two-stage FIML estimation of correlations.</p>
-<p>In the first example below, which uses bootstrap SEs (<code>se = "np-boot"</code>), the confidence intervals are percentile intervals over refitted resamples. For the loadings and factor correlations, the intervals are centred on the point estimate. For the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI), the intervals are located above the point estimate, because each resample carries the sample’s own misfit plus fresh sampling noise. If a point estimate falls below its own lower bound, this shift is the reason, not a miscomputed interval. CFI and TLI are unaffected because they are ratios: their baseline chi-square shifts together with the model chi-square.</p>
+<p>In the first example below, which uses bootstrap SEs (<code>se = "np-boot"</code>), the confidence intervals are percentile intervals over refitted resamples. For the loadings and factor correlations, the intervals are centred on the point estimate. For the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI), the intervals are located above the point estimate, because each resample carries the sample’s own misfit plus fresh sampling noise. So a point estimate can fall below its own lower bound in some cases. CFI and TLI are unaffected because they are ratios: their baseline chi-square shifts together with the model chi-square.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co"># ULS / MINRES estimation with oblimin rotation and bootstrap SEs</span></span>

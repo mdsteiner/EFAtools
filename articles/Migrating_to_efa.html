@@ -270,17 +270,14 @@ example, the Kaiser-Meyer-Olkin criterion:</p>
 <div class="section level2">
 <h2 id="migrating-from-efa-to-efa_fit">Migrating from <code>EFA()</code> to <code>efa_fit()</code><a class="anchor" aria-label="anchor" href="#migrating-from-efa-to-efa_fit"></a>
 </h2>
-<p><code><a href="../reference/EFA.html">EFA()</a></code> to <code><a href="../reference/efa_fit.html">efa_fit()</a></code> is the migration with
-the largest change to the argument list. <code><a href="../reference/EFA.html">EFA()</a></code> exposed
-every estimation and rotation setting as a flat argument, which made for
-a long and somewhat unwieldy signature. <code><a href="../reference/efa_fit.html">efa_fit()</a></code> keeps the
-<strong>primary</strong> choices as top-level arguments —
-<code>x</code>, <code>n_factors</code>, <code>N</code>,
-<code>estimator</code>, <code>rotation</code>, <code>se</code>,
-<code>cor_method</code>, <code>use</code>, <code>b_boot</code>,
-<code>ci</code>, and <code>seed</code> — and collects the
-<strong>tuning</strong> knobs into two small control objects built by
-<code><a href="../reference/estimate_control.html">estimate_control()</a></code> and <code><a href="../reference/estimate_control.html">rotate_control()</a></code>.</p>
+<p><code><a href="../reference/EFA.html">EFA()</a></code> exposed every estimation and rotation setting as a
+flat argument, which made for a long and somewhat unwieldy signature.
+<code><a href="../reference/efa_fit.html">efa_fit()</a></code> keeps the <strong>primary</strong> choices — the
+data, factor count, sample size, estimator, rotation, and a few others —
+as top-level arguments (see <code><a href="../reference/efa_fit.html">?efa_fit</a></code> for the full list),
+and collects the <strong>tuning</strong> knobs into two small control
+objects built by <code><a href="../reference/estimate_control.html">estimate_control()</a></code> and
+<code><a href="../reference/estimate_control.html">rotate_control()</a></code>.</p>
 <p>Each flat <code><a href="../reference/EFA.html">EFA()</a></code> tuning argument now lives in one of the
 two controls:</p>
 <table class="table">
@@ -371,17 +368,16 @@ names the constructor the knob belongs to:</p>
 <span><span class="co">#&gt; Error: `max_iter` cannot be passed to `efa_fit()` directly.</span></span>
 <span><span class="co">#&gt; i The estimation and rotation tuning knobs live in `estimate_control()` and `rotate_control()`.</span></span>
 <span><span class="co">#&gt; i For example: `efa_fit(x, ..., estimate_control = estimate_control(max_iter = 500))`.</span></span></code></pre></div>
-<p>The same move — flat estimation knobs into
+<p>The same move — collecting flat estimation knobs into
 <code><a href="../reference/estimate_control.html">estimate_control()</a></code> — applies to the other functions that
-run factor extractions internally. <code><a href="../reference/efa_retain.html">efa_retain()</a></code>,
+fit a model internally: <code><a href="../reference/efa_retain.html">efa_retain()</a></code>,
 <code><a href="../reference/efa_schmid_leiman.html">efa_schmid_leiman()</a></code>, and the retention criteria that fit a
-model or use EFA-based eigenvalues (<code><a href="../reference/efa_parallel.html">efa_parallel()</a></code>,
+model or use EFA-based eigenvalues — <code><a href="../reference/efa_parallel.html">efa_parallel()</a></code>,
 <code><a href="../reference/efa_kgc.html">efa_kgc()</a></code>, <code><a href="../reference/efa_scree.html">efa_scree()</a></code>,
 <code><a href="../reference/efa_hull.html">efa_hull()</a></code>, <code><a href="../reference/efa_nest.html">efa_nest()</a></code>, and
-<code><a href="../reference/efa_smt.html">efa_smt()</a></code>) all take an <code><a href="../reference/estimate_control.html">estimate_control()</a></code>
-object in place of the loose estimation arguments; and
-<code><a href="../reference/efa_average.html">efa_average()</a></code> takes <code>p_type</code> in place of
-<code>P_type</code>.</p>
+<code><a href="../reference/efa_smt.html">efa_smt()</a></code>. <code><a href="../reference/efa_average.html">efa_average()</a></code> is the exception: it
+keeps its flat estimation and rotation arguments, and only renames
+<code>P_type</code> to <code>p_type</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="what-the-type-presets-replicate">What the <code>type</code> Presets Replicate<a class="anchor" aria-label="anchor" href="#what-the-type-presets-replicate"></a>
@@ -389,27 +385,15 @@ object in place of the loose estimation arguments; and
 <p>The <code>type</code> presets are more than shorthand for a bundle of
 defaults. <code>"SPSS"</code> and <code>"psych"</code> follow how SPSS’s
 FACTOR procedure and <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code> implement principal axis
-factoring and promax rotation, down to the details those implementations
-differ in — the iteration limit, the convergence criterion, whether
-eigenvalues are taken in absolute value, and which formula builds the
-promax target. <code>"EFAtools"</code>, the default, combines the
-settings that came out best across those comparisons. The presets and
-the differences they encode come from <a href="https://doi.org/10.3758/s13428-021-01581-x" class="external-link">Grieder and Steiner
-(2022)</a>, and the reference outputs of that study ship with the
-package: <code>test_models</code> holds correlation matrices for four
-<code>population_models</code> cases, and <code>SPSS_23</code> and
-<code>SPSS_27</code> hold what SPSS FACTOR returned for those matrices —
-and for several real data sets — under the two SPSS versions, so a
-preset can be checked against the program it emulates
-(<code><a href="../reference/SPSS_23.html">?SPSS_23</a></code> records what such a check needs beyond the
-preset: those references were produced with the PAF iteration limit
-raised above SPSS’s default of 25). <code><a href="../reference/efa_fit.html">?efa_fit</a></code> lists the
-exact settings each preset selects, along with the one place a preset
-alone is not enough: because every preset keeps EFAtools’ Kaiser
-normalization, <code>"psych"</code> also needs
-<code>normalize = FALSE</code> to reproduce <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>’s
-promax — and even then a residual difference remains, which
-<code><a href="../reference/efa_fit.html">?efa_fit</a></code> explains.</p>
+factoring and promax rotation, and <code>"EFAtools"</code>, the default,
+combines the settings that performed best in a systematic comparison of
+the three (<a href="https://doi.org/10.3758/s13428-021-01581-x" class="external-link">Grieder
+and Steiner, 2022</a>). There is one place a preset alone is not enough:
+because every preset keeps EFAtools’ Kaiser normalization,
+<code>"psych"</code> also needs <code>normalize = FALSE</code> to
+reproduce <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>’s promax — and even then a small
+residual difference remains, from ordinary convergence slack between the
+two implementations.</p>
 </div>
 <div class="section level2">
 <h2 id="returned-objects-keep-their-legacy-classes">Returned Objects Keep Their Legacy Classes<a class="anchor" aria-label="anchor" href="#returned-objects-keep-their-legacy-classes"></a>

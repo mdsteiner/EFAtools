@@ -218,22 +218,21 @@ efa_simulate(
   integer or character. Only used with `missing = "MAR"`: which variable
   drives each holed variable's missingness, as one column index or
   variable name per variable in `missing_vars` (so one per variable by
-  default), in that order. Each must reference another variable, not
-  itself (so a single shared predictor is not allowed – it would predict
-  its own missingness). Default is `NULL`, in which case each variable's
-  missingness is driven by the next variable cyclically (so variable
-  order matters; supply this explicitly when the order is arbitrary).
-  Predictors outside `missing_vars` are fully observed, which is what
-  makes the mechanism ignorably MAR.
+  default), in that order. A variable cannot be its own predictor; if
+  the same predictor is reused for several `missing_vars`, it must not
+  itself be one of them. Default is `NULL`, in which case each
+  variable's missingness is driven by the next variable cyclically (so
+  variable order matters; supply this explicitly when the order is
+  arbitrary). Predictors outside `missing_vars` are fully observed (see
+  Details for why this matters).
 
 - missing_vars:
 
   integer or character. Only used when `missing` is not `"none"`: which
   variables carry missing values, as column indices or variable names.
   Default is `NULL`, in which case every variable is holed. Restricting
-  it leaves the remaining variables complete, which under
-  `missing = "MAR"` is how a fully observed `missing_predictor` – and
-  with it an ignorably MAR design – is obtained.
+  it, together with pointing `missing_predictor` at variables outside
+  that set, is how an ignorably MAR design is obtained (see Details).
 
 - n_datasets:
 
@@ -256,19 +255,36 @@ efa_simulate(
 
 ## Value
 
-An object of class `efa_simulated`: a list with elements `data` (the
-simulated data – an `N` by `p` numeric matrix, an integer matrix of
-category codes when `categories` is set, or a length-`n_datasets` list
-of these when `n_datasets > 1`; `NULL` when `return_pop = TRUE`),
-`population` (the `p` by `p` population correlation matrix drawn from,
-model-error-perturbed when requested; when `force_pd = TRUE` and
-`marginals = "VM"` project the intermediate matrix, it is the population
-the projected draw actually attains, which differs from the target by
-the drift the warning reports), `model_error` (`NULL`, or, when model
-error was applied, a list of the method, the target and achieved
-RMSEA/CFI, the model degrees of freedom `df`, and the method's tuning
-parameter – `kappa` for `"CB"`, `v` and `eps` for `"TKL"`, `m` for
-`"WB"`), and `settings`. Printing the object shows a compact summary.
+An object of class `efa_simulated`, a list containing:
+
+- data:
+
+  The simulated data: an `N` by `p` numeric matrix, an integer matrix of
+  category codes when `categories` is set, or a length-`n_datasets` list
+  of these when `n_datasets > 1`. `NULL` when `return_pop = TRUE`.
+
+- population:
+
+  The `p` by `p` population correlation matrix drawn from,
+  model-error-perturbed when requested. When `force_pd = TRUE` causes
+  `marginals = "VM"`'s intermediate matrix to be projected, `population`
+  is the population the projected draw actually reaches, differing from
+  the target by the drift the warning reports.
+
+- model_error:
+
+  `NULL`, or, when model error was applied, a list of the method, the
+  target and achieved RMSEA/CFI, the model degrees of freedom `df`, and
+  the method's tuning parameter: `kappa` for `"CB"`, `v` and `eps` for
+  `"TKL"`, `m` for `"WB"`.
+
+- settings:
+
+  The call's key arguments (`N`, `n_datasets`, `marginals`,
+  `categories`, `match`, `missing`, `seed`), kept for reference and used
+  when printing.
+
+Printing the object shows a compact summary.
 
 ## Details
 
@@ -284,10 +300,11 @@ non-standardized `Psi` still yields a correlation matrix. With the
 default `Psi`, a factor model whose implied communalities exceed 1 (a
 Heywood case) leaves no unique variance and is rejected; a `Psi` you
 supply is instead only required to give positive variances and a
-positive-semidefinite population. Cases with normal marginals (the
-default) are drawn through a matrix square root of the population
-correlation: a Cholesky factor, or a symmetric eigen square root for a
-positive-semidefinite but singular population.
+positive-semidefinite (a mathematically valid, internally consistent
+correlation/covariance structure) population. Cases with normal
+marginals (the default) are drawn through a matrix square root of the
+population correlation – a Cholesky factor, or a symmetric eigen square
+root when it is singular (e.g. a communality of exactly 1).
 
 With `marginals = "empirical"`, the iterative rank-matching algorithm of
 Ruscio and Kaczetow (2008) reproduces the population correlation while
@@ -313,18 +330,17 @@ With `categories`, the drawn data are discretized into ordered
 categories (an integer code `1` to `K`) at the thresholds that reproduce
 the requested category proportions (Olsson, 1979): the standard-normal
 quantiles for `marginals = "normal"`, and for `marginals = "VM"` those
-quantiles mapped through the same Fleishman cubic the draw uses, so the
-requested proportions are reproduced on the non-normal scale too. Under
-`marginals = "IG"` the thresholds stay on the standard-normal scale
-while the data do not, so the achieved proportions depart from the
+quantiles mapped through the same Fleishman (1978) cubic the draw uses,
+so the requested proportions are reproduced on the non-normal scale too.
+Under `marginals = "IG"` the thresholds stay on the standard-normal
+scale while the data do not, so the achieved proportions depart from the
 request systematically rather than by sampling noise, and only the
 *number* of categories is guaranteed; the same holds for a `"VM"`
 variable whose Fleishman cubic is not increasing over its own thresholds
 and the tails beyond them, which keeps the normal-scale thresholds and
-is reported with a warning. That happens when a turning point of the
-cubic sits at or near an outer threshold – under a strongly platykurtic
-marginal, or under substantial skewness or kurtosis combined with a
-small outer-category proportion. Because categorization attenuates
+is reported with a warning. This is more likely with strong
+skewness/kurtosis or very unequal category proportions; the warning
+names the affected variable. Because categorization attenuates
 product-moment correlations, the categorized data's Pearson correlation
 is smaller in magnitude than the population correlation; under
 non-normal marginals its polychoric correlation departs from the
@@ -347,10 +363,10 @@ the complete drawn values, so whether the mechanism is *ignorably* MAR
 depends on which variables carry missing values. By default every
 variable is holed, which leaves a variable's MAR predictor itself
 missing for roughly a `missing_prop` fraction of the cases whose
-missingness it drove: the mechanism is then MAR conditional on the
-*complete* data and **not** ignorable for an analyst who sees only the
-observed data, so estimators that are consistent under ignorable MAR –
-`cor_method = "fiml"` in
+missingness it drove. This breaks ignorability: the mechanism is then
+MAR conditional on the *complete* data but **not** ignorable for an
+analyst who sees only the observed data. As a result, estimators that
+are consistent under ignorable MAR – `cor_method = "fiml"` in
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
 or the multiple imputation behind
 [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md) –
@@ -364,10 +380,9 @@ carries the `NA`s, which the correlation estimators handle downstream.
 With `model_error`, the population is perturbed away from the exact
 factor structure so the `q`-factor model (`q = ncol(Lambda)`) fits it
 only approximately, at a prescribed misfit; exact factor structures are
-unrealistic and overstate recovery in simulation studies (MacCallum,
-2003). The perturbation is applied once to the population, and the
-achieved misfit of the specified generating model is computed with the
-same fit-index formulas
+unrealistic (see `target_rmsea`). The perturbation is applied once to
+the population, and the achieved misfit of the specified generating
+model is computed with the same fit-index formulas
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
 uses and returned in the `model_error` element. It needs a factor-model
 population with residual degrees of freedom and an exact factor
@@ -382,9 +397,9 @@ it is a compromise, reported with a warning when the two cannot be
 reconciled. `"WB"` (Wu & Browne, 2015) draws the population from an
 inverse-Wishart distribution around the model-implied correlation; its
 calibration applies to the *best-fitting* model, so the reported misfit
-of the *generating* model is systematically larger than the target – by
-roughly \\\sqrt{(p(p-1)/2)/df}\\, about 1.4 times for 12 variables and 3
-factors. Use `"CB"` when the reported RMSEA must equal the target.
+of the *generating* model is systematically larger than the target –
+about 1.4 times for a typical 12-variable, 3-factor model. Use `"CB"`
+when the reported RMSEA must equal the target.
 
 Replicated draws (`n_datasets > 1`) are generated in parallel across
 replicates with future.apply; a parallel plan can be selected with
@@ -420,11 +435,6 @@ imperfect models. Multivariate Behavioral Research, 38(1), 113-139.
 Olsson, U. (1979). Maximum likelihood estimation of the polychoric
 correlation coefficient. Psychometrika, 44(4), 443-460.
 [doi:10.1007/BF02296207](https://doi.org/10.1007/BF02296207)
-
-Olvera Astivia, O. L., & Zumbo, B. D. (2019). A note on the solution
-multiplicity of the Vale-Maurelli intermediate correlation equation.
-Journal of Educational and Behavioral Statistics, 44(2), 127-143.
-[doi:10.3102/1076998618803381](https://doi.org/10.3102/1076998618803381)
 
 Rubin, D. B. (1976). Inference and missing data. Biometrika, 63(3),
 581-592.

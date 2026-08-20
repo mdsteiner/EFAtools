@@ -120,17 +120,14 @@ otherwise). Use <code><a href="efa_retain.html">efa_retain()</a></code> to decid
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
 <dd><p>numeric. The number of observations. Needs only be specified if a
-correlation matrix is used. If input is a correlation matrix and <code>N</code> = NA
-(default), not all fit indices can be computed; <code>NA</code> is the only accepted way of
-saying that the sample size is unknown, and a supplied <code>N</code> must be at least 1.
-A positive <code>N</code> that is very small relative to the number of variables leaves the
-chi-square-derived indices unavailable as well, with a warning.
-When raw data with missing
-values are entered and <code>use</code> is <code>"complete.obs"</code> or <code>"na.or.complete"</code>, rows
-are deleted listwise, so <code>N</code> is taken as the number of complete cases. The same
-applies, whatever <code>use</code> asks for, whenever an asymptotic covariance is required
-(the "DWLS" estimator, or <code>se = "sandwich"</code>); with <code>cor_method = "fiml"</code>, <code>N</code> is
-instead the number of cases carrying at least one observed value.</p></dd>
+correlation matrix is used; with raw data, <code>N</code> is found from the data instead.</p><ul><li><p>With <code>N = NA</code>, not all fit indices can be computed; a positive <code>N</code> that is very
+small relative to the number of variables leaves the chi-square-derived indices
+unavailable as well, with a warning.</p></li>
+<li><p>With raw data, <code>N</code> is the number of cases the correlation matrix was actually
+computed from – see <code>use</code> for the general rule and how missing values change it.
+Under <code>cor_method = "fiml"</code>, <code>use</code> is ignored and <code>N</code> is instead the number of
+cases carrying at least one observed value.</p></li>
+</ul></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -150,12 +147,14 @@ an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 
 <dt id="arg-se">se<a class="anchor" aria-label="anchor" href="#arg-se"></a></dt>
 <dd><p>character. Whether and how to compute standard errors (and matching
-confidence intervals): "none" (default, no standard errors), "information" (analytic
+confidence intervals): "none" (default), "information" (analytic
 standard errors from the expected Fisher information of the ML solution), "sandwich"
-(robust Godambe sandwich standard errors from raw data), or "np-boot" (non-parametric
-bootstrap). The methods differ in their assumptions, their data requirements, and which
-estimator, rotation, and <code>cor_method</code> combinations they support; see the <em>Standard
-errors</em> section in Details.</p></dd>
+(robust "sandwich" standard errors from raw data, which stay reliable under
+non-normality or a misspecified estimator weight), or "np-boot" (non-parametric
+bootstrap). The
+methods differ in their assumptions, their data requirements, and which estimator,
+rotation, and <code>cor_method</code> combinations they support; see the <em>Standard errors</em>
+section in Details.</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
@@ -294,15 +293,7 @@ rotation to guard against local minima. Default is 100.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>numeric. An optional seed for the random-number generator, governing every
-stochastic part of the fit: the rotation's random starts on the point estimate (the
-criterion-based rotations draw <code>random_starts</code> random starts; see <em>Rotations</em>) and,
-under <code>se = "np-boot"</code>, the case resampling, the replicate rotations, and the
-Procrustes random starts. Setting it makes the fit reproducible and the bootstrap
-additionally independent of the number of parallel workers (see Details); the
-caller's random-number stream is restored afterwards, so supplying a seed leaves no
-lasting effect on it. Default is <code>NULL</code>, which uses (and advances) the current state
-of the generator.</p></dd>
+<dd><p>numeric. An optional seed for the random-number generator.</p></dd>
 
 
 <dt id="arg-p-type-randomstarts">P_type, randomStarts<a class="anchor" aria-label="anchor" href="#arg-p-type-randomstarts"></a></dt>

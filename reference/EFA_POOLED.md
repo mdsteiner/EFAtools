@@ -37,9 +37,10 @@ EFA_POOLED(
 
 - p:
 
-  Numeric in \\(0, 1)\\. One minus the confidence level used for pooled
-  Wald-type bootstrap/MI confidence intervals when bootstrap replicates
-  are available. For example, `p = .05` gives 95% intervals.
+  Numeric in \\(0, 1)\\. One minus the confidence level for the pooled
+  confidence intervals, whichever `se` method produced them
+  (`"information"`, `"np-boot"`, or `"sandwich"`). For example,
+  `p = .05` gives 95% intervals.
 
 - target_method:
 
@@ -62,10 +63,10 @@ EFA_POOLED(
 
 - fit_pool_method:
 
-  Character. Currently only `"D2"` is implemented for chi-square-type
-  fit. If no chi-square is available, only residual-based fit and
-  descriptive quantities are returned. See *Pooling the model chi-square
-  and fit indices* in Details.
+  Character. Only `"D2"` is implemented for pooling chi-square-type fit.
+  If no chi-square is available, only residual-based fit and descriptive
+  quantities are returned. See *Pooling the model chi-square and fit
+  indices* in Details.
 
 - consensus_args:
 
@@ -92,15 +93,10 @@ EFA_POOLED(
 
 - rmsr_upper:
 
-  **\[deprecated\]** Accepted and ignored. It selected between computing
-  RMSR from the unique off-diagonal residual correlations and from the
-  full off-diagonal matrix. The two element sets hold each residual pair
-  once and twice respectively, so their sums and counts double together
-  and the mean square is the same number whenever the residual matrix is
-  symmetric, which the pooled residuals always are. RMSR is therefore
-  always the root mean square of the unique off-diagonal residuals;
-  SRMR, which divides the same sum by the number of non-redundant
-  elements, is reported alongside it. Supplying it to
+  **\[deprecated\]** Deprecated and ignored.
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  now always computes RMSR the same way, from the unique off-diagonal
+  residuals; SRMR is reported alongside it. Supplying it to
   [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
   signals a deprecation warning; the superseded `EFA_POOLED()` accepts
   it silently.

@@ -103,8 +103,7 @@ data are normal, cutting them at the standard-normal category thresholds
 already leaves the population <em>polychoric</em> correlation of the
 discretised data equal to the target correlation;
 <code>match = "polychoric"</code> records that this is what we are
-after, and would reject the request had we asked for non-normal
-marginals.</p>
+after.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d_ord</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_simulate.html">efa_simulate</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">400</span>, Lambda <span class="op">=</span> <span class="va">Lambda</span>, Phi <span class="op">=</span> <span class="va">Phi</span>,</span>
 <span>                      categories <span class="op">=</span> <span class="fl">4</span>, match <span class="op">=</span> <span class="st">"polychoric"</span>, seed <span class="op">=</span> <span class="fl">2024</span><span class="op">)</span><span class="op">$</span><span class="va">data</span></span>
@@ -139,8 +138,8 @@ worthwhile.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Determinant: 0.0357. It falls as variables are added, so the condition index</span></span>
 <span><span class="co">#&gt; below carries the verdict.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition number: 7.919 (condition index 2.814). No concern (index below 10;</span></span>
-<span><span class="co">#&gt; Belsley, Kuh &amp; Welsch, 1980).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition number: 7.919 (condition index 2.814). An index of 10 or less is</span></span>
+<span><span class="co">#&gt; rarely of interest (Belsley, 1991).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Per-variable diagnostics</span> ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -190,11 +189,12 @@ worthwhile.</p>
 are factorable. The telling parts are the multivariate-normality section
 and the recommendations: Mardia’s kurtosis and the Henze-Zirkler test
 reject normality, and the recommendations flag that every item has fewer
-than five response categories. Together these spell out the consequence
-— with few categories and non-normal data, a polychoric correlation with
-a categorical estimator such as DWLS is less biased than normal-theory
-maximum likelihood, and the normal-theory standard errors and fit
-indices are better replaced by robust (sandwich) versions.</p>
+than five response categories. Together, these point to the same
+conclusion. With few categories and non-normal data, a polychoric
+correlation with a categorical estimator such as DWLS is less biased
+than normal-theory maximum likelihood. The normal-theory standard errors
+and fit indices are also better replaced by robust (sandwich)
+versions.</p>
 </div>
 <div class="section level3">
 <h3 id="polychoric-correlations-dwls-and-robust-standard-errors">Polychoric Correlations, DWLS, and Robust Standard Errors<a class="anchor" aria-label="anchor" href="#polychoric-correlations-dwls-and-robust-standard-errors"></a>
@@ -202,11 +202,11 @@ indices are better replaced by robust (sandwich) versions.</p>
 <p><code><a href="../reference/efa_fit.html">efa_fit()</a></code> computes the polychoric correlation when
 <code>cor_method = "poly"</code> and fits it with diagonally weighted
 least squares when <code>estimator = "DWLS"</code> — the estimator
-recommended for ordinal data, which weights each correlation residual by
-the inverse asymptotic variance of the corresponding polychoric
-correlation. Requesting <code>se = "sandwich"</code> adds robust
-standard errors and a scaled (Satorra-Bentler) chi-square that stay
-valid under the non-normality these data show.</p>
+recommended for ordinal data because it accounts for how precisely each
+polychoric correlation is estimated. Requesting
+<code>se = "sandwich"</code> adds robust standard errors and a scaled
+(Satorra-Bentler) chi-square that stay valid under the non-normality
+these data show.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_poly</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_ord</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>, estimator <span class="op">=</span> <span class="st">"dwls"</span>,</span>
 <span>                    rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span>
@@ -367,9 +367,8 @@ normal latent variable underlies each item, and it needs an adequate
 sample size and reasonably populated response-category combinations.
 When categories are very sparse (rare responses, small samples), the
 polychoric asymptotic covariance behind the DWLS weights and the robust
-standard errors becomes unreliable — <code><a href="../reference/efa_fit.html">efa_fit()</a></code> warns when
-empty category combinations are present — and collapsing rare categories
-can help.</p>
+standard errors becomes unreliable, and collapsing rare categories can
+help.</p>
 </div>
 </div>
 <div class="section level2">
@@ -384,18 +383,18 @@ likelihood, and a multiple-imputation route via
 <code><a href="../reference/efa_mi.html">efa_mi()</a></code>.</p>
 <p>We simulate 250 continuous cases with about 15% of values missing at
 random, where each item’s missingness depends on another item’s value.
-By default <code><a href="../reference/efa_simulate.html">efa_simulate()</a></code> holes every column, so each
-item’s MAR predictor would itself be partly missing: the mechanism is
-then MAR given the <em>complete</em> data, but not ignorable for an
-analyst who sees only the observed data, and estimators that are
-consistent under ignorable MAR keep a residual bias — a property of the
-generator rather than of the estimators, growing with
-<code>missing_prop</code> and <code>missing_strength</code>.</p>
-<p><code>missing_vars</code> avoids that. Here the first nine items
-carry the missing values and each is driven by one of the last nine,
-which stay complete. Every predictor is therefore fully observed, which
-is ignorably MAR — exactly the assumption the two routes below rely
-on.</p>
+By default, <code><a href="../reference/efa_simulate.html">efa_simulate()</a></code> would make each item’s
+missingness depend on another item that is itself partly missing — a
+kind of missingness the two routes below are not designed for. Rather
+than failing outright, they run with a residual bias that grows as
+<code>missing_prop</code> and <code>missing_strength</code>
+increase.</p>
+<p><code>missing_vars</code> and <code>missing_predictor</code> avoid
+that. Here the first nine items carry the missing values and each is
+driven by one of the last nine, which stay complete. Every predictor is
+therefore fully observed, satisfying the <em>ignorable</em> MAR
+assumption the two routes below rely on – not just MAR, but MAR with no
+incomplete predictor left unaccounted for.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d_miss</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_simulate.html">efa_simulate</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">250</span>, Lambda <span class="op">=</span> <span class="va">Lambda</span>, Phi <span class="op">=</span> <span class="va">Phi</span>,</span>
 <span>                       missing <span class="op">=</span> <span class="st">"MAR"</span>, missing_prop <span class="op">=</span> <span class="fl">0.15</span>,</span>
@@ -503,10 +502,8 @@ proportion of missing values, or with near-collinear items —
 <code><a href="../reference/efa_fit.html">efa_fit()</a></code> warns and keeps the plain two-stage
 likelihood-ratio statistic instead of discarding the test. Such a fit is
 never presented as corrected: the printed chi-square line is labelled
-<strong>uncorrected</strong>, the object carries
-<code>fit_indices$chi_scaled_type == "uncorrected.lrt"</code>, and the
-accompanying <em>p</em>-value, CFI, TLI, and RMSEA should be read as
-indicative only.</p>
+<strong>uncorrected</strong>, and the accompanying <em>p</em>-value,
+CFI, TLI, and RMSEA should be read as indicative only.</p>
 </div>
 <div class="section level3">
 <h3 id="multiple-imputation-with-efa_mi">Multiple Imputation with <code>efa_mi()</code><a class="anchor" aria-label="anchor" href="#multiple-imputation-with-efa_mi"></a>
@@ -600,11 +597,10 @@ pools them.</p>
 <span><span class="co">#&gt; separately pooled model and baseline statistics in `mi_diagnostics`.</span></span></code></pre></div>
 <p>The pooled loadings recover the three factors. Point estimates are
 averaged across the imputations after alignment. The model chi-square,
-and the AIC/BIC derived from it, are pooled with the D2 rule — which is
-why the printout labels the pooled chi-square as a D2 statistic with its
-own reference distribution. RMSEA is pooled by the same rule, but from
-the discrepancies on the uncorrected N - 1 scale on which it is defined,
-so it does not reconcile by hand with the printed chi-square. The
+and the AIC/BIC derived from it, are pooled with the same rule as RMSEA,
+but applied to a different discrepancy scale — which is why the printout
+labels the pooled chi-square <strong>D2-pooled</strong>, and why you
+should not expect it to reconcile by hand with the pooled RMSEA. The
 incremental CFI and TLI are instead averaged across the per-imputation
 fits. Requesting standard errors in the call (for example
 <code>se = "information"</code> or <code>se = "np-boot"</code>)

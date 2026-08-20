@@ -84,9 +84,10 @@ correlation matrix. See argument <code>x</code> in <code><a href="efa_fit.html">
 
 
 <dt id="arg-p">p<a class="anchor" aria-label="anchor" href="#arg-p"></a></dt>
-<dd><p>Numeric in \((0, 1)\). One minus the confidence level used for
-pooled Wald-type bootstrap/MI confidence intervals when bootstrap replicates
-are available. For example, <code>p = .05</code> gives 95% intervals.</p></dd>
+<dd><p>Numeric in \((0, 1)\). One minus the confidence level for the
+pooled confidence intervals, whichever <code>se</code> method produced them
+(<code>"information"</code>, <code>"np-boot"</code>, or <code>"sandwich"</code>). For example, <code>p = .05</code>
+gives 95% intervals.</p></dd>
 
 
 <dt id="arg-target-method">target_method<a class="anchor" aria-label="anchor" href="#arg-target-method"></a></dt>
@@ -107,8 +108,8 @@ gauge), <code>"procrustes"</code> (orthogonal Procrustes to the first imputation
 
 
 <dt id="arg-fit-pool-method">fit_pool_method<a class="anchor" aria-label="anchor" href="#arg-fit-pool-method"></a></dt>
-<dd><p>Character. Currently only <code>"D2"</code> is implemented
-for chi-square-type fit. If no chi-square is available, only residual-based
+<dd><p>Character. Only <code>"D2"</code> is implemented for pooling
+chi-square-type fit. If no chi-square is available, only residual-based
 fit and descriptive quantities are returned. See <em>Pooling the model chi-square and
 fit indices</em> in Details.</p></dd>
 
@@ -134,15 +135,11 @@ cross-product <code>S</code> are derived from the imputations and cannot be set 
 
 
 <dt id="arg-rmsr-upper">rmsr_upper<a class="anchor" aria-label="anchor" href="#arg-rmsr-upper"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Accepted and ignored. It
-selected between computing RMSR from the unique off-diagonal residual correlations
-and from the full off-diagonal matrix. The two element sets hold each residual pair
-once and twice respectively, so their sums and counts double together and the mean
-square is the same number whenever the residual matrix is symmetric, which the pooled
-residuals always are. RMSR is therefore always the root mean square of the unique
-off-diagonal residuals; SRMR, which divides the same sum by the number of
-non-redundant elements, is reported alongside it. Supplying it to <code><a href="efa_mi.html">efa_mi()</a></code>
-signals a deprecation warning; the superseded <code>EFA_POOLED()</code> accepts it silently.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Deprecated and ignored.
+<code><a href="efa_mi.html">efa_mi()</a></code> now always computes RMSR the same way, from the unique
+off-diagonal residuals; SRMR is reported alongside it. Supplying it to
+<code><a href="efa_mi.html">efa_mi()</a></code> signals a deprecation warning; the superseded <code>EFA_POOLED()</code>
+accepts it silently.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

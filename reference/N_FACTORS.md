@@ -44,9 +44,8 @@ N_FACTORS(
 
 - x:
 
-  data.frame or matrix. Dataframe or matrix of raw data or matrix with
-  correlations. If `"CD"` is included as a criterion, x must be raw
-  data.
+  data.frame or matrix. Raw data, or a correlation matrix. If `"CD"` is
+  included as a criterion, x must be raw data.
 
 - criteria:
 
@@ -60,7 +59,7 @@ N_FACTORS(
 - suitability:
 
   logical. Whether the data should be checked for suitability for factor
-  analysis using the Bartlett's test of sphericity and the
+  analysis using Bartlett's test of sphericity and the
   Kaiser-Meyer-Olkin criterion (see details). Default is `TRUE`.
 
 - N:
@@ -80,10 +79,9 @@ N_FACTORS(
   `"spearman"`, or `"kendall"` (passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
   `"tetra"` for polychoric / tetrachoric correlations (a two-step
-  estimator). `CD`, `PARALLEL`, `NEST`, and `HULL` compare against
-  simulated continuous data, and `SMT` relies on a normal-theory
-  chi-square test; none of these support `"poly"` / `"tetra"`, so they
-  are skipped in that case. Default is `"pearson"`.
+  estimator). `CD`, `PARALLEL`, `NEST`, `HULL`, and `SMT` do not support
+  `"poly"` / `"tetra"` and are skipped automatically if you request them
+  together. Default is `"pearson"`.
 
 - n_factors_max:
 
@@ -124,10 +122,10 @@ N_FACTORS(
 
   numeric. Passed to
   [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
-  Theoretical number of factors to retain. The maximum of this number
-  and the number of factors suggested by
+  Theoretical number of factors to retain. The Hull method uses one plus
+  the larger of this number and the number of factors suggested by
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
-  plus one will be used in the Hull method.
+  as its upper bound.
 
 - method:
 
@@ -151,13 +149,14 @@ N_FACTORS(
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
   in
   [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
-  On what the eigenvalues should be found in the parallel analysis. Can
-  be one of `"SMC"`, `"PCA"`, or `"EFA"`. If using `"SMC"` (default),
-  the diagonal of the correlation matrices is replaced by the squared
-  multiple correlations (SMCs) of the indicators. If using `"PCA"`, the
-  diagonal values of the correlation matrices are left to be 1. If using
-  `"EFA"`, eigenvalues are found on the correlation matrices with the
-  final communalities of an EFA solution as diagonal.
+  What the eigenvalues in the parallel analysis are based on. One of
+  `"SMC"`, `"PCA"`, or `"EFA"` – different ways of estimating how much
+  variance each indicator shares with the others before the eigenvalues
+  are computed. `"SMC"` (default) uses each indicator's squared multiple
+  correlation with the others (its diagonal value in the correlation
+  matrix). `"PCA"` leaves the diagonal at 1, so each indicator's total
+  variance – not just the shared part – feeds into the eigenvalues.
+  `"EFA"` uses the communalities from a fitted EFA solution instead.
 
 - eigen_type_other:
 
@@ -205,32 +204,32 @@ N_FACTORS(
   (also within
   [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)).
   Which rule to use to determine the number of factors to retain.
-  Default is `"means"`, which will use the average simulated
-  eigenvalues. `"percentile"`, uses the percentiles specified in
-  percent. `"crawford"` uses the 95th percentile for the first factor
-  and the mean afterwards (based on Crawford et al, 2010).
+  Default is `"means"`, which uses the average simulated eigenvalues.
+  `"percentile"` uses the percentiles specified in `percent`.
+  `"crawford"` uses the 95th percentile for the first factor and the
+  mean afterwards (based on Crawford et al., 2010).
 
 - ekc_type:
 
-  **\[deprecated\]** Accepted and ignored. It selected between two ways
-  to compute the
+  **\[deprecated\]** Accepted and ignored. It used to select between two
+  ways to compute the
   [`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md)
   reference values. The `"AM2019"` reference values do not depend on the
-  observed eigenvalues, so they do not apply the empirical correction
-  that defines the criterion, and they are no longer computed.
+  observed eigenvalues. They therefore skip the empirical correction
+  that defines the criterion, so they are no longer computed.
 
 - n_datasets_nest:
 
-  numeric. The number of datasets to simulate in
+  numeric. Passed to
   [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
-  Default is 1000.
+  The number of datasets to simulate. Default is 1000.
 
 - alpha_nest:
 
-  numeric. The alpha level to use in
-  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md)
-  (i.e., 1-alpha percentile of eigenvalues is used for reference
-  values).
+  numeric. Passed to
+  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
+  The alpha level to use. The reference values are the eigenvalues at
+  the (1 - alpha_nest) percentile. Default is .05.
 
 - show_progress:
 

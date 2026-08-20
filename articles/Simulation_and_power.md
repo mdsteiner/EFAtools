@@ -39,10 +39,11 @@ A population can be given in one of two mutually exclusive ways: as the
 components of a factor model (`Lambda`, and optionally the factor
 intercorrelations `Phi` and the unique variances `Psi`), or as a ready
 population correlation matrix `R`. With the model components, the
-population correlation is assembled as
-$`R = \Lambda \Phi \Lambda' + \Psi`$ and standardized; when `Psi` is
-left unset it is filled in with the unique variances that make the
-population a correlation matrix.
+population correlation is built from the loadings and factor
+correlations you supplied, plus the unique variances (the standard
+factor-analysis equation, $`R = \Lambda \Phi \Lambda' + \Psi`$), then
+standardized; when `Psi` is left unset it is filled in with the unique
+variances that make the population a correlation matrix.
 
 ``` r
 
@@ -119,8 +120,9 @@ sim_me
 
 Three methods are available through `model_error`. `"CB"` (Cudeck &
 Browne, 1992; the default) matches the target RMSEA to numerical
-precision and keeps the factor model the exact minimizer, so the CFI
-follows as a derived quantity:
+precision and keeps the factor model as the best-fitting solution for
+the data, so the fitted loadings stay exactly right; the CFI then comes
+out wherever that implies – it cannot be targeted directly:
 
 ``` r
 
@@ -156,10 +158,10 @@ efa_simulate(N = 500, Lambda = Lambda, Phi = Phi, model_error = "WB",
 #> [1] 0.06530353
 ```
 
-Model error needs a factor-model population (there is no specified model
-to misfit against a bare `R`) with residual degrees of freedom and an
-exact factor structure (a diagonal `Psi`); it is orthogonal to the
-marginal, ordinal, and missing-data options below.
+Model error needs a factor-model population – there is no model to
+misfit against a bare `R` – with degrees of freedom left over (a
+saturated model has none) and a diagonal `Psi`. It can be freely
+combined with the marginal, ordinal, and missing-data options below.
 
 ### Non-normal marginals
 
@@ -183,10 +185,9 @@ round(c(target = 1.5, achieved = mean(apply(sim_vm$data, 2, sk))), 2)
 
 `marginals = "IG"` is the independent-generator method (Foldnes &
 Olsson, 2016), which covers non-normal distributions the Vale-Maurelli
-family cannot. Not every (skewness, kurtosis) pair is attainable – every
-distribution needs excess kurtosis of at least `skewness^2 - 2`, and
-each method covers a smaller region still – so an unreachable request is
-rejected with an informative error.
+family cannot. Not every (skewness, kurtosis) pair is mathematically
+possible, and each method covers only part of the possible region, so an
+unreachable request is rejected with an informative error.
 
 ``` r
 
@@ -245,11 +246,11 @@ categorized data equals the target correlation. That is the guarantee
 you want when the downstream analysis will use polychoric correlations
 (`efa_fit(..., cor_method = "poly")`), because the estimated correlation
 matrix then targets the true population rather than the attenuated one.
-Because the guarantee rests on normality, the mode refuses to combine
-with the non-normal marginals above – which is the point of asking for
-it: under `marginals = "normal"` the draw itself is the same one
-`"thresholds"` makes, so what you gain is the check, not a different
-sampler.
+Because the guarantee rests on normality, this mode requires
+`marginals = "normal"` and refuses the non-normal-marginal options
+above. The draw itself is then identical to what `match = "thresholds"`
+produces – what `"polychoric"` adds is the guarantee that the population
+value is exactly recovered, not a different way of generating the data.
 
 ``` r
 
@@ -355,15 +356,14 @@ random-number stream untouched.
 The fastest power analysis needs no simulation at all.
 [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
 (in its default `mode = "rmsea"`) implements the RMSEA power framework
-of MacCallum, Browne, and Sugawara (1996), which refers the fit
-statistic to a noncentral chi-square distribution. Two tests are
-available. Under the **test of close fit**, the null hypothesis is that
-the fit is close (RMSEA ≤ `eps0`, conventionally `.05`), and power is
-the probability of rejecting that null when the true fit is worse
-(`eps1`, conventionally `.08`) – that is, the probability of detecting a
-model that is *not* close. The **test of not-close fit** reverses the
-logic: its null is that the fit is not close (RMSEA ≥ `eps0`), tested
-against a better alternative (`eps1`, conventionally `.01`).
+of MacCallum, Browne, and Sugawara (1996). Two tests are available.
+Under the **test of close fit**, the null hypothesis is that the fit is
+close (RMSEA ≤ `eps0`, conventionally `.05`), and power is the
+probability of rejecting that null when the true fit is worse (`eps1`,
+conventionally `.08`) – that is, the probability of detecting a model
+that is *not* close. The **test of not-close fit** reverses the logic:
+its null is that the fit is not close (RMSEA ≥ `eps0`), tested against a
+better alternative (`eps1`, conventionally `.01`).
 
 Give a sample size to get the power at it. The model can be described
 either by its degrees of freedom directly or by its dimensions – here
@@ -414,11 +414,12 @@ efa_power(p = 18, k = 3, N = 200, type = "notclose")
 #> Critical value χ²(102) = 121.042 · noncentrality H0 = 50.745, H1 = 2.030.
 ```
 
-For a multiple-group model, `group` divides the noncentrality across
-groups. The reported `N` is the *total* across groups – 260 in all, 130
-per group – and `N_per_group` carries that per-group figure. All groups
-have the same size, so a required total is rounded up to the next
-multiple of `group`:
+For a multiple-group model, `group` divides the sample size evenly
+across groups, so power is computed as though a fixed total `N` were
+spread thinner the more groups there are. The reported `N` is the
+*total* across groups – 260 in all, 130 per group – and `N_per_group`
+carries that per-group figure. All groups have the same size, so a
+required total is rounded up to the next multiple of `group`:
 
 ``` r
 
@@ -474,7 +475,9 @@ and, over the replicates, reports three things: the **hit-rate** of each
 retention criterion (how often it recovers the true factor count),
 **structure recovery** (how often the fitted loadings match the
 population pattern by Tucker congruence), and the **convergence** and
-Heywood-case rate of the fit.
+Heywood-case rate of the fit (a Heywood case is an impossible solution,
+where an item’s unique variance is estimated at zero or below –
+equivalently, its communality reaches 100% or more).
 
 By default the population fits the model exactly, which – as in
 [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
@@ -544,9 +547,9 @@ efa_power("simulation", Lambda = Lambda, Phi = Phi, N = 300,
 A few things to read off the output. The hit-rate is reported per
 criterion, and per *variant* where a criterion has several (the
 minimum-average-partial test reports its squared and fourth-power
-variants, for example); its denominator is the number of replicates on
-which the criterion returned a definite count, so a criterion that
-errored or was undecided on some replicates is not silently penalised.
+variants, for example). Its denominator is the number of replicates on
+which the criterion returned a definite count. A criterion that errored
+or was undecided on some replicates is therefore not silently penalised.
 Structure recovery is available only for a factor-model population (a
 bare `R` carries no loadings to recover); a replicate counts as
 recovered when its matched-factor Tucker congruence reaches

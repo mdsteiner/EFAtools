@@ -72,18 +72,18 @@ EFA(
 - N:
 
   numeric. The number of observations. Needs only be specified if a
-  correlation matrix is used. If input is a correlation matrix and `N` =
-  NA (default), not all fit indices can be computed; `NA` is the only
-  accepted way of saying that the sample size is unknown, and a supplied
-  `N` must be at least 1. A positive `N` that is very small relative to
-  the number of variables leaves the chi-square-derived indices
-  unavailable as well, with a warning. When raw data with missing values
-  are entered and `use` is `"complete.obs"` or `"na.or.complete"`, rows
-  are deleted listwise, so `N` is taken as the number of complete cases.
-  The same applies, whatever `use` asks for, whenever an asymptotic
-  covariance is required (the "DWLS" estimator, or `se = "sandwich"`);
-  with `cor_method = "fiml"`, `N` is instead the number of cases
-  carrying at least one observed value.
+  correlation matrix is used; with raw data, `N` is found from the data
+  instead.
+
+  - With `N = NA`, not all fit indices can be computed; a positive `N`
+    that is very small relative to the number of variables leaves the
+    chi-square-derived indices unavailable as well, with a warning.
+
+  - With raw data, `N` is the number of cases the correlation matrix was
+    actually computed from – see `use` for the general rule and how
+    missing values change it. Under `cor_method = "fiml"`, `use` is
+    ignored and `N` is instead the number of cases carrying at least one
+    observed value.
 
 - method:
 
@@ -106,14 +106,14 @@ EFA(
 - se:
 
   character. Whether and how to compute standard errors (and matching
-  confidence intervals): "none" (default, no standard errors),
-  "information" (analytic standard errors from the expected Fisher
-  information of the ML solution), "sandwich" (robust Godambe sandwich
-  standard errors from raw data), or "np-boot" (non-parametric
-  bootstrap). The methods differ in their assumptions, their data
-  requirements, and which estimator, rotation, and `cor_method`
-  combinations they support; see the *Standard errors* section in
-  Details.
+  confidence intervals): "none" (default), "information" (analytic
+  standard errors from the expected Fisher information of the ML
+  solution), "sandwich" (robust "sandwich" standard errors from raw
+  data, which stay reliable under non-normality or a misspecified
+  estimator weight), or "np-boot" (non-parametric bootstrap). The
+  methods differ in their assumptions, their data requirements, and
+  which estimator, rotation, and `cor_method` combinations they support;
+  see the *Standard errors* section in Details.
 
 - type:
 
@@ -263,16 +263,7 @@ EFA(
 
 - seed:
 
-  numeric. An optional seed for the random-number generator, governing
-  every stochastic part of the fit: the rotation's random starts on the
-  point estimate (the criterion-based rotations draw `random_starts`
-  random starts; see *Rotations*) and, under `se = "np-boot"`, the case
-  resampling, the replicate rotations, and the Procrustes random starts.
-  Setting it makes the fit reproducible and the bootstrap additionally
-  independent of the number of parallel workers (see Details); the
-  caller's random-number stream is restored afterwards, so supplying a
-  seed leaves no lasting effect on it. Default is `NULL`, which uses
-  (and advances) the current state of the generator.
+  numeric. An optional seed for the random-number generator.
 
 - P_type, randomStarts:
 

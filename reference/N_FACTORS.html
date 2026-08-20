@@ -93,9 +93,8 @@ keeps working.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>data.frame or matrix. Dataframe or matrix of raw data or matrix with
-correlations. If <code>"CD"</code> is included as a criterion, x must be raw
-data.</p></dd>
+<dd><p>data.frame or matrix. Raw data, or a correlation matrix. If <code>"CD"</code> is
+included as a criterion, x must be raw data.</p></dd>
 
 
 <dt id="arg-criteria">criteria<a class="anchor" aria-label="anchor" href="#arg-criteria"></a></dt>
@@ -108,7 +107,7 @@ methods are performed.</p></dd>
 
 <dt id="arg-suitability">suitability<a class="anchor" aria-label="anchor" href="#arg-suitability"></a></dt>
 <dd><p>logical. Whether the data should be checked for suitability
-for factor analysis using the Bartlett's test of sphericity and the
+for factor analysis using Bartlett's test of sphericity and the
 Kaiser-Meyer-Olkin criterion (see details). Default is <code>TRUE</code>.</p></dd>
 
 
@@ -126,11 +125,9 @@ data is given as input. Default is <code>"pairwise.complete.obs"</code>.</p></dd
 <dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
 <code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
 <code>"tetra"</code> for polychoric / tetrachoric correlations (a two-step estimator).
-<code>CD</code>, <code>PARALLEL</code>, <code>NEST</code>, and
-<code>HULL</code> compare against simulated continuous data, and <code>SMT</code> relies on a
-normal-theory chi-square test; none of these support <code>"poly"</code> / <code>"tetra"</code>,
-so they are skipped in that case.
-Default is  <code>"pearson"</code>.</p></dd>
+<code>CD</code>, <code>PARALLEL</code>, <code>NEST</code>, <code>HULL</code>, and <code>SMT</code> do not support <code>"poly"</code> / <code>"tetra"</code>
+and are skipped automatically if you request them together.
+Default is <code>"pearson"</code>.</p></dd>
 
 
 <dt id="arg-n-factors-max">n_factors_max<a class="anchor" aria-label="anchor" href="#arg-n-factors-max"></a></dt>
@@ -165,8 +162,9 @@ Default is 50.</p></dd>
 
 <dt id="arg-n-fac-theor">n_fac_theor<a class="anchor" aria-label="anchor" href="#arg-n-fac-theor"></a></dt>
 <dd><p>numeric. Passed to <code><a href="efa_hull.html">efa_hull()</a></code>. Theoretical number
-of factors to retain. The maximum of this number and the number of factors
-suggested by <code><a href="efa_parallel.html">efa_parallel()</a></code> plus one will be used in the Hull method.</p></dd>
+of factors to retain. The Hull method uses one plus the larger of this
+number and the number of factors suggested by <code><a href="efa_parallel.html">efa_parallel()</a></code> as its
+upper bound.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -184,16 +182,15 @@ Lorenzo-Seva, Timmerman, and Kiers (2011).</p></dd>
 
 
 <dt id="arg-eigen-type-hull">eigen_type_HULL<a class="anchor" aria-label="anchor" href="#arg-eigen-type-hull"></a></dt>
-<dd><p>character. Passed to  <code><a href="efa_parallel.html">efa_parallel()</a></code> in
-<code><a href="efa_hull.html">efa_hull()</a></code>. On what the
-eigenvalues should be found in the parallel analysis. Can be one of
-<code>"SMC"</code>, <code>"PCA"</code>, or <code>"EFA"</code>. If using  <code>"SMC"</code> (default),
-the diagonal of the correlation matrices is
-replaced by the squared multiple correlations (SMCs) of the indicators. If
-using  <code>"PCA"</code>, the diagonal values of the correlation
-matrices are left to be 1. If using  <code>"EFA"</code>, eigenvalues are found on the
-correlation  matrices with the final communalities of an EFA solution as
-diagonal.</p></dd>
+<dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> in
+<code><a href="efa_hull.html">efa_hull()</a></code>. What the eigenvalues in the parallel analysis are based on.
+One of <code>"SMC"</code>, <code>"PCA"</code>, or <code>"EFA"</code> – different ways of estimating how much
+variance each indicator shares with the others before the eigenvalues are
+computed. <code>"SMC"</code> (default) uses each indicator's squared multiple
+correlation with the others (its diagonal value in the correlation matrix).
+<code>"PCA"</code> leaves the diagonal at 1, so each indicator's total variance – not
+just the shared part – feeds into the eigenvalues. <code>"EFA"</code> uses the
+communalities from a fitted EFA solution instead.</p></dd>
 
 
 <dt id="arg-eigen-type-other">eigen_type_other<a class="anchor" aria-label="anchor" href="#arg-eigen-type-other"></a></dt>
@@ -224,26 +221,29 @@ Default is 95.</p></dd>
 <dt id="arg-decision-rule">decision_rule<a class="anchor" aria-label="anchor" href="#arg-decision-rule"></a></dt>
 <dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> (also within
 <code><a href="efa_hull.html">efa_hull()</a></code>). Which rule to use to determine the number of
-factors to retain. Default is <code>"means"</code>, which will use the average
-simulated eigenvalues. <code>"percentile"</code>, uses the percentiles specified
-in percent. <code>"crawford"</code> uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010).</p></dd>
+factors to retain. Default is <code>"means"</code>, which uses the average simulated
+eigenvalues. <code>"percentile"</code> uses the percentiles specified in <code>percent</code>.
+<code>"crawford"</code> uses the 95th percentile for the first factor and the mean
+afterwards (based on Crawford et al., 2010).</p></dd>
 
 
 <dt id="arg-ekc-type">ekc_type<a class="anchor" aria-label="anchor" href="#arg-ekc-type"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Accepted and ignored. It selected
-between two ways to compute the <code><a href="efa_ekc.html">efa_ekc()</a></code> reference values. The <code>"AM2019"</code>
-reference values do not depend on the observed eigenvalues, so they do not apply
-the empirical correction that defines the criterion, and they are no longer
-computed.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Accepted and ignored. It
+used to select between two ways to compute the <code><a href="efa_ekc.html">efa_ekc()</a></code> reference values.
+The <code>"AM2019"</code> reference values do not depend on the observed eigenvalues.
+They therefore skip the empirical correction that defines the criterion, so
+they are no longer computed.</p></dd>
 
 
 <dt id="arg-n-datasets-nest">n_datasets_nest<a class="anchor" aria-label="anchor" href="#arg-n-datasets-nest"></a></dt>
-<dd><p>numeric. The number of datasets to simulate in <code><a href="efa_nest.html">efa_nest()</a></code>. Default is 1000.</p></dd>
+<dd><p>numeric. Passed to <code><a href="efa_nest.html">efa_nest()</a></code>. The number of
+datasets to simulate. Default is 1000.</p></dd>
 
 
 <dt id="arg-alpha-nest">alpha_nest<a class="anchor" aria-label="anchor" href="#arg-alpha-nest"></a></dt>
-<dd><p>numeric. The alpha level to use in <code><a href="efa_nest.html">efa_nest()</a></code> (i.e., 1-alpha percentile of eigenvalues is used for reference values).</p></dd>
+<dd><p>numeric. Passed to <code><a href="efa_nest.html">efa_nest()</a></code>. The alpha level to use.
+The reference values are the eigenvalues at the (1 - alpha_nest)
+percentile. Default is .05.</p></dd>
 
 
 <dt id="arg-show-progress">show_progress<a class="anchor" aria-label="anchor" href="#arg-show-progress"></a></dt>

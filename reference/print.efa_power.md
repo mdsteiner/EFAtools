@@ -2,21 +2,10 @@
 
 [`print()`](https://rdrr.io/r/base/print.html) turns an
 [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
-result into a short report. For an RMSEA-mode object this is a header
-naming the test, the null and alternative hypotheses with the
-significance level and degrees of freedom, the headline result (the
-power at the sample size, or the required sample size for the target
-power), and the critical value and noncentrality parameters. For a
-simulation-mode object it is instead the population and design, the
-retention hit-rate per criterion, the structure-recovery rate, and the
-convergence and Heywood-case rate.
-[`format()`](https://rdrr.io/r/base/format.html) assembles the same
-report and returns it as a character vector;
-[`print()`](https://rdrr.io/r/base/print.html) is
-`cat(format(x), sep = "\n")`. The lines follow the active console theme,
-so they are plain when colours are disabled (for example when captured
-into a file or stripped with
-[`cli::ansi_strip()`](https://cli.r-lib.org/reference/ansi_strip.html)).
+result into a short report, and
+[`format()`](https://rdrr.io/r/base/format.html) builds the same report
+as a character vector ([`print()`](https://rdrr.io/r/base/print.html) is
+`cat(format(x), sep = "\n")`).
 
 ## Usage
 
@@ -49,6 +38,23 @@ format(x, digits = 3, ...)
 [`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
 invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
 character vector with the report lines.
+
+## Details
+
+For an RMSEA-mode object, the report has a header naming the test, the
+null and alternative hypotheses with the significance level and degrees
+of freedom, the headline result (the power at the sample size, or the
+required sample size for the target power), and the critical value and
+noncentrality parameters.
+
+For a simulation-mode object, the report instead has the population and
+design, the retention hit-rate per criterion, the structure-recovery
+rate, and the convergence and Heywood-case rate.
+
+The lines follow the active console theme, so they print as plain text
+when colours are disabled – for example when captured into a file, or
+stripped with
+[`cli::ansi_strip()`](https://cli.r-lib.org/reference/ansi_strip.html).
 
 ## See also
 

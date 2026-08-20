@@ -58,8 +58,11 @@
   Mahalanobis distances when variable scales differed greatly.
 
 - [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)’s
-  multicollinearity verdict is now based on the condition index alone
-  (Belsley, Kuh & Welsch 1980 thresholds of 10/30 unchanged); the
+  multicollinearity verdict is now based on the condition index alone,
+  and its bands follow Belsley (1991): an index of 10 or less is rarely
+  of interest, an index above 30 flags a near linear dependency, and its
+  relative strength above 30 is graded by its position on the scale 1,
+  3, 10, 30, 100, 300, 1000 as moderate, strong, or very strong. The
   determinant is reported as a plain number, since a small determinant
   no longer by itself flags multicollinearity.
 

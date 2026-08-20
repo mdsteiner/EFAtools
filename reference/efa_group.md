@@ -75,15 +75,15 @@ efa_group(
 - seed:
 
   numeric or `NULL`. An optional seed making the analysis reproducible.
-  It covers the per-group fits – whose rotation may draw random starts –
-  whether or not a bootstrap is run, and additionally makes the
-  bootstrap independent of the number of parallel workers (the replicate
-  fits run with
+  It covers the per-group fits, some of whose rotations draw random
+  starts, whether or not a bootstrap is run. With a bootstrap, it also
+  makes the result independent of how many parallel workers are used
+  (bootstrap replicates run with
   [future_lapply()](https://future.apply.futureverse.org/reference/future_lapply.html),
-  for which a parallel plan can be set via
+  configurable via
   [`future::plan()`](https://future.futureverse.org/reference/plan.html)).
-  When supplied, the caller's random-number stream is restored
-  afterwards, leaving no side effect. Default is `NULL`.
+  The caller's random-number stream is restored afterwards, leaving no
+  side effect. Default is `NULL`.
 
 - delta:
 
@@ -135,11 +135,10 @@ efa_group(
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   argument nor a rotation-engine extra is rejected.
 
-  A rotation-engine extra that has the same name as an `efa_group()`
+  A rotation-engine extra that shares a name with an `efa_group()`
   argument cannot reach the rotation through `...`, because the argument
-  takes the name first. This applies to the geomin criterion parameter
-  `delta`: pass it as `rotate_control(delta = ...)`, which reaches both
-  the per-group fits and the shared alignment frame.
+  takes the name first (for example geomin's `delta`; see `delta`
+  above).
 
 ## Value
 
@@ -224,11 +223,10 @@ An object of class `efa_group`, a list containing:
   The alignment result: the consensus object (see
   [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)),
   or a list with the reference group, the target, and the per-group
-  Procrustes results. On the consensus path this is the raw record of
-  the Generalized Procrustes iteration, so its `target` and
-  `aligned_loadings` are in the orientation that iteration converged to,
-  before the gauge described under *Alignment* is applied; the gauged
-  matrices are `target` and `loadings` above.
+  Procrustes results. On the consensus path, this is the raw Procrustes
+  iteration output: its `target`/`aligned_loadings` are in a different
+  (pre-gauge) orientation than the gauged `target`/`loadings` returned
+  above. Use `target`/`loadings` above for comparisons.
 
 - settings:
 
@@ -253,9 +251,8 @@ but not a mix of the two. All groups must contain the same items in the
 same order; a different item set or order is an error rather than being
 silently reordered.
 
-Every group is fitted at the same `n_factors` (a common-\\k\\ multigroup
-model). Extra arguments in `...` (for example `estimator`, `rotation`,
-`cor_method`, or an
+Every group is fitted at the same `n_factors`. Extra arguments in `...`
+(for example `estimator`, `rotation`, `cor_method`, or an
 [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
 /
 [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
@@ -263,13 +260,13 @@ carrying the tuning knobs) are forwarded unchanged to each
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
 call, so the estimator and rotation are common to all groups.
 
-The \\k\\-factor model must be identified for the shared item set: its
-degrees of freedom \\((p - k)^2 - (p + k)) / 2\\ must be non-negative.
-Unlike a single
+The requested number of factors must be small enough, relative to the
+number of items, for the `n_factors`-factor model to be identified for
+the shared item set. Unlike a single
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
 fit – which only warns on an under-identified model – a multigroup fit
-aborts, because a shared alignment target across an under-identified
-group is not interpretable.
+aborts when this fails, because a shared alignment target across an
+under-identified group is not interpretable.
 
 ### Alignment
 
@@ -279,24 +276,21 @@ their loadings can be compared. Two strategies are available and are
 chosen automatically:
 
 - **Consensus** (the default for orthogonal rotations and for unrotated
-  solutions): a symmetric Generalized Procrustes Analysis target is
-  built across all groups (Gower, 1975), and every group's loadings are
-  rotated to it. The consensus frame is only identified up to a global
-  rotation of its factors, so it is then rotated into a fixed gauge and
-  the same transform is applied to every group. The gauge is the simple
-  structure of the rotation that was requested, evaluated on the
-  consensus target itself, so the shared loadings are in the same kind
-  of frame as the per-group solutions they summarise. Where no criterion
-  identifies a frame – an unrotated solution, and a `"bifactorT"`
-  request with two factors, whose criterion is identically zero with a
-  single group factor – the principal-axes orientation of the target is
-  used instead. Either way the columns are ordered by decreasing sum of
-  squares and signed by their column sums, and the shared orientation,
-  and hence every reported congruence, difference, and flag, does not
-  depend on the order in which the groups are supplied – up to the
-  convergence tolerance of the consensus iteration, which is set tight
-  enough that the residual is several orders of magnitude below the
-  precision the loadings are reported to.
+  solutions): a symmetric target is built across all groups using
+  Generalized Procrustes Analysis (Gower, 1975), and every group's
+  loadings are rotated to it. Because this target's own orientation is
+  arbitrary, it is then rotated once more into a fixed convention
+  (called the gauge), and the same transform is applied to every group.
+  The gauge uses the same simple-structure criterion as the requested
+  rotation, applied to the target itself, so the shared loadings are in
+  the same kind of frame as the per-group solutions they summarise.
+  Where no rotation criterion identifies a unique frame (an unrotated
+  solution, or a two-factor `bifactorT` request), the target's
+  principal-axes orientation is used instead. Either way the columns are
+  ordered by decreasing sum of squares and signed by their column sums,
+  and the shared orientation – and hence every reported congruence,
+  difference, and flag – does not depend on the order the groups are
+  supplied, to well beyond the precision loadings are reported at.
 
 - **Reference**: every group's loadings are aligned by Procrustes
   rotation to one reference group's loadings, which are kept fixed. This
@@ -315,15 +309,12 @@ sign of the returned `target`.
 Because the per-group loadings share one orientation, they can be
 compared cell by cell. `efa_group()` reports a per-pair summary of their
 differences (`diffs`) and a per-item, per-factor flag table (`flags`)
-marking cells whose absolute difference reaches `delta`. `delta` is a
-*descriptive salience heuristic*, not a significance test; a bootstrap
-(`b_boot > 0`) additionally reports whether each difference's confidence
-interval excludes zero. With `invariance = TRUE`, a per-factor verdict
-grades the matched Tucker congruence by the Lorenzo-Seva and ten Berge
-(2006) similarity bands – "equal" (`>= .95`) and "fair" (`[.85, .95)`) –
-labelling weaker congruences "incongruent"; when a bootstrap is
-available the verdict uses the congruence CI lower bound, so a factor is
-judged "equal" only if even the lower bound clears the band.
+marking cells whose absolute difference reaches `delta`; a bootstrap
+(`b_boot > 0`) additionally reports, for every cell, whether its
+difference's confidence interval excludes zero. With
+`invariance = TRUE`, each factor and group pair also gets an
+approximate-invariance verdict based on the matched Tucker congruence
+(see *Value* for the similarity bands and how a bootstrap is used).
 
 ## References
 

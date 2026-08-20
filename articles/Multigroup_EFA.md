@@ -179,17 +179,16 @@ tells you which one it used.
 
 - **Consensus** (the default for orthogonal and unrotated solutions)
   builds a single symmetric target across *all* groups by generalized
-  Procrustes analysis and rotates every group to it. That target is only
-  identified up to a rotation of its factors, so
+  Procrustes analysis and rotates every group to it. That target itself
+  could still be rotated in more than one way, so
   [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
-  fixes it in a canonical gauge – the simple structure of the rotation
-  you asked for, evaluated on the target itself, so the shared loadings
-  are the same kind of frame as the per-group solutions; or the target’s
-  principal-axes orientation where no criterion identifies one, as for
-  an unrotated solution – and applies the same transform to every group.
-  The shared orientation, and hence the congruences and flags below,
-  therefore does not depend on the order the groups are listed in. This
-  is what the fit above used.
+  fixes it to one well-defined orientation: where the requested rotation
+  identifies a unique frame, it applies that criterion to the target;
+  otherwise – an unrotated solution, or certain bifactor requests – it
+  uses a standard reference orientation instead. It then applies this
+  same fixed target to every group. The shared orientation, and hence
+  the congruences and flags below, therefore does not depend on the
+  order the groups are listed in. This is what the fit above used.
 - **Reference** keeps one group’s loadings fixed and rotates every other
   group onto them. This path is used whenever you name a
   `reference_group`, and it is used *automatically* for oblique
@@ -200,13 +199,13 @@ When an oblique rotation triggers the reference path without an explicit
 choice,
 [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
 leaves the requested rotation untouched and reports which group it used.
-The call below emits
+The call below prints this message before returning:
 
     Oblique rotations are aligned to a reference group, not a symmetric consensus target.
     ℹ The consensus target is undefined for oblique rotations with more than one factor.
     ℹ Group "control" is used as the reference; set `reference_group` to choose another.
 
-before returning, and records the choice in the settings:
+It also records the choice in the settings:
 
 ``` r
 
@@ -237,11 +236,11 @@ With raw data you can attach a percentile bootstrap confidence interval
 to each congruence by setting `b_boot`. The bootstrap resamples cases
 within each group, refits, re-aligns every replicate to the frozen
 target, and recomputes the congruences; a `seed` makes it reproducible
-and independent of any parallel backend. Should some replicate fits stop
-short of convergence – a handful out of several hundred is common – a
-warning reports how many; as in
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-those replicates are kept rather than discarded, so `n_boot` counts them
+and independent of any parallel backend. If some replicate fits do not
+converge – a handful out of several hundred is common – a warning
+reports how many. As in
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
+these replicates are kept rather than discarded, so `n_boot` counts them
 too.
 
 ``` r
@@ -344,9 +343,9 @@ plot(mg_ci, type = "differences")
 ## An approximate-invariance verdict
 
 For a compact summary, `invariance = TRUE` grades each factor’s
-congruence against the Lorenzo-Seva and ten Berge (2006) bands and
-returns a per-factor verdict: `"equal"` for a congruence of at least
-`.95`, `"fair"` for `.85` to `.95`, and `"incongruent"` below that.
+congruence against the same bands used above and returns a per-factor
+verdict: `"equal"`, `"fair"`, or `"incongruent"` (congruence below
+`.85`).
 
 ``` r
 

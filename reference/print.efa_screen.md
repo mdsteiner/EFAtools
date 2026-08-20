@@ -80,8 +80,9 @@ efa_screen(iris[, 1:4])
 #> 
 #> ℹ Determinant: 0.00811. It falls as variables are added, so the condition index
 #> below carries the verdict.
-#> ! Condition number: 140.889 (condition index 11.870). Moderate
-#> multicollinearity (index 10 to 30; Belsley, Kuh & Welsch, 1980).
+#> ! Condition number: 140.889 (condition index 11.870). The index is above 10,
+#> but not above 30, the value that flags a near linear dependency (Belsley,
+#> 1991).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
@@ -137,8 +138,8 @@ efa_screen(test_models$baseline$cormat, N = 500)
 #> 
 #> ℹ Determinant: 0.0121. It falls as variables are added, so the condition index
 #> below carries the verdict.
-#> ✔ Condition number: 11.680 (condition index 3.418). No concern (index below 10;
-#> Belsley, Kuh & Welsch, 1980).
+#> ✔ Condition number: 11.680 (condition index 3.418). An index of 10 or less is
+#> rarely of interest (Belsley, 1991).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
@@ -185,8 +186,8 @@ writeLines(format(efa_screen(test_models$baseline$cormat, N = 500)))
 #> 
 #> ℹ Determinant: 0.0121. It falls as variables are added, so the condition index
 #> below carries the verdict.
-#> ✔ Condition number: 11.680 (condition index 3.418). No concern (index below 10;
-#> Belsley, Kuh & Welsch, 1980).
+#> ✔ Condition number: 11.680 (condition index 3.418). An index of 10 or less is
+#> rarely of interest (Belsley, 1991).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 

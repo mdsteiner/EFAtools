@@ -124,17 +124,15 @@ identical(KMO(cor_mat)$KMO, efa_kmo(cor_mat)$KMO)
 
 ## Migrating from `EFA()` to `efa_fit()`
 
-[`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) to
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-is the migration with the largest change to the argument list.
 [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) exposed
 every estimation and rotation setting as a flat argument, which made for
 a long and somewhat unwieldy signature.
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-keeps the **primary** choices as top-level arguments — `x`, `n_factors`,
-`N`, `estimator`, `rotation`, `se`, `cor_method`, `use`, `b_boot`, `ci`,
-and `seed` — and collects the **tuning** knobs into two small control
-objects built by
+keeps the **primary** choices — the data, factor count, sample size,
+estimator, rotation, and a few others — as top-level arguments (see
+[`?efa_fit`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+for the full list), and collects the **tuning** knobs into two small
+control objects built by
 [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
 and
 [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
@@ -220,54 +218,38 @@ efa_fit(cor_mat, n_factors = 3, N = 500, max_iter = 500)
 #> i For example: `efa_fit(x, ..., estimate_control = estimate_control(max_iter = 500))`.
 ```
 
-The same move — flat estimation knobs into
+The same move — collecting flat estimation knobs into
 [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
-— applies to the other functions that run factor extractions internally.
+— applies to the other functions that fit a model internally:
 [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md),
 [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md),
 and the retention criteria that fit a model or use EFA-based eigenvalues
-([`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md),
+—
+[`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md),
 [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
 [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
 [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md),
 [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md),
 and
-[`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md))
-all take an
-[`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
-object in place of the loose estimation arguments; and
+[`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md).
 [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
-takes `p_type` in place of `P_type`.
+is the exception: it keeps its flat estimation and rotation arguments,
+and only renames `P_type` to `p_type`.
 
 ## What the `type` Presets Replicate
 
 The `type` presets are more than shorthand for a bundle of defaults.
 `"SPSS"` and `"psych"` follow how SPSS’s FACTOR procedure and
 [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) implement
-principal axis factoring and promax rotation, down to the details those
-implementations differ in — the iteration limit, the convergence
-criterion, whether eigenvalues are taken in absolute value, and which
-formula builds the promax target. `"EFAtools"`, the default, combines
-the settings that came out best across those comparisons. The presets
-and the differences they encode come from [Grieder and Steiner
-(2022)](https://doi.org/10.3758/s13428-021-01581-x), and the reference
-outputs of that study ship with the package: `test_models` holds
-correlation matrices for four `population_models` cases, and `SPSS_23`
-and `SPSS_27` hold what SPSS FACTOR returned for those matrices — and
-for several real data sets — under the two SPSS versions, so a preset
-can be checked against the program it emulates
-([`?SPSS_23`](https://mdsteiner.github.io/EFAtools/reference/SPSS_23.md)
-records what such a check needs beyond the preset: those references were
-produced with the PAF iteration limit raised above SPSS’s default of
-25).
-[`?efa_fit`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-lists the exact settings each preset selects, along with the one place a
+principal axis factoring and promax rotation, and `"EFAtools"`, the
+default, combines the settings that performed best in a systematic
+comparison of the three ([Grieder and Steiner,
+2022](https://doi.org/10.3758/s13428-021-01581-x)). There is one place a
 preset alone is not enough: because every preset keeps EFAtools’ Kaiser
 normalization, `"psych"` also needs `normalize = FALSE` to reproduce
 [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html)’s promax — and
-even then a residual difference remains, which
-[`?efa_fit`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-explains.
+even then a small residual difference remains, from ordinary convergence
+slack between the two implementations.
 
 ## Returned Objects Keep Their Legacy Classes
 
