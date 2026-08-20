@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: end -->
 
-The EFAtools package provides functions to perform exploratory factor analysis (EFA) procedures and compare their solutions. The goal is to provide state-of-the-art factor retention methods and a high degree of flexibility in the EFA procedures. To speed up the analyses, some of the iterative procedures like principal axis factoring (PAF) are implemented in C++.
+The EFAtools package performs exploratory factor analysis (EFA) and compares EFA solutions. It offers current factor retention methods and many estimation, rotation, and correlation options. The package implements core iterative procedures, including principal axis factoring (PAF), rotation, and polychoric correlation estimation, in C++ to increase speed.
 
 ## Installation
 
@@ -43,10 +43,10 @@ pak::pak("mdsteiner/EFAtools")
 
 The `efa_*` functions cover the steps of an EFA workflow:
 
-* **Screening and suitability**: `efa_screen()` checks the data for multivariate normality, outliers, and suitability for factor analysis; `efa_kmo()` and `efa_bartlett()` run the Kaiser-Meyer-Olkin criterion and Bartlett's test of sphericity individually.
+* **Screening and suitability**: `efa_screen()` checks the data for multivariate normality, outliers, and suitability for factor analysis. `efa_kmo()` and `efa_bartlett()` run the Kaiser-Meyer-Olkin criterion and Bartlett's test of sphericity separately.
 * **Factor retention**: `efa_retain()` runs several factor retention criteria with a single call. They are also available on their own: `efa_cd()`, `efa_ekc()`, `efa_hull()`, `efa_kgc()`, `efa_map()`, `efa_nest()`, `efa_parallel()`, `efa_scree()`, and `efa_smt()`.
 * **Fitting**: `efa_fit()` fits the factor model. `estimate_control()` and `rotate_control()` configure the estimation and rotation settings.
-* **Rotation and transformation**: `efa_procrustes()` rotates a solution onto a target; `efa_schmid_leiman()` transforms an oblique solution into a hierarchical one.
+* **Rotation and transformation**: `efa_procrustes()` rotates a solution onto a target. `efa_schmid_leiman()` transforms an oblique solution into a hierarchical one.
 * **Reliability**: `efa_reliability()` computes reliability and common-variance coefficients for a factor solution.
 * **Factor scores**: `efa_scores()` estimates factor scores together with score-quality diagnostics.
 * **Comparison**: `efa_compare()` compares two solutions (loadings or communalities).
@@ -56,7 +56,7 @@ The `efa_*` functions cover the steps of an EFA workflow:
 * **Simulation**: `efa_simulate()` simulates data from a common-factor population model.
 * **Power**: `efa_power()` performs analytic and simulation-based power analysis.
 
-The uppercase names (`EFA()`, `N_FACTORS()`, ...) are superseded by their `efa_*` equivalents, but remain exported and keep their arguments, so existing code keeps working.
+The uppercase names (`EFA()`, `N_FACTORS()`, ...) still work and keep their arguments. Use the `efa_*` names for new code.
 
 The following vignettes and articles cover these in detail:
 
@@ -68,7 +68,7 @@ The following vignettes and articles cover these in detail:
 
 ## Examples
 
-Here are a few examples of EFAtools functionalities
+The following examples show some EFAtools functions.
 
 ```{r fig.height=3}
 # load the package
@@ -77,9 +77,9 @@ library(EFAtools)
 
 ### Factor Retention
 
-Use `efa_retain()` to test the suitability of the data for factor analysis and to run multiple factor retention criteria with a single function call.
+Use `efa_retain()` to test if your data are suitable for factor analysis. It runs multiple factor retention criteria in a single call.
 
-Works on raw-data:
+With raw data, `efa_retain()` runs every criterion:
 
 ```{r fig.height=3}
 
@@ -87,7 +87,7 @@ Works on raw-data:
 efa_retain(GRiPS_raw)
 ```
 
-Skips some criteria on correlation input:
+With a correlation matrix, `efa_retain()` skips the criteria that need raw data:
 
 ```{r}
 
@@ -99,9 +99,9 @@ efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 
 #### Raw-Data Input
 
-With raw-data input, you can use all functionalities, including sandwich and bootstrap standard errors and DWLS estimation with polychoric correlations or two-stage FIML estimation of correlations.
+With raw data, you can use every feature: sandwich and bootstrap standard errors, DWLS estimation with polychoric correlations, and two-stage FIML estimation of correlations.
 
-The bootstrap intervals below are percentile intervals over refitted resamples. For the loadings and factor correlations they are centred on the point estimate as you would expect; for the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI) they sit above it, because each resample carries the sample's own misfit *plus* fresh sampling noise. A point estimate lying below its own lower bound there is that shift, not a miscomputed interval. CFI and TLI are unaffected, being ratios in which the baseline chi-square shifts along with the model one.
+In the first example below, which uses bootstrap SEs (`se = "np-boot"`), the confidence intervals are percentile intervals over refitted resamples. For the loadings and factor correlations, the intervals are centred on the point estimate. For the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI), the intervals are located above the point estimate, because each resample carries the sample's own misfit plus fresh sampling noise. If a point estimate falls below its own lower bound, this shift is the reason, not a miscomputed interval. CFI and TLI are unaffected because they are ratios: their baseline chi-square shifts together with the model chi-square.
 
 ```{r fig.height=3}
 
@@ -112,7 +112,7 @@ mod
 # detailed output with summary()
 summary(mod)
 
-#inspect residuals with residuals()
+# inspect residuals with residuals()
 residuals(mod)
 
 # DWLS estimation based on polychoric correlations, with robust sandwich SEs
@@ -125,7 +125,7 @@ summary(mod)
 
 #### Correlation Input
 
-When you don't have raw data available, you can enter a correlation matrix and sample size. With ML-estimation, you can still get information SEs, but note that they assume multivariate normality.
+When you do not have raw data, you can enter a correlation matrix and sample size instead. With ML estimation, you can still get information-based SEs (from the expected information matrix), but these assume multivariate normality.
 
 ```{r fig.height=3}
 
