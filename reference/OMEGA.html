@@ -9,9 +9,9 @@ from a Schmid-Leiman (SL) solution or lavaan single factor, second-order (see be
 or bifactor solution. The SL-based omegas can either be found from a
 psych::schmid(), efa_schmid_leiman(), or,
 in a more flexible way, by leaving
-model = NULL and specifying additional arguments. By setting the
-type argument, results from psych::omega()
-can be reproduced."><meta property="og:description" content="
+model = NULL and specifying additional arguments. The type argument selects
+how variables are assigned to group factors, and can reproduce the assignment
+psych::omega() makes."><meta property="og:description" content="
 OMEGA() has been superseded by efa_reliability(), which is the recommended
 interface going forward. It remains available and unchanged so existing code
 keeps working.
@@ -21,9 +21,9 @@ from a Schmid-Leiman (SL) solution or lavaan single factor, second-order (see be
 or bifactor solution. The SL-based omegas can either be found from a
 psych::schmid(), efa_schmid_leiman(), or,
 in a more flexible way, by leaving
-model = NULL and specifying additional arguments. By setting the
-type argument, results from psych::omega()
-can be reproduced."></head><body>
+model = NULL and specifying additional arguments. The type argument selects
+how variables are assigned to group factors, and can reproduce the assignment
+psych::omega() makes."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -78,9 +78,9 @@ from a Schmid-Leiman (SL) solution or lavaan single factor, second-order (see be
 or bifactor solution. The SL-based omegas can either be found from a
 <code><a href="https://rdrr.io/pkg/psych/man/schmid.html" class="external-link">psych::schmid()</a></code>, <code><a href="efa_schmid_leiman.html">efa_schmid_leiman()</a></code>, or,
 in a more flexible way, by leaving
-<code>model = NULL</code> and specifying additional arguments. By setting the
-<code>type</code> argument, results from <code><a href="https://rdrr.io/pkg/psych/man/omega.html" class="external-link">psych::omega()</a></code>
-can be reproduced.</p>
+<code>model = NULL</code> and specifying additional arguments. The <code>type</code> argument selects
+how variables are assigned to group factors, and can reproduce the assignment
+<code><a href="https://rdrr.io/pkg/psych/man/omega.html" class="external-link">psych::omega()</a></code> makes.</p>
     </div>
 
     <div class="section level2">
@@ -331,9 +331,14 @@ There is also the possibility to enter a <code>lavaan</code> single factor solut
 In this case, <code>g_name</code> is not needed. Finally, if a solution from a
 <code>lavaan</code> multiple group analysis is entered, the indices are computed for
 each group. For <code>lavaan</code> input the composite variances entering the omegas are
-model-implied (computed from the fitted loadings and residual variances), so the
-coefficients coincide with the observed-score versions when the model fits
-perfectly.
+model-implied: they are computed from the fitted loadings and the fitted residual
+covariance matrix, and count any freed residual covariance as well as the residual
+variances. The coefficients thus coincide with the observed-score versions when the
+model fits perfectly. The omegas split a composite's variance into a general part and one part
+per group factor, which needs uncorrelated latent variables: fit a bifactor model
+with <code>orthogonal = TRUE</code> (not <code>lavaan</code>'s default) and leave the covariances between
+a second-order model's first-order factors at zero. A fit whose factors correlate is
+rejected rather than scored as though they did not.
 The type argument is not evaluated if <code>model</code> is of class
 <code>lavaan</code>.</p>
 <p>If <code>model</code> is of class <code><a href="efa_schmid_leiman.html">efa_schmid_leiman()</a></code> or
@@ -355,18 +360,19 @@ specified instead of <code>cormat</code>, the correlation matrix is found using
 the <code><a href="https://rdrr.io/pkg/psych/man/factor.model.html" class="external-link">psych::factor.model()</a></code> function.</p>
 <p>The only difference between <code>type = "EFAtools"</code> and <code>type = "psych"</code>
 is the determination of variable-to-factor correspondences. <code>type = "psych"</code>
-reproduces the <code><a href="https://rdrr.io/pkg/psych/man/omega.html" class="external-link">psych::omega()</a></code> results, where
-variable-to-factor correspondences are found by taking the highest
+derives them as <code><a href="https://rdrr.io/pkg/psych/man/omega.html" class="external-link">psych::omega()</a></code> does, by
+taking the highest
 group factor loading for each variable as the relevant group factor loading.
 To do this, <code>factor_corres</code> must be left <code>NULL</code>.</p>
-<p><code>variance = "correlation"</code> gives the observed-variance form of omega, which
-reproduces <code><a href="https://rdrr.io/pkg/psych/man/omega.html" class="external-link">psych::omega()</a></code>; <code>"sums_load"</code> gives McDonald's model-implied
-total, which partitions exactly into omega hierarchical plus omega
-subscale. The two settings agree on the whole-scale omega total and omega
-hierarchical up to model misfit, and differ mainly in the whole-scale omega
-subscale, which counts all group-factor variance under <code>"sums_load"</code> but only the
-assigned subscale composites under <code>"correlation"</code>. On the subscale rows the
-two conventions agree when simple structure is well-achieved.</p>
+<p>Both settings score a composite by the true score variance the model attributes
+to it, counting every factor its variables load on; they differ only in the
+variance that is divided into. <code>variance = "correlation"</code> uses the composite's
+observed variance, giving the observed-score form of omega; <code>"sums_load"</code> uses its
+model-implied variance, which partitions exactly into omega hierarchical plus omega
+subscale on the whole-scale row. The two settings agree up to model misfit, and
+differ mainly in the whole-scale omega subscale, which counts all group-factor
+variance under <code>"sums_load"</code> but only the assigned subscale composites under
+<code>"correlation"</code>.</p>
 </div>
 
     </div>
@@ -437,8 +443,8 @@ result.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      tot  hier   sub     H   ECV   PUC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> g  0.883 0.740 0.125 0.842 0.652 0.706</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F1 0.769 0.500 0.269 0.463            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F2 0.763 0.494 0.270 0.472            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F3 0.744 0.519 0.225 0.408            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2 0.765 0.494 0.270 0.472            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3 0.745 0.519 0.225 0.408            </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Use with an output from the psych::schmid function, with type psych for</span></span></span>
 <span class="r-in"><span><span class="co">## OMEGA</span></span></span>
@@ -454,8 +460,8 @@ result.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       tot  hier   sub     H   ECV   PUC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> g   0.883 0.750 0.122 0.845 0.661 0.706</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F1* 0.769 0.498 0.272 0.466            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.765 0.494 0.271 0.473            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F3* 0.745 0.543 0.202 0.379            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.766 0.494 0.271 0.473            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3* 0.746 0.543 0.202 0.379            </span>
 <span class="r-in"><span><span class="co"># Use specified correlation matrix</span></span></span>
 <span class="r-in"><span><span class="fu">OMEGA</span><span class="op">(</span><span class="va">schmid_mod</span>, type <span class="op">=</span> <span class="st">"psych"</span>, cormat <span class="op">=</span> <span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Omega total, omega hierarchical, omega subscale, H index, explained common</span></span>
@@ -465,7 +471,7 @@ result.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       tot  hier   sub     H   ECV   PUC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> g   0.883 0.750 0.122 0.845 0.661 0.706</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F1* 0.769 0.498 0.272 0.466            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.764 0.494 0.270 0.473            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.765 0.494 0.270 0.473            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F3* 0.745 0.543 0.202 0.379            </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Manually specify components (useful if omegas should be computed for a SL</span></span></span>
@@ -488,8 +494,8 @@ result.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     tot  hier   sub     H   ECV   PUC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> g 0.883 0.740 0.125 0.842 0.652 0.706</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.769 0.500 0.269 0.463            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.763 0.494 0.270 0.472            </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.744 0.519 0.225 0.408            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.765 0.494 0.270 0.472            </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.745 0.519 0.225 0.408            </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

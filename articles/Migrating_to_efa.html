@@ -79,8 +79,8 @@ releases used uppercase names instead (<code><a href="../reference/EFA.html">EFA
 have <strong>not</strong> been removed — they still work — but the
 <code>efa_*</code> functions are now the recommended interface. This
 vignette explains the change, gives the full old-to-new mapping, and
-walks through the one migration that involves more than a rename:
-<code><a href="../reference/EFA.html">EFA()</a></code> to <code><a href="../reference/efa_fit.html">efa_fit()</a></code>.</p>
+walks through the migration with the largest change to the argument
+list: <code><a href="../reference/EFA.html">EFA()</a></code> to <code><a href="../reference/efa_fit.html">efa_fit()</a></code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mdsteiner/EFAtools" class="external-link">EFAtools</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
@@ -270,10 +270,10 @@ example, the Kaiser-Meyer-Olkin criterion:</p>
 <div class="section level2">
 <h2 id="migrating-from-efa-to-efa_fit">Migrating from <code>EFA()</code> to <code>efa_fit()</code><a class="anchor" aria-label="anchor" href="#migrating-from-efa-to-efa_fit"></a>
 </h2>
-<p><code><a href="../reference/EFA.html">EFA()</a></code> to <code><a href="../reference/efa_fit.html">efa_fit()</a></code> is the only migration
-that changes an argument list. <code><a href="../reference/EFA.html">EFA()</a></code> exposed every
-estimation and rotation setting as a flat argument, which made for a
-long and somewhat unwieldy signature. <code><a href="../reference/efa_fit.html">efa_fit()</a></code> keeps the
+<p><code><a href="../reference/EFA.html">EFA()</a></code> to <code><a href="../reference/efa_fit.html">efa_fit()</a></code> is the migration with
+the largest change to the argument list. <code><a href="../reference/EFA.html">EFA()</a></code> exposed
+every estimation and rotation setting as a flat argument, which made for
+a long and somewhat unwieldy signature. <code><a href="../reference/efa_fit.html">efa_fit()</a></code> keeps the
 <strong>primary</strong> choices as top-level arguments —
 <code>x</code>, <code>n_factors</code>, <code>N</code>,
 <code>estimator</code>, <code>rotation</code>, <code>se</code>,
@@ -400,12 +400,16 @@ package: <code>test_models</code> holds correlation matrices for four
 <code>population_models</code> cases, and <code>SPSS_23</code> and
 <code>SPSS_27</code> hold what SPSS FACTOR returned for those matrices —
 and for several real data sets — under the two SPSS versions, so a
-preset can be checked against the program it emulates.
-<code><a href="../reference/efa_fit.html">?efa_fit</a></code> lists the exact settings each preset selects,
-along with the one place a preset alone is not enough:
-<code>"psych"</code> also needs <code>normalize = FALSE</code> to match
-<code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>‘s promax, because every preset keeps EFAtools’
-Kaiser normalization.</p>
+preset can be checked against the program it emulates
+(<code><a href="../reference/SPSS_23.html">?SPSS_23</a></code> records what such a check needs beyond the
+preset: those references were produced with the PAF iteration limit
+raised above SPSS’s default of 25). <code><a href="../reference/efa_fit.html">?efa_fit</a></code> lists the
+exact settings each preset selects, along with the one place a preset
+alone is not enough: because every preset keeps EFAtools’ Kaiser
+normalization, <code>"psych"</code> also needs
+<code>normalize = FALSE</code> to reproduce <code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>’s
+promax — and even then a residual difference remains, which
+<code><a href="../reference/efa_fit.html">?efa_fit</a></code> explains.</p>
 </div>
 <div class="section level2">
 <h2 id="returned-objects-keep-their-legacy-classes">Returned Objects Keep Their Legacy Classes<a class="anchor" aria-label="anchor" href="#returned-objects-keep-their-legacy-classes"></a>

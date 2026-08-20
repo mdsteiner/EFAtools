@@ -27,8 +27,11 @@ simulation procedure
 - eigen_type:
 
   numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of
-  correlation matrix at 1) or SMC (eigen_type = 2; i.e., setting
-  diagonal of correlation matrix to SMCs).
+  correlation matrix at 1), SMC (eigen_type = 2; i.e., setting diagonal
+  of correlation matrix to SMCs), or both from the same simulated
+  datasets (eigen_type = 3), in which case the returned matrix holds the
+  PCA eigenvalues in the first n_vars columns and the SMC eigenvalues in
+  the next n_vars.
 
 - maxit:
 

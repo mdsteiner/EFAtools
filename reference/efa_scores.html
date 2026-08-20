@@ -101,12 +101,21 @@ Methods, 6</em>, 430-450.</p>
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>data.frame or matrix. Raw data (needed to obtain factor scores) or a
-correlation matrix (yields weights and diagnostics only). When raw data carry
+correlation matrix (yields weights and diagnostics only). A correlation matrix
+gives the correlations the weights are derived from only where <code>f</code> is a loading
+matrix. An <code><a href="efa_fit.html">efa_fit()</a></code> object carries the correlations it was fitted on, and
+those are used instead, so supply <code>rho</code> to derive the weights from another
+matrix. <code>x</code> describes the model variables either way. When raw data carry
 column names, they are matched to the model variables by name (any extra
 columns are ignored, and a model variable missing from <code>x</code> is an error).
 A named correlation matrix is likewise matched to the loading rows by name;
-its row and column names must use the same order. Unnamed input is matched
-by position.</p></dd>
+its row and column names must use the same order, and it must carry one row and
+column for each model variable. Unnamed input is matched
+by position.</p>
+<p>Raw data are scored as supplied: no imputation is performed, so a case with a
+missing value on any model variable receives <code>NA</code> scores (and is reported as
+not scored). A model variable that carries no usable spread in <code>x</code> – constant,
+infinite, or observed fewer than twice – is an error.</p></dd>
 
 
 <dt id="arg-f">f<a class="anchor" aria-label="anchor" href="#arg-f"></a></dt>
@@ -116,17 +125,20 @@ loadings.</p></dd>
 
 <dt id="arg-phi">Phi<a class="anchor" aria-label="anchor" href="#arg-phi"></a></dt>
 <dd><p>matrix. Factor intercorrelations. Only used when a loading matrix is
-supplied directly in <code>f</code>; taken from the <code>efa</code> object otherwise. Named rows
-and columns are matched to the loading columns and must use the same order.
+supplied directly in <code>f</code>; taken from the <code>efa</code> object otherwise, in which
+case a supplied <code>Phi</code> is ignored with a warning. Named rows and columns are
+matched to the loading columns and must use the same order.
 Default is <code>NULL</code>, in which case the factors are assumed uncorrelated.</p></dd>
 
 
 <dt id="arg-rho">rho<a class="anchor" aria-label="anchor" href="#arg-rho"></a></dt>
 <dd><p>matrix. Correlation matrix used to derive the scoring weights.
-Defaults to <code>NULL</code>, in which case <code>f$orig_R</code> is used for an <code>efa</code> object and
-<code>cor(x, use = "pairwise")</code> otherwise. Pass a matrix here to score against a
-correlation other than the one implied by <code>f</code>/<code>x</code>. Named rows and columns
-are matched to the loading rows; row and column names must use the same order.</p></dd>
+Defaults to <code>NULL</code>, in which case <code>f$orig_R</code> is used for an <code>efa</code> object; for
+a directly supplied loading matrix, <code>x</code> itself when it is a correlation
+matrix, and <code>cor(x, use = "pairwise")</code> otherwise. Pass a matrix here to score
+against a correlation other than the one implied by <code>f</code>/<code>x</code>. Named rows and
+columns are matched to the loading rows; row and column names must use the
+same order.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -143,10 +155,14 @@ are matched to the loading rows; row and column names must use the same order.</
 
 <dt>scores</dt>
 <dd><p>The factor scores (<code>n</code> by <code>m</code>), or <code>NULL</code> when a correlation
-matrix was supplied.</p></dd>
+matrix was supplied. A case with a missing value on any model variable is not
+scored and keeps <code>NA</code> in every column.</p></dd>
 
 <dt>r.scores</dt>
-<dd><p>The <code>m</code> by <code>m</code> correlations of the factor-score estimates.</p></dd>
+<dd><p>The <code>m</code> by <code>m</code> correlations of the factor-score estimates. Like
+<code>score_cor</code> and <code>determinacy</code>, these describe the standardized combination
+<code>scale(x) %*% W</code>, which for <code>method = "components"</code> is not the scale the
+returned <code>scores</code> are on.</p></dd>
 
 <dt>score_cor</dt>
 <dd><p>The <code>m</code> by <code>m</code> score-factor correlation matrix; its diagonal
@@ -158,7 +174,8 @@ univocality.</p></dd>
 squared determinacy <code>rho2</code>, and Guttman's indeterminacy index <code>guttman</code>.</p></dd>
 
 <dt>settings</dt>
-<dd><p>A list of the settings used.</p></dd>
+<dd><p>A list of the settings used, including the number of supplied
+observations <code>n_obs</code> and the number of them that could be scored <code>n_scored</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -184,7 +201,12 @@ which preserve the factor intercorrelations.</p></dd>
 <dd><p>Harman's (1976) idealized-variable scores.</p></dd>
 
 <dt><code>"components"</code></dt>
-<dd><p>component scores, <code>W = Lambda</code>.</p></dd>
+<dd><p>component scores, <code>W = Lambda</code>. These are formed from
+the raw, uncentered data (<code>X %*% W</code>) rather than the standardized data, so
+unlike the other methods they are on the scale of the input variables. The
+diagnostics below describe the standardized combination <code>scale(X) %*% W</code>,
+and therefore differ from the realized correlations of the returned scores
+whenever the variables have unequal variances.</p></dd>
 
 
 </dl><p>The determinacy (validity) of a score is its correlation with the factor it
@@ -197,6 +219,23 @@ between two equally valid sets of scores. For a <code>method</code> other than
 <code>"regression"</code> both quantities are specific to those scores: the determinacy is
 the method's own score-factor correlation (never larger than the regression
 value), and the reported <code>guttman</code> follows from it.</p>
+<p>Determinacies close to 1 mean the scores stand in for the factor with little
+loss; Grice (2001) regards values of about .90 and above as the level required
+before scores are interpreted for individual cases, and treats lower values as
+usable only for group-level research. The Guttman index makes the same point
+more sharply, because a factor score is never the factor: at <code>rho = .90</code> two
+equally valid sets of scores can still correlate as low as .62, and at
+<code>rho = .80</code> as low as .28, so the rank order of cases is not unique.</p>
+<p>Which <code>method</code> to prefer follows from what the scores are for. Regression
+scores correlate most highly with the factor, but they are biased towards it
+and correlate across factors even when the model is orthogonal. Bartlett
+scores are conditionally unbiased, which makes them the choice when the scores
+stand in for the factor in a later model. <code>"tenBerge"</code> reproduces the factor
+intercorrelations <code>Phi</code>, so it is the choice when the scores will be correlated
+with each other or with external variables. <code>"Anderson"</code> forces the scores to
+be uncorrelated with unit variance and is appropriate only when the factors
+themselves are orthogonal. <code>"components"</code> is a weighted sum of the observed
+variables rather than an estimate of a common factor.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -285,7 +324,7 @@ value), and the reported <code>guttman</code> follows from it.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Factor scores (Bartlett)</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Scored 810 observations on 1 factor.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Scored 810 of 810 observations on 1 factor (see `$scores`).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Score determinacy</span> ───────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

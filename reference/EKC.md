@@ -16,7 +16,7 @@ EKC(
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
-  type = "BvA2017"
+  type = lifecycle::deprecated()
 )
 ```
 
@@ -30,7 +30,7 @@ EKC(
 - N:
 
   numeric. The number of observations. Only needed if x is a correlation
-  matrix.
+  matrix. Must be larger than the number of variables.
 
 - use:
 
@@ -53,12 +53,11 @@ EKC(
 
 - type:
 
-  character. The calculation of EKC. type `"BvA2017"` is the original
-  implementation; type `"AM2019"` differs from the original
-  implementation but was used in simulation studies (Auerswald &
-  Moshagen, 2019; Caron, 2025). See details. Use
-  `type = c("BvA2017", "AM2019")` for both implementations. Make sure to
-  report which version you used.
+  **\[deprecated\]** Accepted and ignored. It selected between two ways
+  to compute the reference values. The `"AM2019"` reference values do
+  not depend on the observed eigenvalues, so they do not apply the
+  empirical correction that defines the criterion, and they are no
+  longer computed.
 
 ## Value
 

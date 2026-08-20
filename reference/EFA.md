@@ -73,13 +73,17 @@ EFA(
 
   numeric. The number of observations. Needs only be specified if a
   correlation matrix is used. If input is a correlation matrix and `N` =
-  NA (default), not all fit indices can be computed. When raw data with
-  missing values are entered and `use` is `"complete.obs"` or
-  `"na.or.complete"`, rows are deleted listwise, so `N` is taken as the
-  number of complete cases. The same applies, whatever `use` asks for,
-  whenever an asymptotic covariance is required (the "DWLS" estimator,
-  or `se = "sandwich"`); with `cor_method = "fiml"`, `N` is instead the
-  number of cases carrying at least one observed value.
+  NA (default), not all fit indices can be computed; `NA` is the only
+  accepted way of saying that the sample size is unknown, and a supplied
+  `N` must be at least 1. A positive `N` that is very small relative to
+  the number of variables leaves the chi-square-derived indices
+  unavailable as well, with a warning. When raw data with missing values
+  are entered and `use` is `"complete.obs"` or `"na.or.complete"`, rows
+  are deleted listwise, so `N` is taken as the number of complete cases.
+  The same applies, whatever `use` asks for, whenever an asymptotic
+  covariance is required (the "DWLS" estimator, or `se = "sandwich"`);
+  with `cor_method = "fiml"`, `N` is instead the number of cases
+  carrying at least one observed value.
 
 - method:
 
@@ -245,8 +249,12 @@ EFA(
 
 - ci:
 
-  numeric. The confidence interval to create from the bootstrap samples.
-  Must be between 0 and 1. Default is .95 for 95% CIs.
+  numeric. The level of the confidence intervals: the percentile
+  intervals from the bootstrap samples under `se = "np-boot"`, and the
+  analytic Wald intervals under `se = "information"` and
+  `se = "sandwich"`, the corrected two-stage intervals of
+  `cor_method = "fiml"` included. Must be greater than 0 and smaller
+  than 1. Default is .95 for 95% CIs.
 
 - random_starts:
 

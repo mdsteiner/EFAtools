@@ -4,16 +4,22 @@ averaging settings, the error/convergence/Heywood/admissibility rates, the
 indicator-to-factor correspondences, the averaged loadings (and, for oblique
 solutions, the factor intercorrelations), the variances accounted for, and the
 model fit. format() assembles the same report and returns it as a character
-vector; print() is cat(format(x), sep = "\n"). The lines follow the active
-console theme, so they are plain when colours are disabled (for example when
-captured into a file or stripped with cli::ansi_strip()).'><meta property="og:description" content='print() shows a summarised output of the efa_average() function: the
+vector; by default (plot = FALSE) print() is cat(format(x), sep = "\n").
+With plot = TRUE it additionally draws the loading plot, which is the one
+thing format() cannot return: the printed lines are the same, but the call
+has a side effect beyond them. The lines follow the active console theme, so
+they are plain when colours are disabled (for example when captured into a file
+or stripped with cli::ansi_strip()).'><meta property="og:description" content='print() shows a summarised output of the efa_average() function: the
 averaging settings, the error/convergence/Heywood/admissibility rates, the
 indicator-to-factor correspondences, the averaged loadings (and, for oblique
 solutions, the factor intercorrelations), the variances accounted for, and the
 model fit. format() assembles the same report and returns it as a character
-vector; print() is cat(format(x), sep = "\n"). The lines follow the active
-console theme, so they are plain when colours are disabled (for example when
-captured into a file or stripped with cli::ansi_strip()).'></head><body>
+vector; by default (plot = FALSE) print() is cat(format(x), sep = "\n").
+With plot = TRUE it additionally draws the loading plot, which is the one
+thing format() cannot return: the printed lines are the same, but the call
+has a side effect beyond them. The lines follow the active console theme, so
+they are plain when colours are disabled (for example when captured into a file
+or stripped with cli::ansi_strip()).'></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -63,9 +69,12 @@ averaging settings, the error/convergence/Heywood/admissibility rates, the
 indicator-to-factor correspondences, the averaged loadings (and, for oblique
 solutions, the factor intercorrelations), the variances accounted for, and the
 model fit. <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> assembles the same report and returns it as a character
-vector; <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> is <code>cat(format(x), sep = "\n")</code>. The lines follow the active
-console theme, so they are plain when colours are disabled (for example when
-captured into a file or stripped with <code><a href="https://cli.r-lib.org/reference/ansi_strip.html" class="external-link">cli::ansi_strip()</a></code>).</p>
+vector; by default (<code>plot = FALSE</code>) <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> is <code>cat(format(x), sep = "\n")</code>.
+With <code>plot = TRUE</code> it additionally draws the loading plot, which is the one
+thing <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> cannot return: the printed lines are the same, but the call
+has a side effect beyond them. The lines follow the active console theme, so
+they are plain when colours are disabled (for example when captured into a file
+or stripped with <code><a href="https://cli.r-lib.org/reference/ansi_strip.html" class="external-link">cli::ansi_strip()</a></code>).</p>
     </div>
 
     <div class="section level2">
@@ -94,7 +103,8 @@ are "average", "sd", "range", "min", and "max". Default is "average" and
 <dt id="arg-plot">plot<a class="anchor" aria-label="anchor" href="#arg-plot"></a></dt>
 <dd><p>logical. Whether a plot of the average and min- max loadings should
 be created. Default is FALSE. If more than 10 factors are extracted, no plot is
-created. Only used by <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>.</p></dd>
+created. Only used by <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>; <code><a href="plot.efa_average.html">plot.efa_average()</a></code> draws the same plot and
+returns it, so it is the route to take when the plot object itself is wanted.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -112,13 +122,13 @@ character vector with the report lines.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">EFA_aver</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_average.html">efa_average</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Extracting data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[11ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[16ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reordering factors</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[20ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[29ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Averaging data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[16ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[23ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="va">EFA_aver</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

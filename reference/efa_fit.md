@@ -1,10 +1,13 @@
 # Exploratory factor analysis (EFA)
 
 This function does an EFA with either `PAF`, `ML`, `ULS`/`MINRES`, or
-`DWLS` with or without subsequent rotation. All arguments with default
-value `NA` can be left to default if `type` is set to one of "EFAtools",
-"SPSS", or "psych". The respective specifications are then handled
-according to the specified type (see details).
+`DWLS` with or without subsequent rotation. Estimation and rotation are
+tuned through the control objects built by
+[`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+and
+[`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md);
+each accepts a `type` preset ("EFAtools", "SPSS", "psych", or "none")
+that fills in its remaining settings.
 
 ## Usage
 
@@ -143,13 +146,17 @@ Multivariate Software.
 
   numeric. The number of observations. Needs only be specified if a
   correlation matrix is used. If input is a correlation matrix and `N` =
-  NA (default), not all fit indices can be computed. When raw data with
-  missing values are entered and `use` is `"complete.obs"` or
-  `"na.or.complete"`, rows are deleted listwise, so `N` is taken as the
-  number of complete cases. The same applies, whatever `use` asks for,
-  whenever an asymptotic covariance is required (the "DWLS" estimator,
-  or `se = "sandwich"`); with `cor_method = "fiml"`, `N` is instead the
-  number of cases carrying at least one observed value.
+  NA (default), not all fit indices can be computed; `NA` is the only
+  accepted way of saying that the sample size is unknown, and a supplied
+  `N` must be at least 1. A positive `N` that is very small relative to
+  the number of variables leaves the chi-square-derived indices
+  unavailable as well, with a warning. When raw data with missing values
+  are entered and `use` is `"complete.obs"` or `"na.or.complete"`, rows
+  are deleted listwise, so `N` is taken as the number of complete cases.
+  The same applies, whatever `use` asks for, whenever an asymptotic
+  covariance is required (the "DWLS" estimator, or `se = "sandwich"`);
+  with `cor_method = "fiml"`, `N` is instead the number of cases
+  carrying at least one observed value.
 
 - estimator:
 
@@ -245,8 +252,12 @@ Multivariate Software.
 
 - ci:
 
-  numeric. The confidence interval to create from the bootstrap samples.
-  Must be between 0 and 1. Default is .95 for 95% CIs.
+  numeric. The level of the confidence intervals: the percentile
+  intervals from the bootstrap samples under `se = "np-boot"`, and the
+  analytic Wald intervals under `se = "information"` and
+  `se = "sandwich"`, the corrected two-stage intervals of
+  `cor_method = "fiml"` included. Must be greater than 0 and smaller
+  than 1. Default is .95 for 95% CIs.
 
 - seed:
 
@@ -265,13 +276,14 @@ Multivariate Software.
 
   Additional arguments forwarded to the rotation engine. Only the
   arguments the selected `rotation` consumes are accepted: `maxit` (the
-  maximum number of engine iterations) for the GPArotation-style
-  rotations, plus the selected criterion's parameter (`gam` for
-  "oblimin", where `gam = 0` is the recommended default and larger
-  values can drive the solution toward factor collapse; `delta` for
-  "geominT" and "geominQ"). Anything else – a misspelled name, another
-  criterion's parameter, or any extra with "varimax", "promax", or
-  "none", which consume no extras – is an error rather than a setting
+  iteration bound on a single gradient-projection optimization, see
+  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md))
+  for the criterion rotations, plus the selected criterion's parameter
+  (`gam` for "oblimin", where `gam = 0` is the recommended default and
+  larger values can drive the solution toward factor collapse; `delta`
+  for "geominT" and "geominQ"). Anything else – a misspelled name,
+  another criterion's parameter, or any extra with "varimax", "promax",
+  or "none", which consume no extras – is an error rather than a setting
   that is silently ignored. The accepted arguments are merged with, and
   take precedence over, the extra arguments stored in
   [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
@@ -341,7 +353,13 @@ following:
 - vars_accounted:
 
   Matrix of explained variances and sums of squared loadings. Based on
-  the unrotated loadings.
+  the unrotated loadings. Its rows are `"SS loadings"` and
+  `"Prop Tot Var"`, followed by `"Cum Prop Tot Var"`, `"Prop Comm Var"`,
+  and `"Cum Prop Comm Var"`; those last three are omitted for a
+  single-factor solution, where they would only repeat the two above
+  them. So code that indexes a row by name (for example
+  `["Prop Comm Var", ]`) must allow for the two-row form at
+  `n_factors = 1`.
 
 - fit_indices:
 
@@ -352,16 +370,43 @@ following:
   populated and the Chi-Square-based indices are `NA` (for DWLS with
   `se = "sandwich"` the full block is filled from a scaled Chi Square
   instead). Whenever the Chi Square is a scaled statistic
-  (`se = "sandwich"`, or any `cor_method = "fiml"` fit) AIC, BIC, and
-  ECVI are `NA` and the list additionally carries the scaling
+  (`se = "sandwich"`, or a `cor_method = "fiml"` fit whose correction
+  could be formed) AIC, BIC, and ECVI are `NA` and the list additionally
+  carries `chi_scaled_type` (`"scaled.shifted"`) and the scaling
   components: `chi_scaling` (the multiplier a in the scaled-and-shifted
   statistic \\aT + b\\, i.e. the reciprocal of lavaan's
   `chisq.scaling.factor`), `chi_shift` (b), `chi_unscaled` (the unscaled
-  statistic T), and the alternative `chi_mean_adjusted` and
-  `chi_mean_var` statistics with their `df_mean_var`. RMSR is retained
-  for programmatic use and backward compatibility, although the print
-  and summary methods display SRMR. See the *Fit indices* section in
-  Details for how each index is defined, scaled, and referenced.
+  statistic T, which sits on the package's own weight scale: the
+  reported statistics do not depend on that scale, but T itself is not
+  comparable across estimators or programs), and the alternative
+  `chi_mean_adjusted` and `chi_mean_var` statistics with their
+  `df_mean_var`. `chi_scaled_type` is the field that says which
+  statistic `chi` is: a `cor_method = "fiml"` fit whose corrected
+  statistic could not be formed instead reports the plain two-stage
+  likelihood-ratio statistic under `chi_scaled_type = "uncorrected.lrt"`
+  and carries none of the scaling components, because nothing was
+  rescaled (see *Fit indices* in Details). The field is absent from an
+  ordinary, unscaled chi-square block. RMSR is retained for programmatic
+  use and backward compatibility, although the print and summary methods
+  display SRMR. The list also carries `Fm`, the value of the estimator's
+  own objective at the solution, which is on an estimator-specific scale
+  and is not the discrepancy the Chi Square is built from: for ML the
+  maximum-likelihood discrepancy (there the two do coincide, up to the
+  Bartlett multiplier), for ULS half the squared Frobenius norm of the
+  residual \\R - \Psi - \Lambda\Lambda'\\, whose diagonal vanishes at an
+  interior optimum and there leaves the sum of squared residual
+  correlations over the unique variable pairs (psych does not report
+  this criterion:
+  [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html)'s
+  `criteria["objective"]` is the maximum-likelihood discrepancy at the
+  fitted solution for every `fm`, `"uls"` included), for DWLS the
+  weighted residual sum of squares over those same unique pairs, and
+  `NA` for PAF, which minimises no explicit objective. It also carries
+  the independence-baseline statistics `chi_null` (Bartlett's test of
+  sphericity on the unscaled paths, the scaled or likelihood-ratio
+  baseline otherwise), its degrees of freedom `df_null` (\\p(p -
+  1)/2\\), and the corresponding `p_null`. See the *Fit indices* section
+  in Details for how each index is defined, scaled, and referenced.
 
 - model_implied_R:
 
@@ -378,7 +423,10 @@ following:
 
 - rot_loadings:
 
-  Loading matrix containing the final rotated loadings (pattern matrix).
+  Loading matrix containing the final rotated loadings. For an oblique
+  rotation this is the pattern matrix – each variable's unique
+  contribution from each factor, with the other factors partialled out –
+  and is the matrix normally interpreted (see *Rotations*).
 
 - Phi:
 
@@ -386,7 +434,9 @@ following:
 
 - Structure:
 
-  The structure matrix (only for oblique rotations).
+  The structure matrix `rot_loadings %*% Phi`, holding the plain
+  variable-factor correlations, which are inflated by the factor
+  intercorrelations (only for oblique rotations).
 
 - rotmat:
 
@@ -399,13 +449,23 @@ following:
 
   Matrix of explained variances and sums of squared loadings. Based on
   rotated loadings and, for oblique rotations, the factor
-  intercorrelations.
+  intercorrelations. Same rows as `vars_accounted`; it is returned only
+  when a rotation was actually applied, which never happens for a
+  single-factor solution, so it always has the five-row form.
 
 - settings:
 
-  A list of the settings used. For the criterion rotations fitted by
-  gradient projection it additionally carries `rotation_diagnostics`, a
-  list summarising the multi-start run: `n_starts_total` (the
+  A list of the settings used, including `seed` (`NULL` when none was
+  supplied), `input_type` (`"raw"` or `"correlation"`, what `x` was),
+  and `cor_method_used` (the correlation method that actually ran,
+  `NA_character_` for a correlation-matrix input, which consumes none).
+  `cor_method` keeps the requested value whether or not it was used. For
+  the criterion rotations fitted by gradient projection it additionally
+  carries `rotation_diagnostics`, a list summarising the multi-start
+  run: `converged` (whether the start whose solution is returned reached
+  the convergence tolerance – reported separately from the count below
+  because the returned solution is the one with the lowest criterion
+  value, which need not be a converged one), `n_starts_total` (the
   `random_starts` random starts plus the rational start), `n_optimized`
   (how many of those starts were actually optimized – fewer than
   `n_starts_total` whenever the solver screens the random starts and
@@ -420,6 +480,21 @@ following:
   criterion is optimized on, not on the returned `rot_loadings`, so they
   are not directly comparable to a criterion recomputed from the
   returned loadings.
+
+- fiml:
+
+  Diagnostics of the two-stage FIML correlation's EM estimation, present
+  only for `cor_method = "fiml"`: `converged` (whether the EM met
+  `fiml_tol` before reaching `fiml_max_iter`), `iter` (the number of EM
+  iterations run), `n_patterns` (the number of distinct missingness
+  patterns it accumulated over), and `n` (the number of rows carrying at
+  least one observed value, which is the reported `N`). A `converged` of
+  `FALSE` means the analysed correlation matrix is the EM's last iterate
+  rather than the FIML estimate; it is raised as an
+  `efa_fiml_em_nonconvergence` warning while the fit runs and shown by
+  the print and summary methods. Both `fiml_max_iter` and `fiml_tol` are
+  set through
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
 
 - SE:
 
@@ -461,7 +536,14 @@ following:
   cubes, and the first dimension of the `fit_indices` matrix (whose
   columns are named after the fit indices). Replicates that failed are
   left `NA`. Populated only for `se = "np-boot"`; `NULL` for the
-  analytic SE methods.
+  analytic SE methods. Every block grows linearly in `b_boot`, and this
+  list normally dominates the size of a bootstrap fit. The loading,
+  `Phi`, and structure cubes grow as \\O(B\\p\\k)\\, but the residual
+  cube is \\p \times p \times B\\ and so grows as \\O(B\\p^2)\\: at \\p
+  = 50\\ and `b_boot = 5000` it alone is about 100 MB. If a saved fit is
+  larger than the analysis warrants, that block is why; the standard
+  errors and intervals derived from it are in `SE` and `CI` and do not
+  need it.
 
 - vcov_unrot_loadings:
 
@@ -490,18 +572,23 @@ following:
   the column pairs and labelled `"<var_i>-<var_j>"`. Populated for
   `se = "sandwich"` on the polychoric/tetrachoric and Pearson paths;
   `NULL` otherwise, including under `cor_method = "fiml"`, whose meat is
-  the saturated FIML asymptotic covariance and is not returned.
+  the saturated FIML asymptotic covariance and is not returned. Being
+  square in \\p(p-1)/2\\, it grows as \\O(p^4)\\ – about 1.4 MB at \\p =
+  30\\ and 11 MB at \\p = 50\\ – and typically dominates a sandwich
+  fit's size. It is retained rather than discarded because
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  reads it from each per-imputation fit to build the pooled asymptotic
+  covariance, so an `m`-imputation sandwich run holds `m` of them.
 
 ## Details
 
-There are two main ways to use this function. The easiest way is to use
-it with a specified `type` (see above), which sets most of the other
-arguments accordingly. Another way is to use it more flexibly by
-explicitly specifying all arguments used and set `type` to "none" (see
-examples). A mix of the two can also be done by specifying a `type` as
-well as additional arguments. However, this will throw warnings to avoid
-unintentional deviations from the implementations according to the
-specified `type`.
+Estimation is configured with
+[`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+and rotation with
+[`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
+Each takes a `type` preset that sets its remaining knobs, and a knob
+given explicitly alongside a preset overrides that preset's value for
+it. See *Using the type presets* below for what each preset sets.
 
 ### Estimators
 
@@ -541,6 +628,17 @@ The estimator is chosen with `estimator`.
   listwise-complete cases. Its fit-index behaviour is described under
   *Fit indices*.
 
+ML and ULS are fitted by a bounded L-BFGS-B optimiser over the
+uniquenesses, capped at 100 iterations. DWLS runs a bounded warm start
+capped at 50 iterations and then polishes the loadings with an
+unconstrained quasi-Newton optimiser capped at 500; the reported
+convergence code is the polish's. None of these caps is user-adjustable
+– `max_iter` governs the PAF iteration only – so a fit that stops at its
+cap (convergence code 1) calls for a simpler model or a
+better-conditioned correlation matrix rather than a longer run. Codes 51
+and 52 come from L-BFGS-B's line search and are not iteration limits at
+all.
+
 ### Correlation methods
 
 When raw data are supplied, `cor_method` selects how the correlation
@@ -548,8 +646,15 @@ matrix is computed (it is ignored when a correlation matrix is entered
 directly).
 
 - **"pearson"** (default), **"spearman"**, and **"kendall"** are passed
-  to [`stats::cor()`](https://rdrr.io/r/stats/cor.html) for continuous
-  or rank data.
+  to [`stats::cor()`](https://rdrr.io/r/stats/cor.html). The factor
+  model parameterises a Pearson correlation, but a rank matrix is
+  analysed on its own metric: it is not transformed to the Pearson
+  scale. For bivariate-normal data the population values differ,
+  \\\rho_S = (6/\pi)\arcsin(\rho/2)\\ and \\\tau =
+  (2/\pi)\arcsin(\rho)\\, so Kendall's tau in particular is not a
+  Pearson correlation and gives the most attenuated loadings of the
+  three. For ordinal items prefer `"poly"` / `"tetra"` below, which
+  estimate the correlation of the underlying continuous variables.
 
 - **"poly"** / **"tetra"** compute polychoric / tetrachoric correlations
   for ordinal / binary data, assuming an underlying bivariate-normal
@@ -577,7 +682,15 @@ directly).
   re-integrated with a finer rule, because the base rule under-resolves
   the narrow conditional transition of such a pair. The resulting
   correlations agree with an exact bivariate-normal integrator to about
-  `1e-5`, so no quadrature setting is exposed as an argument.
+  `1e-5` over most of the range, and to about `1e-4` for a two-by-two
+  table whose correlation sits just below the value at which the finer
+  rule takes over; both are far inside the sampling error of the
+  estimate at any realistic sample size, so no quadrature setting is
+  exposed as an argument. Each of the `p(p - 1)/2` variable pairs is a
+  separate numerical optimisation, so a polychoric matrix costs
+  substantially more than a Pearson one, and the difference grows
+  quadratically in the number of variables; with `se = "np-boot"` the
+  whole matrix is re-estimated for every bootstrap replicate.
 
 - **"fiml"** estimates a two-stage full-information maximum-likelihood
   correlation. The saturated multivariate-normal mean and covariance are
@@ -589,13 +702,14 @@ directly).
   followed by [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) and
   `lavaan(missing = "two.stage")`, *not* `lavaan::efa(missing = "ml")`,
   so the point estimates are not expected to match the latter. The model
-  fit indices are corrected two-stage statistics (see *Fit indices*).
-  `"fiml"` uses every case and handles the missingness itself, so `use`
-  is ignored; it supplies a continuous (Pearson-type) correlation only
-  and is therefore not compatible with `estimator = "DWLS"`. Standard
-  errors are available analytically for `estimator = "ML"` or `"ULS"`
-  and, for any estimator, by the non-parametric bootstrap (see *Standard
-  errors*). For multiply imputed data,
+  fit indices are corrected two-stage statistics wherever the correction
+  can be formed (see *Fit indices*). `"fiml"` uses every case and
+  handles the missingness itself, so `use` is ignored; it supplies a
+  continuous (Pearson-type) correlation only and is therefore not
+  compatible with `estimator = "DWLS"`. Standard errors are available
+  analytically for `estimator = "ML"` or `"ULS"` and, for any estimator,
+  by the non-parametric bootstrap (see *Standard errors*). For multiply
+  imputed data,
   [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
   is the alternative route to handling missingness. Both routes assume
   the values are missing at random (MAR), and which one to prefer is
@@ -613,6 +727,14 @@ built into the package. Orthogonal rotations keep the factors
 uncorrelated, whereas oblique rotations let them correlate (returning a
 pattern matrix, a structure matrix, and the factor intercorrelations
 `Phi`) and are usually more realistic for psychological constructs.
+
+For an oblique solution the **pattern** matrix (`rot_loadings`) holds
+each variable's unique contribution from each factor, with the other
+factors partialled out; it is what is normally interpreted and reported.
+The **structure** matrix (`Structure = rot_loadings %*% Phi`) holds the
+plain variable-factor correlations, which are inflated by the factor
+intercorrelations. The two coincide only when `Phi` is the identity,
+which is why an orthogonal rotation returns `rot_loadings` alone.
 
 Orthogonal rotations:
 
@@ -634,26 +756,41 @@ Orthogonal rotations:
 - **bentlerT** uses Bentler's invariant pattern simplicity criterion.
 
 - **bifactorT** is the Jennrich-Bentler orthogonal bifactor criterion: a
-  general factor plus group factors (bifactor simple structure).
+  general factor plus group factors (bifactor simple structure). It
+  needs at least two group factors (`n_factors >= 3`): with two factors
+  the criterion is identically zero, so no rotation is performed and the
+  unrotated loadings are returned with a warning.
 
 Oblique rotations:
 
 - **promax** is a fast two-step rotation: a varimax solution is raised
   to a power (controlled by `k` and `p_type`) to form a target that is
-  then fitted obliquely. It is the common, inexpensive oblique default.
+  then fitted obliquely. It is the historical, inexpensive oblique
+  rotation, kept for comparability with SPSS and with the older
+  literature.
 
-- **oblimin** is a flexible oblique family controlled by `gam` (default
-  0); a good general-purpose criterion. `gam = 0` (quartimin) is the
-  recommended setting: larger values increasingly reward correlated
-  factors and can drive the solution toward factor collapse, so inspect
-  `Phi` before interpreting a fit with `gam > 0`.
+- **oblimin** is the general family **quartimin** belongs to, controlled
+  by `gam` (default 0); use it when you specifically want `gam != 0`.
+  Larger values increasingly reward correlated factors and can drive the
+  solution toward factor collapse, so inspect `Phi` before interpreting
+  a fit with `gam > 0`.
 
-- **quartimin** is oblimin pinned at `gam = 0`; a robust default oblique
-  criterion.
+- **quartimin** is oblimin pinned at `gam = 0`, and is the recommended
+  general-purpose oblique criterion.
 
 - **simplimax** drives the `k` smallest loadings toward zero. Its
-  criterion is only piecewise smooth, so it is the most prone to local
-  minima and relies on several `random_starts`.
+  criterion is only piecewise smooth and strongly multimodal, which
+  makes it by far the most start-dependent rotation offered here:
+  different random starts reach genuinely different optima rather than
+  the same one to within a tolerance. On a 30-variable, four-factor
+  solution the attained criterion varies by half again or more across
+  seeds at the default `random_starts = 100`, and the corresponding
+  loadings can differ by 0.6 or more after matching factors and signs.
+  Because every start is fully optimised (there is no screening stage),
+  raising `random_starts` to several hundred costs proportionally more
+  time but buys a better optimum; always fix the generator with `seed`
+  (or [`base::set.seed()`](https://rdrr.io/r/base/Random.html)) when
+  reporting a simplimax solution.
 
 - **bentlerQ** is the oblique Bentler invariant pattern simplicity
   criterion.
@@ -664,7 +801,14 @@ Oblique rotations:
   internally).
 
 - **bifactorQ** is the oblique (correlated) Jennrich-Bentler bifactor
-  criterion.
+  criterion, with the same two-group-factor requirement as
+  **bifactorT**.
+
+Prefer an oblique rotation unless there is a substantive reason to force
+the factors to be uncorrelated: if `Phi` comes back near zero the
+oblique solution is essentially the orthogonal one anyway, whereas
+imposing orthogonality on genuinely correlated factors distorts the
+pattern.
 
 The criterion-based rotations (all except varimax and promax) are fitted
 by gradient projection with `random_starts` random starts to guard
@@ -673,9 +817,12 @@ particular) are the most multimodal. The starts are drawn from the
 random-number generator, so different starts can reach genuinely
 different optima and such a fit is reproducible only when the generator
 is controlled: pass `seed`, or call
-[`set.seed()`](https://rdrr.io/r/base/Random.html) beforehand. The
-`type` argument changes the varimax and promax settings (see *Using the
-type presets*) and, for every rotation, the factor `order_type`. A
+[`base::set.seed()`](https://rdrr.io/r/base/Random.html) beforehand.
+`precision` and `maxit` govern different stages of a rotation and are
+described with the arguments themselves in
+[`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
+The `type` argument changes the varimax and promax settings (see *Using
+the type presets*) and, for every rotation, the factor `order_type`. A
 single factor cannot be rotated.
 
 ### Standard errors
@@ -740,15 +887,15 @@ coefficients; it reports no uniqueness or communality standard errors
   loadings, `Phi`, the structure coefficients, the uniquenesses and the
   communalities – is unaffected and still reported. Use those, or
   `se = "np-boot"`, when the unrotated loadings themselves are the
-  quantity of interest. The detection covers the Pearson and polychoric
-  paths; the two-stage `cor_method = "fiml"` sandwich carries no such
-  diagnostic, so a weakly determined orientation is not flagged there. A
+  quantity of interest. The detection covers every analytic route – the
+  Pearson and polychoric paths and the two-stage `cor_method = "fiml"`
+  sandwich alike, which share the gauge constraint it describes. A
   Heywood case (a uniqueness at its lower boundary) is separate: the
-  Wald approximation fails there for every parameter, so neither
-  analytic method reports a standard error at all – the whole `SE`/`CI`
-  block is `NA` with an `efa_se_unreliable` warning. The `"sandwich"`
-  scaled chi-square is not a Wald quantity and is still reported, so the
-  fit indices are unaffected.
+  Wald approximation fails there for every parameter, so no analytic
+  method reports a standard error at all – the whole `SE`/`CI` block is
+  `NA` with an `efa_se_unreliable` warning. The scaled chi-square (from
+  `"sandwich"`, or from `cor_method = "fiml"`) is not a Wald quantity
+  and is still reported, so the fit indices are unaffected.
 
 - **"sandwich"** returns robust (Godambe sandwich) standard errors from
   raw data, combining the estimator weight with an
@@ -767,9 +914,12 @@ coefficients; it reports no uniqueness or communality standard errors
   The statistic reported as `chi` is always the scaled-and-shifted one
   (the WLSMV default, flagged by `chi_scaled_type`), for the continuous
   Pearson path as well as the ordinal one; the mean-adjusted statistic
-  that lavaan's `MLM` reports for continuous data is returned alongside
-  it as `chi_mean_adjusted`. Because the asymptotic covariance must
-  describe the same cases as the correlation matrix, the sandwich (like
+  of the kind lavaan's `MLM` reports for continuous data is returned
+  alongside it as `chi_mean_adjusted`. It is not numerically equal to
+  `MLM`, because it projects only the off-diagonal correlation
+  residuals, and the two can differ substantially on data that is not
+  multivariate normal. Because the asymptotic covariance must describe
+  the same cases as the correlation matrix, the sandwich (like
   `estimator = "DWLS"`) is computed on the listwise-complete cases; on
   data with missing values the reported `N`, the correlation matrix, and
   the point estimate therefore reflect the complete cases regardless of
@@ -787,12 +937,11 @@ coefficients; it reports no uniqueness or communality standard errors
   By default they run sequentially; to run them in parallel, register a
   plan with
   [`future::plan()`](https://future.futureverse.org/reference/plan.html)
-  (e.g. `future::plan(future::multisession, workers = 2)`; see
-  examples). With a fixed `seed` the bootstrap is reproducible and
-  yields the same result regardless of the number of workers. Under
-  `cor_method = "fiml"` each resample also re-runs the EM moment
-  estimation and is therefore slow, so a smaller `b_boot` may be
-  advisable.
+  and restore the previous one afterwards, as the examples show. With a
+  fixed `seed` the bootstrap is reproducible and yields the same result
+  regardless of the number of workers. Under `cor_method = "fiml"` each
+  resample also re-runs the EM moment estimation and is therefore slow,
+  so a smaller `b_boot` may be advisable.
 
   The percentile intervals are centred on the point estimate for the
   loadings, the factor correlations, the structure coefficients and the
@@ -834,20 +983,53 @@ Approximation (RMSEA) with its 90% confidence interval (Browne & Cudeck,
 Expected Cross-Validation Index (ECVI; Browne & Cudeck, 1989), the Root
 Mean Squared Residual (RMSR), the Standardized Root Mean Squared
 Residual (SRMR; Bentler, 1995), and the common-part-accounted-for (CAF)
-index (Lorenzo-Seva, Timmerman, & Kiers, 2011). The print and summary
+index (Lorenzo-Seva, Timmerman, & Kiers, 2011). They come with the
+independence-baseline statistics `chi_null`, `df_null`, and `p_null`. On
+the unscaled ML and ULS paths `chi_null` is Bartlett's test of
+sphericity; a scaled chi-square, and the two-stage statistic of a
+`cor_method = "fiml"` fit, each carry their own baseline instead.
+
+The degrees of freedom are \\((p - k)^2 - (p + k))/2\\ for \\p\\
+variables and \\k\\ factors: the \\p(p + 1)/2\\ distinct correlations,
+less the \\pk + p\\ free loadings and uniquenesses, plus the \\k(k -
+1)/2\\ constraints that fix the rotational indeterminacy. The baseline
+degrees of freedom `df_null` are \\p(p - 1)/2\\.
+
+RMSR is the root mean square of the \\p(p - 1)/2\\ unique off-diagonal
+residuals; SRMR divides that same sum of squares by the \\p(p + 1)/2\\
+non-redundant elements of a \\p \times p\\ matrix. The print and summary
 methods show SRMR, not RMSR, because the two residual summaries differ
 only by the fixed scaling \\\sqrt{(p - 1) / (p + 1)}\\ for a fixed
-number of variables; RMSR remains in the returned object. The model
-chi-square is the Bartlett-corrected discrepancy (matching
-[`stats::factanal()`](https://rdrr.io/r/stats/factanal.html) for ML);
-the AIC, BIC, and ECVI are the minimum-fit-function (chi-square-based)
-forms (\\\chi^2 - 2\\df\\ and \\\chi^2 - \log(N)\\df\\ for AIC and BIC,
-as in [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html)) and can
-therefore be negative. The RMSEA, CFI, and TLI place the model and
-baseline noncentrality on the uncorrected \\N - 1\\ discrepancy scale on
-which these approximate-fit indices are defined, so the Bartlett
-small-sample correction enters only the chi-square test, not the
-approximate-fit indices.
+number of variables; RMSR remains in the returned object. They are
+computed over the same residuals, so an unavailable residual leaves both
+`NA` and that fixed relation holds wherever the two are reported.
+(psych's `rms` divides the same one-per-pair sum of squares by \\p(p -
+1)\\, the count of *both* triangles, and so equals RMSR\\/\sqrt{2}\\;
+the two are not directly comparable.)
+
+The model chi-square is the Bartlett-corrected discrepancy (matching
+[`stats::factanal()`](https://rdrr.io/r/stats/factanal.html) for ML).
+For ULS it is that same maximum-likelihood (Wishart) discrepancy,
+evaluated at the ULS-fitted \\\Sigma\\, as in
+[`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html). It is not the
+least-squares criterion made into a test statistic, which is what lavaan
+reports as its standard ULS test, so the two are not comparable. The
+AIC, BIC, and ECVI are the minimum-fit-function (chi-square-based) forms
+\\\chi^2 - 2\\df\\ for AIC, \\\chi^2 - \log(N)\\df\\ for BIC (the form
+[`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) reports as its
+`BIC`; psych reports no AIC), and \\(\chi^2 + 2\\q)/(N - 1)\\ with \\q =
+p(p + 1)/2 - df\\ free parameters for ECVI. AIC and BIC can therefore be
+negative. All three are built on the reported (Bartlett-corrected)
+chi-square, so the ECVI differs slightly from the uncorrected
+Browne-Cudeck form reported by lavaan and Mplus. The RMSEA, CFI, and TLI
+instead place the model and baseline noncentrality on the uncorrected
+\\N - 1\\ discrepancy scale on which these approximate-fit indices are
+defined, so the Bartlett small-sample correction does not enter those
+three. On the unscaled paths the reported `chi` and `chi_null` therefore
+do not reproduce the reported CFI and TLI: those two are built on
+\\F(N - 1)\\ and \\-\log\|R\|(N - 1)\\, the latter being the baseline
+lavaan reports as `baseline.chisq`. On the other paths the reported pair
+is the pair the indices use.
 
 Which indices are reported depends on the estimator:
 
@@ -876,15 +1058,39 @@ Which indices are reported depends on the estimator:
   scaled statistics; AIC, BIC, and ECVI are left `NA`, as for any scaled
   (moment-adjusted) chi-square.
 
-Whenever the chi-square is a scaled one (`se = "sandwich"`, or any
-`cor_method = "fiml"` fit), the AIC, BIC, and ECVI are `NA` and the
-returned `fit_indices` additionally carry the scaled-statistic
-components (see the `fit_indices` entry in Value). Note that
-Lorenzo-Seva, Timmerman, and Kiers (2011) introduce the CAF as ranging
-between 0 and 1, with values close to 1 indicating close fit; this does
-not match the formula they apply, \\1 - KMO(residuals)\\, which only
-works if the diagonal of the residual matrix is set to 1s and then
-approximates 0.5 with close fit.
+  The correction rests on the saturated FIML asymptotic covariance,
+  which can itself be degenerate – typically on a small sample with a
+  high proportion of missing values, or with near-collinear variables.
+  The plain two-stage likelihood-ratio statistic is then reported in its
+  place, with an `efa_fiml_uncorrected_chisq` warning and
+  `chi_scaled_type = "uncorrected.lrt"`; the print methods label that
+  line `uncorrected` rather than `scaled`. It is a usable statistic, but
+  referenced to \\\chi^2(df)\\ it is only approximate under the
+  two-stage estimator, so read its p-value and the CFI, TLI, and RMSEA
+  derived from it as indicative. AIC, BIC, and ECVI stay `NA` there as
+  well.
+
+Beyond the estimator, the chi-square and everything derived from it are
+`NA` whenever the statistic itself is undefined: when `N` is not
+supplied, when the model is underidentified (a negative df), and when a
+positive `N` is too small for Bartlett's small-sample multiplier \\N -
+1 - (2p + 5)/6 - 2q/3\\ to be positive. Each case raises its own
+warning. The residual summaries (RMSR, SRMR, CAF) and the degrees of
+freedom are still returned there, but residual size does not establish
+that a model is identified: below zero degrees of freedom a near-zero
+residual is an artefact of over-parameterisation, not close fit.
+
+Whenever the chi-square is a scaled one (`se = "sandwich"`, or a
+`cor_method = "fiml"` fit whose correction could be formed), the AIC,
+BIC, and ECVI are `NA` and the returned `fit_indices` additionally carry
+the scaled-statistic components (see the `fit_indices` entry in Value).
+AIC, BIC, and ECVI are `NA` on every `cor_method = "fiml"` fit,
+including the uncorrected fallback above, which carries no scaling
+components. Note that Lorenzo-Seva, Timmerman, and Kiers (2011)
+introduce the CAF as ranging between 0 and 1, with values close to 1
+indicating close fit; this does not match the formula they apply, \\1 -
+KMO(residuals)\\, which only works if the diagonal of the residual
+matrix is set to 1s and then approximates 0.5 with close fit.
 
 ### Available combinations
 
@@ -933,7 +1139,7 @@ For PAF, the values of `init_comm`, `criterion`, `criterion_type`,
 
 If SMCs fail, SPSS takes "mac". However, as SPSS takes absolute
 eigenvalues, this is hardly ever the case. Psych, on the other hand,
-takes "unity" if SMCs fail, but uses the Moore-Penrose Psudo Inverse of
+takes "unity" if SMCs fail, but uses the Moore-Penrose Pseudo Inverse of
 a matrix, thus, taking "unity" is only necessary if negative eigenvalues
 occur afterwards in the iterative PAF procedure. The EFAtools type
 setting combination was the best in terms of accuracy and number of
@@ -953,24 +1159,26 @@ For varimax, the values of `varimax_type` and `order_type` depend on the
 `type = "SPSS"` will use the following argument specification:
 `varimax_type = "kaiser", order_type = "ss_factors"`.
 
-For promax, the values of `p_type`, `order_type`, and `k` depend on the
-`type` argument.
+For promax, the values of `p_type`, `order_type`, `k`, `varimax_type`,
+and `normalize` depend on the `type` argument. Promax rotates a varimax
+base, so it takes the same `varimax_type` its `type` selects for varimax
+above.
 
 `type = "EFAtools"` will use the following argument specification:
-`p_type = "norm", order_type = "eigen", k = 4`.
+`p_type = "norm", order_type = "eigen", k = 4, varimax_type = "kaiser", normalize = TRUE`.
 
 `type = "psych"` will use the following argument specification:
-`p_type = "unnorm", order_type = "eigen", k = 4`.
+`p_type = "unnorm", order_type = "eigen", k = 4, varimax_type = "svd", normalize = TRUE`.
 
 `type = "SPSS"` will use the following argument specification:
-`p_type = "norm", order_type = "ss_factors", k = 4`.
+`p_type = "norm", order_type = "ss_factors", k = 4, varimax_type = "kaiser", normalize = TRUE`.
 
 The `p_type` argument can take two values, "unnorm" and "norm". It
 controls which formula is used to compute the target matrix P in the
 promax rotation. "unnorm" uses the formula from Hendrickson and White
 (1964), specifically: `P = abs(A^(k + 1)) / A`, where A is the
 unnormalized matrix containing varimax rotated loadings. "norm" uses the
-normalized varimax rotated loadings. Specifically it used the following
+normalized varimax rotated loadings. Specifically it uses the following
 formula, which can be found in the SPSS 23 and SPSS 27 Algorithms
 manuals:
 `P = abs(A / sqrt(rowSums(A^2))) ^(k + 1) * (sqrt(rowSums(A^2)) / A)`.
@@ -981,9 +1189,17 @@ the EFAtools default Kaiser normalization (`normalize = TRUE`), whereas
 [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) does not
 normalize before its promax target rotation; set `normalize = FALSE` to
 reproduce the [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html)
-promax result to within the varimax convergence tolerance (the residual
-difference is the convergence noise of the underlying varimax base at
-`precision = 1e-5`, not an algorithmic difference).
+promax result. What is left after that is the convergence noise of the
+two varimax bases rather than an algorithmic difference. It is *not*
+bounded by `precision` alone: the tolerance is on the varimax criterion,
+and near a flat optimum the corresponding gap in the loadings is far
+larger. On an awkward correlation matrix it can reach the second decimal
+at the default `precision = 1e-5`. Each package converges its own base,
+so the difference is bounded by both tolerances: a lower `precision`
+takes it down only as far as the tolerance of psych's base. Tighten that
+one too, with `eps` in
+[`psych::Promax()`](https://rdrr.io/pkg/psych/man/Promax.html), if you
+need the comparison to be exact.
 
 The `varimax_type` argument can take two values, "svd", and "kaiser".
 "svd" uses singular value decomposition, by calling
@@ -993,7 +1209,15 @@ manual and by Kaiser (1958). The varimax simplicity criterion monitored
 for convergence is
 `sum(n*colSums(lambda ^ 4) - colSums(lambda ^ 2) ^ 2) / n ^ 2`, where n
 is the number of indicators, and lambda is the Kaiser-normalized rotated
-loadings matrix.
+loadings matrix. `precision` is the tolerance on the *absolute* change
+in that criterion (see
+[`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)),
+and it is what limits how closely `type = "SPSS"` reproduces SPSS
+FACTOR: on the bundled reference solutions (see
+[SPSS_23](https://mdsteiner.github.io/EFAtools/reference/SPSS_23.md))
+the largest deviations are dominated by convergence slack rather than by
+an algorithmic difference, and tightening `precision` to `1e-8` reduces
+the worst of them by an order of magnitude.
 
 For all other rotations except varimax and promax, the `type` argument
 only controls the `order_type` argument with the same values as stated
@@ -2100,10 +2324,13 @@ efa_fiml
 
 if (FALSE) { # \dontrun{
 # Bootstrap standard errors from raw data, reproducible via a fixed seed and run
-# in parallel across replicates.
-future::plan(future::multisession, workers = 2)
-efa_boot <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
-                    se = "np-boot", b_boot = 1000, seed = 42)
-future::plan(future::sequential)
+# in parallel across replicates. future::plan() returns the plan it replaces, so
+# on.exit() puts the session back as it was -- also if the fit fails.
+efa_boot <- local({
+  old_plan <- future::plan(future::multisession, workers = 2)
+  on.exit(future::plan(old_plan), add = TRUE)
+  efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
+          se = "np-boot", b_boot = 1000, seed = 42)
+})
 } # }
 ```

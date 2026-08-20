@@ -6,7 +6,7 @@ or
 [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
 solution. Residuals are a pure extractor here; their diagnostics and a
 formatted display are part of
-[`summary()`](https://rdrr.io/r/base/summary.html) of the efa object.
+[`summary.efa()`](https://mdsteiner.github.io/EFAtools/reference/print.efa.md).
 
 ## Usage
 

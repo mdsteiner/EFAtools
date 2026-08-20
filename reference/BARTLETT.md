@@ -33,9 +33,12 @@ BARTLETT(
 
 - use:
 
-  character. Passed to
-  [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is "pairwise.complete.obs".
+  character. The missing-data policy for raw data. Passed to
+  [`stats::cor()`](https://rdrr.io/r/stats/cor.html) for `"pearson"`,
+  `"spearman"`, and `"kendall"`; for `"poly"` / `"tetra"` the same
+  policies are applied to the raw data before the polychoric estimation,
+  where `"all.obs"` and `"everything"` abort on a missing value instead
+  of returning `NA` correlations. Default is "pairwise.complete.obs".
 
 - cor_method:
 

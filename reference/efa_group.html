@@ -72,6 +72,7 @@ or to a chosen reference group (see <em>Alignment</em>).</p>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  delta <span class="op">=</span> <span class="fl">0.1</span>,</span>
 <span>  invariance <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  se <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -107,8 +108,9 @@ data. Default is <code>NA</code>.</p></dd>
 <dt id="arg-reference-group">reference_group<a class="anchor" aria-label="anchor" href="#arg-reference-group"></a></dt>
 <dd><p>The group to align the others to (a group name or an
 integer index). If <code>NULL</code> (default), orthogonal and unrotated solutions use
-the symmetric consensus target; oblique solutions fall back to the first
-group as reference. Supplying a value forces the reference alignment.</p></dd>
+the symmetric consensus target; oblique solutions with more than one factor
+fall back to the first group as reference. Supplying a value forces the
+reference alignment.</p></dd>
 
 
 <dt id="arg-b-boot">b_boot<a class="anchor" aria-label="anchor" href="#arg-b-boot"></a></dt>
@@ -140,7 +142,11 @@ table: an item's loading on a factor is flagged for a group pair when the groups
 aligned loadings differ by at least <code>delta</code> in absolute value. This is a descriptive
 salience heuristic, not a significance test; common alternatives are <code>0.15</code> and <code>0.20</code>.
 The threshold applies to whatever loading metric the chosen rotation produces (pattern
-coefficients for an oblique rotation). <code>0</code> flags every cell. Default is <code>0.1</code>.</p></dd>
+coefficients for an oblique rotation). <code>0</code> flags every cell. Default is <code>0.1</code>.</p>
+<p>The geomin rotations take a criterion parameter of the same name. A <code>delta</code> given
+directly is always this salience threshold and never reaches the rotation; give the
+geomin parameter as <code>rotate_control(delta = ...)</code>. With <code>rotation = "geominT"</code> or
+<code>"geominQ"</code>, a supplied <code>delta</code> gives a warning that says which of the two applies.</p></dd>
 
 
 <dt id="arg-invariance">invariance<a class="anchor" aria-label="anchor" href="#arg-invariance"></a></dt>
@@ -149,10 +155,25 @@ group pair from the Lorenzo-Seva and ten Berge (2006) congruence bands (see <em>
 Default is <code>FALSE</code>.</p></dd>
 
 
+<dt id="arg-se">se<a class="anchor" aria-label="anchor" href="#arg-se"></a></dt>
+<dd><p>Not used. <code>efa_group()</code> itself sets the standard-error method of the
+per-group <code><a href="efa_fit.html">efa_fit()</a></code> calls, so a supplied value is dropped with a warning. Ask for
+bootstrap confidence intervals of the between-group congruences with <code>b_boot</code>.
+Default is <code>NULL</code>.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code> for every group (for
-example <code>estimator</code>, <code>rotation</code>, <code>cor_method</code>, or an <code><a href="estimate_control.html">estimate_control()</a></code> /
-<code><a href="estimate_control.html">rotate_control()</a></code> to select a preset).</p></dd>
+example <code>estimator</code>, <code>rotation</code>, or <code>cor_method</code>). The <code><a href="estimate_control.html">estimate_control()</a></code> and
+<code><a href="estimate_control.html">rotate_control()</a></code> objects are accepted through <code>...</code> as well, although they are not
+declared formals: pass them as <code>estimate_control =</code> / <code>rotate_control =</code> exactly
+as you would to <code><a href="efa_fit.html">efa_fit()</a></code>. A name that is neither an <code><a href="efa_fit.html">efa_fit()</a></code> argument nor a
+rotation-engine extra is rejected.</p>
+<p>A rotation-engine extra that has the same name as an <code>efa_group()</code> argument cannot
+reach the rotation through <code>...</code>, because the argument takes the name first. This
+applies to the geomin criterion parameter <code>delta</code>: pass it as
+<code>rotate_control(delta = ...)</code>, which reaches both the per-group fits and the shared
+alignment frame.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -206,7 +227,9 @@ factor giving the matched Tucker congruence (<code>phi</code>), its bootstrap CI
 the Lorenzo-Seva and ten Berge (2006) similarity bands: <code>phi &gt;= 0.95</code> is "equal" and
 <code>[0.85, 0.95)</code> is "fair"; congruences <code>&lt; 0.85</code>, below their bands, are labelled
 "incongruent". The verdict is read from <code>phi_lower</code> when a bootstrap is available
-(conservative) and from <code>phi</code> otherwise. Tucker's congruence is invariant to a
+(conservative) and from <code>phi</code> otherwise. A wide interval therefore lowers the verdict:
+<code>phi</code> = 0.989 with <code>phi_lower</code> = 0.726 is labelled "incongruent", because the band is
+applied to the lower bound. Tucker's congruence is invariant to a
 proportional rescaling of a factor's loadings, so a factor can be graded "equal"
 even when one group's loadings on it are uniformly stronger; read the verdict
 alongside <code>diffs</code>. <code>NULL</code> when <code>invariance = FALSE</code>.</p></dd>
@@ -230,8 +253,8 @@ alignment method, the group that seeded the consensus frame (<code>alignment_sta
 <code>NULL</code> on the reference path), the orientation the shared frame was put in
 (<code>gauge</code>: the rotation's own name, <code>"principal_axes"</code>, or <code>"identity"</code> for a
 single factor; <code>NULL</code> on the reference path), the rotation, the estimator, the
-input type, and whether a bootstrap is available (<code>can_bootstrap</code>, <code>FALSE</code> for
-correlation-matrix input).</p></dd>
+input type, whether a bootstrap is available (<code>can_bootstrap</code>, <code>FALSE</code> for
+correlation-matrix input), and <code>seed</code> (<code>NULL</code> when none was supplied).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -279,8 +302,10 @@ and a <code>"bifactorT"</code> request with two factors, whose criterion is iden
 zero with a single group factor – the principal-axes orientation of the
 target is used instead. Either way the columns are ordered by decreasing sum
 of squares and signed by their column sums, and the shared orientation, and
-hence every reported congruence, difference, and flag, is independent of the
-order in which the groups are supplied.</p></li>
+hence every reported congruence, difference, and flag, does not depend on the
+order in which the groups are supplied – up to the convergence tolerance of
+the consensus iteration, which is set tight enough that the residual is
+several orders of magnitude below the precision the loadings are reported to.</p></li>
 <li><p><strong>Reference</strong>: every group's loadings are aligned by Procrustes rotation to
 one reference group's loadings, which are kept fixed. This path is used when
 <code>reference_group</code> is given, and is used automatically for oblique rotations
@@ -334,7 +359,6 @@ doi: 10.1027/1614-2241.2.2.57</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Raw data split by a grouping vector (unrotated, consensus alignment)</span></span></span>
 <span class="r-in"><span><span class="va">g</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"g1"</span>, <span class="st">"g2"</span><span class="op">)</span>, length.out <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">GRiPS_raw</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">mg</span> <span class="op">&lt;-</span> <span class="fu">efa_group</span><span class="op">(</span><span class="va">GRiPS_raw</span>, groups <span class="op">=</span> <span class="va">g</span>, n_factors <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-in"><span><span class="va">mg</span><span class="op">$</span><span class="va">loadings</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $g1</span>
@@ -391,7 +415,6 @@ doi: 10.1027/1614-2241.2.2.57</p>
 <span class="r-in"><span><span class="co"># approximate-invariance verdict read conservatively off the congruence CI lower bound</span></span></span>
 <span class="r-in"><span><span class="va">mg_ci</span> <span class="op">&lt;-</span> <span class="fu">efa_group</span><span class="op">(</span><span class="va">GRiPS_raw</span>, groups <span class="op">=</span> <span class="va">g</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, b_boot <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">42</span>,</span></span>
 <span class="r-in"><span>                   invariance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-in"><span><span class="va">mg_ci</span><span class="op">$</span><span class="va">congruence</span><span class="op">$</span><span class="va">matched_ci</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $lower</span>

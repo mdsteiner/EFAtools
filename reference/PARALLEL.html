@@ -87,7 +87,8 @@ correlation matrix or raw data.</p></dd>
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
 <dd><p>numeric. The number of cases / observations to simulate. Only has to
 be specified if <code>x</code> is either a correlation matrix or <code>NULL</code>. If
-x contains raw data, <code>N</code> is found from the dimensions of <code>x</code>.</p></dd>
+x contains raw data, <code>N</code> is found from the dimensions of <code>x</code>. Must be larger
+than the number of variables.</p></dd>
 
 
 <dt id="arg-n-vars">n_vars<a class="anchor" aria-label="anchor" href="#arg-n-vars"></a></dt>
@@ -97,7 +98,8 @@ dimensions are taken from <code>x</code>.</p></dd>
 
 
 <dt id="arg-n-datasets">n_datasets<a class="anchor" aria-label="anchor" href="#arg-n-datasets"></a></dt>
-<dd><p>numeric. The number of datasets to simulate. Default is 1000.</p></dd>
+<dd><p>numeric. The number of datasets to simulate. Must be at
+least 1. Default is 1000.</p></dd>
 
 
 <dt id="arg-percent">percent<a class="anchor" aria-label="anchor" href="#arg-percent"></a></dt>
@@ -134,10 +136,12 @@ Default is "pearson".</p></dd>
 factors to retain. Default is <code>"means"</code>, which will use the average
 simulated eigenvalues. <code>"percentile"</code>, uses the percentiles specified
 in percent. <code>"crawford"</code> uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010). The <code>"means"</code> rule
-retains a factor whenever its real eigenvalue exceeds the average simulated
-one and thus tends to retain more factors than the more conservative
-<code>"percentile"</code> rule (Glorfeld, 1995).</p></dd>
+and the mean afterwards (based on Crawford et al, 2010). All three rules retain
+the factors up to the first observed eigenvalue that fails to exceed its
+reference value; an eigenvalue further down the series that rises above its own
+reference again therefore adds no factor. Because the average simulated
+eigenvalue is a lower reference than the percentile, <code>"means"</code> tends to retain
+more factors than the more conservative <code>"percentile"</code> rule (Glorfeld, 1995).</p></dd>
 
 
 <dt id="arg-n-factors">n_factors<a class="anchor" aria-label="anchor" href="#arg-n-factors"></a></dt>

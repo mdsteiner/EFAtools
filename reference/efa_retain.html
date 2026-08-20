@@ -84,7 +84,7 @@ can be checked for their suitability for factor analysis.</p>
 <span>  n_datasets <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  percent <span class="op">=</span> <span class="fl">95</span>,</span>
 <span>  decision_rule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"means"</span>, <span class="st">"percentile"</span>, <span class="st">"crawford"</span><span class="op">)</span>,</span>
-<span>  ekc_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BvA2017"</span><span class="op">)</span>,</span>
+<span>  ekc_type <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  n_datasets_nest <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  alpha_nest <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  show_progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -92,6 +92,13 @@ can be checked for their suitability for factor analysis.</p>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="source">Source<a class="anchor" aria-label="anchor" href="#source"></a></h2>
+    <p>Auerswald, M., &amp; Moshagen, M. (2019). How to determine the number of
+factors to retain in exploratory factor analysis: A comparison of extraction
+methods under realistic conditions. Psychological Methods, 24(4), 468–491.
+https://doi.org/10.1037/met0000200</p>
+    </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
@@ -107,7 +114,7 @@ data.</p></dd>
 perform. Possible inputs are: <code>"CD"</code>, <code>"EKC"</code>, <code>"HULL"</code>,
 <code>"KGC"</code>, <code>"MAP"</code>, <code>"NEST"</code>,<code>"PARALLEL"</code>, <code>"SCREE"</code>, and <code>"SMT"</code>
 (see details). By default, a subset of often used, well-performing methods
-are performed.</p></dd>
+are performed; the details name them.</p></dd>
 
 
 <dt id="arg-suitability">suitability<a class="anchor" aria-label="anchor" href="#arg-suitability"></a></dt>
@@ -163,7 +170,10 @@ Default is .30.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Further arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code> in
-<code><a href="efa_parallel.html">efa_parallel()</a></code> (also within <code><a href="efa_hull.html">efa_hull()</a></code>), <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_nest.html">efa_nest()</a></code>.
+<code><a href="efa_parallel.html">efa_parallel()</a></code>, <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_nest.html">efa_nest()</a></code>. They also reach
+<code><a href="efa_hull.html">efa_hull()</a></code>, both through the parallel analysis it runs to set its upper bound and
+through its own candidate fits, so an argument that <code><a href="efa_fit.html">efa_fit()</a></code> rejects stops the Hull
+method even when its <code>eigen_type_HULL</code> fits no model.
 The estimation tuning knobs are not passed here; they live in <code>estimate_control</code>, and the
 standard-error arguments (<code>se</code>, <code>b_boot</code>, <code>ci</code>, <code>seed</code>) are not accepted because the
 criterion fits are internal steps whose standard errors are not reported. Note
@@ -189,8 +199,11 @@ suggested by <code><a href="efa_parallel.html">efa_parallel()</a></code> plus on
 <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, <code><a href="efa_parallel.html">efa_parallel()</a></code>, and <code><a href="efa_nest.html">efa_nest()</a></code>. The
 estimator to use. One of  <code>"PAF"</code>, <code>"ULS"</code>, or  <code>"ML"</code>,
 for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. In <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code> it only
-takes effect when the respective <code>eigen_type</code> includes <code>"EFA"</code>.</p></dd>
+likelihood, respectively. The default here is <code>"ML"</code>, which is not
+the default of every criterion called standalone (for example <code><a href="efa_hull.html">efa_hull()</a></code> defaults to
+<code>"PAF"</code>), so a criterion run through <code>efa_retain()</code> can differ from the same criterion
+called directly unless <code>estimator</code> is set to match. In <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and
+<code><a href="efa_parallel.html">efa_parallel()</a></code> it only takes effect when the respective <code>eigen_type</code> includes <code>"EFA"</code>.</p></dd>
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
@@ -249,10 +262,11 @@ and the mean afterwards (based on Crawford et al, 2010).</p></dd>
 
 
 <dt id="arg-ekc-type">ekc_type<a class="anchor" aria-label="anchor" href="#arg-ekc-type"></a></dt>
-<dd><p>character. Passed to the <code>type</code> argument of <code><a href="efa_ekc.html">efa_ekc()</a></code>.
-Either <code>"BvA2017"</code> for the original implementation by Braeken and van Assen
-(2017), or <code>"AM2019"</code> for the adapted implementation by Auerswald and Moshagen
-(2019).</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Accepted and ignored. It selected
+between two ways to compute the <code><a href="efa_ekc.html">efa_ekc()</a></code> reference values. The <code>"AM2019"</code>
+reference values do not depend on the observed eigenvalues, so they do not apply
+the empirical correction that defines the criterion, and they are no longer
+computed.</p></dd>
 
 
 <dt id="arg-n-datasets-nest">n_datasets_nest<a class="anchor" aria-label="anchor" href="#arg-n-datasets-nest"></a></dt>
@@ -297,7 +311,13 @@ retention criterion that was run (see, e.g., <code><a href="efa_ekc.html">efa_ek
 <dd><p>A named numeric vector with the suggested number of factors
 per criterion and, where a criterion has several variants, per variant
 (e.g. <code>EKC_BvA2017</code> or <code>PARALLEL_SMC</code>). Criteria without a numeric
-suggestion (the scree plot) are not included.</p></dd>
+suggestion (the scree plot) are not included. The "most common" value the printed
+summary line reports is counted with one vote per <em>criterion</em> – each criterion's own
+modal variant – so that a criterion with several variants cannot outvote a
+single-variant one. A criterion whose variants tie has no modal value and abstains
+rather than casting a vote for each of them, and a value that no two criteria agree on
+is not reported as most common. Tallying this vector directly counts one vote per
+<em>variant</em> and can therefore have a different mode.</p></dd>
 
 <dt>not_run</dt>
 <dd><p>A named character vector with the criteria that were skipped
@@ -306,7 +326,10 @@ or failed and the reason, or <code>NULL</code> if all requested criteria ran.</p
 <dt>settings</dt>
 <dd><p>A list of the settings used. Its <code>criteria</code> element records the
 requested criteria, in the order they were given, while <code>outputs</code> and <code>n_factors</code>
-are in the order in which the criteria were run.</p></dd>
+are in the order in which the criteria were run. <code>gof</code> records the requested Hull
+goodness-of-fit indices and <code>gof_used</code> the ones the Hull method actually computed
+(it reduces them to <code>"CAF"</code> for the PAF estimator); <code>gof_used</code> is <code>NA</code> when HULL was
+not requested, was skipped, or failed.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -319,15 +342,22 @@ documentations for details):</p><ul><li><p>Comparison data (see <code><a href="e
 <li><p>Empirical Kaiser criterion (see <code><a href="efa_ekc.html">efa_ekc()</a></code>)</p></li>
 <li><p>Hull method (see <code><a href="efa_hull.html">efa_hull()</a></code>)</p></li>
 <li><p>Kaiser-Guttman criterion (see <code><a href="efa_kgc.html">efa_kgc()</a></code>)</p></li>
+<li><p>Velicer's minimum average partial, MAP (see <code><a href="efa_map.html">efa_map()</a></code>)</p></li>
 <li><p>Parallel analysis (see <code><a href="efa_parallel.html">efa_parallel()</a></code>)</p></li>
 <li><p>Next Eigenvalue Sufficiency Test, NEST (see <code><a href="efa_nest.html">efa_nest()</a></code>)</p></li>
 <li><p>Scree plot (see <code><a href="efa_scree.html">efa_scree()</a></code>)</p></li>
 <li><p>Sequential chi-square model tests, RMSEA lower bound, and AIC
 (see <code><a href="efa_smt.html">efa_smt()</a></code>)</p></li>
-</ul><p>The comparison data, parallel analysis, and NEST criteria compare the data against
+</ul><p>The default <code>criteria</code> are comparison data, the empirical Kaiser criterion, the
+Hull method, MAP, NEST, and parallel analysis. No single criterion is the most
+accurate in all conditions. <code>efa_retain()</code> therefore runs several criteria
+together, and the printed summary gives the range of their suggestions and the
+most common one. Auerswald and Moshagen (2019) compare the criteria and give
+guidance on the selection.</p>
+<p>The comparison data, parallel analysis, and NEST criteria compare the data against
 simulated reference data, so their suggested numbers of factors vary slightly from run
 to run; the Hull method does too, because it calls <code><a href="efa_parallel.html">efa_parallel()</a></code> to set its upper
-bound. Call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before <code>efa_retain()</code> to make them reproducible.</p>
+bound. Call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">base::set.seed()</a></code> before <code>efa_retain()</code> to make them reproducible.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -38,7 +38,8 @@ PARALLEL(
 
   numeric. The number of cases / observations to simulate. Only has to
   be specified if `x` is either a correlation matrix or `NULL`. If x
-  contains raw data, `N` is found from the dimensions of `x`.
+  contains raw data, `N` is found from the dimensions of `x`. Must be
+  larger than the number of variables.
 
 - n_vars:
 
@@ -48,7 +49,8 @@ PARALLEL(
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Default is 1000.
+  numeric. The number of datasets to simulate. Must be at least 1.
+  Default is 1000.
 
 - percent:
 
@@ -87,10 +89,13 @@ PARALLEL(
   retain. Default is `"means"`, which will use the average simulated
   eigenvalues. `"percentile"`, uses the percentiles specified in
   percent. `"crawford"` uses the 95th percentile for the first factor
-  and the mean afterwards (based on Crawford et al, 2010). The `"means"`
-  rule retains a factor whenever its real eigenvalue exceeds the average
-  simulated one and thus tends to retain more factors than the more
-  conservative `"percentile"` rule (Glorfeld, 1995).
+  and the mean afterwards (based on Crawford et al, 2010). All three
+  rules retain the factors up to the first observed eigenvalue that
+  fails to exceed its reference value; an eigenvalue further down the
+  series that rises above its own reference again therefore adds no
+  factor. Because the average simulated eigenvalue is a lower reference
+  than the percentile, `"means"` tends to retain more factors than the
+  more conservative `"percentile"` rule (Glorfeld, 1995).
 
 - n_factors:
 

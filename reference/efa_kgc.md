@@ -29,15 +29,15 @@ extraction methods under realistic conditions. Psychological Methods,
 
 Guttman, L. (1954). Some necessary conditions for common-factor
 analysis. Psychometrika, 19, 149 –161.
-http://dx.doi.org/10.1007/BF02289162
+https://doi.org/10.1007/BF02289162
 
 Kaiser, H. F. (1960). The application of electronic computers to factor
 analysis. Educational and Psychological Measurement, 20, 141–151.
-http://dx.doi.org/10.1177/001316446002000116
+https://doi.org/10.1177/001316446002000116
 
 Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
 determining the number of components to retain. Psychological Bulletin,
-99, 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
+99, 432–442. https://doi.org/10.1037/0033-2909.99.3.432
 
 ## Arguments
 
@@ -139,13 +139,17 @@ setting `eigen_type` to "EFA"; see Auerswald & Moshagen, 2019). However,
 although this variant of the KGC is more accurate in some cases compared
 to the traditional KGC, it is at the same time less accurate than the
 PCA-variant in other cases, and it is still often less accurate than
-other factor retention methods, for example parallel analysis
+several of the other criteria available here, such as parallel analysis
 ([`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)),
 the Hull method
-[`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md),
+([`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)),
+the empirical Kaiser criterion
+([`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md)),
 or sequential \\chi^2\\ model tests
 ([`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md);
-see Auerswald & Moshagen, 2019).
+see Auerswald & Moshagen, 2019). Which criteria are informative depends
+on the data at hand, so rather than substituting one for another, run
+several of them together and compare their suggestions.
 
 The `efa_kgc` function can also be called together with other factor
 retention criteria in the
@@ -173,7 +177,8 @@ Other factor retention criteria:
 ``` r
 efa_kgc(test_models$baseline$cormat, eigen_type = c("PCA", "SMC"))
 #> ── Kaiser-Guttman criterion ────────────────────────────────────────────────────
+#> Eigenvalues found using PCA and SMC.
 #> 
-#> • PCA eigenvalues: 3
-#> • SMC eigenvalues: 1
+#> • PCA: 3
+#> • SMC: 1
 ```

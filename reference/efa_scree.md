@@ -31,7 +31,7 @@ https://doi.org/10.1207/s15327906mbr0102_10
 
 Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
 determining the number of components to retain. Psychological Bulletin,
-99, 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
+99, 432–442. https://doi.org/10.1037/0033-2909.99.3.432
 
 ## Arguments
 
@@ -151,5 +151,5 @@ efa_scree(test_models$baseline$cormat, eigen_type = c("PCA", "SMC"))
 #> ── Scree plot ──────────────────────────────────────────────────────────────────
 #> Eigenvalues found using PCA and SMC.
 #> 
-#> ℹ Scree plot is a visual criterion; inspect the plot to identify the elbow.
+#> ℹ Scree plot is a visual criterion; call plot(x) to identify the elbow.
 ```

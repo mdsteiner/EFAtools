@@ -65,6 +65,8 @@ est
 #> max_iter: <from type preset>
 #> abs_eigen: <from type preset>
 #> start_method: psych
+#> fiml_max_iter: 500
+#> fiml_tol: 1e-05
 writeLines(format(est))
 #> Estimation control (type: "SPSS")
 #> 
@@ -74,4 +76,6 @@ writeLines(format(est))
 #> max_iter: <from type preset>
 #> abs_eigen: <from type preset>
 #> start_method: psych
+#> fiml_max_iter: 500
+#> fiml_tol: 1e-05
 ```

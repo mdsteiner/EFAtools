@@ -90,8 +90,10 @@ efa_power(
 
 - p:
 
-  numeric. The number of observed variables. Used with `k` to derive
-  `df` when `df` is not given directly.
+  numeric. The number of observed variables. In `"rmsea"` mode, used
+  with `k` to derive `df` when `df` is not given directly. In
+  `"simulation"` mode it is read off the population, so leave it unset
+  (or matching `nrow(Lambda)` / `nrow(R)`).
 
 - k:
 
@@ -121,7 +123,8 @@ efa_power(
 - group:
 
   numeric. The number of groups. Default is `1`. `N` is the total across
-  all `group` groups, not the size of each one. See *Details*.
+  all `group` groups, not the size of each one, and a solved `N` is a
+  multiple of `group`. See *Details*.
 
 - Lambda:
 
@@ -244,12 +247,13 @@ An object of class `efa_power`. For `mode = "rmsea"`, a list containing:
 - N:
 
   The total sample size across groups: the supplied `N`, or the solved
-  required sample size.
+  required sample size (a multiple of `group`).
 
 - N_per_group:
 
   The per-group sample size `N / group`, equal to `N` when `group` is
-  `1`.
+  `1`. A whole number for a solved `N`; for a supplied `N` that is not a
+  multiple of `group` it is the fraction that the noncentrality uses.
 
 - crit:
 
@@ -303,8 +307,9 @@ For `mode = "simulation"`, a list containing:
 - replicates:
 
   The raw per-replicate values: the suggested factor counts (`n_hat`),
-  the matched congruences (`rec_min`, `rec_mean`), and the `converged`,
-  `heywood`, and `fit_ok` flags.
+  the matched congruences (`rec_min`, `rec_mean`), the `converged`,
+  `heywood`, and `fit_ok` flags, and `fit_error`, the message of the fit
+  that did not complete (`NA` where it did).
 
 - k_true:
 
@@ -356,6 +361,14 @@ above carries the `1 / group` factor, so a fixed total spread over more
 groups buys less power. The corresponding per-group sample size
 `N / group` is returned as `N_per_group`.
 
+The `1 / group` factor makes all `group` groups the same size, so a
+required total is rounded up to the next multiple of `group`. A solved
+`N_per_group` is thus a whole number of persons, and the reported
+`power` is the power at a total that a study can collect. With
+`group = 2` and `df = 102`, for example, the required total is 260, or
+130 per group. Bisection on the total alone gives 259, which asks for
+129.5 persons in each group.
+
 ## Simulation mode
 
 The population is passed to
@@ -380,7 +393,9 @@ compared with `recovery_threshold`; a replicate counts as a success when
 the smallest (`min`) or the average (`mean`) matched congruence reaches
 it. **Convergence**: the same fit supplies the proportion of replicates
 whose fit completed and, among those, the proportion that converged and
-that produced a Heywood case.
+that produced a Heywood case. A replicate whose fit fails outright
+contributes to none of the three; if any fit fails, a warning reports
+how many did and the first replicate's cause.
 
 Replicates are analysed in parallel with future.apply; a plan is
 selected with

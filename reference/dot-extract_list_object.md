@@ -1,6 +1,11 @@
 # Extract a list object by its name
 
-Extract a list object by its name
+Consider a list of named sub-lists. This function extracts, for each
+sub-list, the sub-list element that is specified by the user. This
+function is useful for extracting results from
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+for each imputation in
+[`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md).
 
 ## Usage
 
@@ -13,7 +18,7 @@ Extract a list object by its name
 - alist:
 
   A list of sub-lists, typically a list of \\m\\ objects of class
-  `"EFA"`, where \\m\\ is the number of imputations passed to
+  `"efa"`, where \\m\\ is the number of imputations passed to
   [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md).
 
 - object:
@@ -29,10 +34,3 @@ A list of length \\m\\, with each element containing the extracted
 ## Author
 
 Andreas Soteriades
-
-Consider a list of named sub-lists. This function extracts, for each
-sub-list, the sub-list element that is specified by the user. This
-function is useful for extracting results from
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-for each permutation run in
-[`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md).

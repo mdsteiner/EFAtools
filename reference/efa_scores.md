@@ -51,12 +51,25 @@ Grice, J. W. (2001). Computing and evaluating factor scores.
 - x:
 
   data.frame or matrix. Raw data (needed to obtain factor scores) or a
-  correlation matrix (yields weights and diagnostics only). When raw
-  data carry column names, they are matched to the model variables by
-  name (any extra columns are ignored, and a model variable missing from
-  `x` is an error). A named correlation matrix is likewise matched to
-  the loading rows by name; its row and column names must use the same
-  order. Unnamed input is matched by position.
+  correlation matrix (yields weights and diagnostics only). A
+  correlation matrix gives the correlations the weights are derived from
+  only where `f` is a loading matrix. An
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  object carries the correlations it was fitted on, and those are used
+  instead, so supply `rho` to derive the weights from another matrix.
+  `x` describes the model variables either way. When raw data carry
+  column names, they are matched to the model variables by name (any
+  extra columns are ignored, and a model variable missing from `x` is an
+  error). A named correlation matrix is likewise matched to the loading
+  rows by name; its row and column names must use the same order, and it
+  must carry one row and column for each model variable. Unnamed input
+  is matched by position.
+
+  Raw data are scored as supplied: no imputation is performed, so a case
+  with a missing value on any model variable receives `NA` scores (and
+  is reported as not scored). A model variable that carries no usable
+  spread in `x` – constant, infinite, or observed fewer than twice – is
+  an error.
 
 - f:
 
@@ -67,19 +80,21 @@ Grice, J. W. (2001). Computing and evaluating factor scores.
 - Phi:
 
   matrix. Factor intercorrelations. Only used when a loading matrix is
-  supplied directly in `f`; taken from the `efa` object otherwise. Named
-  rows and columns are matched to the loading columns and must use the
-  same order. Default is `NULL`, in which case the factors are assumed
+  supplied directly in `f`; taken from the `efa` object otherwise, in
+  which case a supplied `Phi` is ignored with a warning. Named rows and
+  columns are matched to the loading columns and must use the same
+  order. Default is `NULL`, in which case the factors are assumed
   uncorrelated.
 
 - rho:
 
   matrix. Correlation matrix used to derive the scoring weights.
   Defaults to `NULL`, in which case `f$orig_R` is used for an `efa`
-  object and `cor(x, use = "pairwise")` otherwise. Pass a matrix here to
-  score against a correlation other than the one implied by `f`/`x`.
-  Named rows and columns are matched to the loading rows; row and column
-  names must use the same order.
+  object; for a directly supplied loading matrix, `x` itself when it is
+  a correlation matrix, and `cor(x, use = "pairwise")` otherwise. Pass a
+  matrix here to score against a correlation other than the one implied
+  by `f`/`x`. Named rows and columns are matched to the loading rows;
+  row and column names must use the same order.
 
 - method:
 
@@ -98,11 +113,15 @@ An object of class `efa_scores`, a list containing:
 - scores:
 
   The factor scores (`n` by `m`), or `NULL` when a correlation matrix
-  was supplied.
+  was supplied. A case with a missing value on any model variable is not
+  scored and keeps `NA` in every column.
 
 - r.scores:
 
-  The `m` by `m` correlations of the factor-score estimates.
+  The `m` by `m` correlations of the factor-score estimates. Like
+  `score_cor` and `determinacy`, these describe the standardized
+  combination `scale(x) %*% W`, which for `method = "components"` is not
+  the scale the returned `scores` are on.
 
 - score_cor:
 
@@ -117,7 +136,9 @@ An object of class `efa_scores`, a list containing:
 
 - settings:
 
-  A list of the settings used.
+  A list of the settings used, including the number of supplied
+  observations `n_obs` and the number of them that could be scored
+  `n_scored`.
 
 ## Details
 
@@ -150,7 +171,12 @@ the scoring correlation matrix `R` according to `method`:
 
 - `"components"`:
 
-  component scores, `W = Lambda`.
+  component scores, `W = Lambda`. These are formed from the raw,
+  uncentered data (`X %*% W`) rather than the standardized data, so
+  unlike the other methods they are on the scale of the input variables.
+  The diagnostics below describe the standardized combination
+  `scale(X) %*% W`, and therefore differ from the realized correlations
+  of the returned scores whenever the variables have unequal variances.
 
 The determinacy (validity) of a score is its correlation with the factor
 it estimates, computed from the returned weights; for regression scores
@@ -163,6 +189,27 @@ For a `method` other than `"regression"` both quantities are specific to
 those scores: the determinacy is the method's own score-factor
 correlation (never larger than the regression value), and the reported
 `guttman` follows from it.
+
+Determinacies close to 1 mean the scores stand in for the factor with
+little loss; Grice (2001) regards values of about .90 and above as the
+level required before scores are interpreted for individual cases, and
+treats lower values as usable only for group-level research. The Guttman
+index makes the same point more sharply, because a factor score is never
+the factor: at `rho = .90` two equally valid sets of scores can still
+correlate as low as .62, and at `rho = .80` as low as .28, so the rank
+order of cases is not unique.
+
+Which `method` to prefer follows from what the scores are for.
+Regression scores correlate most highly with the factor, but they are
+biased towards it and correlate across factors even when the model is
+orthogonal. Bartlett scores are conditionally unbiased, which makes them
+the choice when the scores stand in for the factor in a later model.
+`"tenBerge"` reproduces the factor intercorrelations `Phi`, so it is the
+choice when the scores will be correlated with each other or with
+external variables. `"Anderson"` forces the scores to be uncorrelated
+with unit variance and is appropriate only when the factors themselves
+are orthogonal. `"components"` is a weighted sum of the observed
+variables rather than an estimate of a common factor.
 
 ## See also
 
@@ -253,7 +300,7 @@ efa_scores(GRiPS_raw, f = efa_raw, method = "Bartlett")
 #> 
 #> ── Factor scores (Bartlett) ────────────────────────────────────────────────────
 #> 
-#> Scored 810 observations on 1 factor.
+#> Scored 810 of 810 observations on 1 factor (see `$scores`).
 #> 
 #> ── Score determinacy ───────────────────────────────────────────────────────────
 #> 

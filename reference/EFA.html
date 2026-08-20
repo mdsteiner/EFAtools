@@ -121,7 +121,11 @@ otherwise). Use <code><a href="efa_retain.html">efa_retain()</a></code> to decid
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
 <dd><p>numeric. The number of observations. Needs only be specified if a
 correlation matrix is used. If input is a correlation matrix and <code>N</code> = NA
-(default), not all fit indices can be computed. When raw data with missing
+(default), not all fit indices can be computed; <code>NA</code> is the only accepted way of
+saying that the sample size is unknown, and a supplied <code>N</code> must be at least 1.
+A positive <code>N</code> that is very small relative to the number of variables leaves the
+chi-square-derived indices unavailable as well, with a warning.
+When raw data with missing
 values are entered and <code>use</code> is <code>"complete.obs"</code> or <code>"na.or.complete"</code>, rows
 are deleted listwise, so <code>N</code> is taken as the number of complete cases. The same
 applies, whatever <code>use</code> asks for, whenever an asymptotic covariance is required
@@ -277,8 +281,11 @@ estimation, so a smaller value may be advisable.</p></dd>
 
 
 <dt id="arg-ci">ci<a class="anchor" aria-label="anchor" href="#arg-ci"></a></dt>
-<dd><p>numeric. The confidence interval to create from the bootstrap samples.
-Must be between 0 and 1. Default is .95 for 95% CIs.</p></dd>
+<dd><p>numeric. The level of the confidence intervals: the percentile intervals from
+the bootstrap samples under <code>se = "np-boot"</code>, and the analytic Wald intervals under
+<code>se = "information"</code> and <code>se = "sandwich"</code>, the corrected two-stage intervals of
+<code>cor_method = "fiml"</code> included. Must be greater than 0 and smaller than 1. Default is
+.95 for 95% CIs.</p></dd>
 
 
 <dt id="arg-random-starts">random_starts<a class="anchor" aria-label="anchor" href="#arg-random-starts"></a></dt>

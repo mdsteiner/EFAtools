@@ -423,8 +423,10 @@ by the ordering of <code>eps0</code>/<code>eps1</code>):</p>
 <span><span class="co">#&gt; Critical value χ²(102) = 121.042 · noncentrality H0 = 50.745, H1 = 2.030.</span></span></code></pre></div>
 <p>For a multiple-group model, <code>group</code> divides the
 noncentrality across groups. The reported <code>N</code> is the
-<em>total</em> across groups – 259 in all, about 130 per group – and
-<code>N_per_group</code> carries that per-group figure:</p>
+<em>total</em> across groups – 260 in all, 130 per group – and
+<code>N_per_group</code> carries that per-group figure. All groups have
+the same size, so a required total is rounded up to the next multiple of
+<code>group</code>:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pw_2g</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_power.html">efa_power</a></span><span class="op">(</span>p <span class="op">=</span> <span class="fl">18</span>, k <span class="op">=</span> <span class="fl">3</span>, power <span class="op">=</span> <span class="fl">0.80</span>, group <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">pw_2g</span></span>
@@ -434,10 +436,10 @@ noncentrality across groups. The reported <code>N</code> is the
 <span><span class="co">#&gt; Test of close fit: H0 RMSEA ≤ .050 vs. H1 RMSEA = .080.</span></span>
 <span><span class="co">#&gt; alpha = .050 · df = 102 · groups = 2</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">Required N = 259</span> (total; 129.5 per group) for a power of .800 (achieved .801).</span></span>
-<span><span class="co">#&gt; Critical value χ²(102) = 166.326 · noncentrality H0 = 32.895, H1 = 84.211.</span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">Required N = 260</span> (total; 130 per group) for a power of .800 (achieved .803).</span></span>
+<span><span class="co">#&gt; Critical value χ²(102) = 166.477 · noncentrality H0 = 33.023, H1 = 84.538.</span></span>
 <span><span class="va">pw_2g</span><span class="op">$</span><span class="va">N_per_group</span></span>
-<span><span class="co">#&gt; [1] 129.5</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 130</span></span></code></pre></div>
 <p>The <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> method draws power against sample size,
 marking the object’s own result. When a sample size was solved for, it
 marks the target power and the required <code>N</code>:</p>

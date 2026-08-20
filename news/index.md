@@ -4,318 +4,515 @@
 
 ### Comparing and Averaging Solutions
 
-- The display settings of
-  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
-  (`digits`, `m_red`, `range_red`, `round_red`, and `print_diff`) can
-  now be passed to [`print()`](https://rdrr.io/r/base/print.html) and
-  [`format()`](https://rdrr.io/r/base/format.html), and `plot_red` to
-  [`plot()`](https://rdrr.io/r/graphics/plot.default.html), so the
-  printed report or the plot can be changed without recomputing the
-  comparison. Omitting them keeps the settings recorded when the
-  comparison was made.
+- [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
+  display settings (as set via
+  [`print()`](https://rdrr.io/r/base/print.html),
+  [`format()`](https://rdrr.io/r/base/format.html), or
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html)) are now
+  saved and reused, so you can change them after the fact without
+  rerunning the comparison.
 
-- `are_equal` is now `NA` when two objects do not even agree in their
-  integer parts, and the printed report shows “none” for it. Previously
-  such a comparison returned `0`, the same value returned when the
-  integer parts do agree but no decimal place does.
+- [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)’s
+  `are_equal` is now `NA` when the compared integer parts differ; `0` is
+  reserved for values whose integer parts agree but decimals do not.
 
-- The
-  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
-  report is now divided into a summary-statistics and an
-  elementwise-differences section, and the line reporting the minimum
-  number of decimals provided is shown only when the inputs were
-  rounded; for two ordinary double matrices it carried no information.
+- Fixed
+  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)’s
+  progress bar, which could previously trigger spurious warnings.
 
-- The Model Fit section of
-  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
-  now states how many solutions each index was averaged over.
-  Chi-square-based indices and the residual-based CAF, RMSR, and SRMR
-  can rest on different numbers of solutions, because PAF contributes
-  only the latter.
+- [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
+  now declares `se` as a formal argument; a supplied value is dropped
+  with a warning pointing to `b_boot` (previously it was silently
+  matched to `seed` and raised a confusing error).
 
-- The printed
-  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
-  output now says that the fit indices summarise the individual
-  solutions rather than the averaged loadings, which are a cell-wise
-  summary and not themselves a fitted solution, and labels the range
-  tables as `max - min` rather than as an interval.
+- [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)’s
+  elementwise differences are now signed (previously unsigned).
 
-- [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
-  now points out that `trim` is ignored when `averaging = "median"`
-  instead of recording a trim that never affected a value.
+- `efa_compare(reorder = "congruence")` now also aligns the sign of
+  single-factor solutions, so two one-factor solutions differing only in
+  sign are no longer reported as maximally different.
 
-- The progress bar of
-  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
-  now announces exactly as many steps as it reports, and reaches 100%
-  when the last EFA has been fitted. Previously it reported one step too
-  many for most grids of fewer than 15 EFAs, which raised a warning from
-  `with_progress()`; because that warning was raised while the function
-  ran, an unassigned call also had its printed output styled as part of
-  it. Larger grids raised no warning but left the bar short of 100%.
+- Fixed
+  [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)’s
+  handling of missing loadings, which previously inflated `diff_corres`
+  and `diff_corres_cross`; both are now `NA` when no row can be
+  compared.
 
-- The stages
-  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
-  reports after fitting the grid are now shown as `cli` progress steps.
-  Previously they were written directly to the console, which left stray
-  blank lines wherever the output was not a terminal, such as in
-  rendered documents and check logs.
+- [`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
+  now rejects invalid input: empty pairs, infinite values, non-numeric
+  content, or a negative `thresh`.
 
-- The
-  [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
-  report now points out when every factor is graded “equal” although the
-  groups’ loadings differ substantially: Tucker’s congruence is
-  unchanged by a proportional rescaling of a factor’s loadings, so
-  uniformly stronger loadings in one group still reach the highest band.
+- [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
+  now rejects `b_boot = 1`.
 
-- The header lines of the
-  [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
-  report are now wrapped to the console width, and its
-  loading-difference and invariance tables are split into stacked blocks
-  when they are wider than the console, as the congruence table already
-  was.
+### Data Screening and Simulation
 
-### Data Screening
+- Fixed
+  [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)’s
+  multivariate-outlier check, which could previously discard the best
+  solution when a robust subset’s covariance matrix was singular.
 
-- The multivariate-outlier diagnostic of
-  [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
-  now reports an exact fit as soon as its search reaches a covering
-  subset whose covariance is singular. Such a subset minimises the
-  minimum-covariance-determinant criterion, so no other subset can
-  improve on it; it was previously discarded and a strictly worse,
-  non-degenerate subset returned in its place under the label
-  `method = "mcd"`.
+- Fixed
+  [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)’s
+  robust covariance estimation, which previously fell back to classical
+  Mahalanobis distances when variable scales differed greatly.
+
+- [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)’s
+  multicollinearity verdict is now based on the condition index alone
+  (Belsley, Kuh & Welsch 1980 thresholds of 10/30 unchanged); the
+  determinant is reported as a plain number, since a small determinant
+  no longer by itself flags multicollinearity.
 
 - [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
-  now searches for the robust covariance on robustly rescaled columns
-  and returns the estimate in the units it was given, so the outlier
-  diagnostic no longer depends on how the variables happen to be
-  measured. Previously a change of measurement unit on a single variable
-  (e.g., an income column beside a Likert item) could be enough to drop
-  the robust estimate for classical Mahalanobis distances, which
-  under-flags, because they are computed from a covariance the outliers
-  themselves inflate.
+  now withholds the Henze-Zirkler p-value (previously an uninformative
+  exact 0 or 1) when its null distribution has no resolvable spread; the
+  `hz` result then carries class `efa_screen_no_hz`.
 
-### Data Simulation
+- Mardia’s skewness and kurtosis in
+  [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+  now always apply small-sample/exact-moment corrections (previously
+  only below 20 observations, or asymptotic); both statistics, their
+  p-values, and the normality verdict can change. The
+  `mardia$small_sample` flag is dropped.
 
-- [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
-  gains a `missing_vars` argument selecting which variables carry
-  missing values; the remaining ones stay complete. With
-  `missing = "MAR"` and a `missing_predictor` outside `missing_vars`,
-  every predictor of the missingness is fully observed, which is the
-  ignorably missing-at-random design that full-information maximum
-  likelihood and multiple imputation assume. Leaving `missing_vars`
-  unset holes every variable, as before.
+- [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+  now requires at least 3 variables (error `efa_screen_too_few_vars`).
 
-- When `marginals = "VM"` and `force_pd = TRUE` project the intermediate
-  correlation matrix, the returned `population` is now the population
-  the projected draw actually attains rather than the requested target,
-  and the warning reports how far the two differ. Previously the target
-  was returned although the realized correlations of the draw could
-  depart from it substantially, which understated the bias in a recovery
-  study measuring against it. `return_pop = TRUE` draws no data and
-  therefore never reaches the projection, so it continues to return the
-  target unchanged.
+- [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)’s
+  `outlier_cutoff` must now lie between 0.5 and 0.9999 (default 0.975
+  unchanged).
 
 - [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
-  now warns when `target_rmsea` and `target_cfi` cannot both be met by
-  `model_error = "TKL"`, naming the achieved values, instead of silently
-  returning the closest compromise.
+  gains `missing_vars` to restrict missingness to selected variables.
 
-- A degenerate resample under `marginals = "empirical"` — a marginal
-  with a category too rare to be drawn more than once at the requested
-  sample size — now raises an actionable error instead of failing inside
-  the reproduction loop.
+- With `marginals = "VM"` and `force_pd = TRUE`,
+  [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)’s
+  returned `population` now reflects the projected correlations actually
+  used to generate the data.
+
+- [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
+  now gives a clear error when a requested empirical-marginal category
+  is too rare to reproduce at the sample size.
+
+- [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
+  and `efa_power(mode = "simulation")` now reject an `R` whose diagonal
+  is not 1.
 
 ### Factor Retention
 
+- The `type` argument of
+  [`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md)
+  and `ekc_type` of
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  are deprecated and ignored: the empirical Kaiser criterion is now
+  always computed as in Braeken and van Assen (2017), so suggested
+  factor counts can differ from earlier results, and
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  no longer reports `EKC_AM2019`.
+
 - [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md)
-  now rejects data with a constant variable, which the comparison-data
-  generation cannot reproduce, instead of failing inside its eigenvalue
-  decomposition.
+  now gives a clear error when data contain constant variables.
 
-- [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md)
-  now warns when one of its three rules selects a solution with a
-  Heywood case or a model that did not converge, matching what
-  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
-  already reported. The suggestion is still returned, but it is flagged
-  as unreliable rather than presented without comment.
-
-- The RMSEA rule of
-  [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md)
-  now stops at the first model whose lower bound cannot be computed, as
-  the sequential chi-square rule already did. Previously it skipped past
-  such a model to a later one, which is not a valid continuation of a
-  sequential test.
+- [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md)’s
+  RMSEA rule now stops when the lower confidence bound cannot be
+  computed, instead of continuing to later models.
 
 - [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md)
-  results can now be plotted: the plot shows the empirical eigenvalues
-  together with the reference eigenvalues NEST compared them against,
-  with the retained number of factors marked.
+  results can now be plotted.
 
-- [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
-  now summarises its results in one line under the section heading: how
-  many suggestions how many criteria made, the range they span, and the
-  most common number of factors.
+- Factor-retention functions now reject the unsupported arguments
+  `seed`, `se`, `b_boot`, and `ci` (use
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) for randomness).
 
-- The factor retention criteria and
+- [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  now shares simulated datasets between `"PCA"` and `"SMC"` references
+  when both are requested, halving simulation time; results for a given
+  seed can differ from before.
+
+- A failed simulation block in
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  is now redrawn on its own instead of restarting the whole batch.
+
+- [`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md),
+  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md),
+  and
+  [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md)
+  now require a sample size larger than the number of variables (error
+  `efa_n_too_small`, as
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  already required); in
   [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
-  now reject `seed`, `se`, `b_boot`, and `ci` in their `...` and point
-  at [`set.seed()`](https://rdrr.io/r/base/Random.html). These are
-  arguments of
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
-  so they were previously accepted and forwarded to the criteria’s
-  internal fits, where nothing could come of them.
+  the affected criterion is listed under `not_run` instead of stopping
+  the call.
+
+- [`efa_map()`](https://mdsteiner.github.io/EFAtools/reference/efa_map.md)
+  now stops the grid and warns (`efa_map_truncated`, recording the
+  reached point in `m_last`) when a residual variance hits zero, instead
+  of continuing with stale, uncomputed values.
+
+- [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md)
+  now gives the error `efa_cd_degenerate_population` when `N_pop` is
+  smaller than 2.
+
+- Count arguments of the retention criteria (`n_factors_max`,
+  `N_samples`, `max_iter` of
+  [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md);
+  `n_factors`, `N`, `n_vars`, `n_datasets` of
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md);
+  `n_datasets` of
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md);
+  `N`, `n_datasets` of
+  [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md))
+  must now be at least 1.
+
+- Factor counts in retention output no longer print in scientific
+  notation (e.g. `3e+00`) under a negative `options(scipen)`.
 
 ### Input Validation and Correlation Handling
 
-- Every argument of the `efa_*` interface that takes a fixed set of
-  values is now matched without regard to capitalization, and the
-  canonical spelling is what the result stores and prints. For an
-  argument that takes a single value, an unambiguous abbreviation is
-  accepted as well, and an unmatched value raises an error that names
-  the argument, lists the choices, and carries the condition class
-  `efa_bad_choice` (`efa_control_input` for the tuning knobs of
-  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+- [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   and
-  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)).
+  [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+  now reject `N = 0` (`N = NA` still means an unknown sample size).
 
-- A correlation matrix supplied as a data frame is now recognised as one
-  and analysed.
+- `efa_*` arguments with fixed choices are now case-insensitive and
+  accept unambiguous abbreviations.
 
-- Passing `NULL` to a choice-valued argument now selects the documented
-  default, as leaving the argument out does. It previously selected the
-  first admissible value.
+- Correlation matrices supplied as data frames are now recognised and
+  analysed correctly.
 
-- When a correlation matrix cannot be computed from raw data, the error
-  now names the columns responsible and separates non-numeric, infinite,
-  and constant ones, pointing at `cor_method = "poly"` for ordinal items
-  stored as factors or character strings.
+- Passing `NULL` to a choice-valued argument now uses its documented
+  default.
 
-- A correlation matrix reported as smoothed is now positive definite on
-  every platform. For a matrix that is singular to working precision,
-  whether the smoothing was carried out could previously depend on the
-  linear algebra library R was built against, and on some builds the
-  warning was raised although the matrix was returned unchanged.
+- Correlation-matrix smoothing now consistently returns a
+  positive-definite matrix, including for nearly singular matrices.
+
+- A square, non-symmetric matrix is now refused as a correlation matrix
+  (error `efa_input_not_symmetric`) instead of being treated as raw
+  data.
+
+- A correlation matrix is now considered singular when its
+  smallest-to-largest eigenvalue ratio falls below
+  `n_vars * machine epsilon`, rather than only when
+  [`solve()`](https://rdrr.io/r/base/solve.html) fails; some previously
+  accepted, ill-conditioned matrices now give the error
+  `efa_cor_singular`.
+
+- [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  now gives the error `efa_n_factors_object` when a factor-retention
+  object is supplied as `n_factors`.
 
 ### Missing Data and Multiple Imputation
 
-- The `rmsr_upper` argument of
-  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
-  is deprecated and ignored. It selected between computing RMSR from the
-  unique off-diagonal residual correlations and from the full
-  off-diagonal matrix, but the two element sets hold each residual pair
-  once and twice respectively, so their sums and counts double together
-  and the mean square is the same number whenever the residual matrix is
-  symmetric — which the pooled residuals always are. The argument
-  therefore never changed the reported RMSR. SRMR, the index that
-  divides the same sum by the number of non-redundant elements,
-  continues to be reported alongside it.
+- [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)’s
+  `rmsr_upper` argument is deprecated and ignored (it never affected the
+  reported RMSR);
   [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md)
-  still accepts the argument without a warning.
+  still accepts it silently.
 
-- The printed
-  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
-  model fit now marks CFI and TLI as averaged over the imputations and
-  says that they are not formed from separately pooled model and
-  baseline statistics. Only the D2-pooled chi-square carried such a note
-  before, which invited the reading that the incremental indices were
-  conventionally pooled ones.
+- [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  now rejects `mids` objects from `mice`; convert them first with
+  `mice::complete(x, "all")`.
 
-- The help page of
+- With `target_method = "consensus"`,
   [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
-  now documents the `mi_diagnostics`, `fits`, `alignment`, and
-  `settings` slots of the returned object, including how to form the
-  `lavaan.mi`-style reference CFI from the pooled chi-squares in
-  `mi_diagnostics`.
+  now starts the search for the common rotational target at the
+  imputation closest to all others rather than the first; pooled results
+  no longer depend on the order of `data_list` (they can differ from
+  earlier versions). Pass `consensus_args = list(start = 1)` to recover
+  the previous behaviour.
 
-- A `mids` object from `mice` passed to
+- [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)’s
+  pooled RMSEA is now capped at 1, and its confidence bounds are
+  withheld when they do not contain the point estimate.
+
+- [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)’s
+  pooled communalities are now named `communalities` (`MI$h2` is gone;
+  use `MI$communalities`, `SE$communalities`, `CI$communalities`).
+
+- [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)’s
+  pooled `fit_indices` now hold the same elements in the same order
+  across every standard-error route; the sandwich route gains
+  `pool_method` (as `NA`).
+
+- An
   [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
-  is now rejected with an error that names it and gives the conversion,
-  `mice::complete(x, "all")`, and that carries the condition class
-  `efa_pooled_mids_input`. A `mids` object is itself a list, so it
-  previously passed the argument checks and failed inside the
-  per-imputation one, with a message naming an internal loop variable.
+  solution now carries an `mi_admissibility` component, reporting the
+  Heywood flags of the individual imputations.
+
+- A `cor_method = "fiml"` fit with analytic standard errors now
+  withholds loading standard errors (warning `efa_se_unreliable`) when
+  the rotational orientation is weakly determined, matching the other
+  standard-error routes.
+
+### Model Estimation
+
+- The `"uls"` (minimum residual) estimator’s search now matches its
+  analytic gradient and reported `Fm`, minimising the full
+  reduced-correlation residual including the diagonal (previously the
+  search used only the off-diagonal residual). Results move little for
+  well-supported solutions; over-factored models can show larger
+  changes.
+
+- Squared multiple correlations that start the `"paf"`, `"ml"`, and
+  `"uls"` estimators are now held within \[0, 1\], matching
+  [`psych::smc()`](https://rdrr.io/pkg/psych/man/smc.html); results can
+  change for indefinite or badly conditioned correlation matrices
+  (e.g. unsmoothed bootstrap resamples).
+
+- [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  gains `fiml_max_iter` and `fiml_tol` to govern the FIML two-stage EM
+  algorithm.
+
+- An
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  fit with `cor_method = "fiml"` now returns a `fiml` component
+  (convergence state, iteration count, missing-data patterns, sample
+  size), and warns (`efa_fiml_em_nonconvergence`) when the EM algorithm
+  does not converge.
+
+- A `cor_method = "fiml"` fit that cannot form the corrected two-stage
+  chi-square now records `chi_scaled_type = "uncorrected.lrt"` and warns
+  (`efa_fiml_uncorrected_chisq`).
+
+- An RMSEA confidence interval that cannot be computed is now reported
+  as `NA` instead of stopping the fit.
 
 ### Ordinal Correlations
 
-- A polychoric or tetrachoric pair whose response table shows a perfect
-  ordering is only bounded, not identified, by the data, and is now
-  reported at 0.9999 (or -0.9999 for a perfectly reversed table) with a
-  warning naming the affected pairs, instead of at an
-  operating-system-dependent value.
+- Perfectly ordered polychoric or tetrachoric pairs are now reported as
+  `0.9999`/`-0.9999`, with a warning listing the affected pairs.
 
-- Binary pairs with a single empty response cell instead receive a 0.5
-  continuity correction that preserves the table margins, matching
-  `lavaan` and `psych`, which avoids the boundary estimate and makes the
-  correlation matrix positive definite far more often.
+- Binary pairs with an empty response cell now use a margin-preserving
+  0.5 continuity correction.
 
-- Neither kind of pair has an asymptotic variance, so `NA` is reported:
-  `DWLS` estimation gives an actionable error rather than fitting with
-  an unusable weight, and robust standard errors involving these pairs
-  are withheld.
+- Unavailable asymptotic variances for polychoric/tetrachoric pairs are
+  now reported as `NA`; `DWLS` stops with a clear error, and affected
+  robust standard errors are withheld.
 
-- The response combinations that a strongly correlated pair makes all
-  but impossible are now computed from the complementary tail of the
-  normal distribution, which keeps them accurate down to the smallest
-  representable probability instead of losing them to rounding. When
-  such a combination is nevertheless observed (a handful of careless or
-  extreme responses is enough) this both sharpens the correlation of the
-  pair and gives it an asymptotic variance. Previously that variance
-  came out missing, which refused `DWLS` estimation for the whole data
-  set and withheld every robust standard error involving the pair.
+- Rare response combinations in strongly correlated pairs are now
+  handled more accurately, so such pairs less often block `DWLS`
+  estimation or robust standard errors.
 
 ### Power Analysis
 
-- `efa_power(mode = "simulation")` now warns when a requested
-  factor-retention criterion produced no suggestion on any replicate,
-  and reports it with a missing hit-rate over zero valid replicates.
-  Previously such a criterion was dropped from the results without
-  comment, although the request was still recorded in the settings.
+- A sample size solved by
+  [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
+  with `group > 1` is now a multiple of `group`, so `N_per_group` is a
+  whole number (previously, e.g., a required total of 259 across two
+  groups gave 129.5 per group).
 
-- A missing or invalid `N` or `n_datasets` in simulation mode is now
-  reported with an actionable, catchable error stating that `N` is
-  required there, rather than a bare assertion message.
+- In simulation mode,
+  [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
+  now reports an `NA` hit rate when a requested factor-retention
+  criterion never produces a suggestion.
+
+- Simulation mode now gives clear errors for missing or invalid `N` and
+  `n_datasets`.
+
+- In simulation mode,
+  [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
+  now rejects a `p` that disagrees with the population model (previously
+  replaced silently).
+
+- In simulation mode,
+  [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
+  now records the failure reason in `replicates$fit_error` when fits
+  that recover the model fail (previously `NA` with no explanation).
+
+### Printed Output
+
+- Truncated variable names in loading tables no longer collide: names
+  that would collide are abbreviated and numbered so they stay
+  distinguishable.
+
+- [`print()`](https://rdrr.io/r/base/print.html)/[`format()`](https://rdrr.io/r/base/format.html)
+  for Schmid-Leiman loading matrices now honour `max_name_length`,
+  `name_style`, `sort_loadings`, and `max_factors_per_block` (previously
+  accepted but ignored).
+
+- Errors from argument checks now carry the condition class
+  `efa_invalid_argument` and name the function called.
 
 ### Reliability and Factor Scores
 
+- The whole-scale row of an
+  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  table for a correlated-factors solution is now labelled
+  `factor = "total"`, `level = "total"` (previously `"g"`/`"general"`,
+  which implied a general factor such solutions do not have). Solutions
+  with an actual general factor, and single-factor solutions, are
+  unchanged.
+
 - [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
-  now warns when the items a `factor_map` column assigns to a group
-  factor hardly load on it although they do load on another one.
+  and
+  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+  now compute every omega total from the model-implied common variance,
+  counting contributions from cross-loadings; subscale totals change for
+  solutions with cross-loadings.
 
-- `efa_scores(method = "Anderson")`, and
+- With `variance = "correlation"`, the whole-scale omega total is now
+  the model-implied common variance over observed total variance
+  (previously total variance minus unique variances).
+
+- With `variance = "sums_load"`, a subscale composite’s model-implied
+  variance now also includes what it receives from other group factors,
+  and this setting now applies to solutions without a general factor,
+  including correlated-factors
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  solutions (previously silently overridden to `"correlation"`).
+
+- A `Phi` supplied to
+  [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  without a `pattern` is now treated as the group-factor correlation
+  matrix of `s_load` and enters the coefficients.
+
+- A `Phi` supplied together with a loading matrix of two or more factors
+  is no longer dropped: the pair is now scored as a correlated-factors
+  solution regardless of the matrix’s class (previously a hierarchy’s
+  coefficients were returned).
+
+- [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  now refuses a `Phi` supplied together with an
+  [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+  loading table (previously dropped silently), since such a table
+  already states it is a hierarchy.
+
+- [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  and
+  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+  now include a `lavaan` fit’s residual covariances in the model-implied
+  composite variances; a freed residual covariance previously overstated
+  omegas and understated standardized alpha.
+
+- [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  and
+  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+  now reject a bifactor or second-order `lavaan` fit whose latent
+  variables are correlated (previously scored as though uncorrelated).
+
+- [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  now correctly scores an
+  [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+  loading table as a bifactor matrix, and no longer misreads an oblique
+  solution’s pattern matrix as one (pass the
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  object itself for that solution).
+
+- [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  now scores a `lavaan` fit whose variables each load on a single factor
+  as the correlated-factors solution it is.
+
+- [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  now returns omega total, standardized alpha, and the H index for a
+  single-factor solution consistently across all input routes, including
+  a one-factor
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  solution or a one-column loading matrix (previously refused).
+
+- The one factor of a single-factor solution is now reported under its
+  input name, or `"F1"` if unnamed (previously always `"g"`).
+
+- A `cormat` supplied in a different variable order than the solution is
+  now reordered to match it (previously gave wrong subscale
+  coefficients).
+
+- [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+  and [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md) now
+  reorder a supplied `Phi` to match the loading columns (a differently
+  ordered named `Phi` previously gave a silently wrong solution) and
+  error if `Phi` does not match.
+
+- [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md)
+  and
   [`FACTOR_SCORES()`](https://mdsteiner.github.io/EFAtools/reference/FACTOR_SCORES.md)
-  with it, now warn when the factors of the solution are correlated.
-  Anderson-Rubin scores are defined for orthogonal factors and are
-  orthogonalised regardless, so they were reported as uncorrelated for
-  factors the model says are correlated.
+  now check and reorder a named `Phi` and scoring correlation matrix
+  (`rho`) to match the model, instead of silently using a mismatched
+  order.
 
-- [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md),
-  and the superseded
-  [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md) with
-  it, now reject `se`, `b_boot`, `ci`, and `seed` in their `...`. These
-  are arguments of
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
-  so they were previously forwarded to the second-order fit, which is an
-  internal step run against a placeholder sample size and reports none
-  of them.
+- [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md)
+  and
+  [`FACTOR_SCORES()`](https://mdsteiner.github.io/EFAtools/reference/FACTOR_SCORES.md)
+  now check a correlation matrix supplied in `x` against the model and
+  align it to the model variables, as already done for raw data; a
+  mismatched matrix is now an error (previously returned the fitted
+  solution’s weights regardless of the matrix supplied).
+
+- [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md)/[`FACTOR_SCORES()`](https://mdsteiner.github.io/EFAtools/reference/FACTOR_SCORES.md)
+  with `method = "Bartlett"` or `"Anderson"` now stop on a solution with
+  a communality at or above 1, instead of returning unusable weights
+  with a warning.
+
+- A `factor_map` (and
+  [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)’s
+  `factor_corres`) must now hold only 0 and 1, and is checked against
+  the loading matrix’s dimensions (previously any value was accepted and
+  silently multiplied into the coefficients).
+
+- [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+  and [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md) now
+  reject a solution with a single first-order factor.
+
+- [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md)
+  and
+  [`FACTOR_SCORES()`](https://mdsteiner.github.io/EFAtools/reference/FACTOR_SCORES.md)
+  now reject scoring data where a model variable is constant, infinite,
+  or observed fewer than twice (previously produced `NaN` scores).
+
+- [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md)
+  now reports the count of scored cases in `settings$n_scored`.
+
+- [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+  and [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md) now
+  reject the unsupported arguments `se`, `b_boot`, `ci`, and `seed`.
+
+### Rotation
+
+- Oblique rotations now refuse a nearly singular transformation matrix
+  (smallest singular value below 0.0001) at every evaluation point,
+  including the oblique Procrustes solver; results can differ for
+  near-degenerate solutions (typically more factors than the data
+  support). Well-conditioned solutions are unaffected.
+
+- A gradient-projection rotation is now reported as converged only when
+  the projected gradient meets tolerance (except simplimax, whose kinked
+  objective still uses a stalled-progress criterion); convergence flags
+  and diagnostics can differ from before for the same data.
+
+- Rotation criterion parameters from
+  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  (`gam`, `delta`, `maxit`, simplimax `k`) are now validated before
+  rotation runs, rejecting invalid values that previously reached the
+  rotation engine silently or with an opaque error.
+
+- [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)
+  now refuses an `S` that is not `crossprod(A)` (previously a mismatched
+  matrix silently minimised a different criterion), and refuses a badly
+  conditioned `T_init`, not only a singular one.
+
+- `varimax`/`promax` with `varimax_type = "svd"` and Kaiser
+  normalisation no longer fail on a solution containing a
+  zero-communality variable.
 
 ### Standard Errors
 
-- `efa_fit(se = "sandwich")` now withholds its standard errors and
-  confidence intervals at a Heywood case, as `se = "information"`
-  already did.
+- [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  now rejects `b_boot` below 2 (error `efa_b_boot_too_small`) and `ci`
+  of 0 or 1 (error `efa_ci_out_of_bounds`).
 
-- The printed output of a bootstrap fit now reports how many replicates
-  were actually usable whenever fewer survived than were requested
-  (`20 bootstrap samples (4 usable)`), for a pooled
+- `efa_fit(se = "sandwich")` now withholds standard errors and
+  confidence intervals when a Heywood case occurs.
+
+- Bootstrap output now reports the number of usable replicates when
+  fewer than requested are available (for both single fits and pooled
   [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
-  fit as well as a single one.
+  fits).
 
-- The analytic `SE$Phi` now carries the factor names, the one component
-  of the analytic standard-error list that shipped without them, and
-  `vcov_unrot_loadings` labels its rows and columns
-  `"<variable>_<factor>"` so its documented column-major ordering can be
-  read off the object.
+- A bootstrap replicate whose rotation cannot be aligned now warns under
+  the classed condition `efa_boot_rotation_failed`.
+
+- Analytic standard-error output now includes factor names in `SE$Phi`
+  and variable-factor labels in `vcov_unrot_loadings`.
 
 ## EFAtools 1.0.0
 

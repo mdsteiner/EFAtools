@@ -44,11 +44,17 @@ PROCRUSTES(
 
 - S:
 
-  Optional `k x k` cross-product matrix `crossprod(A)`. Supplying this
-  is useful when the same `A` is rotated repeatedly. `S` is used only
-  when `oblique_normalize = FALSE`; if Kaiser normalization is
-  requested, the cross-product must be recomputed on the normalized
-  matrix.
+  Optional `k x k` cross-product matrix `crossprod(A)`, kept for
+  compatibility. It enters both the oblique criterion and its gradient,
+  so any other matrix would minimize a different criterion: where `S` is
+  used it is checked against `crossprod(A)` and must agree with it up to
+  a relative tolerance of `1e-8`. That check forms `crossprod(A)`
+  itself, so passing `S` no longer avoids any work: omitting it gives
+  the same result for slightly less. `S` is used, and therefore checked,
+  only on the oblique path with more than one factor and
+  `oblique_normalize = FALSE`; if Kaiser normalization is requested, the
+  cross-product must be recomputed on the normalized matrix and `S` is
+  ignored.
 
 - T_init:
 

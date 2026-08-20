@@ -49,7 +49,10 @@ format(
 
   numeric. The maximum length of the variable names to display.
   Everything beyond this will be cut from the right unless
-  `name_style = "abbreviate"` or `name_style = "full"` is used.
+  `name_style = "abbreviate"` or `name_style = "full"` is used. Cutting
+  never leaves two variables sharing a row label: if it would (as for
+  items with a long common prefix), the names are abbreviated instead,
+  and numbered if needed.
 
 - h2:
 

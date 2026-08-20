@@ -61,30 +61,34 @@ rel
 #> 
 #> Total variance from the correlation matrix.
 #> 
-#> Correlated-factors solution: with no general factor, each factor's subscale
-#> omega equals its total omega.
+#> Correlated-factors solution: a factor's total omega counts the true score
+#> variance its composite receives from every factor, through its cross-loadings
+#> and any factor correlations; its subscale omega counts only that factor's own
+#> contribution.
 #> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
-#>      tot   sub  alpha    H
-#> g   .883         .868
-#> F1  .734  .734   .768  .760
-#> F2  .680  .680   .763  .753
-#> F3  .667  .667   .743  .738
+#>         tot   sub  alpha    H
+#> total  .883         .868
+#> F1     .769  .734   .768  .760
+#> F2     .765  .680   .763  .753
+#> F3     .745  .667   .743  .738
 
 # format() returns the same lines as a character vector:
 writeLines(format(rel))
 #> 
 #> Total variance from the correlation matrix.
 #> 
-#> Correlated-factors solution: with no general factor, each factor's subscale
-#> omega equals its total omega.
+#> Correlated-factors solution: a factor's total omega counts the true score
+#> variance its composite receives from every factor, through its cross-loadings
+#> and any factor correlations; its subscale omega counts only that factor's own
+#> contribution.
 #> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
-#>      tot   sub  alpha    H
-#> g   .883         .868
-#> F1  .734  .734   .768  .760
-#> F2  .680  .680   .763  .753
-#> F3  .667  .667   .743  .738
+#>         tot   sub  alpha    H
+#> total  .883         .868
+#> F1     .769  .734   .768  .760
+#> F2     .765  .680   .763  .753
+#> F3     .745  .667   .743  .738
 ```

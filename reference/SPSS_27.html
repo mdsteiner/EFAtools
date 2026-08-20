@@ -85,6 +85,16 @@ Manual. Woodcock-Johnson IV. Rolling Meadows, IL: Riverside.</p>
 <p>Schrank, F. A., McGrew, K. S., &amp; Mather, N. (2014). Woodcock-Johnson IV.
 Rolling Meadows, IL: Riverside.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The principal axis factoring was run with the iteration limit raised above
+SPSS's own default of 25, so reproducing these solutions requires the same: <code>case_1a</code>
+needs 60 iterations and <code>case_11b</code> needs 33, and at <code>max_iter = 25</code> both stop short of
+convergence and differ from the stored loadings in the second decimal. Use
+<code>estimate_control(type = "SPSS", max_iter = 500)</code> when checking a preset against these
+references; the other two simulated cases converge in six iterations and are
+unaffected.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

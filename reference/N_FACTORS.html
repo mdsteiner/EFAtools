@@ -80,7 +80,7 @@ keeps working.</p>
 <span>  n_datasets <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  percent <span class="op">=</span> <span class="fl">95</span>,</span>
 <span>  decision_rule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"means"</span>, <span class="st">"percentile"</span>, <span class="st">"crawford"</span><span class="op">)</span>,</span>
-<span>  ekc_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BvA2017"</span><span class="op">)</span>,</span>
+<span>  ekc_type <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  n_datasets_nest <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  alpha_nest <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  show_progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -231,10 +231,11 @@ and the mean afterwards (based on Crawford et al, 2010).</p></dd>
 
 
 <dt id="arg-ekc-type">ekc_type<a class="anchor" aria-label="anchor" href="#arg-ekc-type"></a></dt>
-<dd><p>character. Passed to the <code>type</code> argument of <code><a href="efa_ekc.html">efa_ekc()</a></code>.
-Either <code>"BvA2017"</code> for the original implementation by Braeken and van Assen
-(2017), or <code>"AM2019"</code> for the adapted implementation by Auerswald and Moshagen
-(2019).</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Accepted and ignored. It selected
+between two ways to compute the <code><a href="efa_ekc.html">efa_ekc()</a></code> reference values. The <code>"AM2019"</code>
+reference values do not depend on the observed eigenvalues, so they do not apply
+the empirical correction that defines the criterion, and they are no longer
+computed.</p></dd>
 
 
 <dt id="arg-n-datasets-nest">n_datasets_nest<a class="anchor" aria-label="anchor" href="#arg-n-datasets-nest"></a></dt>

@@ -1,7 +1,10 @@
 # Convert an `"efa_loadings"` table to matrix or a matrix to `"efa_loadings"`
 
-Convert an `"efa_loadings"` table to matrix or a matrix to
-`"efa_loadings"`
+The loadings tables returned by
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+are of class `c("efa_loadings", "LOADINGS")`, which prevents applying
+functions on them. This function changes their class to `"matrix"`, and
+changes it back to `"efa_loadings"` when done.
 
 ## Usage
 
@@ -28,9 +31,3 @@ A table with the loadings, of class either `"efa_loadings"` or
 ## Author
 
 Andreas Soteriades
-
-The loadings tables returned by
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-are of class `c("efa_loadings", "LOADINGS")`, which prevents applying
-functions on them. This function allows to change their class to
-`"matrix"`, and to change back to `"efa_loadings"` when done.

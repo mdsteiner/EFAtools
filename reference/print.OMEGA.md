@@ -35,8 +35,8 @@ format(x, digits = 3, ...)
 - digits:
 
   Integer. The number of decimal places the coefficients are rounded to
-  (passed to [`round()`](https://rdrr.io/r/base/Round.html)). Default is
-  3.
+  (passed to [`base::round()`](https://rdrr.io/r/base/Round.html)).
+  Default is 3.
 
 - ...:
 
@@ -65,8 +65,8 @@ om
 #>      tot  hier   sub     H   ECV   PUC
 #> g  0.883 0.740 0.125 0.842 0.652 0.706
 #> F1 0.769 0.500 0.269 0.463            
-#> F2 0.763 0.494 0.270 0.472            
-#> F3 0.744 0.519 0.225 0.408            
+#> F2 0.765 0.494 0.270 0.472            
+#> F3 0.745 0.519 0.225 0.408            
 
 # format() returns the same lines as a character vector:
 writeLines(format(om))
@@ -77,6 +77,6 @@ writeLines(format(om))
 #>      tot  hier   sub     H   ECV   PUC
 #> g  0.883 0.740 0.125 0.842 0.652 0.706
 #> F1 0.769 0.500 0.269 0.463            
-#> F2 0.763 0.494 0.270 0.472            
-#> F3 0.744 0.519 0.225 0.408            
+#> F2 0.765 0.494 0.270 0.472            
+#> F3 0.745 0.519 0.225 0.408            
 ```

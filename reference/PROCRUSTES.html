@@ -93,10 +93,16 @@ existing code keeps working.</p>
 
 
 <dt id="arg-s">S<a class="anchor" aria-label="anchor" href="#arg-s"></a></dt>
-<dd><p>Optional <code>k x k</code> cross-product matrix <code>crossprod(A)</code>. Supplying this
-is useful when the same <code>A</code> is rotated repeatedly. <code>S</code> is used only when
-<code>oblique_normalize = FALSE</code>; if Kaiser normalization is requested, the
-cross-product must be recomputed on the normalized matrix.</p></dd>
+<dd><p>Optional <code>k x k</code> cross-product matrix <code>crossprod(A)</code>, kept for
+compatibility. It enters both the oblique criterion and its gradient, so any
+other matrix would minimize a different criterion: where <code>S</code> is used it is
+checked against <code>crossprod(A)</code> and must agree with it up to a relative
+tolerance of <code>1e-8</code>. That check forms <code>crossprod(A)</code> itself, so passing <code>S</code>
+no longer avoids any work: omitting it gives the same result for slightly
+less. <code>S</code> is used, and therefore checked, only on the oblique path with more
+than one factor and <code>oblique_normalize = FALSE</code>; if Kaiser normalization is
+requested, the cross-product must be recomputed on the normalized matrix and
+<code>S</code> is ignored.</p></dd>
 
 
 <dt id="arg-t-init">T_init<a class="anchor" aria-label="anchor" href="#arg-t-init"></a></dt>

@@ -12,8 +12,9 @@ and so on. Earlier releases used uppercase names instead
 …). The uppercase names have **not** been removed — they still work —
 but the `efa_*` functions are now the recommended interface. This
 vignette explains the change, gives the full old-to-new mapping, and
-walks through the one migration that involves more than a rename:
-[`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) to
+walks through the migration with the largest change to the argument
+list: [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md)
+to
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
 
 ``` r
@@ -125,7 +126,7 @@ identical(KMO(cor_mat)$KMO, efa_kmo(cor_mat)$KMO)
 
 [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) to
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-is the only migration that changes an argument list.
+is the migration with the largest change to the argument list.
 [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) exposed
 every estimation and rotation setting as a flat argument, which made for
 a long and somewhat unwieldy signature.
@@ -254,12 +255,19 @@ outputs of that study ship with the package: `test_models` holds
 correlation matrices for four `population_models` cases, and `SPSS_23`
 and `SPSS_27` hold what SPSS FACTOR returned for those matrices — and
 for several real data sets — under the two SPSS versions, so a preset
-can be checked against the program it emulates.
+can be checked against the program it emulates
+([`?SPSS_23`](https://mdsteiner.github.io/EFAtools/reference/SPSS_23.md)
+records what such a check needs beyond the preset: those references were
+produced with the PAF iteration limit raised above SPSS’s default of
+25).
 [`?efa_fit`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
 lists the exact settings each preset selects, along with the one place a
-preset alone is not enough: `"psych"` also needs `normalize = FALSE` to
-match [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html)‘s promax,
-because every preset keeps EFAtools’ Kaiser normalization.
+preset alone is not enough: because every preset keeps EFAtools’ Kaiser
+normalization, `"psych"` also needs `normalize = FALSE` to reproduce
+[`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html)’s promax — and
+even then a residual difference remains, which
+[`?efa_fit`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+explains.
 
 ## Returned Objects Keep Their Legacy Classes
 

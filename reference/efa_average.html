@@ -159,12 +159,14 @@ Default is "promax".</p></dd>
 <dd><p>character vector. Any combination of "none" (default), "EFAtools",
 "psych", and "SPSS" can be entered. "none" allows the specification of various
 combinations of the arguments controlling both factor extraction methods and
-the rotations. The others ("EFAtools", "psych", and "SPSS"), control the execution
-of the respective factor extraction method and rotation to be in line with how
-it is executed in this package (i.e., the respective default procedure), in the
-psych package, and in SPSS. A specific psych implementation exists for PAF, ML, varimax,
-and promax. The SPSS implementation exists for PAF, varimax, and promax. For
-details, see <code><a href="efa_fit.html">efa_fit()</a></code>.</p></dd>
+the rotations. The others ("EFAtools", "psych", and "SPSS") take the extraction
+and rotation tuning of the respective implementation: this package's default
+procedure, the psych package's, and SPSS's. A specific psych implementation
+exists for PAF, ML, varimax, and promax. The SPSS implementation exists for
+PAF, varimax, and promax. For details, see <code><a href="efa_fit.html">efa_fit()</a></code>. The factor ordering is
+the one setting a named <code>type</code> does not bring here: every solution in the grid
+is fitted with the eigenvalue-based ordering, so that the solutions can be
+realigned to a common target before averaging.</p></dd>
 
 
 <dt id="arg-averaging">averaging<a class="anchor" aria-label="anchor" href="#arg-averaging"></a></dt>
@@ -259,7 +261,9 @@ or "oblique" is among the specified rotations. Default is <code>2:4</code>.</p><
 <dt id="arg-k-simplimax">k_simplimax<a class="anchor" aria-label="anchor" href="#arg-k-simplimax"></a></dt>
 <dd><p>numeric. The number of 'close to zero loadings' for the
 simplimax rotation if "simplimax" or "oblique" is among the specified rotations. Default
-is <code>ncol(x)</code>, where x is the entered data.</p></dd>
+is <code>ncol(x)</code>, where x is the entered data. It counts loadings, so each value must be a
+whole number no larger than the number of loadings in the solution; a simplimax fit
+given anything else fails and is reported as an errored solution in the grid.</p></dd>
 
 
 <dt id="arg-p-type">p_type<a class="anchor" aria-label="anchor" href="#arg-p-type"></a></dt>
@@ -343,7 +347,8 @@ range of the final communality estimates across the factor solutions.</p></dd>
 <dd><p>A list with the average, standard deviation, minimum, maximum,
 and range of the final loadings across the factor solutions. If rotation was
 "none", the unrotated loadings, otherwise the rotated loadings (pattern
-coefficients).</p></dd>
+coefficients). <code>average</code> is a cell-wise summary of the solutions and not itself
+a fitted solution (see Details).</p></dd>
 
 <dt>Phi</dt>
 <dd><p>A list with the average, standard deviation, minimum, maximum, and
@@ -360,7 +365,10 @@ Note: Rowsums can exceed 1 due to cross-loadings.</p></dd>
 <dd><p>A list with the average, standard deviation, minimum,
 maximum, and range of explained variances and sums of squared loadings across
 the factor solutions. Based on the unrotated loadings if rotation was "none"
-or only one factor was extracted, otherwise on the rotated loadings.</p></dd>
+or only one factor was extracted, otherwise on the rotated loadings. Each entry
+is a matrix with rows <code>"SS loadings"</code>, <code>"Prop Tot Var"</code>, and <code>"Prop Comm Var"</code>;
+the last is omitted for a single-factor solution, where it is identically 1, so
+those matrices have two rows there and three otherwise.</p></dd>
 
 <dt>fit_indices</dt>
 <dd><p>A matrix containing the average, standard deviation,
@@ -393,11 +401,17 @@ indices.</p></dd>
 correspond to the rownames from the implementations_grid.</p></dd>
 
 <dt>settings</dt>
-<dd><p>A list of the settings used.</p></dd>
+<dd><p>A list of the settings used, including <code>seed</code> (<code>NULL</code> when none was
+supplied).</p></dd>
 
 
 </dl><p>If the supplied arguments admit only a single EFA, there is nothing to average
-across: that one <code><a href="efa_fit.html">efa_fit()</a></code> object is returned instead, with a warning.</p>
+across: that one <code><a href="efa_fit.html">efa_fit()</a></code> object is returned instead, with a warning. Its
+<code>settings</code> are that fit's, with <code>seed</code> recording the seed the run was governed by.
+They therefore describe the concrete arguments the fit ran under rather than the
+<code>type</code> that supplied them: a row taken from a named preset records <code>type = "none"</code>
+together with the preset's resolved values (for example <code>max_iter = 25</code> for
+"SPSS"), and <code>order_type = "eigen"</code> as for every other row in the grid.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -444,6 +458,18 @@ is included in <code>rotation</code>.</p>
 in <code>type</code>.</p>
 <p>The argument <code>start_method</code> is only evaluated if "ML" is included in
 <code>estimator</code>.</p>
+<p>Every solution in the grid is fitted with the eigenvalue-based factor ordering,
+including under a named <code>type</code>: the solutions are realigned to a common target
+before averaging, so a per-fit ordering (SPSS orders by the sum of squared
+loadings) would not survive into the averaged result. That target is the first
+solution the grid retains, in grid order; solutions dropped for an error,
+non-convergence, or a Heywood case cannot become it. The averaged loadings are
+therefore in the factor order and sign of that solution. This is the one setting a
+named <code>type</code> does not carry, and it is visible in the two places the individual
+fits are: the solutions returned in <code>efa_list</code> are eigenvalue-ordered, and so is
+the single <code><a href="efa_fit.html">efa_fit()</a></code> object returned when the grid collapses to one row. Their
+loadings can therefore appear in a different factor order than the same fit run
+through <code><a href="efa_fit.html">efa_fit()</a></code> under that <code>type</code>, even though the solutions are the same.</p>
 <p>To avoid a bias in the averaged factor solutions from problematic solutions,
 these are excluded prior to averaging. A solution is deemed problematic if
 at least one of the following is true: an error occurred, the model did not
@@ -522,39 +548,39 @@ and is purely descriptive; it is not the p-value of any pooled chi-square test.<
 <span class="r-in"><span>                         estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ULS"</span>, <span class="st">"ML"</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"EFAtools"</span>,</span></span>
 <span class="r-in"><span>                         start_method <span class="op">=</span> <span class="st">"psych"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Extracting data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[9ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[13ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reordering factors</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[27ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[38ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Averaging data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[23ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[43ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># Averaging across different implementations of PAF and promax rotation (72 EFAs)</span></span></span>
 <span class="r-in"><span><span class="va">Aver_PAF</span> <span class="op">&lt;-</span> <span class="fu">efa_average</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Extracting data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[11ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[16ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reordering factors</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[19ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[30ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Averaging data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[16ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[24ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use median instead of mean for averaging (72 EFAs)</span></span></span>
 <span class="r-in"><span><span class="va">Aver_PAF_md</span> <span class="op">&lt;-</span> <span class="fu">efa_average</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
 <span class="r-in"><span>                           averaging <span class="op">=</span> <span class="st">"median"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Extracting data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[10ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[15ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reordering factors</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[19ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[29ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Averaging data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[20ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[29ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Averaging across different implementations of PAF and promax rotation,</span></span></span>
@@ -562,13 +588,13 @@ and is purely descriptive; it is not the p-value of any pooled chi-square test.<
 <span class="r-in"><span><span class="va">Aver_meth_ext</span> <span class="op">&lt;-</span> <span class="fu">efa_average</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
 <span class="r-in"><span>                             estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ULS"</span>, <span class="st">"ML"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Extracting data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[12ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[18ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reordering factors</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[30ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[42ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Averaging data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[16ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[24ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Averaging across different oblique rotation methods, using one implementation</span></span></span>
@@ -577,13 +603,13 @@ and is purely descriptive; it is not the p-value of any pooled chi-square test.<
 <span class="r-in"><span>                         estimator <span class="op">=</span> <span class="st">"ML"</span>, rotation <span class="op">=</span> <span class="st">"oblique"</span>, type <span class="op">=</span> <span class="st">"EFAtools"</span>,</span></span>
 <span class="r-in"><span>                         start_method <span class="op">=</span> <span class="st">"psych"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Extracting data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[10ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Extracting data <span style="color: #B2B2B2;">[11ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reordering factors</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[20ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Reordering factors <span style="color: #B2B2B2;">[21ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Averaging data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[23ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Averaging data <span style="color: #B2B2B2;">[24ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>

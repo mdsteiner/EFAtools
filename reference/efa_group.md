@@ -21,6 +21,7 @@ efa_group(
   seed = NULL,
   delta = 0.1,
   invariance = FALSE,
+  se = NULL,
   ...
 )
 ```
@@ -54,8 +55,9 @@ efa_group(
 
   The group to align the others to (a group name or an integer index).
   If `NULL` (default), orthogonal and unrotated solutions use the
-  symmetric consensus target; oblique solutions fall back to the first
-  group as reference. Supplying a value forces the reference alignment.
+  symmetric consensus target; oblique solutions with more than one
+  factor fall back to the first group as reference. Supplying a value
+  forces the reference alignment.
 
 - b_boot:
 
@@ -94,22 +96,50 @@ efa_group(
   produces (pattern coefficients for an oblique rotation). `0` flags
   every cell. Default is `0.1`.
 
+  The geomin rotations take a criterion parameter of the same name. A
+  `delta` given directly is always this salience threshold and never
+  reaches the rotation; give the geomin parameter as
+  `rotate_control(delta = ...)`. With `rotation = "geominT"` or
+  `"geominQ"`, a supplied `delta` gives a warning that says which of the
+  two applies.
+
 - invariance:
 
   logical. Whether to add an approximate-invariance verdict per factor
   and group pair from the Lorenzo-Seva and ten Berge (2006) congruence
   bands (see *Value*). Default is `FALSE`.
 
+- se:
+
+  Not used. `efa_group()` itself sets the standard-error method of the
+  per-group
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  calls, so a supplied value is dropped with a warning. Ask for
+  bootstrap confidence intervals of the between-group congruences with
+  `b_boot`. Default is `NULL`.
+
 - ...:
 
   Additional arguments passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  for every group (for example `estimator`, `rotation`, `cor_method`, or
-  an
+  for every group (for example `estimator`, `rotation`, or
+  `cor_method`). The
   [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
-  /
+  and
   [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
-  to select a preset).
+  objects are accepted through `...` as well, although they are not
+  declared formals: pass them as `estimate_control =` /
+  `rotate_control =` exactly as you would to
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
+  A name that is neither an
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  argument nor a rotation-engine extra is rejected.
+
+  A rotation-engine extra that has the same name as an `efa_group()`
+  argument cannot reach the rotation through `...`, because the argument
+  takes the name first. This applies to the geomin criterion parameter
+  `delta`: pass it as `rotate_control(delta = ...)`, which reaches both
+  the per-group fits and the shared alignment frame.
 
 ## Value
 
@@ -175,11 +205,13 @@ An object of class `efa_group`, a list containing:
   Berge (2006) similarity bands: `phi >= 0.95` is "equal" and
   `[0.85, 0.95)` is "fair"; congruences `< 0.85`, below their bands, are
   labelled "incongruent". The verdict is read from `phi_lower` when a
-  bootstrap is available (conservative) and from `phi` otherwise.
-  Tucker's congruence is invariant to a proportional rescaling of a
-  factor's loadings, so a factor can be graded "equal" even when one
-  group's loadings on it are uniformly stronger; read the verdict
-  alongside `diffs`. `NULL` when `invariance = FALSE`.
+  bootstrap is available (conservative) and from `phi` otherwise. A wide
+  interval therefore lowers the verdict: `phi` = 0.989 with `phi_lower`
+  = 0.726 is labelled "incongruent", because the band is applied to the
+  lower bound. Tucker's congruence is invariant to a proportional
+  rescaling of a factor's loadings, so a factor can be graded "equal"
+  even when one group's loadings on it are uniformly stronger; read the
+  verdict alongside `diffs`. `NULL` when `invariance = FALSE`.
 
 - efa:
 
@@ -205,9 +237,9 @@ An object of class `efa_group`, a list containing:
   (`alignment_start`, `NULL` on the reference path), the orientation the
   shared frame was put in (`gauge`: the rotation's own name,
   `"principal_axes"`, or `"identity"` for a single factor; `NULL` on the
-  reference path), the rotation, the estimator, the input type, and
-  whether a bootstrap is available (`can_bootstrap`, `FALSE` for
-  correlation-matrix input).
+  reference path), the rotation, the estimator, the input type, whether
+  a bootstrap is available (`can_bootstrap`, `FALSE` for
+  correlation-matrix input), and `seed` (`NULL` when none was supplied).
 
 ## Details
 
@@ -260,8 +292,11 @@ chosen automatically:
   single group factor – the principal-axes orientation of the target is
   used instead. Either way the columns are ordered by decreasing sum of
   squares and signed by their column sums, and the shared orientation,
-  and hence every reported congruence, difference, and flag, is
-  independent of the order in which the groups are supplied.
+  and hence every reported congruence, difference, and flag, does not
+  depend on the order in which the groups are supplied – up to the
+  convergence tolerance of the consensus iteration, which is set tight
+  enough that the residual is several orders of magnitude below the
+  precision the loadings are reported to.
 
 - **Reference**: every group's loadings are aligned by Procrustes
   rotation to one reference group's loadings, which are kept fixed. This
@@ -318,7 +353,6 @@ Other factor analysis:
 g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
 mg <- efa_group(GRiPS_raw, groups = g, n_factors = 1)
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mg$loadings
 #> $g1
 #>                  F1
@@ -374,7 +408,6 @@ mg$flags
 # approximate-invariance verdict read conservatively off the congruence CI lower bound
 mg_ci <- efa_group(GRiPS_raw, groups = g, n_factors = 1, b_boot = 100, seed = 42,
                    invariance = TRUE)
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mg_ci$congruence$matched_ci
 #> $lower

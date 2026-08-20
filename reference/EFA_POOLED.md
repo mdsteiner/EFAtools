@@ -46,9 +46,10 @@ EFA_POOLED(
   Character. How rotated solutions are aligned across imputations before
   pooling: `"first_target"` (the default) aligns every imputation to the
   first imputation's rotated solution, while `"consensus"` refines a
-  centroid target by Generalized Procrustes Analysis (orthogonal
-  rotations only). See *Aligning solutions across imputations* in
-  Details.
+  centroid target by Generalized Procrustes Analysis, started from the
+  medoid imputation so that the pooled rotated solution does not depend
+  on the order of `data_list` (orthogonal rotations only). See *Aligning
+  solutions across imputations* in Details.
 
 - align_unrotated:
 
@@ -72,13 +73,18 @@ EFA_POOLED(
   when `target_method = "consensus"`. Recognised tuning parameters
   include the convergence tolerances `tol` and `loss_tol`, the iteration
   bounds `min_iter` and `max_iter`, the target-update damping `alpha`,
-  and the multi-start controls `multi_start` and `starts`.
+  the multi-start controls `multi_start` and `starts`, and `start`,
+  which overrides the medoid imputation the iteration is otherwise
+  started from.
 
 - procrustes_args:
 
-  List of additional arguments passed to
+  List of
   [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)
-  for fixed-target alignment.
+  algorithm controls for fixed-target alignment, for example
+  `oblique_maxit` or `oblique_random_starts`. The loadings `A`, the
+  alignment `Target`, the `rotation` family, and the cross-product `S`
+  are derived from the imputations and cannot be set here.
 
 - rmsea_ci_level:
 
@@ -108,7 +114,22 @@ EFA_POOLED(
   for every imputation; see
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   for the available options, their properties, and which combinations
-  are valid.
+  are valid. Two of them shape the pooled object rather than a single
+  fit: `seed` sets the random state once for the whole
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  call – every component bootstrap and every random-start rotation draws
+  from it, so a seeded call is reproducible as a whole, and the caller's
+  random stream is restored afterwards – and `b_boot` sets the number of
+  bootstrap replicates drawn per imputation under `se = "np-boot"`,
+  which is what the pooled within-imputation variances are estimated
+  from and is recorded in `settings$b_boot`. The
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  and
+  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  objects are accepted through `...` as well, although they are not
+  declared formals: pass them as `estimate_control =` /
+  `rotate_control =` exactly as you would to
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
 
 ## Value
 

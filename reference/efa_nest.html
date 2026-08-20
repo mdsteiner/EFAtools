@@ -95,7 +95,7 @@ correlations.</p></dd>
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
 <dd><p>numeric. The number of observations. Only needed if x is a correlation
-matrix.</p></dd>
+matrix. Must be larger than the number of variables.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
@@ -181,7 +181,7 @@ slowest criteria available here.</p>
 one of them leaves no unique variance to simulate the reference data from, so
 NEST aborts rather than continuing from an inadmissible reference.</p>
 <p>The reference eigenvalues are obtained from simulated data, so the suggested number
-of factors varies slightly from run to run. Call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> beforehand to make a
+of factors varies slightly from run to run. Call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">base::set.seed()</a></code> beforehand to make a
 run reproducible.</p>
 <p>For details on the method, including simulation studies, see Achim (2017),
 Brandenburg and Papenberg (2024), and Caron (2025).</p>

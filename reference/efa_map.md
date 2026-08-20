@@ -36,7 +36,7 @@ Seventy* (pp. 41–71). Boston: Kluwer.
 
 Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
 determining the number of components to retain. *Psychological Bulletin,
-99*, 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
+99*, 432–442. https://doi.org/10.1037/0033-2909.99.3.432
 
 ## Arguments
 
@@ -75,7 +75,8 @@ returns `NULL` with a message for it. Its main elements are:
   criterion.
 
 - `results`: A list with one record per criterion, each holding the
-  criterion values over \\m\\.
+  criterion values over \\m\\ and, in `m_last`, the largest \\m\\ at
+  which the criterion could be evaluated (see details).
 
 - `settings`: A list containing `use` and `cor_method`.
 
@@ -104,6 +105,12 @@ criteria are returned, each rescaling the trace of a matrix power of
   fourth powers of the individual partial correlations; the matrix power
   is intended and is what Velicer, Eaton, and Fava (2000) describe.
 
+Both criteria are returned for every call and they can suggest different
+numbers of factors on the same correlation matrix. Both are in use in
+the literature and neither is treated as the default here, so be sure to
+state which of the two you report, as you would for any other analysis
+choice.
+
 MAP is most dependable when the components are well determined, that is
 with many indicators per factor and substantial loadings. It has a
 well-documented tendency to under-extract, particularly with few
@@ -112,6 +119,19 @@ indicators per factor or weak loadings (Zwick & Velicer, 1986; Auerswald
 criterion that errs in the other direction, such as the Kaiser-Guttman
 criterion
 ([`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md)).
+
+The criterion is evaluated over \\m = 0, \ldots, p - 1\\. Each step
+standardizes the partial covariance matrix by its residual standard
+deviations, which requires every residual variance to stay positive.
+Partialling out all but one component leaves a rank-one residual, so the
+final point \\m = p - 1\\ is undefined for most correlation matrices and
+is routinely returned as `NA`. A residual variance can also reach zero
+earlier, most often on a near-singular matrix; the search then stops
+there, the criterion values that could be computed are kept, the
+remaining values stay `NA`, and a warning (class `efa_map_truncated`)
+reports how far the grid was searched. In that case the suggested \\m\\
+is the minimum over the evaluated range only, so it should be read
+together with the returned series.
 
 A non-positive-definite input correlation matrix (e.g. from sampling
 error) is smoothed with

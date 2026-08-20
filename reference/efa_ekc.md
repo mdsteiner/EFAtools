@@ -3,9 +3,8 @@
 The empirical Kaiser criterion incorporates random sampling variations
 of the eigenvalues from the Kaiser-Guttman criterion
 ([`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md);
-see Auerswald & Moshagen , 2019; Braeken & van Assen, 2017). The code is
-based on Braeken & van Assen, (2017) and on Auerswald and Moshagen
-(2019).
+see Auerswald & Moshagen, 2019; Braeken & van Assen, 2017). The
+implementation follows Braeken and van Assen (2017).
 
 ## Usage
 
@@ -16,7 +15,7 @@ efa_ekc(
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
-  type = "BvA2017"
+  type = lifecycle::deprecated()
 )
 ```
 
@@ -28,17 +27,11 @@ extraction methods under realistic conditions. Psychological Methods,
 24(4), 468–491. https://doi.org/10.1037/met0000200
 
 Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
-Psychological Methods, 22, 450 – 466.
-http://dx.doi.org/10.1037/met0000074
-
-Caron, P.-O. (2025). A Comparison of the Next Eigenvalue Sufficiency
-Test to Other Stopping Rules for the Number of Factors in Factor
-Analysis. Educational and Psychological Measurement, Online-first
-publication. https://doi.org/10.1177/00131644241308528
+Psychological Methods, 22, 450 – 466. https://doi.org/10.1037/met0000074
 
 Zwick, W. R., & Velicer, W. F. (1986). Comparison of five rules for
 determining the number of components to retain. Psychological Bulletin,
-99, 432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432
+99, 432–442. https://doi.org/10.1037/0033-2909.99.3.432
 
 ## Arguments
 
@@ -50,7 +43,7 @@ determining the number of components to retain. Psychological Bulletin,
 - N:
 
   numeric. The number of observations. Only needed if x is a correlation
-  matrix.
+  matrix. Must be larger than the number of variables.
 
 - use:
 
@@ -73,12 +66,11 @@ determining the number of components to retain. Psychological Bulletin,
 
 - type:
 
-  character. The calculation of EKC. type `"BvA2017"` is the original
-  implementation; type `"AM2019"` differs from the original
-  implementation but was used in simulation studies (Auerswald &
-  Moshagen, 2019; Caron, 2025). See details. Use
-  `type = c("BvA2017", "AM2019")` for both implementations. Make sure to
-  report which version you used.
+  **\[deprecated\]** Accepted and ignored. It selected between two ways
+  to compute the reference values. The `"AM2019"` reference values do
+  not depend on the observed eigenvalues, so they do not apply the
+  empirical correction that defines the criterion, and they are no
+  longer computed.
 
 ## Value
 
@@ -90,14 +82,20 @@ for the print and plot methods). Its main fields are:
 
 - n_factors:
 
-  A named numeric vector with the suggested number of factors for each
-  requested implementation (`"BvA2017"` and/or `"AM2019"`).
+  A numeric vector of length one, named `"BvA2017"`, with the suggested
+  number of factors. The factors up to the first observed eigenvalue
+  that fails to exceed its reference value are retained. The
+  "all-exceed" convention of parallel analysis
+  ([`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)),
+  which retains all *J* factors when no such crossing is found, cannot
+  be reached here: the reference values are never below 1, while the
+  eigenvalues of a correlation matrix sum to *J* and are sorted
+  downwards, so the last of them is never above 1.
 
 - results:
 
-  A list with one record per implementation, each holding the
-  eigenvalues, the reference eigenvalues, and the retained solution used
-  for printing and plotting.
+  A list with one record, holding the eigenvalues, the reference
+  eigenvalues, and the retained solution used for printing and plotting.
 
 - settings:
 
@@ -129,29 +127,6 @@ intercorrelation is moderate to high and the number of variables per
 factor is small, which is characteristic of many applications these
 days" (p.463-464).
 
-In EFAtools version \<= 0.5.0 only the implementation of Auerswald and
-Moshagen (2019) was implemented (now available with `type = "AM2019"`).
-However, this implementation, that was probably also used in Caron
-(2025), differs from the original implementation by Braeken and van
-Assen (2017) in that it corrects by the reference values, i.e., without
-using the empirical eigenvalues used in the original implementation.
-Thanks to Luis Eduardo Garrido for pointing this out and to Johan
-Braeken for sharing sample code, based on which the original version is
-now implemented and used by default with `type = "BvA2017"`.
-
-While the adapted version performed relatively well in the simulation
-studies by Auerswald and Moshagen (2019) and Caron (2025), the
-theoretical derivations of the EKC as introduced by Braeken and van
-Assen (2017) may no longer hold. Currently we are unaware of studies
-comparing the two implementations, but based on our own brief
-comparisons across multiple datasets, the two implementations appear to
-often differ substantially regarding the number of factors suggested.
-
-As both implementations exist in different packages and studies, we
-provide both versions here. Be sure to state clearly which version you
-use when reporting your results to avoid confusion and ensure
-reproducibility.
-
 ## See also
 
 [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
@@ -171,12 +146,8 @@ Other factor retention criteria:
 ## Examples
 
 ``` r
-# original implementation
 efa_ekc(test_models$baseline$cormat, N = 500)
 #> ── Empirical Kaiser Criterion ──────────────────────────────────────────────────
 #> 
-#> • Original implementation (Braeken & van Assen, 2017): 3
-#> 
-#> ℹ Multiple implementations of EKC exist; make sure to report which one you used
-#> (see the efa_ekc help page for details).
+#> • Braeken & van Assen (2017): 3
 ```

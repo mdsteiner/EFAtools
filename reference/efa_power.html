@@ -155,8 +155,9 @@ solved for and no <code>group</code> division.</p></dd>
 
 
 <dt id="arg-p">p<a class="anchor" aria-label="anchor" href="#arg-p"></a></dt>
-<dd><p>numeric. The number of observed variables. Used with <code>k</code> to derive
-<code>df</code> when <code>df</code> is not given directly.</p></dd>
+<dd><p>numeric. The number of observed variables. In <code>"rmsea"</code> mode, used with
+<code>k</code> to derive <code>df</code> when <code>df</code> is not given directly. In <code>"simulation"</code> mode it is
+read off the population, so leave it unset (or matching <code>nrow(Lambda)</code> / <code>nrow(R)</code>).</p></dd>
 
 
 <dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
@@ -185,7 +186,8 @@ solved for.</p></dd>
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
 <dd><p>numeric. The number of groups. Default is <code>1</code>. <code>N</code> is the total
-across all <code>group</code> groups, not the size of each one. See <em>Details</em>.</p></dd>
+across all <code>group</code> groups, not the size of each one, and a solved <code>N</code> is a
+multiple of <code>group</code>. See <em>Details</em>.</p></dd>
 
 
 <dt id="arg-lambda">Lambda<a class="anchor" aria-label="anchor" href="#arg-lambda"></a></dt>
@@ -290,11 +292,12 @@ solved sample size is at least the target).</p></dd>
 
 <dt>N</dt>
 <dd><p>The total sample size across groups: the supplied <code>N</code>, or the solved
-required sample size.</p></dd>
+required sample size (a multiple of <code>group</code>).</p></dd>
 
 <dt>N_per_group</dt>
 <dd><p>The per-group sample size <code>N / group</code>, equal to <code>N</code> when
-<code>group</code> is <code>1</code>.</p></dd>
+<code>group</code> is <code>1</code>. A whole number for a solved <code>N</code>; for a supplied <code>N</code> that is not
+a multiple of <code>group</code> it is the fraction that the noncentrality uses.</p></dd>
 
 <dt>crit</dt>
 <dd><p>The critical chi-square value the fit statistic is compared against.</p></dd>
@@ -338,8 +341,9 @@ fits).</p></dd>
 
 <dt>replicates</dt>
 <dd><p>The raw per-replicate values: the suggested factor counts
-(<code>n_hat</code>), the matched congruences (<code>rec_min</code>, <code>rec_mean</code>), and the <code>converged</code>,
-<code>heywood</code>, and <code>fit_ok</code> flags.</p></dd>
+(<code>n_hat</code>), the matched congruences (<code>rec_min</code>, <code>rec_mean</code>), the <code>converged</code>,
+<code>heywood</code>, and <code>fit_ok</code> flags, and <code>fit_error</code>, the message of the fit that did
+not complete (<code>NA</code> where it did).</p></dd>
 
 <dt>k_true</dt>
 <dd><p>The true number of factors.</p></dd>
@@ -380,6 +384,12 @@ smallest <code>N</code> reaching <code>power</code>) is found by bisection. <cod
 sample size across groups: with <code>group &gt; 1</code> the noncentrality above carries the
 <code>1 / group</code> factor, so a fixed total spread over more groups buys less power.
 The corresponding per-group sample size <code>N / group</code> is returned as <code>N_per_group</code>.</p>
+<p>The <code>1 / group</code> factor makes all <code>group</code> groups the same size, so a required
+total is rounded up to the next multiple of <code>group</code>. A solved <code>N_per_group</code> is thus
+a whole number of persons, and the reported <code>power</code> is the power at a total that a
+study can collect. With <code>group = 2</code> and <code>df = 102</code>, for example, the required total
+is 260, or 130 per group. Bisection on the total alone gives 259, which asks for
+129.5 persons in each group.</p>
     </div>
     <div class="section level2">
     <h2 id="simulation-mode">Simulation mode<a class="anchor" aria-label="anchor" href="#simulation-mode"></a></h2>
@@ -399,7 +409,9 @@ are matched to the population loadings, and the matched-factor Tucker congruence
 replicate counts as a success when the smallest (<code>min</code>) or the average (<code>mean</code>)
 matched congruence reaches it. <strong>Convergence</strong>: the same fit supplies the
 proportion of replicates whose fit completed and, among those, the proportion that
-converged and that produced a Heywood case.</p>
+converged and that produced a Heywood case. A replicate whose fit fails outright
+contributes to none of the three; if any fit fails, a warning reports how many did
+and the first replicate's cause.</p>
 <p>Replicates are analysed in parallel with <span class="pkg">future.apply</span>; a plan is selected with
 <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>. Each replicate is bound to its own reproducible random-number
 stream, so with a fixed <code>seed</code> the result is identical regardless of the number of

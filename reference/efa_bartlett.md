@@ -36,9 +36,12 @@ approximation in factor analysis. Biometrika, 38, 337-344.
 
 - use:
 
-  character. Passed to
-  [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is "pairwise.complete.obs".
+  character. The missing-data policy for raw data. Passed to
+  [`stats::cor()`](https://rdrr.io/r/stats/cor.html) for `"pearson"`,
+  `"spearman"`, and `"kendall"`; for `"poly"` / `"tetra"` the same
+  policies are applied to the raw data before the polychoric estimation,
+  where `"all.obs"` and `"everything"` abort on a missing value instead
+  of returning `NA` correlations. Default is "pairwise.complete.obs".
 
 - cor_method:
 
@@ -54,8 +57,8 @@ A list containing
 
 - chisq:
 
-  The chi square statistic, or `NA` if `N` is too small for the Bartlett
-  correction (i.e. \\N - 1 - (2p + 5)/6 \le 0\\).
+  The chi square statistic, or `NA`, with a warning, if `N` is too small
+  for the Bartlett correction (i.e. \\N - 1 - (2p + 5)/6 \le 0\\).
 
 - p_value:
 
@@ -80,8 +83,8 @@ chi square distributed with \\df = \frac{p(p - 1)}{2}\\ and is given by
 where \\det(R)\\ is the determinant of the correlation matrix, \\N\\ is
 the sample size, and \\p\\ is the number of variables.
 
-This tests requires multivariate normality. If this condition is not
-met, the Kaiser-Meyer-Olkin criterion
+This test requires multivariate normality. If this condition is not met,
+the Kaiser-Meyer-Olkin criterion
 ([`efa_kmo()`](https://mdsteiner.github.io/EFAtools/reference/efa_kmo.md))
 can still be used.
 

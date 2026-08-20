@@ -1,10 +1,10 @@
 # DOSPERT
 
-A list containing the the bivariate correlations (cormat) of the 40
-items of the Domain Specific Risk Taking Scale (DOSPERT; Weber, Blais, &
-Betz, 2002) and the sample size (N) based on the publicly available
-dataset at (<https://osf.io/rce7g>) of the Basel-Berlin Risk Study (Frey
-et al., 2017). The items measure risk-taking propensity on six different
+A list containing the bivariate correlations (cormat) of the 40 items of
+the Domain Specific Risk Taking Scale (DOSPERT; Weber, Blais, & Betz,
+2002) and the sample size (N) based on the publicly available dataset at
+(<https://osf.io/rce7g>) of the Basel-Berlin Risk Study (Frey et al.,
+2017). The items measure risk-taking propensity on six different
 domains: social, recreational, gambling, health/ safety, investment, and
 ethical.
 
@@ -41,3 +41,10 @@ Risk preference shares the psychometric structure of major psychological
 traits. Science Advances, 3, e1701381.
 
 <https://osf.io/rce7g>
+
+## Details
+
+The underlying data deposit is licensed under CC BY 4.0
+(<https://creativecommons.org/licenses/by/4.0/legalcode>). These
+correlations are a derivative of it and are attributed to Frey et al.
+(2017), as the licence requires.

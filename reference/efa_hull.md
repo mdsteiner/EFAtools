@@ -63,7 +63,7 @@ Behavioral Research, 46(2), 340-364.
 
   character. The estimator to use. One of `"PAF"`, `"ULS"`, or `"ML"`,
   for principal axis factoring, unweighted least squares, and maximum
-  likelihood, respectively.
+  likelihood, respectively. Default is `"PAF"`.
 
 - gof:
 
@@ -100,8 +100,8 @@ Behavioral Research, 46(2), 340-364.
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Default is 1000. This is
-  passed to
+  numeric. The number of datasets to simulate. Must be at least 1.
+  Default is 1000. This is passed to
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
 
 - percent:
@@ -170,12 +170,27 @@ for the print and plot methods). Its main fields are:
 
   A list with one record per goodness-of-fit index, each holding the
   goodness-of-fit values, the degrees of freedom, the hull membership,
-  and the retained solution used for printing and plotting.
+  and the retained solution used for printing and plotting. Each record
+  also carries `st`, the elbow sharpness of every solution (see
+  details): the retained solution has the largest value, and the
+  runner-up shows how close the selection was. `st` is `NA` for the
+  solutions where it is undefined, that is for those not on the hull and
+  for the two hull endpoints, which have no neighbouring hull solution
+  on one side. When fewer than three solutions remain on the hull, `st`
+  is undefined throughout and the whole vector is `NA`; the retained
+  solution is then the one with the highest goodness of fit, and a
+  warning says so.
 
 - settings:
 
   A list of the settings used, including `n_fac_max`, the upper bound
-  *J* of the number of factors to extract (see details).
+  *J* of the number of factors to extract (see details). For backwards
+  compatibility the estimator is also repeated in `settings$method`.
+
+For backwards compatibility the per-index suggestions are additionally
+available as the top-level fields `n_fac_CAF`, `n_fac_CFI` and
+`n_fac_RMSEA`, each `NA` if that index was not requested in `gof`. New
+code should read them from `n_factors` instead.
 
 ## Details
 
@@ -210,9 +225,9 @@ The upper bound *J* comes from
 which compares against simulated data, so the suggested number of
 factors varies slightly from run to run; a criterion-based rotation
 passed through `...` adds its own random starts. Call
-[`set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to make a
-run reproducible; the result is then also independent of the parallel
-plan.
+[`base::set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to
+make a run reproducible; the result is then also independent of the
+parallel plan.
 
 Note that if `gof = "RMSEA"` is used, 1 - RMSEA is actually used to
 compare the different solutions. This is necessary due to how the
@@ -250,18 +265,18 @@ Other factor retention criteria:
 
 ``` r
 # \donttest{
-# using PAF (this will throw a warning if gof is not specified manually
+# using PAF (this will print a message if gof is not specified manually
 # and CAF will be used automatically)
 efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF", n_datasets = 100)
 #> ── Hull method ─────────────────────────────────────────────────────────────────
-#> Estimation method: PAF
+#> Estimator: PAF
 #> 
 #> • CAF: 3
 
 # using ML with all available fit indices (CAF, CFI, and RMSEA)
 efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML", n_datasets = 100)
 #> ── Hull method ─────────────────────────────────────────────────────────────────
-#> Estimation method: ML
+#> Estimator: ML
 #> 
 #> • CAF: 3
 #> • CFI: 1
@@ -271,15 +286,19 @@ efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML", n_datasets = 10
 efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS", gof = "RMSEA",
          n_datasets = 100)
 #> ── Hull method ─────────────────────────────────────────────────────────────────
-#> Estimation method: ULS
+#> Estimator: ULS
 #> 
 #> • RMSEA: 1
 # }
 
 if (FALSE) { # \dontrun{
 # using parallel processing (Note: plans can be adapted, see the future
-# package for details)
-future::plan(future::multisession)
-efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
+# package for details). future::plan() returns the plan it replaces, so
+# on.exit() puts the session back as it was -- also if the call fails.
+local({
+  old_plan <- future::plan(future::multisession, workers = 2)
+  on.exit(future::plan(old_plan), add = TRUE)
+  efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
+})
 } # }
 ```

@@ -43,9 +43,12 @@ efa_compare(
   character. Whether and how elements / columns should be reordered. If
   "congruence" (default), the columns of `y` are matched to those of `x`
   by an optimal one-to-one assignment that maximizes Tucker's congruence
-  coefficient, so each factor is matched exactly once; if "names",
-  objects are reordered according to their names; if "none", no
-  reordering is done.
+  coefficient, so each factor is matched exactly once; with a single
+  column this reduces to matching its sign. It applies to matrices only,
+  and warns when `x` and `y` are vectors. If "names", the columns of a
+  matrix – or the elements of a vector – are put in alphabetical order
+  of their names; the rows of a matrix are assumed to be aligned already
+  and are left untouched. If "none", no reordering is done.
 
 - corres:
 
@@ -105,7 +108,10 @@ efa_compare(
 
   character. A vector of length two containing identifying labels for
   the two objects x and y that will be compared. These will be used as
-  labels on the x-axis of the plot. Default is "x" and "y".
+  labels on the x-axis of the plot, and to name the direction of the
+  signed elementwise differences in the printed report (see
+  [`print.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_compare.md)).
+  Default is "x" and "y".
 
 - plot:
 
@@ -164,12 +170,16 @@ differences of x and y.
 - diff_corres:
 
   The number of differing variable-to-factor correspondences between x
-  and y, when only the highest loading is considered.
+  and y, when only the highest loading is considered. `NA` whenever the
+  correspondences were not compared: for vector input, for a matrix with
+  a single column, with `corres = FALSE`, and when a loading is missing
+  under `na.rm = FALSE`.
 
 - diff_corres_cross:
 
   The number of differing variable-to-factor correspondences between x
-  and y when all loadings `>= thresh` are considered.
+  and y when all loadings `>= thresh` are considered. `NA` under the
+  same conditions as `diff_corres`.
 
 - g:
 
@@ -211,9 +221,12 @@ efa_compare(EFA_SPSS_6$unrot_loadings, EFA_psych_6$unrot_loadings,
 #> Median absolute difference:  .0008
 #> Root mean squared distance (RMSE):  .0048
 #> Max decimals where all numbers agree in absolute value: 0
-#> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
+#> Differing indicator-to-factor correspondences: 0 (highest loading),
+#>   0 (all |loadings| >= 0.3)
 #> 
 #> ── Elementwise differences ─────────────────────────────────────────────────────
+#> 
+#> Differences: SPSS - psych.
 #> 
 #>        F1      F2      F3      F4      F5      F6
 #> V1    .0000  -.0001  -.0003  -.0053  -.0015  -.0012

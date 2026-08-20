@@ -128,7 +128,8 @@ standardize the population to a correlation matrix are used.</p></dd>
 
 <dt id="arg-r">R<a class="anchor" aria-label="anchor" href="#arg-r"></a></dt>
 <dd><p>matrix. A <code>p</code> by <code>p</code> population correlation matrix to draw from
-directly. Supply this instead of <code>Lambda</code>/<code>Phi</code>/<code>Psi</code>.</p></dd>
+directly. Supply this instead of <code>Lambda</code>/<code>Phi</code>/<code>Psi</code>. It must have a unit
+diagonal; standardize a covariance matrix with <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cov2cor()</a></code> first.</p></dd>
 
 
 <dt id="arg-model-error">model_error<a class="anchor" aria-label="anchor" href="#arg-model-error"></a></dt>

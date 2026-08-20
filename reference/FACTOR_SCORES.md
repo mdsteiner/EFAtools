@@ -6,9 +6,14 @@
 [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md),
 which is the recommended interface going forward. It remains available
 so existing code keeps working. Note that `R2` is now the squared
-factor-score determinacy (the value
+factor-score determinacy of the *requested* `method`: the squared
+correlation between a factor and the scores that method produces. For
+`method = "Thurstone"` this is each factor's squared multiple
+correlation with the observed variables (the value
 [`psych::factor.scores()`](https://rdrr.io/pkg/psych/man/factor.scores.html)
-returns with `Grice = TRUE`); earlier versions returned psych's default
+returns with `Grice = TRUE`); for every other method it is smaller,
+because no estimator correlates more highly with the factor than the
+regression estimator does. Earlier versions returned psych's default
 `Grice = FALSE` validity coefficient, so the slot is not comparable
 across versions.
 
@@ -49,9 +54,10 @@ FACTOR_SCORES(
   specified if a factor loadings matrix is entered directly into `f`;
   for an
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  object the intercorrelations are taken from the object. Default is
-  `NULL`, in which case the intercorrelations of a directly supplied
-  loading matrix are assumed to be zero.
+  object the intercorrelations are taken from the object, and a supplied
+  `Phi` is ignored with a warning. Default is `NULL`, in which case the
+  intercorrelations of a directly supplied loading matrix are assumed to
+  be zero.
 
 - rho:
 
@@ -93,10 +99,10 @@ A list of class FACTOR_SCORES containing the following:
 - R2:
 
   The squared factor-score determinacy for each factor: the squared
-  correlation between a factor and its estimated score. For orthogonal
-  factors this equals the squared multiple correlation between the
-  factor and the observed variables; for oblique factors it is the
-  score-specific determinacy. See
+  correlation between a factor and the score the requested `method`
+  produces. For `method = "Thurstone"` this equals the squared multiple
+  correlation between the factor and the observed variables; for every
+  other method it is specific to those scores and smaller. See
   [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md)
   for the underlying score-quality diagnostics.
 

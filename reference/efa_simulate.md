@@ -71,7 +71,9 @@ efa_simulate(
 - R:
 
   matrix. A `p` by `p` population correlation matrix to draw from
-  directly. Supply this instead of `Lambda`/`Phi`/`Psi`.
+  directly. Supply this instead of `Lambda`/`Phi`/`Psi`. It must have a
+  unit diagonal; standardize a covariance matrix with
+  [`stats::cov2cor()`](https://rdrr.io/r/stats/cor.html) first.
 
 - model_error:
 

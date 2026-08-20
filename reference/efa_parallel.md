@@ -2,9 +2,11 @@
 
 Various methods for performing parallel analysis. This function uses
 [future_lapply()](https://future.apply.futureverse.org/reference/future_lapply.html)
-for which a parallel processing plan can be selected. To do so, call
-[`library(future)`](https://future.futureverse.org) and, for example,
-`plan(multisession)`; see examples.
+for which a parallel processing plan can be selected. To do so, register
+a plan with
+[`future::plan()`](https://future.futureverse.org/reference/plan.html),
+for example `future::plan(future::multisession, workers = 2)`; see
+examples.
 
 ## Usage
 
@@ -56,7 +58,8 @@ https://doi.org/10.1007/BF02289447
 
   numeric. The number of cases / observations to simulate. Only has to
   be specified if `x` is either a correlation matrix or `NULL`. If x
-  contains raw data, `N` is found from the dimensions of `x`.
+  contains raw data, `N` is found from the dimensions of `x`. Must be
+  larger than the number of variables.
 
 - n_vars:
 
@@ -66,7 +69,8 @@ https://doi.org/10.1007/BF02289447
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Default is 1000.
+  numeric. The number of datasets to simulate. Must be at least 1.
+  Default is 1000.
 
 - percent:
 
@@ -105,10 +109,13 @@ https://doi.org/10.1007/BF02289447
   retain. Default is `"means"`, which will use the average simulated
   eigenvalues. `"percentile"`, uses the percentiles specified in
   percent. `"crawford"` uses the 95th percentile for the first factor
-  and the mean afterwards (based on Crawford et al, 2010). The `"means"`
-  rule retains a factor whenever its real eigenvalue exceeds the average
-  simulated one and thus tends to retain more factors than the more
-  conservative `"percentile"` rule (Glorfeld, 1995).
+  and the mean afterwards (based on Crawford et al, 2010). All three
+  rules retain the factors up to the first observed eigenvalue that
+  fails to exceed its reference value; an eigenvalue further down the
+  series that rises above its own reference again therefore adds no
+  factor. Because the average simulated eigenvalue is a lower reference
+  than the percentile, `"means"` tends to retain more factors than the
+  more conservative `"percentile"` rule (Glorfeld, 1995).
 
 - n_factors:
 
@@ -151,15 +158,15 @@ for the print and plot methods). Its main fields are:
   A named numeric vector with the suggested number of factors for each
   requested eigenvalue type (`"PCA"`, `"SMC"`, and/or `"EFA"`). These
   are `NA` when no real data are supplied (i.e. only `N` and `n_vars`
-  are given). When every real eigenvalue exceeds its reference (no
-  crossing is found), all `n_vars` components are retained and a warning
-  is issued.
+  are given). When every observed eigenvalue exceeds its reference value
+  (no crossing is found), all `n_vars` components are retained and a
+  warning is issued.
 
 - results:
 
-  A list with one record per eigenvalue type, each holding the real
+  A list with one record per eigenvalue type, each holding the observed
   eigenvalues (when real data were supplied) and the simulated reference
-  eigenvalues (means and percentiles) used for printing and plotting.
+  values (means and percentiles) used for printing and plotting.
 
 - settings:
 
@@ -187,11 +194,28 @@ Braeken & van Assen, 2017).
 
 The reference eigenvalues are obtained from simulated data, so the
 suggested number of factors varies slightly from run to run. Call
-[`set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to make a
-run reproducible; the result is then also independent of the parallel
-plan set via
+[`base::set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to
+make a run reproducible; the result is then also independent of the
+parallel plan set via
 [`future::plan()`](https://future.futureverse.org/reference/plan.html),
 so it can be reproduced on a machine with a different number of cores.
+For `"PCA"` and `"SMC"` the simulation is drawn in independently seeded
+blocks; a block that fails – which happens when a simulated correlation
+matrix is singular, so that no eigenvalues can be taken from it – is
+redrawn on its own, leaving the blocks that succeeded with the draws
+they already made. The `"EFA"` series instead redraws the single dataset
+that could not be fitted; if that dataset still cannot be fitted, the
+call stops with an error.
+
+When both `"PCA"` and `"SMC"` are requested, the two are read off the
+*same* simulated datasets rather than from two independent simulations:
+they differ only in the diagonal substituted into the simulated
+correlation matrix, so one set of draws serves both and the two
+reference series are paired dataset by dataset. A draw that cannot be
+used for the SMC series – a simulated matrix with no inverse, and hence
+no squared multiple correlations – is discarded for the `"PCA"` series
+as well, so that the pairing stays exact. `"EFA"` fits a model to each
+simulated dataset and draws its own.
 
 The `efa_parallel` function can also be called together with other
 factor retention criteria in the
@@ -231,8 +255,12 @@ pa_ml <- efa_parallel(test_models$case_11b$cormat, N = 500, estimator = "ML",
 # }
 
 if (FALSE) { # \dontrun{
-# for parallel computation
-future::plan(future::multisession)
-pa_faster <- efa_parallel(test_models$case_11b$cormat, N = 500)
+# for parallel computation. future::plan() returns the plan it replaces, so
+# on.exit() puts the session back as it was -- also if the call fails.
+pa_faster <- local({
+  old_plan <- future::plan(future::multisession, workers = 2)
+  on.exit(future::plan(old_plan), add = TRUE)
+  efa_parallel(test_models$case_11b$cormat, N = 500)
+})
 } # }
 ```

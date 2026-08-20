@@ -80,7 +80,8 @@ efa_screen(DOSPERT_sub, seed = 2)
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
 #> ✔ The overall KMO value for your data is meritorious (Overall KMO = 0.87).
-#> These data are probably suitable for factor analysis.
+#> These data are probably suitable for factor analysis (verbal bands: Kaiser &
+#> Rice, 1974).
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
@@ -88,8 +89,8 @@ efa_screen(DOSPERT_sub, seed = 2)
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ✖ Determinant: 0.00000634. Multicollinearity likely (a value near 0 signals
-#> it).
+#> ℹ Determinant: 0.00000634. It falls as variables are added, so the condition
+#> index below carries the verdict.
 #> ✔ Condition number: 46.561 (condition index 6.824). No concern (index below 10;
 #> Belsley, Kuh & Welsch, 1980).
 #> 
@@ -129,10 +130,10 @@ efa_screen(DOSPERT_sub, seed = 2)
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
-#> ✖ Mardia's skewness: χ²(4960) = 11585.82, p < .001.
-#> ✖ Mardia's kurtosis: z = 43.84, p < .001.
+#> ✖ Mardia's skewness: χ²(4960) = 11659.84, p < .001.
+#> ✖ Mardia's kurtosis: z = 48.3, p < .001.
 #> ✖ Henze-Zirkler: HZ = 1.03, p < .001.
-#> These data depart from multivariate normality.
+#> These data depart from multivariate normality: 3 of the 3 tests reject it.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
@@ -155,9 +156,6 @@ efa_screen(DOSPERT_sub, seed = 2)
 #> ! Bartlett's test is significant, but it assumes multivariate normality and
 #>   grows more sensitive as N increases; because these data are non-normal, treat
 #>   it as uninformative here and rely on the KMO.
-#> ! A near-zero determinant or high condition number indicates multicollinearity;
-#>   look for redundant or linearly dependent items (r > .8) and consider removing
-#>   them.
 #> ! 3 variables have a sparse response category (< 5 responses): ethR_3, ethR_4,
 #>   and socR_1; a low-frequency category can destabilise polychoric estimates -
 #>   consider collapsing it into an adjacent category.
@@ -166,32 +164,43 @@ efa_screen(DOSPERT_sub, seed = 2)
 ```
 
 The overall KMO is meritorious and Bartlett’s test is clearly
-significant, so the data are factorable. The near-zero determinant flags
-some multicollinearity, which is expected for a scale with strongly
-related items within each risk domain. More interesting are the last few
-sections: three items have a sparse response category, and both the
-Mardia and the Henze-Zirkler tests reject multivariate normality. A
-consequence is that normal-theory standard errors and fit indices may be
-biased, so robust (sandwich) or bootstrapped standard errors are
-preferable, and Bartlett’s test should be read with caution. For a fully
-ordinal treatment you would move to polychoric correlations with a
-categorical least-squares estimator.
+significant, so the data are factorable. The determinant looks small,
+but it is a product of 30 eigenvalues and falls as variables are added;
+the condition index (6.8) is the measure that does not move with the
+number of variables, and it shows no multicollinearity. More interesting
+are the last few sections: three items have a sparse response category,
+and both the Mardia and the Henze-Zirkler tests reject multivariate
+normality. A consequence is that normal-theory standard errors and fit
+indices may be biased, so robust (sandwich) or bootstrapped standard
+errors are preferable, and Bartlett’s test should be read with caution.
+For a fully ordinal treatment you would move to polychoric correlations
+with a categorical least-squares estimator.
 
-On the outlier section: The robust distances come from a minimum
-covariance determinant (MCD) estimate, whose random subset search is the
-reason
+The outlier section reports something other than the usual case, and it
+says so. The diagnostic normally measures each case against a
+high-breakdown location and scatter. It estimates those from a minimum
+covariance determinant (MCD) subset, which here must cover 265 of the
+500 cases. For these data no usable subset of that size exists. The
+DOSPERT items have seven categories, and 318 respondents give the lowest
+answer on `ethR_2`. That is more than the subset needs, so the search
+can fill it from those respondents alone. The item is then constant
+inside the subset, and the covariance of the subset is singular (an
+*exact fit*). Ten of the 30 items are degenerate in this way.
+
 [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
-takes a `seed`. The MCD assumes roughly elliptical data, and on markedly
-non-normal data like these, large robust distances are common. This is
-why almost half of the observations end up flagged (On such heavily
-discretised data the most robust 50% subset can also turn out singular,
-in which case
-[`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
-falls back to classical Mahalanobis distances and labels the output
-accordingly). The flagged cases are therefore better understood as
-evidence of that non-normality than as genuine outliers to remove.
-Inspect them (via `$outliers$flagged`) rather than deleting them
-automatically.
+falls back to classical Mahalanobis distances. It names the reason and
+labels the distances it reports. A classical covariance uses every
+observation, outliers included, so the outliers inflate the scatter that
+measures them. The diagnostic is no longer high-breakdown and it tends
+to under-flag. Read the 60 flagged cases as a lower bound, and as a sign
+of the non-normality the tests above report, rather than as a list of
+cases to remove. The MCD does not run, so its random subset search does
+not run either and `seed` changes nothing here. `seed` matters only when
+the robust estimate is available, as in the ordinal example in the [EFA
+with ordinal and missing
+data](https://mdsteiner.github.io/EFAtools/articles/Ordinal_and_missing_data.md)
+vignette. Inspect the flagged cases (via `$outliers$flagged`) rather
+than deleting them automatically.
 
 If you only want the two classic factorability tests, they are also
 available on their own. Bartlett’s test of sphericity checks whether the
@@ -261,7 +270,7 @@ pa
 #> ── Parallel analysis ───────────────────────────────────────────────────────────
 #> Eigenvalues found using SMC; 1000 simulated datasets.
 #> 
-#> • SMC eigenvalues: 10
+#> • SMC: 10
 #> 
 #> ℹ Number of factors retained using the "means" decision rule.
 ```
@@ -289,10 +298,7 @@ instance:
 efa_ekc(DOSPERT_sub)
 #> ── Empirical Kaiser Criterion ──────────────────────────────────────────────────
 #> 
-#> • Original implementation (Braeken & van Assen, 2017): 8
-#> 
-#> ℹ Multiple implementations of EKC exist; make sure to report which one you used
-#> (see the efa_ekc help page for details).
+#> • Braeken & van Assen (2017): 8
 ```
 
 The following criteria are currently implemented: comparison data
@@ -330,6 +336,12 @@ Bartlett’s test and computes the KMO. You can pick a subset with the
 
 ret <- efa_retain(DOSPERT_sub,
                   criteria = c("parallel", "ekc", "kgc", "smt", "map"))
+#> Warning: The MAP criterion could only be evaluated up to 27 partialled components of 29.
+#> ℹ A residual variance reached zero there, so the criterion is `NA` beyond that
+#>   point and the suggestion is the minimum over the range that could be
+#>   computed.
+#> ℹ A stop well before the end of the grid usually indicates a near-singular
+#>   correlation matrix.
 #> Warning: The sequential model tests selected an inadmissible solution: chi: 13 factors
 #> (Heywood case) and AIC: 13 factors (Heywood case).
 #> ℹ The selected solution has a Heywood case or did not converge, so the
@@ -349,17 +361,19 @@ ret
 #> 8 suggestions from 5 criteria, ranging from 4 to 13 factors.
 #> 
 #> Empirical Kaiser Criterion
-#> • Original implementation (Braeken & van Assen, 2017): 8
+#> • Braeken & van Assen (2017): 8
 #> 
 #> Kaiser-Guttman criterion
-#> • SMC eigenvalues: 4
+#> Eigenvalues found using SMC.
+#> • SMC: 4
 #> 
 #> Minimum average partial
 #> • Original implementation (TR2): 6
 #> • Revised implementation (TR4): 6
 #> 
 #> Parallel analysis
-#> • SMC eigenvalues: 10
+#> Eigenvalues found using SMC; 1000 simulated datasets.
+#> • SMC: 10
 #> 
 #> Sequential model tests
 #> • Sequential chi-square model tests: 13
@@ -367,8 +381,6 @@ ret
 #> • Akaike Information Criterion: 13
 ```
 
-The printed summary is text only, so the scree test’s suggestion to
-inspect the plot needs an explicit call.
 [`plot()`](https://rdrr.io/r/graphics/plot.default.html) on the result
 draws the figure for every criterion that has one:
 
@@ -390,10 +402,17 @@ plot(ret)
 
 ![](EFAtools_files/figure-html/unnamed-chunk-10-3.png)
 
-Omitting `criteria` runs the full suite, including the hull method, the
-next eigenvalue sufficiency test, and comparison data; the latter is
-computationally expensive and can be slow on larger data sets, which is
-why we leave it out here.
+Omitting `criteria` does not run every criterion listed above. The
+default is a subset of six: comparison data, the empirical Kaiser
+criterion, the hull method, the minimum average partial test, the next
+eigenvalue sufficiency test, and parallel analysis. The Kaiser-Guttman
+criterion, the scree test, and the sequential model tests are outside
+that subset, and `criteria =` is how you ask for them. The call above
+therefore differs from the default in both directions. It adds the
+Kaiser-Guttman criterion and the sequential model tests, and it drops
+comparison data, the hull method, and the next eigenvalue sufficiency
+test. We leave comparison data out because it is computationally
+expensive and can be slow on larger data sets.
 
 This is the situation one would rather avoid, but it does happen: the
 criteria disagree, with suggestions ranging from four to well above ten
@@ -425,11 +444,12 @@ efa_retain(test_models$baseline$cormat, N = 500, estimator = "uls",
 #> 6 suggestions from 3 criteria, ranging from 2 to 3 factors (most common: 3).
 #> 
 #> Empirical Kaiser Criterion
-#> • Original implementation (Braeken & van Assen, 2017): 3
+#> • Braeken & van Assen (2017): 3
 #> 
 #> Parallel analysis
-#> • PCA eigenvalues: 3
-#> • SMC eigenvalues: 3
+#> Eigenvalues found using SMC and PCA; 1000 simulated datasets.
+#> • PCA: 3
+#> • SMC: 3
 #> 
 #> Sequential model tests
 #> • Sequential chi-square model tests: 3
@@ -451,9 +471,13 @@ analysed with polychoric or tetrachoric correlations (see the [EFA with
 ordinal and missing
 data](https://mdsteiner.github.io/EFAtools/articles/Ordinal_and_missing_data.md)
 vignette). For rotation the package offers varimax and promax as well as
-a range of further orthogonal and oblique rotations (e.g., quartimax,
-equamax, oblimin, quartimin, geomin, bentler, bifactor, and simplimax),
-all computed by rotation engines built into the package.
+a range of further rotations: quartimax and equamax are orthogonal;
+oblimin, quartimin, and simplimax are oblique; and geomin, bentler, and
+bifactor come in both an orthogonal form (`geominT`, `bentlerT`,
+`bifactorT`) and an oblique one (`geominQ`, `bentlerQ`, `bifactorQ`).
+The suffix is part of the name: `geomin` on its own matches both forms
+and is rejected. All are computed by rotation engines built into the
+package.
 
 An EFA with PAF and no rotation is as simple as:
 
@@ -705,13 +729,16 @@ efa_compare(efa_dospert$rot_loadings, efa_uls$rot_loadings,
 #> Median absolute difference:  .0226
 #> Root mean squared distance (RMSE):  .0359
 #> Max decimals where all numbers agree in absolute value: 0
-#> Differing indicator-to-factor correspondences: 1 (highest loading), 0 (all |loadings| >= 0.3)
+#> Differing indicator-to-factor correspondences: 1 (highest loading),
+#>   0 (all |loadings| >= 0.3)
 #> 
 #> ── Elementwise differences ─────────────────────────────────────────────────────
 #> 
+#> Differences: PAF and promax - ULS and oblimin.
+#> 
 #>           F1      F2      F3      F4      F5      F6
 #> ethR_1   .0244  -.0335  -.0590  -.0073   .0157  -.0248
-#> ethR_2   .0274  -.0299  -.0345   .0006   .0153  -.0348
+#> ethR_2   .0274  -.0298  -.0345   .0007   .0153  -.0348
 #> ethR_3   .0208  -.0194  -.0522   .0025   .0073  -.0224
 #> ethR_4   .0509   .0033  -.0253  -.0578   .0306  -.0099
 #> ethR_5   .0110  -.0174  -.0482   .0045   .0028  -.0227
@@ -721,7 +748,7 @@ efa_compare(efa_dospert$rot_loadings, efa_uls$rot_loadings,
 #> finR_3   .0072   .0077   .0114  -.0060   .0069  -.0179
 #> finR_4  -.0240  -.0170  -.0625  -.0334   .0071   .0427
 #> finR_5  -.0046  -.0054  -.0032   .0162  -.0006  -.0168
-#> finR_6  -.0267  -.0230  -.0624  -.0316   .0075   .0378
+#> finR_6  -.0267  -.0230  -.0624  -.0316   .0075   .0379
 #> heaR_1   .0156  -.0223  -.0331   .0003   .0095  -.0269
 #> heaR_2   .0272  -.0276  -.0316  -.0019   .0148  -.0376
 #> heaR_3  -.0213  -.0955  -.0820   .1154  -.0202  -.0595
@@ -737,7 +764,7 @@ efa_compare(efa_dospert$rot_loadings, efa_uls$rot_loadings,
 #> socR_1   .0259  -.0045   .0287  -.0333   .0225  -.0286
 #> socR_2   .0137  -.0351  -.0068  -.0020   .0166  -.0377
 #> socR_3   .0111   .0072   .0203  -.0524   .0206   .0005
-#> socR_4   .0005  -.0483  -.0079   .0283   .0065  -.0417
+#> socR_4   .0005  -.0482  -.0079   .0283   .0065  -.0417
 #> socR_5   .0058  -.0272  -.0242  -.0084   .0114  -.0191
 #> socR_6   .0199  -.0179  -.0076  -.0427   .0257  -.0124
 ```
@@ -952,8 +979,12 @@ If you need factor scores,
 [`efa_scores()`](https://mdsteiner.github.io/EFAtools/reference/efa_scores.md)
 estimates them directly from an
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-solution, and reports score-quality diagnostics (determinacy,
-univocality, and the Guttman indeterminacy index):
+solution and reports score-quality diagnostics. Printing the object
+gives the determinacy of each score and the Guttman indeterminacy index.
+[`summary()`](https://rdrr.io/r/base/summary.html) adds the factor
+weights, the score intercorrelations, and a score validity/univocality
+matrix. The off-diagonals of that matrix are the univocality — how
+strongly each score correlates with the *other* factors:
 
 ``` r
 
@@ -962,7 +993,7 @@ fac_scores
 #> 
 #> ── Factor scores (regression) ──────────────────────────────────────────────────
 #> 
-#> Scored 500 observations on 6 factors.
+#> Scored 500 of 500 observations on 6 factors (see `$scores`).
 #> 
 #> ── Score determinacy ───────────────────────────────────────────────────────────
 #> 
@@ -973,6 +1004,78 @@ fac_scores
 #> F4  .910  .829     .658
 #> F5  .887  .787     .574
 #> F6  .907  .822     .644
+
+summary(fac_scores)
+#> 
+#> ── Factor scores (regression) ──────────────────────────────────────────────────
+#> 
+#> Scored 500 of 500 observations on 6 factors.
+#> 
+#> ── Score determinacy ───────────────────────────────────────────────────────────
+#> 
+#>      rho  rho2  guttman
+#> F1  .903  .815     .629
+#> F2  .951  .905     .810
+#> F3  .961  .923     .846
+#> F4  .910  .829     .658
+#> F5  .887  .787     .574
+#> F6  .907  .822     .644
+#> 
+#> ── Factor weights ──────────────────────────────────────────────────────────────
+#> 
+#>           F1     F2     F3     F4     F5     F6
+#> ethR_1   .191   .023   .012   .050  -.001   .050
+#> ethR_2   .123  -.005   .013   .037   .032  -.004
+#> ethR_3   .192   .009   .019   .041  -.088   .004
+#> ethR_4   .195  -.027  -.005  -.024  -.010   .005
+#> ethR_5   .098   .016  -.001   .036  -.031   .017
+#> ethR_6   .197   .000  -.005  -.005  -.030  -.016
+#> finR_1  -.004  -.005   .238   .039   .000   .018
+#> finR_2  -.018   .031  -.012  -.041   .052   .161
+#> finR_3   .053   .014   .311  -.044   .027  -.006
+#> finR_4   .033  -.016   .029   .031  -.032   .368
+#> finR_5   .011  -.002   .436   .068  -.064   .064
+#> finR_6  -.007   .020   .010   .051   .045   .381
+#> heaR_1   .079   .004   .015   .034   .025  -.001
+#> heaR_2   .109  -.002   .007   .035   .050  -.015
+#> heaR_3   .062  -.011  -.004   .189   .001   .001
+#> heaR_4   .041  -.005   .003   .223  -.010  -.019
+#> heaR_5   .094  -.003  -.009   .047   .053  -.011
+#> heaR_6   .022   .033  -.001   .115   .031   .020
+#> recR_1  -.011   .057   .006   .061   .088   .045
+#> recR_2  -.002   .054   .028   .200   .001  -.010
+#> recR_3  -.060   .109   .006   .164   .043   .028
+#> recR_4   .007   .373  -.006  -.001   .038   .017
+#> recR_5   .047   .398   .016  -.033  -.041  -.012
+#> recR_6  -.012   .102  -.015   .105   .045   .075
+#> socR_1   .000   .025   .002  -.027   .231  -.030
+#> socR_2   .003  -.014   .014   .044   .208  -.001
+#> socR_3  -.042   .006  -.018  -.033   .183   .035
+#> socR_4  -.028   .003   .008   .057   .202  -.005
+#> socR_5   .022   .013  -.011   .026   .107   .051
+#> socR_6   .031   .000  -.013  -.006   .195   .052
+#> 
+#> ── Score validity and univocality ──────────────────────────────────────────────
+#> 
+#> Diagonal: validity (score-factor correlation). Off-diagonal: univocality.
+#> 
+#>      F1    F2    F3    F4    F5    F6
+#> F1  .903  .402  .501  .613  .043  .362
+#> F2  .381  .951  .367  .608  .322  .453
+#> F3  .470  .363  .961  .515  .051  .482
+#> F4  .607  .635  .543  .910  .298  .523
+#> F5  .044  .345  .056  .306  .887  .349
+#> F6  .360  .475  .510  .525  .341  .907
+#> 
+#> ── Score intercorrelations ─────────────────────────────────────────────────────
+#> 
+#>       F1     F2     F3     F4     F5     F6
+#> F1  1.000   .423   .521   .673   .049   .399
+#> F2   .423  1.000   .382   .667   .363   .499
+#> F3   .521   .382  1.000   .566   .058   .531
+#> F4   .673   .667   .566  1.000   .336   .577
+#> F5   .049   .363   .058   .336  1.000   .385
+#> F6   .399   .499   .531   .577   .385  1.000
 ```
 
 ## Schmid-Leiman Transformation and McDonald’s Omegas
@@ -1077,13 +1180,13 @@ efa_reliability(sl_dospert)
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
 #>      tot  hier   sub  alpha    H
-#> g   .922  .718  .177   .886  .886
-#> F1  .791  .377  .415   .788  .652
-#> F2  .867  .474  .393   .845  .683
+#> g   .931  .718  .177   .886  .886
+#> F1  .797  .377  .415   .788  .652
+#> F2  .872  .474  .393   .845  .683
 #> F3  .912  .344  .568   .914  .739
-#> F4  .709  .531  .177   .716  .305
-#> F5  .739  .124  .615   .741  .726
-#> F6  .745  .295  .451   .742  .571
+#> F4  .715  .531  .177   .716  .305
+#> F5  .742  .124  .615   .741  .726
+#> F6  .747  .295  .451   .742  .571
 #> 
 #> ── Common-variance indices ─────────────────────────────────────────────────────
 #> 
@@ -1110,13 +1213,13 @@ efa_reliability(sl_dospert,
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
 #>      tot  hier   sub  alpha    H
-#> g   .922  .718  .150   .886  .886
-#> F1  .737  .317  .420   .763  .611
-#> F2  .828  .535  .292   .844  .689
+#> g   .931  .718  .150   .886  .886
+#> F1  .743  .317  .420   .763  .611
+#> F2  .851  .535  .292   .844  .689
 #> F3  .912  .344  .568   .914  .739
-#> F4  .567  .479  .088   .697  .262
-#> F5  .742  .082  .660   .735  .722
-#> F6  .745  .295  .451   .742  .571
+#> F4  .665  .479  .088   .697  .262
+#> F5  .744  .082  .660   .735  .722
+#> F6  .747  .295  .451   .742  .571
 #> 
 #> ── Common-variance indices ─────────────────────────────────────────────────────
 #> 
@@ -1128,10 +1231,28 @@ The columns of `factor_map` are matched to the group factors **by
 position**, so the assignment has to be read off the solution rather
 than assumed: a column naming the wrong set of items yields a
 well-formed but meaningless subscale omega instead of an error.
-Comparing the two tables, the health row is the one that moves most:
-three of the six health items load higher on the ethical factor than on
-the health one, so pinning all six to F4 lowers that subscale’s omega
-relative to the automatic assignment.
+Comparing the two tables, the health row (F4) moves clearly: three of
+the six health items load higher on the ethical factor than on the
+health one, so pinning all six to F4 roughly halves the variance its own
+group factor accounts for. Its omega total falls less, because those
+three items still bring in the true score variance they receive from the
+ethical factor — omega subscale counts a factor’s own contribution,
+omega total everything the composite receives.
+
+Which coefficient to report depends on the question being asked. Omega
+hierarchical asks whether a total score can be read as a measure of a
+single construct; omega subscale asks whether a subscale score carries
+anything beyond the general factor; the H index asks whether a factor is
+well defined by its indicators; and ECV together with PUC ask whether a
+unidimensional model would be defensible at all. Alpha is reported
+alongside them because it is still widely expected, but it assumes
+essentially tau-equivalent items — equal true-score contributions —
+whereas factor analysis yields congeneric solutions, for which alpha is
+only a lower bound. For a multidimensional scale such as the DOSPERT it
+is therefore rarely the coefficient to report, and the omegas answer the
+question alpha is usually asked to answer. See
+[`?efa_reliability`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+for the definition of each coefficient and the references behind it.
 
 ## Where to Next
 

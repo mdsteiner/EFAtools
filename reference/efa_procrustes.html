@@ -93,10 +93,16 @@ averaging or comparing solutions.</p>
 
 
 <dt id="arg-s">S<a class="anchor" aria-label="anchor" href="#arg-s"></a></dt>
-<dd><p>Optional <code>k x k</code> cross-product matrix <code>crossprod(A)</code>. Supplying this
-is useful when the same <code>A</code> is rotated repeatedly. <code>S</code> is used only when
-<code>oblique_normalize = FALSE</code>; if Kaiser normalization is requested, the
-cross-product must be recomputed on the normalized matrix.</p></dd>
+<dd><p>Optional <code>k x k</code> cross-product matrix <code>crossprod(A)</code>, kept for
+compatibility. It enters both the oblique criterion and its gradient, so any
+other matrix would minimize a different criterion: where <code>S</code> is used it is
+checked against <code>crossprod(A)</code> and must agree with it up to a relative
+tolerance of <code>1e-8</code>. That check forms <code>crossprod(A)</code> itself, so passing <code>S</code>
+no longer avoids any work: omitting it gives the same result for slightly
+less. <code>S</code> is used, and therefore checked, only on the oblique path with more
+than one factor and <code>oblique_normalize = FALSE</code>; if Kaiser normalization is
+requested, the cross-product must be recomputed on the normalized matrix and
+<code>S</code> is ignored.</p></dd>
 
 
 <dt id="arg-t-init">T_init<a class="anchor" aria-label="anchor" href="#arg-t-init"></a></dt>
@@ -156,13 +162,60 @@ required for a triaged start to be promoted to full optimization.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list containing aligned <code>loadings</code>, transformation matrix <code>T</code>,
-factor intercorrelation matrix <code>Phi</code>, target criterion <code>value</code>, convergence
-diagnostics, line-search diagnostics, and multi-start summaries. Row and
-column names are preserved where possible. When <code>oblique_normalize = TRUE</code>
-the returned <code>loadings</code> are back-transformed to the original scale, but
-<code>value</code> is the criterion on the Kaiser-normalized loadings, so it is not
-<code>0.5 * sum((loadings - Target)^2)</code>.</p>
+    <p>A list. Every path returns the following components:</p>
+<dl><dt>loadings</dt>
+<dd><p>Aligned loading matrix.</p></dd>
+
+<dt>T</dt>
+<dd><p>Transformation matrix.</p></dd>
+
+<dt>Phi</dt>
+<dd><p>Factor intercorrelation matrix; the identity for orthogonal and
+one-factor alignment.</p></dd>
+
+<dt>value</dt>
+<dd><p>Target criterion at the returned solution.</p></dd>
+
+<dt>convergence</dt>
+<dd><p>Logical; <code>TRUE</code> for the closed-form orthogonal solution.</p></dd>
+
+<dt>valid</dt>
+<dd><p>Logical; whether the transformation defines an admissible <code>Phi</code>.</p></dd>
+
+<dt>iterations</dt>
+<dd><p>Number of solver iterations; <code>0</code> for the closed-form
+orthogonal solution.</p></dd>
+
+<dt>kappa_T</dt>
+<dd><p>Condition number of <code>T</code>; a constant <code>1</code> on the orthogonal path.</p></dd>
+
+<dt>Table</dt>
+<dd><p>Iteration history with columns <code>iter</code>, <code>f</code>, <code>log10_s</code>, and <code>step</code>;
+a single placeholder row on the orthogonal path.</p></dd>
+
+<dt>method</dt>
+<dd><p><code>"orthogonal_procrustes"</code>, <code>"oblique_procrustes"</code>, or
+<code>"single_factor_procrustes"</code> for a one-factor oblique request.</p></dd>
+
+<dt>line_search_failed</dt>
+<dd><p>Logical line-search diagnostic.</p></dd>
+
+<dt>best_start_index, all_start_indices, all_values, all_converged,
+all_iterations</dt>
+<dd><p>Multi-start summary of the starts that were fully
+optimized; each has a single entry when no random starts were used.</p></dd>
+
+
+</dl><p>The oblique solver additionally returns <code>screen_start_indices</code> and
+<code>screen_values</code> (the starts kept by cheap objective screening and their
+criterion values) together with the counts <code>n_random_starts</code>, <code>n_screened</code>,
+<code>n_triaged</code>, and <code>n_fully_optimized</code>. These six components are absent for
+<code>rotation = "orthogonal"</code> and for one-factor models, which are aligned with the
+orthogonal solution.</p>
+<p>Row and column names are preserved where possible. When
+<code>oblique_normalize = TRUE</code> the returned <code>loadings</code> are back-transformed to the
+original scale, but <code>value</code> is the criterion on the Kaiser-normalized loadings,
+so it is not <code>0.5 * sum((loadings - Target)^2)</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

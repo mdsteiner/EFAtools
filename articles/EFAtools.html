@@ -134,7 +134,8 @@ closes with a set of recommendations.</p>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Sampling adequacy and sphericity</span> ────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The overall KMO value for your data is meritorious (Overall KMO = 0.87).</span></span>
-<span><span class="co">#&gt; These data are probably suitable for factor analysis.</span></span>
+<span><span class="co">#&gt; These data are probably suitable for factor analysis (verbal bands: Kaiser &amp;</span></span>
+<span><span class="co">#&gt; Rice, 1974).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05.</span></span>
 <span><span class="co">#&gt; These data are probably suitable for factor analysis.</span></span>
@@ -142,8 +143,8 @@ closes with a set of recommendations.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Multicollinearity</span> ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Determinant: 0.00000634. Multicollinearity likely (a value near 0 signals</span></span>
-<span><span class="co">#&gt; it).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Determinant: 0.00000634. It falls as variables are added, so the condition</span></span>
+<span><span class="co">#&gt; index below carries the verdict.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition number: 46.561 (condition index 6.824). No concern (index below 10;</span></span>
 <span><span class="co">#&gt; Belsley, Kuh &amp; Welsch, 1980).</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -183,10 +184,10 @@ closes with a set of recommendations.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Multivariate normality</span> ──────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Mardia's skewness: χ²(4960) = 11585.82, p &lt; .001.</span></span>
-<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Mardia's kurtosis: z = 43.84, p &lt; .001.</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Mardia's skewness: χ²(4960) = 11659.84, p &lt; .001.</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Mardia's kurtosis: z = 48.3, p &lt; .001.</span></span>
 <span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Henze-Zirkler: HZ = 1.03, p &lt; .001.</span></span>
-<span><span class="co">#&gt; These data depart from multivariate normality.</span></span>
+<span><span class="co">#&gt; These data depart from multivariate normality: 3 of the 3 tests reject it.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Outliers</span> ────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -209,37 +210,48 @@ closes with a set of recommendations.</p>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Bartlett's test is significant, but it assumes multivariate normality and</span></span>
 <span><span class="co">#&gt;   grows more sensitive as N increases; because these data are non-normal, treat</span></span>
 <span><span class="co">#&gt;   it as uninformative here and rely on the KMO.</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> A near-zero determinant or high condition number indicates multicollinearity;</span></span>
-<span><span class="co">#&gt;   look for redundant or linearly dependent items (r &gt; .8) and consider removing</span></span>
-<span><span class="co">#&gt;   them.</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 3 variables have a sparse response category (&lt; 5 responses): ethR_3, ethR_4,</span></span>
 <span><span class="co">#&gt;   and socR_1; a low-frequency category can destabilise polychoric estimates -</span></span>
 <span><span class="co">#&gt;   consider collapsing it into an adjacent category.</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 60 observations were flagged as potential multivariate outliers; inspect them</span></span>
 <span><span class="co">#&gt;   (see `$outliers$flagged`) before down-weighting or excluding.</span></span></code></pre></div>
 <p>The overall KMO is meritorious and Bartlett’s test is clearly
-significant, so the data are factorable. The near-zero determinant flags
-some multicollinearity, which is expected for a scale with strongly
-related items within each risk domain. More interesting are the last few
-sections: three items have a sparse response category, and both the
-Mardia and the Henze-Zirkler tests reject multivariate normality. A
-consequence is that normal-theory standard errors and fit indices may be
-biased, so robust (sandwich) or bootstrapped standard errors are
-preferable, and Bartlett’s test should be read with caution. For a fully
-ordinal treatment you would move to polychoric correlations with a
-categorical least-squares estimator.</p>
-<p>On the outlier section: The robust distances come from a minimum
-covariance determinant (MCD) estimate, whose random subset search is the
-reason <code><a href="../reference/efa_screen.html">efa_screen()</a></code> takes a <code>seed</code>. The MCD
-assumes roughly elliptical data, and on markedly non-normal data like
-these, large robust distances are common. This is why almost half of the
-observations end up flagged (On such heavily discretised data the most
-robust 50% subset can also turn out singular, in which case
-<code><a href="../reference/efa_screen.html">efa_screen()</a></code> falls back to classical Mahalanobis distances
-and labels the output accordingly). The flagged cases are therefore
-better understood as evidence of that non-normality than as genuine
-outliers to remove. Inspect them (via <code>$outliers$flagged</code>)
-rather than deleting them automatically.</p>
+significant, so the data are factorable. The determinant looks small,
+but it is a product of 30 eigenvalues and falls as variables are added;
+the condition index (6.8) is the measure that does not move with the
+number of variables, and it shows no multicollinearity. More interesting
+are the last few sections: three items have a sparse response category,
+and both the Mardia and the Henze-Zirkler tests reject multivariate
+normality. A consequence is that normal-theory standard errors and fit
+indices may be biased, so robust (sandwich) or bootstrapped standard
+errors are preferable, and Bartlett’s test should be read with caution.
+For a fully ordinal treatment you would move to polychoric correlations
+with a categorical least-squares estimator.</p>
+<p>The outlier section reports something other than the usual case, and
+it says so. The diagnostic normally measures each case against a
+high-breakdown location and scatter. It estimates those from a minimum
+covariance determinant (MCD) subset, which here must cover 265 of the
+500 cases. For these data no usable subset of that size exists. The
+DOSPERT items have seven categories, and 318 respondents give the lowest
+answer on <code>ethR_2</code>. That is more than the subset needs, so
+the search can fill it from those respondents alone. The item is then
+constant inside the subset, and the covariance of the subset is singular
+(an <em>exact fit</em>). Ten of the 30 items are degenerate in this
+way.</p>
+<p><code><a href="../reference/efa_screen.html">efa_screen()</a></code> falls back to classical Mahalanobis
+distances. It names the reason and labels the distances it reports. A
+classical covariance uses every observation, outliers included, so the
+outliers inflate the scatter that measures them. The diagnostic is no
+longer high-breakdown and it tends to under-flag. Read the 60 flagged
+cases as a lower bound, and as a sign of the non-normality the tests
+above report, rather than as a list of cases to remove. The MCD does not
+run, so its random subset search does not run either and
+<code>seed</code> changes nothing here. <code>seed</code> matters only
+when the robust estimate is available, as in the ordinal example in the
+<a href="Ordinal_and_missing_data.html">EFA with ordinal and missing
+data</a> vignette. Inspect the flagged cases (via
+<code>$outliers$flagged</code>) rather than deleting them
+automatically.</p>
 <p>If you only want the two classic factorability tests, they are also
 available on their own. Bartlett’s test of sphericity checks whether the
 correlation matrix differs from an identity matrix (it should be
@@ -302,7 +314,7 @@ principal factors), for example, you would run:</p>
 <span><span class="co">#&gt; ── Parallel analysis ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; Eigenvalues found using SMC; 1000 simulated datasets.</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; • SMC eigenvalues: 10</span></span>
+<span><span class="co">#&gt; • SMC: 10</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Number of factors retained using the "means" decision rule.</span></span></code></pre></div>
 <p>Printing the result reports the suggested number of factors. Each
@@ -319,10 +331,7 @@ instance:</p>
 <span><span class="fu"><a href="../reference/efa_ekc.html">efa_ekc</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Empirical Kaiser Criterion ──────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; • Original implementation (Braeken &amp; van Assen, 2017): 8</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Multiple implementations of EKC exist; make sure to report which one you used</span></span>
-<span><span class="co">#&gt; (see the efa_ekc help page for details).</span></span></code></pre></div>
+<span><span class="co">#&gt; • Braeken &amp; van Assen (2017): 8</span></span></code></pre></div>
 <p>The following criteria are currently implemented: comparison data
 (<code><a href="../reference/efa_cd.html">efa_cd()</a></code>), the empirical Kaiser criterion
 (<code><a href="../reference/efa_ekc.html">efa_ekc()</a></code>), the hull method (<code><a href="../reference/efa_hull.html">efa_hull()</a></code>), the
@@ -346,6 +355,12 @@ Bartlett’s test and computes the KMO. You can pick a subset with the
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ret</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_retain.html">efa_retain</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>,</span>
 <span>                  criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"parallel"</span>, <span class="st">"ekc"</span>, <span class="st">"kgc"</span>, <span class="st">"smt"</span>, <span class="st">"map"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: The MAP criterion could only be evaluated up to 27 partialled components of 29.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> A residual variance reached zero there, so the criterion is `NA` beyond that</span></span>
+<span><span class="co">#&gt;   point and the suggestion is the minimum over the range that could be</span></span>
+<span><span class="co">#&gt;   computed.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> A stop well before the end of the grid usually indicates a near-singular</span></span>
+<span><span class="co">#&gt;   correlation matrix.</span></span>
 <span><span class="co">#&gt; Warning: The sequential model tests selected an inadmissible solution: chi: 13 factors</span></span>
 <span><span class="co">#&gt; (Heywood case) and AIC: 13 factors (Heywood case).</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> The selected solution has a Heywood case or did not converge, so the</span></span>
@@ -365,25 +380,26 @@ Bartlett’s test and computes the KMO. You can pick a subset with the
 <span><span class="co">#&gt; 8 suggestions from 5 criteria, ranging from 4 to 13 factors.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Empirical Kaiser Criterion</span></span>
-<span><span class="co">#&gt; • Original implementation (Braeken &amp; van Assen, 2017): 8</span></span>
+<span><span class="co">#&gt; • Braeken &amp; van Assen (2017): 8</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Kaiser-Guttman criterion</span></span>
-<span><span class="co">#&gt; • SMC eigenvalues: 4</span></span>
+<span><span class="co">#&gt; Eigenvalues found using SMC.</span></span>
+<span><span class="co">#&gt; • SMC: 4</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Minimum average partial</span></span>
 <span><span class="co">#&gt; • Original implementation (TR2): 6</span></span>
 <span><span class="co">#&gt; • Revised implementation (TR4): 6</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Parallel analysis</span></span>
-<span><span class="co">#&gt; • SMC eigenvalues: 10</span></span>
+<span><span class="co">#&gt; Eigenvalues found using SMC; 1000 simulated datasets.</span></span>
+<span><span class="co">#&gt; • SMC: 10</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Sequential model tests</span></span>
 <span><span class="co">#&gt; • Sequential chi-square model tests: 13</span></span>
 <span><span class="co">#&gt; • Lower bound of RMSEA 90% CI: 6</span></span>
 <span><span class="co">#&gt; • Akaike Information Criterion: 13</span></span></code></pre></div>
-<p>The printed summary is text only, so the scree test’s suggestion to
-inspect the plot needs an explicit call. <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on the
-result draws the figure for every criterion that has one:</p>
+<p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on the result draws the figure for every
+criterion that has one:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ret</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $EKC</span></span></code></pre></div>
@@ -394,10 +410,17 @@ result draws the figure for every criterion that has one:</p>
 <pre><code><span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $PARALLEL</span></span></code></pre>
 <p><img src="EFAtools_files/figure-html/unnamed-chunk-10-3.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
-<p>Omitting <code>criteria</code> runs the full suite, including the
-hull method, the next eigenvalue sufficiency test, and comparison data;
-the latter is computationally expensive and can be slow on larger data
-sets, which is why we leave it out here.</p>
+<p>Omitting <code>criteria</code> does not run every criterion listed
+above. The default is a subset of six: comparison data, the empirical
+Kaiser criterion, the hull method, the minimum average partial test, the
+next eigenvalue sufficiency test, and parallel analysis. The
+Kaiser-Guttman criterion, the scree test, and the sequential model tests
+are outside that subset, and <code>criteria =</code> is how you ask for
+them. The call above therefore differs from the default in both
+directions. It adds the Kaiser-Guttman criterion and the sequential
+model tests, and it drops comparison data, the hull method, and the next
+eigenvalue sufficiency test. We leave comparison data out because it is
+computationally expensive and can be slow on larger data sets.</p>
 <p>This is the situation one would rather avoid, but it does happen: the
 criteria disagree, with suggestions ranging from four to well above ten
 factors. When there is no clear convergence, the choice becomes partly a
@@ -425,11 +448,12 @@ be supplied. On a cleaner data set the criteria often agree:</p>
 <span><span class="co">#&gt; 6 suggestions from 3 criteria, ranging from 2 to 3 factors (most common: 3).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Empirical Kaiser Criterion</span></span>
-<span><span class="co">#&gt; • Original implementation (Braeken &amp; van Assen, 2017): 3</span></span>
+<span><span class="co">#&gt; • Braeken &amp; van Assen (2017): 3</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Parallel analysis</span></span>
-<span><span class="co">#&gt; • PCA eigenvalues: 3</span></span>
-<span><span class="co">#&gt; • SMC eigenvalues: 3</span></span>
+<span><span class="co">#&gt; Eigenvalues found using SMC and PCA; 1000 simulated datasets.</span></span>
+<span><span class="co">#&gt; • PCA: 3</span></span>
+<span><span class="co">#&gt; • SMC: 3</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Sequential model tests</span></span>
 <span><span class="co">#&gt; • Sequential chi-square model tests: 3</span></span>
@@ -450,10 +474,15 @@ MINRES); diagonally weighted least squares (DWLS) is additionally
 available for ordinal data analysed with polychoric or tetrachoric
 correlations (see the <a href="Ordinal_and_missing_data.html">EFA with
 ordinal and missing data</a> vignette). For rotation the package offers
-varimax and promax as well as a range of further orthogonal and oblique
-rotations (e.g., quartimax, equamax, oblimin, quartimin, geomin,
-bentler, bifactor, and simplimax), all computed by rotation engines
-built into the package.</p>
+varimax and promax as well as a range of further rotations: quartimax
+and equamax are orthogonal; oblimin, quartimin, and simplimax are
+oblique; and geomin, bentler, and bifactor come in both an orthogonal
+form (<code>geominT</code>, <code>bentlerT</code>,
+<code>bifactorT</code>) and an oblique one (<code>geominQ</code>,
+<code>bentlerQ</code>, <code>bifactorQ</code>). The suffix is part of
+the name: <code>geomin</code> on its own matches both forms and is
+rejected. All are computed by rotation engines built into the
+package.</p>
 <p>An EFA with PAF and no rotation is as simple as:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, n_factors <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
@@ -691,13 +720,16 @@ one:</p>
 <span><span class="co">#&gt; Median absolute difference: <span style="color: #BB0000; font-weight: bold;"> .0226</span></span></span>
 <span><span class="co">#&gt; Root mean squared distance (RMSE): <span style="font-weight: bold;"> .0359</span></span></span>
 <span><span class="co">#&gt; Max decimals where all numbers agree in absolute value: <span style="color: #BB0000; font-weight: bold;">0</span></span></span>
-<span><span class="co">#&gt; Differing indicator-to-factor correspondences: <span style="color: #BB0000; font-weight: bold;">1</span> (highest loading), <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span></span>
+<span><span class="co">#&gt; Differing indicator-to-factor correspondences: <span style="color: #BB0000; font-weight: bold;">1</span> (highest loading),</span></span>
+<span><span class="co">#&gt;   <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Elementwise differences</span> ─────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Differences: PAF and promax - ULS and oblimin.</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;           <span style="font-weight: bold;">F1</span>      <span style="font-weight: bold;">F2</span>      <span style="font-weight: bold;">F3</span>      <span style="font-weight: bold;">F4</span>      <span style="font-weight: bold;">F5</span>      <span style="font-weight: bold;">F6</span></span></span>
 <span><span class="co">#&gt; ethR_1  <span style="color: #BB0000;"> .0244</span>  <span style="color: #BB0000;">-.0335</span>  <span style="color: #BB0000;">-.0590</span>  <span style="color: #BB0000;">-.0073</span>  <span style="color: #BB0000;"> .0157</span>  <span style="color: #BB0000;">-.0248</span></span></span>
-<span><span class="co">#&gt; ethR_2  <span style="color: #BB0000;"> .0274</span>  <span style="color: #BB0000;">-.0299</span>  <span style="color: #BB0000;">-.0345</span>   .0006  <span style="color: #BB0000;"> .0153</span>  <span style="color: #BB0000;">-.0348</span></span></span>
+<span><span class="co">#&gt; ethR_2  <span style="color: #BB0000;"> .0274</span>  <span style="color: #BB0000;">-.0298</span>  <span style="color: #BB0000;">-.0345</span>   .0007  <span style="color: #BB0000;"> .0153</span>  <span style="color: #BB0000;">-.0348</span></span></span>
 <span><span class="co">#&gt; ethR_3  <span style="color: #BB0000;"> .0208</span>  <span style="color: #BB0000;">-.0194</span>  <span style="color: #BB0000;">-.0522</span>  <span style="color: #BB0000;"> .0025</span>  <span style="color: #BB0000;"> .0073</span>  <span style="color: #BB0000;">-.0224</span></span></span>
 <span><span class="co">#&gt; ethR_4  <span style="color: #BB0000;"> .0509</span>  <span style="color: #BB0000;"> .0033</span>  <span style="color: #BB0000;">-.0253</span>  <span style="color: #BB0000;">-.0578</span>  <span style="color: #BB0000;"> .0306</span>  <span style="color: #BB0000;">-.0099</span></span></span>
 <span><span class="co">#&gt; ethR_5  <span style="color: #BB0000;"> .0110</span>  <span style="color: #BB0000;">-.0174</span>  <span style="color: #BB0000;">-.0482</span>  <span style="color: #BB0000;"> .0045</span>  <span style="color: #BB0000;"> .0028</span>  <span style="color: #BB0000;">-.0227</span></span></span>
@@ -707,7 +739,7 @@ one:</p>
 <span><span class="co">#&gt; finR_3  <span style="color: #BB0000;"> .0072</span>  <span style="color: #BB0000;"> .0077</span>  <span style="color: #BB0000;"> .0114</span>  <span style="color: #BB0000;">-.0060</span>  <span style="color: #BB0000;"> .0069</span>  <span style="color: #BB0000;">-.0179</span></span></span>
 <span><span class="co">#&gt; finR_4  <span style="color: #BB0000;">-.0240</span>  <span style="color: #BB0000;">-.0170</span>  <span style="color: #BB0000;">-.0625</span>  <span style="color: #BB0000;">-.0334</span>  <span style="color: #BB0000;"> .0071</span>  <span style="color: #BB0000;"> .0427</span></span></span>
 <span><span class="co">#&gt; finR_5  <span style="color: #BB0000;">-.0046</span>  <span style="color: #BB0000;">-.0054</span>  <span style="color: #BB0000;">-.0032</span>  <span style="color: #BB0000;"> .0162</span>  -.0006  <span style="color: #BB0000;">-.0168</span></span></span>
-<span><span class="co">#&gt; finR_6  <span style="color: #BB0000;">-.0267</span>  <span style="color: #BB0000;">-.0230</span>  <span style="color: #BB0000;">-.0624</span>  <span style="color: #BB0000;">-.0316</span>  <span style="color: #BB0000;"> .0075</span>  <span style="color: #BB0000;"> .0378</span></span></span>
+<span><span class="co">#&gt; finR_6  <span style="color: #BB0000;">-.0267</span>  <span style="color: #BB0000;">-.0230</span>  <span style="color: #BB0000;">-.0624</span>  <span style="color: #BB0000;">-.0316</span>  <span style="color: #BB0000;"> .0075</span>  <span style="color: #BB0000;"> .0379</span></span></span>
 <span><span class="co">#&gt; heaR_1  <span style="color: #BB0000;"> .0156</span>  <span style="color: #BB0000;">-.0223</span>  <span style="color: #BB0000;">-.0331</span>   .0003  <span style="color: #BB0000;"> .0095</span>  <span style="color: #BB0000;">-.0269</span></span></span>
 <span><span class="co">#&gt; heaR_2  <span style="color: #BB0000;"> .0272</span>  <span style="color: #BB0000;">-.0276</span>  <span style="color: #BB0000;">-.0316</span>  <span style="color: #BB0000;">-.0019</span>  <span style="color: #BB0000;"> .0148</span>  <span style="color: #BB0000;">-.0376</span></span></span>
 <span><span class="co">#&gt; heaR_3  <span style="color: #BB0000;">-.0213</span>  <span style="color: #BB0000;">-.0955</span>  <span style="color: #BB0000;">-.0820</span>  <span style="color: #BB0000;"> .1154</span>  <span style="color: #BB0000;">-.0202</span>  <span style="color: #BB0000;">-.0595</span></span></span>
@@ -723,7 +755,7 @@ one:</p>
 <span><span class="co">#&gt; socR_1  <span style="color: #BB0000;"> .0259</span>  <span style="color: #BB0000;">-.0045</span>  <span style="color: #BB0000;"> .0287</span>  <span style="color: #BB0000;">-.0333</span>  <span style="color: #BB0000;"> .0225</span>  <span style="color: #BB0000;">-.0286</span></span></span>
 <span><span class="co">#&gt; socR_2  <span style="color: #BB0000;"> .0137</span>  <span style="color: #BB0000;">-.0351</span>  <span style="color: #BB0000;">-.0068</span>  <span style="color: #BB0000;">-.0020</span>  <span style="color: #BB0000;"> .0166</span>  <span style="color: #BB0000;">-.0377</span></span></span>
 <span><span class="co">#&gt; socR_3  <span style="color: #BB0000;"> .0111</span>  <span style="color: #BB0000;"> .0072</span>  <span style="color: #BB0000;"> .0203</span>  <span style="color: #BB0000;">-.0524</span>  <span style="color: #BB0000;"> .0206</span>   .0005</span></span>
-<span><span class="co">#&gt; socR_4   .0005  <span style="color: #BB0000;">-.0483</span>  <span style="color: #BB0000;">-.0079</span>  <span style="color: #BB0000;"> .0283</span>  <span style="color: #BB0000;"> .0065</span>  <span style="color: #BB0000;">-.0417</span></span></span>
+<span><span class="co">#&gt; socR_4   .0005  <span style="color: #BB0000;">-.0482</span>  <span style="color: #BB0000;">-.0079</span>  <span style="color: #BB0000;"> .0283</span>  <span style="color: #BB0000;"> .0065</span>  <span style="color: #BB0000;">-.0417</span></span></span>
 <span><span class="co">#&gt; socR_5  <span style="color: #BB0000;"> .0058</span>  <span style="color: #BB0000;">-.0272</span>  <span style="color: #BB0000;">-.0242</span>  <span style="color: #BB0000;">-.0084</span>  <span style="color: #BB0000;"> .0114</span>  <span style="color: #BB0000;">-.0191</span></span></span>
 <span><span class="co">#&gt; socR_6  <span style="color: #BB0000;"> .0199</span>  <span style="color: #BB0000;">-.0179</span>  <span style="color: #BB0000;">-.0076</span>  <span style="color: #BB0000;">-.0427</span>  <span style="color: #BB0000;"> .0257</span>  <span style="color: #BB0000;">-.0124</span></span></span></code></pre></div>
 </div>
@@ -930,16 +962,20 @@ maximum, and average loading of every indicator.</p>
 <h2 id="factor-scores-with-efa_scores">Factor Scores with <code>efa_scores()</code><a class="anchor" aria-label="anchor" href="#factor-scores-with-efa_scores"></a>
 </h2>
 <p>If you need factor scores, <code><a href="../reference/efa_scores.html">efa_scores()</a></code> estimates them
-directly from an <code><a href="../reference/efa_fit.html">efa_fit()</a></code> solution, and reports
-score-quality diagnostics (determinacy, univocality, and the Guttman
-indeterminacy index):</p>
+directly from an <code><a href="../reference/efa_fit.html">efa_fit()</a></code> solution and reports
+score-quality diagnostics. Printing the object gives the determinacy of
+each score and the Guttman indeterminacy index. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>
+adds the factor weights, the score intercorrelations, and a score
+validity/univocality matrix. The off-diagonals of that matrix are the
+univocality — how strongly each score correlates with the <em>other</em>
+factors:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fac_scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_scores.html">efa_scores</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, f <span class="op">=</span> <span class="va">efa_dospert</span><span class="op">)</span></span>
 <span><span class="va">fac_scores</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Factor scores (regression)</span> ──────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Scored 500 observations on 6 factors.</span></span>
+<span><span class="co">#&gt; Scored 500 of 500 observations on 6 factors (see `$scores`).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Score determinacy</span> ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -949,7 +985,79 @@ indeterminacy index):</p>
 <span><span class="co">#&gt; F3  .961  .923     .846</span></span>
 <span><span class="co">#&gt; F4  .910  .829     .658</span></span>
 <span><span class="co">#&gt; F5  .887  .787     .574</span></span>
-<span><span class="co">#&gt; F6  .907  .822     .644</span></span></code></pre></div>
+<span><span class="co">#&gt; F6  .907  .822     .644</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fac_scores</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Factor scores (regression)</span> ──────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Scored 500 of 500 observations on 6 factors.</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Score determinacy</span> ───────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;      <span style="font-weight: bold;">rho</span>  <span style="font-weight: bold;">rho2</span>  <span style="font-weight: bold;">guttman</span></span></span>
+<span><span class="co">#&gt; F1  .903  .815     .629</span></span>
+<span><span class="co">#&gt; F2  .951  .905     .810</span></span>
+<span><span class="co">#&gt; F3  .961  .923     .846</span></span>
+<span><span class="co">#&gt; F4  .910  .829     .658</span></span>
+<span><span class="co">#&gt; F5  .887  .787     .574</span></span>
+<span><span class="co">#&gt; F6  .907  .822     .644</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Factor weights</span> ──────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;           <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>     <span style="font-weight: bold;">F4</span>     <span style="font-weight: bold;">F5</span>     <span style="font-weight: bold;">F6</span></span></span>
+<span><span class="co">#&gt; ethR_1   .191   .023   .012   .050  -.001   .050</span></span>
+<span><span class="co">#&gt; ethR_2   .123  -.005   .013   .037   .032  -.004</span></span>
+<span><span class="co">#&gt; ethR_3   .192   .009   .019   .041  -.088   .004</span></span>
+<span><span class="co">#&gt; ethR_4   .195  -.027  -.005  -.024  -.010   .005</span></span>
+<span><span class="co">#&gt; ethR_5   .098   .016  -.001   .036  -.031   .017</span></span>
+<span><span class="co">#&gt; ethR_6   .197   .000  -.005  -.005  -.030  -.016</span></span>
+<span><span class="co">#&gt; finR_1  -.004  -.005   .238   .039   .000   .018</span></span>
+<span><span class="co">#&gt; finR_2  -.018   .031  -.012  -.041   .052   .161</span></span>
+<span><span class="co">#&gt; finR_3   .053   .014   .311  -.044   .027  -.006</span></span>
+<span><span class="co">#&gt; finR_4   .033  -.016   .029   .031  -.032   .368</span></span>
+<span><span class="co">#&gt; finR_5   .011  -.002   .436   .068  -.064   .064</span></span>
+<span><span class="co">#&gt; finR_6  -.007   .020   .010   .051   .045   .381</span></span>
+<span><span class="co">#&gt; heaR_1   .079   .004   .015   .034   .025  -.001</span></span>
+<span><span class="co">#&gt; heaR_2   .109  -.002   .007   .035   .050  -.015</span></span>
+<span><span class="co">#&gt; heaR_3   .062  -.011  -.004   .189   .001   .001</span></span>
+<span><span class="co">#&gt; heaR_4   .041  -.005   .003   .223  -.010  -.019</span></span>
+<span><span class="co">#&gt; heaR_5   .094  -.003  -.009   .047   .053  -.011</span></span>
+<span><span class="co">#&gt; heaR_6   .022   .033  -.001   .115   .031   .020</span></span>
+<span><span class="co">#&gt; recR_1  -.011   .057   .006   .061   .088   .045</span></span>
+<span><span class="co">#&gt; recR_2  -.002   .054   .028   .200   .001  -.010</span></span>
+<span><span class="co">#&gt; recR_3  -.060   .109   .006   .164   .043   .028</span></span>
+<span><span class="co">#&gt; recR_4   .007   .373  -.006  -.001   .038   .017</span></span>
+<span><span class="co">#&gt; recR_5   .047   .398   .016  -.033  -.041  -.012</span></span>
+<span><span class="co">#&gt; recR_6  -.012   .102  -.015   .105   .045   .075</span></span>
+<span><span class="co">#&gt; socR_1   .000   .025   .002  -.027   .231  -.030</span></span>
+<span><span class="co">#&gt; socR_2   .003  -.014   .014   .044   .208  -.001</span></span>
+<span><span class="co">#&gt; socR_3  -.042   .006  -.018  -.033   .183   .035</span></span>
+<span><span class="co">#&gt; socR_4  -.028   .003   .008   .057   .202  -.005</span></span>
+<span><span class="co">#&gt; socR_5   .022   .013  -.011   .026   .107   .051</span></span>
+<span><span class="co">#&gt; socR_6   .031   .000  -.013  -.006   .195   .052</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Score validity and univocality</span> ──────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Diagonal: validity (score-factor correlation). Off-diagonal: univocality.</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;      <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span>    <span style="font-weight: bold;">F4</span>    <span style="font-weight: bold;">F5</span>    <span style="font-weight: bold;">F6</span></span></span>
+<span><span class="co">#&gt; F1  .903  .402  .501  .613  .043  .362</span></span>
+<span><span class="co">#&gt; F2  .381  .951  .367  .608  .322  .453</span></span>
+<span><span class="co">#&gt; F3  .470  .363  .961  .515  .051  .482</span></span>
+<span><span class="co">#&gt; F4  .607  .635  .543  .910  .298  .523</span></span>
+<span><span class="co">#&gt; F5  .044  .345  .056  .306  .887  .349</span></span>
+<span><span class="co">#&gt; F6  .360  .475  .510  .525  .341  .907</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Score intercorrelations</span> ─────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;       <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>     <span style="font-weight: bold;">F4</span>     <span style="font-weight: bold;">F5</span>     <span style="font-weight: bold;">F6</span></span></span>
+<span><span class="co">#&gt; F1  1.000   .423   .521   .673   .049   .399</span></span>
+<span><span class="co">#&gt; F2   .423  1.000   .382   .667   .363   .499</span></span>
+<span><span class="co">#&gt; F3   .521   .382  1.000   .566   .058   .531</span></span>
+<span><span class="co">#&gt; F4   .673   .667   .566  1.000   .336   .577</span></span>
+<span><span class="co">#&gt; F5   .049   .363   .058   .336  1.000   .385</span></span>
+<span><span class="co">#&gt; F6   .399   .499   .531   .577   .385  1.000</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="schmid-leiman-transformation-and-mcdonalds-omegas">Schmid-Leiman Transformation and McDonald’s Omegas<a class="anchor" aria-label="anchor" href="#schmid-leiman-transformation-and-mcdonalds-omegas"></a>
@@ -1047,13 +1155,13 @@ explicit map shown afterwards:</p>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Reliability coefficients</span> ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;      <span style="font-weight: bold;">tot</span>  <span style="font-weight: bold;">hier</span>   <span style="font-weight: bold;">sub</span>  <span style="font-weight: bold;">alpha</span>    <span style="font-weight: bold;">H</span></span></span>
-<span><span class="co">#&gt; g   .922  .718  .177   .886  .886</span></span>
-<span><span class="co">#&gt; F1  .791  .377  .415   .788  .652</span></span>
-<span><span class="co">#&gt; F2  .867  .474  .393   .845  .683</span></span>
+<span><span class="co">#&gt; g   .931  .718  .177   .886  .886</span></span>
+<span><span class="co">#&gt; F1  .797  .377  .415   .788  .652</span></span>
+<span><span class="co">#&gt; F2  .872  .474  .393   .845  .683</span></span>
 <span><span class="co">#&gt; F3  .912  .344  .568   .914  .739</span></span>
-<span><span class="co">#&gt; F4  .709  .531  .177   .716  .305</span></span>
-<span><span class="co">#&gt; F5  .739  .124  .615   .741  .726</span></span>
-<span><span class="co">#&gt; F6  .745  .295  .451   .742  .571</span></span>
+<span><span class="co">#&gt; F4  .715  .531  .177   .716  .305</span></span>
+<span><span class="co">#&gt; F5  .742  .124  .615   .741  .726</span></span>
+<span><span class="co">#&gt; F6  .747  .295  .451   .742  .571</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Common-variance indices</span> ─────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -1076,13 +1184,13 @@ a theoretical assignment — pass a <code>factor_map</code> matrix:</p>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Reliability coefficients</span> ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;      <span style="font-weight: bold;">tot</span>  <span style="font-weight: bold;">hier</span>   <span style="font-weight: bold;">sub</span>  <span style="font-weight: bold;">alpha</span>    <span style="font-weight: bold;">H</span></span></span>
-<span><span class="co">#&gt; g   .922  .718  .150   .886  .886</span></span>
-<span><span class="co">#&gt; F1  .737  .317  .420   .763  .611</span></span>
-<span><span class="co">#&gt; F2  .828  .535  .292   .844  .689</span></span>
+<span><span class="co">#&gt; g   .931  .718  .150   .886  .886</span></span>
+<span><span class="co">#&gt; F1  .743  .317  .420   .763  .611</span></span>
+<span><span class="co">#&gt; F2  .851  .535  .292   .844  .689</span></span>
 <span><span class="co">#&gt; F3  .912  .344  .568   .914  .739</span></span>
-<span><span class="co">#&gt; F4  .567  .479  .088   .697  .262</span></span>
-<span><span class="co">#&gt; F5  .742  .082  .660   .735  .722</span></span>
-<span><span class="co">#&gt; F6  .745  .295  .451   .742  .571</span></span>
+<span><span class="co">#&gt; F4  .665  .479  .088   .697  .262</span></span>
+<span><span class="co">#&gt; F5  .744  .082  .660   .735  .722</span></span>
+<span><span class="co">#&gt; F6  .747  .295  .451   .742  .571</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Common-variance indices</span> ─────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -1092,10 +1200,27 @@ a theoretical assignment — pass a <code>factor_map</code> matrix:</p>
 factors <strong>by position</strong>, so the assignment has to be read
 off the solution rather than assumed: a column naming the wrong set of
 items yields a well-formed but meaningless subscale omega instead of an
-error. Comparing the two tables, the health row is the one that moves
-most: three of the six health items load higher on the ethical factor
-than on the health one, so pinning all six to F4 lowers that subscale’s
-omega relative to the automatic assignment.</p>
+error. Comparing the two tables, the health row (F4) moves clearly:
+three of the six health items load higher on the ethical factor than on
+the health one, so pinning all six to F4 roughly halves the variance its
+own group factor accounts for. Its omega total falls less, because those
+three items still bring in the true score variance they receive from the
+ethical factor — omega subscale counts a factor’s own contribution,
+omega total everything the composite receives.</p>
+<p>Which coefficient to report depends on the question being asked.
+Omega hierarchical asks whether a total score can be read as a measure
+of a single construct; omega subscale asks whether a subscale score
+carries anything beyond the general factor; the H index asks whether a
+factor is well defined by its indicators; and ECV together with PUC ask
+whether a unidimensional model would be defensible at all. Alpha is
+reported alongside them because it is still widely expected, but it
+assumes essentially tau-equivalent items — equal true-score
+contributions — whereas factor analysis yields congeneric solutions, for
+which alpha is only a lower bound. For a multidimensional scale such as
+the DOSPERT it is therefore rarely the coefficient to report, and the
+omegas answer the question alpha is usually asked to answer. See
+<code><a href="../reference/efa_reliability.html">?efa_reliability</a></code> for the definition of each coefficient and
+the references behind it.</p>
 </div>
 </div>
 <div class="section level2">

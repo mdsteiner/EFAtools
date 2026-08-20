@@ -30,6 +30,9 @@ approximation in factor analysis. Biometrika, 38, 337-344.
 Belsley, D. A., Kuh, E. & Welsch, R. E. (1980). Regression diagnostics:
 Identifying influential data and sources of collinearity. Wiley.
 
+Cochran, W. G. (1954). Some methods for strengthening the common
+\\\chi^2\\ tests. Biometrics, 10, 417-451.
+
 Croux, C. & Haesbroeck, G. (1999). Influence function and efficiency of
 the minimum covariance determinant scatter matrix estimator. Journal of
 Multivariate Analysis, 71, 161-190.
@@ -70,7 +73,8 @@ minimum covariance determinant estimator. Technometrics, 41, 212-223.
 - x:
 
   data.frame or matrix. Data frame or matrix of raw data, or a matrix of
-  correlations.
+  correlations. At least three variables are required, and no variable
+  may be a perfect linear combination of the others.
 
 - N:
 
@@ -81,9 +85,12 @@ minimum covariance determinant estimator. Technometrics, 41, 212-223.
 
 - use:
 
-  character. Passed to
-  [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data are
-  supplied. Default is `"pairwise.complete.obs"`.
+  character. The missing-data policy for raw data. Passed to
+  [`stats::cor()`](https://rdrr.io/r/stats/cor.html) for `"pearson"`,
+  `"spearman"`, and `"kendall"`; for `"poly"` / `"tetra"` the same
+  policies are applied to the raw data before the polychoric estimation,
+  where `"all.obs"` and `"everything"` abort on a missing value instead
+  of returning `NA` correlations. Default is `"pairwise.complete.obs"`.
 
 - cor_method:
 
@@ -91,7 +98,14 @@ minimum covariance determinant estimator. Technometrics, 41, 212-223.
   `"spearman"`, or `"kendall"` (passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
   `"tetra"` for polychoric / tetrachoric correlations of ordinal /
-  binary data (a two-step estimator). Default is `"pearson"`.
+  binary data (a two-step estimator). A Spearman or Kendall matrix is
+  screened on its own metric and is not transformed to the Pearson scale
+  the factor model assumes; Kendall's tau in particular is not a Pearson
+  correlation. Only `"poly"` and `"tetra"` accept ordered factors as
+  well as numeric response codes; the other three need numeric data. An
+  unordered factor or a character column is refused, because its
+  categories carry no response order and the alphabetical order of its
+  levels is not a safe substitute. Default is `"pearson"`.
 
 - mcd_alpha:
 
@@ -128,9 +142,9 @@ An object of class `efa_screen`, a list containing:
 - bartlett:
 
   A list with Bartlett's chi-square statistic (`chisq`), its `p_value`,
-  and its degrees of freedom (`df`); `chisq` and `p_value` are `NA` when
-  `N` is too small for the Bartlett correction. `NULL` when `N` is
-  unavailable.
+  and its degrees of freedom (`df`); `chisq` and `p_value` are `NA`,
+  with a warning, when `N` is too small for the Bartlett correction.
+  `NULL` when `N` is unavailable.
 
 - determinant:
 
@@ -160,14 +174,19 @@ An object of class `efa_screen`, a list containing:
   Multivariate-normality diagnostics computed from the complete cases of
   the raw data: a list with `mardia` (Mardia's multivariate skewness
   statistic `skewness`, its degrees of freedom `skewness_df` and p-value
-  `skewness_p`, a `small_sample` flag recording whether the small-sample
-  skewness correction was applied, the standardised `kurtosis` statistic
-  and its p-value `kurtosis_p`, and the underlying coefficients `b1p`
-  and `b2p`), `hz` (the Henze-Zirkler `statistic` and its `p_value`),
-  and `n_complete` (the number of complete cases used). When the
-  complete-case covariance is singular the tests are skipped and a
-  classed note (of class `efa_screen_no_mvn`) is returned instead,
-  alongside a warning. `NULL` when a correlation matrix is supplied.
+  `skewness_p`, the standardised `kurtosis` statistic and its p-value
+  `kurtosis_p` (both `NA` when the exact null variance is zero, as at
+  \\n = p + 1\\, where the kurtosis coefficient is constant and gives no
+  information), and the underlying coefficients `b1p` and `b2p`), `hz`
+  (the Henze-Zirkler `statistic` and its `p_value`), and `n_complete`
+  (the number of complete cases used). When the complete-case covariance
+  is singular the tests are skipped and a classed note (of class
+  `efa_screen_no_mvn`) is returned instead, alongside a warning. When
+  the Henze-Zirkler null approximation degenerates at many variables,
+  `hz` keeps its `statistic`, has an `NA` `p_value`, and carries a
+  `message` and the class `efa_screen_no_hz`, also alongside a warning;
+  Mardia's tests are unaffected. `NULL` when a correlation matrix is
+  supplied.
 
 - outliers:
 
@@ -202,9 +221,10 @@ An object of class `efa_screen`, a list containing:
 - settings:
 
   A list of the settings used, including `n_obs`, the number of rows in
-  the supplied raw data (`NA` for a correlation-matrix input), and
+  the supplied raw data (`NA` for a correlation-matrix input),
   `outlier_cutoff`, the probability behind the outlier flagging
-  threshold.
+  threshold, `mcd_alpha`, the coverage of the minimum covariance
+  determinant subset, and `seed` (`NULL` when none was supplied).
 
 ## Details
 
@@ -225,15 +245,22 @@ The diagnostics are computed from the analysis correlation matrix \\R\\:
   for \\p\\ variables. It requires the sample size `N`; when `N` is
   unavailable (a correlation matrix supplied without `N`) the test is
   skipped with a warning, `$bartlett` is `NULL`, and the remaining
-  diagnostics are still returned. See
+  diagnostics are still returned. A supplied `N` that is too small
+  relative to \\p\\ for the correction \\N - 1 - (2p + 5)/6\\ to be
+  positive leaves the statistic itself `NA`, also with a warning. See
   [`efa_bartlett()`](https://mdsteiner.github.io/EFAtools/reference/efa_bartlett.md).
 
 - Determinant:
 
-  The determinant of \\R\\. A value near zero signals extreme
-  multicollinearity or a (near-)singular matrix; as a rough guide, a
-  determinant below about 0.00001 is commonly taken as a sign of
-  multicollinearity (Field, 2018).
+  The determinant of \\R\\, reported as a number. It is the product of
+  the \\p\\ eigenvalues of \\R\\, so it falls geometrically as variables
+  are added even when every eigenvalue stays far from zero: on a clean
+  one-factor pool with all loadings 0.5 it goes from 0.24 at \\p = 10\\
+  to 6.7e-07 at \\p = 60\\ while the condition index moves only from 2.1
+  to 4.6. A fixed cut-off on it, such as the 0.00001 that is commonly
+  quoted (Field, 2018), is therefore a statement about the number of
+  variables as much as about the data, and this package does not use
+  one. The multicollinearity verdict rests on the condition index below.
 
 - Condition number:
 
@@ -242,7 +269,10 @@ The diagnostics are computed from the analysis correlation matrix \\R\\:
   dependencies among the variables. Its square root is the condition
   index: an index above 30 is a conventional sign of strong
   multicollinearity, and 10 to 30 of moderate multicollinearity
-  (Belsley, Kuh & Welsch, 1980).
+  (Belsley, Kuh & Welsch, 1980). The index is a ratio of eigenvalues, so
+  unlike the determinant it does not move with \\p\\ on its own; it
+  carries the multicollinearity verdict in the printed report and the
+  multicollinearity recommendation, which fires above 30.
 
 - SMC:
 
@@ -253,40 +283,79 @@ The diagnostics are computed from the analysis correlation matrix \\R\\:
 - Variance and missing data:
 
   The variance of each variable (over its available values) and the
-  percentage of missing values. Factor and character columns are recoded
-  to their integer level codes, so `variance` and the empty-category
-  check below refer to those codes (the category counts themselves are
-  labelled by the original levels). These, and the category tabulation
-  below, are computed column by column from the supplied data using
-  every non-missing value, and so do not depend on `use`, which governs
-  only the correlation matrix. Under a listwise `use` (`"complete.obs"`
-  / `"na.or.complete"`) the correlation matrix and `N` are based on the
-  complete cases, while the missingness is reported over every supplied
-  row so that it explains why `N` is smaller; the number of supplied
-  rows is recorded in `settings$n_obs`. Available only from raw data.
+  percentage of missing values. Ordered-factor columns are recoded to
+  their integer level codes, so `variance` and the empty-category check
+  below refer to those codes (the category counts themselves are
+  labelled by the original levels). Such columns reach the correlation
+  matrix only with `cor_method = "poly"` or `"tetra"`; a Pearson,
+  Spearman, or Kendall correlation of a factor frame is refused, as is
+  any correlation of an unordered factor or a character column. These,
+  and the category tabulation below, are computed column by column from
+  the supplied data using every non-missing value, and so do not depend
+  on `use`, which governs only the correlation matrix. Under a listwise
+  `use` (`"complete.obs"` / `"na.or.complete"`) the correlation matrix
+  and `N` are based on the complete cases, while the missingness is
+  reported over every supplied row so that it explains why `N` is
+  smaller; the number of supplied rows is recorded in `settings$n_obs`.
+  Available only from raw data.
 
 - Categories:
 
   For each variable with fewer than ten distinct values (treated as
   categorical), the response-category counts, flagging a *sparse*
-  category (fewer than five responses) and, for integer-coded variables,
-  an *empty* interior category (an unused category between the smallest
-  and largest observed value). A variable with ten or more distinct
-  values is treated as continuous and is not tabulated. As a rough
-  guide, items with fewer than five response categories are better
-  analysed with an ordinal estimator (polychoric correlations with
-  categorical least squares) than with normal-theory maximum likelihood
-  (Rhemtulla et al., 2012). Available only from raw data.
+  category (fewer than five responses; a heuristic of this package,
+  borrowing the conventional minimum cell count of five from
+  contingency-table analysis (Cochran, 1954), because a polychoric
+  correlation is estimated from the bivariate response table, in which a
+  category with very few responses leaves its threshold poorly
+  determined) and, for integer-coded variables, an *empty* interior
+  category (an unused category between the smallest and largest observed
+  value). A variable with ten or more distinct values is treated as
+  continuous and is not tabulated. As a rough guide, items with fewer
+  than five response categories are better analysed with an ordinal
+  estimator (polychoric correlations with categorical least squares)
+  than with normal-theory maximum likelihood (Rhemtulla et al., 2012).
+  Available only from raw data.
 
 - Multivariate normality:
 
   Two tests of multivariate normality computed from the complete cases
   of the raw data: Mardia's (1970) multivariate skewness and kurtosis,
-  and the Henze-Zirkler (1990) omnibus test. A small p-value indicates a
-  departure from multivariate normality, a reason to prefer robust or
-  ordinal estimation over normal-theory maximum likelihood. Available
-  only from raw data, and skipped with a note if the complete-case
-  covariance is singular.
+  and the Henze-Zirkler (1990) omnibus test. Both use the
+  maximum-likelihood (divisor-\\n\\) covariance, so Mardia's
+  coefficients differ from implementations using the unbiased divisor by
+  a factor of \\(n / (n - 1))^3\\ for the skewness coefficient and \\(n
+  / (n - 1))^2\\ for the kurtosis coefficient. The kurtosis coefficient
+  is standardised with its exact null moments, \\p(p + 2)(n - 1) / (n +
+  1)\\ for the mean (Mardia, 1970) and \\8p(p + 2)(n - 3)(n - p - 1)(n -
+  p + 1) / ((n + 1)^2 (n + 3)(n + 5))\\ for the variance (Mardia, 1974).
+  Both become the asymptotic pair \\p(p + 2)\\ and \\8p(p + 2) / n\\ as
+  the sample size increases. Most other implementations use that
+  asymptotic pair. It overstates both moments, by an amount that
+  increases with the ratio of variables to observations. With 40
+  variables and 200 observations it rejects data from an exact
+  multivariate normal more than half of the time at the .05 level, where
+  the exact moments hold the nominal rate. The skewness statistic always
+  carries Mardia's (1974) correction, which makes its expectation equal
+  its degrees of freedom at every sample size. Implementations that
+  apply the correction only below 20 observations leave the statistic
+  biased low, and the bias increases with the ratio of variables to
+  observations until the test has no power. The correction sets the mean
+  exactly, but the chi-square approximation keeps an inexact variance,
+  so the skewness test holds a rejection rate near, but not exactly at,
+  its nominal level. A small p-value indicates a departure from
+  multivariate normality, a reason to prefer robust or ordinal
+  estimation over normal-theory maximum likelihood. The Henze-Zirkler
+  p-value comes from a lognormal approximation whose null variance falls
+  geometrically with the number of variables. Beyond roughly 50 to 60
+  variables (the exact point depends on the sample size) that variance
+  is no longer resolvable in double precision, and the p-value would be
+  exactly 0 or exactly 1 as a rounding-level residual decides, even for
+  data from an exact multivariate normal. It is then withheld, with a
+  warning, and the statistic alone is reported; the printed report says
+  how many of the available tests reject multivariate normality.
+  Available only from raw data, and skipped with a note if the
+  complete-case covariance is singular.
 
 - Outliers:
 
@@ -334,7 +403,8 @@ efa_screen(test_models$baseline$cormat, N = 500)
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
 #> ✔ The overall KMO value for your data is marvellous (Overall KMO = 0.916).
-#> These data are probably suitable for factor analysis.
+#> These data are probably suitable for factor analysis (verbal bands: Kaiser &
+#> Rice, 1974).
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
@@ -342,7 +412,8 @@ efa_screen(test_models$baseline$cormat, N = 500)
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ✔ Determinant: 0.0121. No concern (a value near 0 signals multicollinearity).
+#> ℹ Determinant: 0.0121. It falls as variables are added, so the condition index
+#> below carries the verdict.
 #> ✔ Condition number: 11.680 (condition index 3.418). No concern (index below 10;
 #> Belsley, Kuh & Welsch, 1980).
 #> 
@@ -387,7 +458,8 @@ efa_screen(GRiPS_raw, seed = 1)
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
 #> ✔ The overall KMO value for your data is marvellous (Overall KMO = 0.955).
-#> These data are probably suitable for factor analysis.
+#> These data are probably suitable for factor analysis (verbal bands: Kaiser &
+#> Rice, 1974).
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
@@ -395,7 +467,8 @@ efa_screen(GRiPS_raw, seed = 1)
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ✔ Determinant: 0.00188. No concern (a value near 0 signals multicollinearity).
+#> ℹ Determinant: 0.00188. It falls as variables are added, so the condition index
+#> below carries the verdict.
 #> ✔ Condition number: 24.340 (condition index 4.934). No concern (index below 10;
 #> Belsley, Kuh & Welsch, 1980).
 #> 
@@ -413,10 +486,10 @@ efa_screen(GRiPS_raw, seed = 1)
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
-#> ✖ Mardia's skewness: χ²(120) = 910.1, p < .001.
-#> ✖ Mardia's kurtosis: z = 49.32, p < .001.
+#> ✖ Mardia's skewness: χ²(120) = 914.23, p < .001.
+#> ✖ Mardia's kurtosis: z = 50.44, p < .001.
 #> ✖ Henze-Zirkler: HZ = 11.65, p < .001.
-#> These data depart from multivariate normality.
+#> These data depart from multivariate normality: 3 of the 3 tests reject it.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 

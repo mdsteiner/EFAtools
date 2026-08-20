@@ -15,9 +15,9 @@ either be found from a
 [`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html),
 [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md),
 or, in a more flexible way, by leaving `model = NULL` and specifying
-additional arguments. By setting the `type` argument, results from
-[`psych::omega()`](https://rdrr.io/pkg/psych/man/omega.html) can be
-reproduced.
+additional arguments. The `type` argument selects how variables are
+assigned to group factors, and can reproduce the assignment
+[`psych::omega()`](https://rdrr.io/pkg/psych/man/omega.html) makes.
 
 ## Usage
 
@@ -293,10 +293,17 @@ possibility to enter a `lavaan` single factor solution. In this case,
 `g_name` is not needed. Finally, if a solution from a `lavaan` multiple
 group analysis is entered, the indices are computed for each group. For
 `lavaan` input the composite variances entering the omegas are
-model-implied (computed from the fitted loadings and residual
-variances), so the coefficients coincide with the observed-score
-versions when the model fits perfectly. The type argument is not
-evaluated if `model` is of class `lavaan`.
+model-implied: they are computed from the fitted loadings and the fitted
+residual covariance matrix, and count any freed residual covariance as
+well as the residual variances. The coefficients thus coincide with the
+observed-score versions when the model fits perfectly. The omegas split
+a composite's variance into a general part and one part per group
+factor, which needs uncorrelated latent variables: fit a bifactor model
+with `orthogonal = TRUE` (not `lavaan`'s default) and leave the
+covariances between a second-order model's first-order factors at zero.
+A fit whose factors correlate is rejected rather than scored as though
+they did not. The type argument is not evaluated if `model` is of class
+`lavaan`.
 
 If `model` is of class
 [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
@@ -323,22 +330,22 @@ function.
 
 The only difference between `type = "EFAtools"` and `type = "psych"` is
 the determination of variable-to-factor correspondences.
-`type = "psych"` reproduces the
-[`psych::omega()`](https://rdrr.io/pkg/psych/man/omega.html) results,
-where variable-to-factor correspondences are found by taking the highest
-group factor loading for each variable as the relevant group factor
-loading. To do this, `factor_corres` must be left `NULL`.
+`type = "psych"` derives them as
+[`psych::omega()`](https://rdrr.io/pkg/psych/man/omega.html) does, by
+taking the highest group factor loading for each variable as the
+relevant group factor loading. To do this, `factor_corres` must be left
+`NULL`.
 
-`variance = "correlation"` gives the observed-variance form of omega,
-which reproduces
-[`psych::omega()`](https://rdrr.io/pkg/psych/man/omega.html);
-`"sums_load"` gives McDonald's model-implied total, which partitions
-exactly into omega hierarchical plus omega subscale. The two settings
-agree on the whole-scale omega total and omega hierarchical up to model
-misfit, and differ mainly in the whole-scale omega subscale, which
+Both settings score a composite by the true score variance the model
+attributes to it, counting every factor its variables load on; they
+differ only in the variance that is divided into.
+`variance = "correlation"` uses the composite's observed variance,
+giving the observed-score form of omega; `"sums_load"` uses its
+model-implied variance, which partitions exactly into omega hierarchical
+plus omega subscale on the whole-scale row. The two settings agree up to
+model misfit, and differ mainly in the whole-scale omega subscale, which
 counts all group-factor variance under `"sums_load"` but only the
-assigned subscale composites under `"correlation"`. On the subscale rows
-the two conventions agree when simple structure is well-achieved.
+assigned subscale composites under `"correlation"`.
 
 ## See also
 
@@ -407,8 +414,8 @@ OMEGA(sl_mod, type = "EFAtools", factor_corres = factor_corres_1)
 #>      tot  hier   sub     H   ECV   PUC
 #> g  0.883 0.740 0.125 0.842 0.652 0.706
 #> F1 0.769 0.500 0.269 0.463            
-#> F2 0.763 0.494 0.270 0.472            
-#> F3 0.744 0.519 0.225 0.408            
+#> F2 0.765 0.494 0.270 0.472            
+#> F3 0.745 0.519 0.225 0.408            
 
 ## Use with an output from the psych::schmid function, with type psych for
 ## OMEGA
@@ -424,8 +431,8 @@ OMEGA(schmid_mod, type = "psych")
 #>       tot  hier   sub     H   ECV   PUC
 #> g   0.883 0.750 0.122 0.845 0.661 0.706
 #> F1* 0.769 0.498 0.272 0.466            
-#> F2* 0.765 0.494 0.271 0.473            
-#> F3* 0.745 0.543 0.202 0.379            
+#> F2* 0.766 0.494 0.271 0.473            
+#> F3* 0.746 0.543 0.202 0.379            
 # Use specified correlation matrix
 OMEGA(schmid_mod, type = "psych", cormat = test_models$baseline$cormat)
 #> Omega total, omega hierarchical, omega subscale, H index, explained common
@@ -435,7 +442,7 @@ OMEGA(schmid_mod, type = "psych", cormat = test_models$baseline$cormat)
 #>       tot  hier   sub     H   ECV   PUC
 #> g   0.883 0.750 0.122 0.845 0.661 0.706
 #> F1* 0.769 0.498 0.272 0.466            
-#> F2* 0.764 0.494 0.270 0.473            
+#> F2* 0.765 0.494 0.270 0.473            
 #> F3* 0.745 0.543 0.202 0.379            
 
 ## Manually specify components (useful if omegas should be computed for a SL
@@ -458,6 +465,6 @@ OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
 #>     tot  hier   sub     H   ECV   PUC
 #> g 0.883 0.740 0.125 0.842 0.652 0.706
 #> 1 0.769 0.500 0.269 0.463            
-#> 2 0.763 0.494 0.270 0.472            
-#> 3 0.744 0.519 0.225 0.408            
+#> 2 0.765 0.494 0.270 0.472            
+#> 3 0.745 0.519 0.225 0.408            
 ```

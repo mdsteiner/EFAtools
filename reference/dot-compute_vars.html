@@ -80,7 +80,9 @@ is used.</p></dd>
     <p>A matrix with sum of squared loadings, proportion explained variance
 from total variance per factor, same as previous but cumulative, Proportion
 of explained variance from total explained variance, and same as previous but
-cumulative.</p>
+cumulative. The three cumulative and common-variance rows are omitted when
+<code>L_rot</code> has a single column, where they would only repeat the two above them,
+so the result has two rows there and five otherwise.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

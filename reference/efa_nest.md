@@ -50,7 +50,7 @@ publication. https://doi.org/10.1177/00131644241308528
 - N:
 
   numeric. The number of observations. Only needed if x is a correlation
-  matrix.
+  matrix. Must be larger than the number of variables.
 
 - alpha:
 
@@ -159,8 +159,8 @@ inadmissible reference.
 
 The reference eigenvalues are obtained from simulated data, so the
 suggested number of factors varies slightly from run to run. Call
-[`set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to make a
-run reproducible.
+[`base::set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to
+make a run reproducible.
 
 For details on the method, including simulation studies, see Achim
 (2017), Brandenburg and Papenberg (2024), and Caron (2025).

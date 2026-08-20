@@ -32,7 +32,7 @@ NEST(
 - N:
 
   numeric. The number of observations. Only needed if x is a correlation
-  matrix.
+  matrix. Must be larger than the number of variables.
 
 - alpha:
 

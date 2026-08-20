@@ -37,9 +37,12 @@ approach. Hillsdale, N.J.: Lawrence Erlbaum Associates, Inc.
 
 - use:
 
-  character. Passed to
-  [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is "pairwise.complete.obs".
+  character. The missing-data policy for raw data. Passed to
+  [`stats::cor()`](https://rdrr.io/r/stats/cor.html) for `"pearson"`,
+  `"spearman"`, and `"kendall"`; for `"poly"` / `"tetra"` the same
+  policies are applied to the raw data before the polychoric estimation,
+  where `"all.obs"` and `"everything"` abort on a missing value instead
+  of returning `NA` correlations. Default is "pairwise.complete.obs".
 
 - cor_method:
 
@@ -69,14 +72,14 @@ A list containing
 
 Kaiser (1970) proposed this index, originally called measure of sampling
 adequacy (MSA), that indicates how near the inverted correlation matrix
-\\R^{-1}\\ is to a diagonal matrix \\S\\ to determine a given
-correlation matrix's (\\R\\) suitability for factor analysis. The index
-is \$\$KMO = \frac{\sum\_{i \neq j} r\_{ij}^2}{\sum\_{i \neq j}
-r\_{ij}^2 + \sum\_{i \neq j} q\_{ij}^2}\$\$ with \\Q = SR^{-1}S\\ and S
-= \\(diag R^{-1})^{-1/2}\\ where \\\sum\_{i \neq j} r\_{ij}^2\\ is the
-sum of squares of the off-diagonal elements of \\R\\ and \\\sum\_{i \neq
-j} q\_{ij}^2\\ is the sum of squares of the off-diagonal elements of
-\\Q\\ (see also Cureton & D'Agostino, 1983).
+\\R^{-1}\\ is to a diagonal matrix to determine a given correlation
+matrix's (\\R\\) suitability for factor analysis. The index is \$\$KMO =
+\frac{\sum\_{i \neq j} r\_{ij}^2}{\sum\_{i \neq j} r\_{ij}^2 + \sum\_{i
+\neq j} q\_{ij}^2}\$\$ with \\Q = SR^{-1}S\\ and S = \\(diag
+R^{-1})^{-1/2}\\ where \\\sum\_{i \neq j} r\_{ij}^2\\ is the sum of
+squares of the off-diagonal elements of \\R\\ and \\\sum\_{i \neq j}
+q\_{ij}^2\\ is the sum of squares of the off-diagonal elements of \\Q\\
+(see also Cureton & D'Agostino, 1983).
 
 So KMO varies between 0 and 1, with larger values indicating higher
 suitability for factor analysis. Kaiser and Rice (1974) suggest that KMO

@@ -69,6 +69,14 @@ when it carries information: two ordinary double matrices carry the full
 double precision, for which the count is uninformative and the line is
 omitted.
 
+The summary statistics are absolute differences, so they carry no
+direction. The elementwise differences are signed, and the table is
+headed by the direction of the subtraction, named with the `x_labels`
+recorded by
+[`efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/efa_compare.md)
+(`"x"` and `"y"` by default): a negative cell means the first solution
+is the lower of the two there.
+
 ## Examples
 
 ``` r
@@ -95,9 +103,12 @@ comp
 #> Median absolute difference:  .0009
 #> Root mean squared distance (RMSE):  .0025
 #> Max decimals where all numbers agree in absolute value: 1
-#> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
+#> Differing indicator-to-factor correspondences: 0 (highest loading),
+#>   0 (all |loadings| >= 0.3)
 #> 
 #> ── Elementwise differences ─────────────────────────────────────────────────────
+#> 
+#> Differences: SPSS - psych.
 #> 
 #>        F1      F2      F3      F4      F5
 #> GS    .0004   .0002  -.0002   .0002  -.0034
@@ -124,9 +135,12 @@ writeLines(format(comp))
 #> Median absolute difference:  .0009
 #> Root mean squared distance (RMSE):  .0025
 #> Max decimals where all numbers agree in absolute value: 1
-#> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
+#> Differing indicator-to-factor correspondences: 0 (highest loading),
+#>   0 (all |loadings| >= 0.3)
 #> 
 #> ── Elementwise differences ─────────────────────────────────────────────────────
+#> 
+#> Differences: SPSS - psych.
 #> 
 #>        F1      F2      F3      F4      F5
 #> GS    .0004   .0002  -.0002   .0002  -.0034
@@ -153,5 +167,6 @@ print(comp, digits = 2, print_diff = FALSE)
 #> Median absolute difference:  .00
 #> Root mean squared distance (RMSE):  .00
 #> Max decimals where all numbers agree in absolute value: 1
-#> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
+#> Differing indicator-to-factor correspondences: 0 (highest loading),
+#>   0 (all |loadings| >= 0.3)
 ```

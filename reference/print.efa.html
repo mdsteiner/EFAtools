@@ -157,7 +157,12 @@ Default is 3.</p></dd>
 
 <dt id="arg-max-name-length">max_name_length<a class="anchor" aria-label="anchor" href="#arg-max-name-length"></a></dt>
 <dd><p>numeric. Maximum length of the variable names to
-display; longer names are cut from the right.</p></dd>
+display; longer names are cut from the right, or abbreviated where cutting
+would give two variables the same label. Applies to every table that names
+variables. <code>name_style</code> (see <code><a href="print.efa_loadings.html">print.efa_loadings()</a></code>) can be passed through
+<code>...</code> to choose the shortening explicitly, but it reaches the loading table
+only; the confidence-interval and simple-structure tables always shorten by
+cutting.</p></dd>
 
 
 <dt id="arg-sort-loadings">sort_loadings<a class="anchor" aria-label="anchor" href="#arg-sort-loadings"></a></dt>

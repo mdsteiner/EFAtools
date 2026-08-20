@@ -29,7 +29,8 @@ SMT(
 - N:
 
   numeric. The number of observations. Needs only be specified if a
-  correlation matrix is used.
+  correlation matrix is used. Must be larger than the number of
+  variables.
 
 - use:
 

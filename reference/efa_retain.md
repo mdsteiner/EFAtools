@@ -33,13 +33,20 @@ efa_retain(
   n_datasets = 1000,
   percent = 95,
   decision_rule = c("means", "percentile", "crawford"),
-  ekc_type = c("BvA2017"),
+  ekc_type = lifecycle::deprecated(),
   n_datasets_nest = 1000,
   alpha_nest = 0.05,
   show_progress = FALSE,
   estimate_control = NULL
 )
 ```
+
+## Source
+
+Auerswald, M., & Moshagen, M. (2019). How to determine the number of
+factors to retain in exploratory factor analysis: A comparison of
+extraction methods under realistic conditions. Psychological Methods,
+24(4), 468–491. https://doi.org/10.1037/met0000200
 
 ## Arguments
 
@@ -55,7 +62,7 @@ efa_retain(
   Possible inputs are: `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
   `"NEST"`,`"PARALLEL"`, `"SCREE"`, and `"SMT"` (see details). By
   default, a subset of often used, well-performing methods are
-  performed.
+  performed; the details name them.
 
 - suitability:
 
@@ -118,14 +125,18 @@ efa_retain(
   Further arguments passed to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   in
-  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
-  (also within
-  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)),
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md),
   [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
   [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
   and
   [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
-  The estimation tuning knobs are not passed here; they live in
+  They also reach
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md),
+  both through the parallel analysis it runs to set its upper bound and
+  through its own candidate fits, so an argument that
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  rejects stops the Hull method even when its `eigen_type_HULL` fits no
+  model. The estimation tuning knobs are not passed here; they live in
   `estimate_control`, and the standard-error arguments (`se`, `b_boot`,
   `ci`, `seed`) are not accepted because the criterion fits are internal
   steps whose standard errors are not reported. Note that the arguments
@@ -162,7 +173,12 @@ efa_retain(
   [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
   The estimator to use. One of `"PAF"`, `"ULS"`, or `"ML"`, for
   principal axis factoring, unweighted least squares, and maximum
-  likelihood, respectively. In
+  likelihood, respectively. The default here is `"ML"`, which is not the
+  default of every criterion called standalone (for example
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
+  defaults to `"PAF"`), so a criterion run through `efa_retain()` can
+  differ from the same criterion called directly unless `estimator` is
+  set to match. In
   [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md),
   [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
   and
@@ -246,11 +262,12 @@ efa_retain(
 
 - ekc_type:
 
-  character. Passed to the `type` argument of
-  [`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md).
-  Either `"BvA2017"` for the original implementation by Braeken and van
-  Assen (2017), or `"AM2019"` for the adapted implementation by
-  Auerswald and Moshagen (2019).
+  **\[deprecated\]** Accepted and ignored. It selected between two ways
+  to compute the
+  [`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md)
+  reference values. The `"AM2019"` reference values do not depend on the
+  observed eigenvalues, so they do not apply the empirical correction
+  that defines the criterion, and they are no longer computed.
 
 - n_datasets_nest:
 
@@ -330,7 +347,14 @@ superseded name. It contains
   A named numeric vector with the suggested number of factors per
   criterion and, where a criterion has several variants, per variant
   (e.g. `EKC_BvA2017` or `PARALLEL_SMC`). Criteria without a numeric
-  suggestion (the scree plot) are not included.
+  suggestion (the scree plot) are not included. The "most common" value
+  the printed summary line reports is counted with one vote per
+  *criterion* – each criterion's own modal variant – so that a criterion
+  with several variants cannot outvote a single-variant one. A criterion
+  whose variants tie has no modal value and abstains rather than casting
+  a vote for each of them, and a value that no two criteria agree on is
+  not reported as most common. Tallying this vector directly counts one
+  vote per *variant* and can therefore have a different mode.
 
 - not_run:
 
@@ -341,7 +365,11 @@ superseded name. It contains
 
   A list of the settings used. Its `criteria` element records the
   requested criteria, in the order they were given, while `outputs` and
-  `n_factors` are in the order in which the criteria were run.
+  `n_factors` are in the order in which the criteria were run. `gof`
+  records the requested Hull goodness-of-fit indices and `gof_used` the
+  ones the Hull method actually computed (it reduces them to `"CAF"` for
+  the PAF estimator); `gof_used` is `NA` when HULL was not requested,
+  was skipped, or failed.
 
 ## Details
 
@@ -370,6 +398,9 @@ respective documentations for details):
 - Kaiser-Guttman criterion (see
   [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md))
 
+- Velicer's minimum average partial, MAP (see
+  [`efa_map()`](https://mdsteiner.github.io/EFAtools/reference/efa_map.md))
+
 - Parallel analysis (see
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md))
 
@@ -382,14 +413,21 @@ respective documentations for details):
 - Sequential chi-square model tests, RMSEA lower bound, and AIC (see
   [`efa_smt()`](https://mdsteiner.github.io/EFAtools/reference/efa_smt.md))
 
+The default `criteria` are comparison data, the empirical Kaiser
+criterion, the Hull method, MAP, NEST, and parallel analysis. No single
+criterion is the most accurate in all conditions. `efa_retain()`
+therefore runs several criteria together, and the printed summary gives
+the range of their suggestions and the most common one. Auerswald and
+Moshagen (2019) compare the criteria and give guidance on the selection.
+
 The comparison data, parallel analysis, and NEST criteria compare the
 data against simulated reference data, so their suggested numbers of
 factors vary slightly from run to run; the Hull method does too, because
 it calls
 [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
 to set its upper bound. Call
-[`set.seed()`](https://rdrr.io/r/base/Random.html) before `efa_retain()`
-to make them reproducible.
+[`base::set.seed()`](https://rdrr.io/r/base/Random.html) before
+`efa_retain()` to make them reproducible.
 
 ## See also
 

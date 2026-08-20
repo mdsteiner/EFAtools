@@ -94,7 +94,10 @@ to round the loadings to (default is 3).</p></dd>
 <dt id="arg-max-name-length">max_name_length<a class="anchor" aria-label="anchor" href="#arg-max-name-length"></a></dt>
 <dd><p>numeric. The maximum length of the variable names to
 display. Everything beyond this will be cut from the right unless
-<code>name_style = "abbreviate"</code> or <code>name_style = "full"</code> is used.</p></dd>
+<code>name_style = "abbreviate"</code> or <code>name_style = "full"</code> is used. Cutting never
+leaves two variables sharing a row label: if it would (as for items with a
+long common prefix), the names are abbreviated instead, and numbered if
+needed.</p></dd>
 
 
 <dt id="arg-h-">h2<a class="anchor" aria-label="anchor" href="#arg-h-"></a></dt>

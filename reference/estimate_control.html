@@ -71,7 +71,9 @@ by one.</p>
 <span>  criterion_type <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  max_iter <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  abs_eigen <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  start_method <span class="op">=</span> <span class="st">"psych"</span></span>
+<span>  start_method <span class="op">=</span> <span class="st">"psych"</span>,</span>
+<span>  fiml_max_iter <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>  fiml_tol <span class="op">=</span> <span class="fl">1e-05</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">rotate_control</span><span class="op">(</span></span>
@@ -137,6 +139,25 @@ Only maximum likelihood uses it, so <code>NA</code> leaves it unset and is rejec
 a fit that is actually run with <code>estimator = "ML"</code>.</p></dd>
 
 
+<dt id="arg-fiml-max-iter">fiml_max_iter<a class="anchor" aria-label="anchor" href="#arg-fiml-max-iter"></a></dt>
+<dd><p>numeric. The maximum number of EM iterations used to estimate the
+two-stage full-information maximum-likelihood moments from raw data with missing
+values (<code>cor_method = "fiml"</code>); the last iterate is returned, with a warning, if the
+cap is reached. A single whole number of at least 1; default <code>500</code>. Not governed by
+<code>type</code>, and unused by every other correlation method. The EM converges linearly and
+needs more iterations the larger the fraction of missing information, so raise it when
+a fit reports that the moments did not converge.</p></dd>
+
+
+<dt id="arg-fiml-tol">fiml_tol<a class="anchor" aria-label="anchor" href="#arg-fiml-tol"></a></dt>
+<dd><p>numeric. The convergence tolerance of that EM: iteration stops once the
+largest change in the standardized moments (the standardized means, log-variances, and
+correlations) falls below it, so it does not depend on the variables' measurement
+scale. A single number greater than 0 and smaller than 1 (at or above 1 the criterion is
+met immediately and the starting moments would be returned as converged); default <code>1e-5</code>.
+Not governed by <code>type</code>.</p></dd>
+
+
 <dt id="arg-normalize">normalize<a class="anchor" aria-label="anchor" href="#arg-normalize"></a></dt>
 <dd><p>logical. If <code>TRUE</code> (default), a Kaiser normalization is
 performed before the rotation. The one knob that is always on unless you turn
@@ -145,7 +166,17 @@ it off with <code>FALSE</code>.</p></dd>
 
 <dt id="arg-precision">precision<a class="anchor" aria-label="anchor" href="#arg-precision"></a></dt>
 <dd><p>numeric. The convergence tolerance of the rotation procedure. A
-single number greater than 0 and at most 1; default <code>1e-5</code>.</p></dd>
+single number greater than 0 and at most 1; default <code>1e-5</code>. Each rotation stage
+monitors its own quantity, so the same number is not the same tolerance everywhere:
+<code>varimax_type = "kaiser"</code> stops on the <em>absolute</em> change in the varimax simplicity
+criterion, which is an average over variables (and so does not scale with how many
+there are) but rises with the number of factors, roughly toward
+<code>1 - 1 / n_factors</code>, so a fixed value is a relatively weaker tolerance the more
+factors are extracted; <code>varimax_type = "svd"</code> stops on the <em>relative</em> change in the
+singular values (as in <code><a href="https://rdrr.io/r/stats/varimax.html" class="external-link">stats::varimax()</a></code>); and the criterion rotations fitted by
+gradient projection stop when the <em>projected-gradient norm</em> falls below it. Promax
+inherits whichever of the two varimax tests its <code>varimax_type</code> selects, because it
+rotates a varimax base.</p></dd>
 
 
 <dt id="arg-order-type">order_type<a class="anchor" aria-label="anchor" href="#arg-order-type"></a></dt>
@@ -172,23 +203,31 @@ resolves from <code>type</code>.</p></dd>
 <dd><p>numeric. The promax power (for the target matrix) or the number of
 near-zero loadings for simplimax. A single number greater than 0; <code>NA</code>
 (default) leaves it to the fit (the <code>type</code>-dependent promax value, or
-<code>nrow(loadings)</code> for simplimax).</p></dd>
+<code>nrow(loadings)</code> for simplimax). Simplimax counts loadings, so a fit using it
+additionally requires a whole number no larger than the number of loadings in
+the solution; promax's power has no such restriction.</p></dd>
 
 
 <dt id="arg-random-starts">random_starts<a class="anchor" aria-label="anchor" href="#arg-random-starts"></a></dt>
 <dd><p>numeric. The number of random starts used by the
 criterion-based rotations to guard against local minima. A single whole number
 of at least 0, where <code>0</code> runs the rotation from its warm start only; default
-<code>100</code>.</p></dd>
+<code>100</code>. The default suffices for the smooth criteria; <code>simplimax</code> remains
+materially start-dependent at it, so raise it there (see the <em>Rotations</em> section
+of <code><a href="efa_fit.html">efa_fit()</a></code>).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments forwarded to the rotation engine. Only the names
-a rotation engine can consume are accepted: <code>maxit</code> (the maximum number of
-engine iterations), and the criterion parameters <code>gam</code> (oblimin; <code>gam = 0</code> is the
+a rotation engine can consume are accepted: <code>maxit</code> (a whole number of at least 0
+bounding a <em>single</em> gradient-projection optimization – the multi-start search runs
+several of them and each is bounded separately, so it is not a budget for the run as a
+whole; varimax and promax have no such stage and take only <code>precision</code>), and the
+criterion parameters <code>gam</code> (oblimin; <code>gam = 0</code> is the
 recommended default, and larger values increasingly reward correlated factors and
 can drive the solution toward factor collapse, so inspect <code>Phi</code> before interpreting
-a fit with <code>gam &gt; 0</code>) and <code>delta</code> (geomin); anything else is rejected as a
+a fit with <code>gam &gt; 0</code>) and <code>delta</code> (geomin; a positive number, default <code>0.01</code>);
+anything else is rejected as a
 misspelling. They are stored in <code>extra_args</code> and passed on to the rotation engine
 when the control is used to fit a model; an extra a given fit's rotation does not
 consume is ignored by that fit, so one control can serve fits with different
@@ -201,7 +240,8 @@ fit would silently drop it.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>estimate_control()</code> returns a list of class <code>efa_estimate_control</code> with
 the components <code>type</code>, <code>init_comm</code>, <code>criterion</code>, <code>criterion_type</code>, <code>max_iter</code>,
-<code>abs_eigen</code>, and <code>start_method</code>. <code>rotate_control()</code> returns a list of class
+<code>abs_eigen</code>, <code>start_method</code>, <code>fiml_max_iter</code>, and <code>fiml_tol</code>.
+<code>rotate_control()</code> returns a list of class
 <code>efa_rotate_control</code> with the components <code>type</code>, <code>normalize</code>, <code>precision</code>,
 <code>order_type</code>, <code>varimax_type</code>, <code>p_type</code>, <code>k</code>, <code>random_starts</code>, and <code>extra_args</code>
 (a named list of any additional arguments forwarded to the rotation engine).</p>
@@ -238,6 +278,8 @@ fits they run.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">max_iter</span>: <span style="color: #555555;">&lt;from type preset&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">abs_eigen</span>: <span style="color: #555555;">&lt;from type preset&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">start_method</span>: psych</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">fiml_max_iter</span>: 500</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">fiml_tol</span>: 1e-05</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># A preset with one knob pinned to a non-preset value:</span></span></span>
 <span class="r-in"><span><span class="fu">estimate_control</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"EFAtools"</span>, max_iter <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
@@ -249,6 +291,8 @@ fits they run.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">max_iter</span>: 500</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">abs_eigen</span>: <span style="color: #555555;">&lt;from type preset&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">start_method</span>: psych</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">fiml_max_iter</span>: 500</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">fiml_tol</span>: 1e-05</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Every knob supplied explicitly (type = "none"):</span></span></span>
 <span class="r-in"><span><span class="fu">estimate_control</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"none"</span>, init_comm <span class="op">=</span> <span class="st">"smc"</span>, criterion <span class="op">=</span> <span class="fl">1e-3</span>,</span></span>
@@ -261,6 +305,8 @@ fits they run.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">max_iter</span>: 300</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">abs_eigen</span>: TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">start_method</span>: psych</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">fiml_max_iter</span>: 500</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">fiml_tol</span>: 1e-05</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Rotation knobs taken from a preset:</span></span></span>

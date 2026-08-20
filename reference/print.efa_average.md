@@ -8,11 +8,15 @@ error/convergence/Heywood/admissibility rates, the indicator-to-factor
 correspondences, the averaged loadings (and, for oblique solutions, the
 factor intercorrelations), the variances accounted for, and the model
 fit. [`format()`](https://rdrr.io/r/base/format.html) assembles the same
-report and returns it as a character vector;
+report and returns it as a character vector; by default (`plot = FALSE`)
 [`print()`](https://rdrr.io/r/base/print.html) is
-`cat(format(x), sep = "\n")`. The lines follow the active console theme,
-so they are plain when colours are disabled (for example when captured
-into a file or stripped with
+`cat(format(x), sep = "\n")`. With `plot = TRUE` it additionally draws
+the loading plot, which is the one thing
+[`format()`](https://rdrr.io/r/base/format.html) cannot return: the
+printed lines are the same, but the call has a side effect beyond them.
+The lines follow the active console theme, so they are plain when
+colours are disabled (for example when captured into a file or stripped
+with
 [`cli::ansi_strip()`](https://cli.r-lib.org/reference/ansi_strip.html)).
 
 ## Usage
@@ -43,7 +47,10 @@ format(x, stat = c("average", "range"), ...)
   logical. Whether a plot of the average and min- max loadings should be
   created. Default is FALSE. If more than 10 factors are extracted, no
   plot is created. Only used by
-  [`print()`](https://rdrr.io/r/base/print.html).
+  [`print()`](https://rdrr.io/r/base/print.html);
+  [`plot.efa_average()`](https://mdsteiner.github.io/EFAtools/reference/plot.efa_average.md)
+  draws the same plot and returns it, so it is the route to take when
+  the plot object itself is wanted.
 
 - ...:
 
@@ -61,13 +68,13 @@ character vector with the report lines.
 # \donttest{
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ℹ Extracting data
-#> ✔ Extracting data [11ms]
+#> ✔ Extracting data [16ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [20ms]
+#> ✔ Reordering factors [29ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [16ms]
+#> ✔ Averaging data [23ms]
 #> 
 EFA_aver
 #> 

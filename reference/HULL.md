@@ -91,8 +91,8 @@ HULL(
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Default is 1000. This is
-  passed to
+  numeric. The number of datasets to simulate. Must be at least 1.
+  Default is 1000. This is passed to
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
 
 - percent:

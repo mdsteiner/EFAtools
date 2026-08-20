@@ -45,9 +45,12 @@ COMPARE(
   character. Whether and how elements / columns should be reordered. If
   "congruence" (default), the columns of `y` are matched to those of `x`
   by an optimal one-to-one assignment that maximizes Tucker's congruence
-  coefficient, so each factor is matched exactly once; if "names",
-  objects are reordered according to their names; if "none", no
-  reordering is done.
+  coefficient, so each factor is matched exactly once; with a single
+  column this reduces to matching its sign. It applies to matrices only,
+  and warns when `x` and `y` are vectors. If "names", the columns of a
+  matrix – or the elements of a vector – are put in alphabetical order
+  of their names; the rows of a matrix are assumed to be aligned already
+  and are left untouched. If "none", no reordering is done.
 
 - corres:
 
@@ -107,7 +110,10 @@ COMPARE(
 
   character. A vector of length two containing identifying labels for
   the two objects x and y that will be compared. These will be used as
-  labels on the x-axis of the plot. Default is "x" and "y".
+  labels on the x-axis of the plot, and to name the direction of the
+  signed elementwise differences in the printed report (see
+  [`print.efa_compare()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_compare.md)).
+  Default is "x" and "y".
 
 - plot:
 

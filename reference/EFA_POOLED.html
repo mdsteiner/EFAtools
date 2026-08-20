@@ -93,8 +93,9 @@ are available. For example, <code>p = .05</code> gives 95% intervals.</p></dd>
 <dd><p>Character. How rotated solutions are aligned across imputations
 before pooling: <code>"first_target"</code> (the default) aligns every imputation to the first
 imputation's rotated solution, while <code>"consensus"</code> refines a centroid target by
-Generalized Procrustes Analysis (orthogonal rotations only). See <em>Aligning solutions
-across imputations</em> in Details.</p></dd>
+Generalized Procrustes Analysis, started from the medoid imputation so that the
+pooled rotated solution does not depend on the order of <code>data_list</code> (orthogonal
+rotations only). See <em>Aligning solutions across imputations</em> in Details.</p></dd>
 
 
 <dt id="arg-align-unrotated">align_unrotated<a class="anchor" aria-label="anchor" href="#arg-align-unrotated"></a></dt>
@@ -117,12 +118,15 @@ fit indices</em> in Details.</p></dd>
 GPA-consensus iteration when <code>target_method = "consensus"</code>. Recognised tuning
 parameters include the convergence tolerances <code>tol</code> and <code>loss_tol</code>, the
 iteration bounds <code>min_iter</code> and <code>max_iter</code>, the target-update damping <code>alpha</code>,
-and the multi-start controls <code>multi_start</code> and <code>starts</code>.</p></dd>
+the multi-start controls <code>multi_start</code> and <code>starts</code>, and <code>start</code>, which
+overrides the medoid imputation the iteration is otherwise started from.</p></dd>
 
 
 <dt id="arg-procrustes-args">procrustes_args<a class="anchor" aria-label="anchor" href="#arg-procrustes-args"></a></dt>
-<dd><p>List of additional arguments passed to <code><a href="efa_procrustes.html">efa_procrustes()</a></code>
-for fixed-target alignment.</p></dd>
+<dd><p>List of <code><a href="efa_procrustes.html">efa_procrustes()</a></code> algorithm controls for
+fixed-target alignment, for example <code>oblique_maxit</code> or <code>oblique_random_starts</code>.
+The loadings <code>A</code>, the alignment <code>Target</code>, the <code>rotation</code> family, and the
+cross-product <code>S</code> are derived from the imputations and cannot be set here.</p></dd>
 
 
 <dt id="arg-rmsea-ci-level">rmsea_ci_level<a class="anchor" aria-label="anchor" href="#arg-rmsea-ci-level"></a></dt>
@@ -145,7 +149,17 @@ signals a deprecation warning; the superseded <code>EFA_POOLED()</code> accepts 
 <dd><p>Additional arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code> (e.g. <code>estimator</code>, <code>rotation</code>, <code>se</code>,
 <code>n_factors</code>, <code>N</code>). These select the estimator, rotation, standard-error method, and
 fit indices used for every imputation; see <code><a href="efa_fit.html">efa_fit()</a></code> for the available options, their
-properties, and which combinations are valid.</p></dd>
+properties, and which combinations are valid. Two of them shape the pooled object
+rather than a single fit: <code>seed</code> sets the random state once for the whole
+<code><a href="efa_mi.html">efa_mi()</a></code> call – every component bootstrap and every random-start rotation draws
+from it, so a seeded call is reproducible as a whole, and the caller's random stream
+is restored afterwards – and <code>b_boot</code> sets the number of bootstrap replicates drawn
+per imputation under <code>se = "np-boot"</code>, which is what the pooled within-imputation
+variances are estimated from and is recorded in <code>settings$b_boot</code>. The
+<code><a href="estimate_control.html">estimate_control()</a></code> and
+<code><a href="estimate_control.html">rotate_control()</a></code> objects are accepted through <code>...</code> as well, although they are not
+declared formals: pass them as <code>estimate_control =</code> / <code>rotate_control =</code> exactly as you
+would to <code><a href="efa_fit.html">efa_fit()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -127,12 +127,14 @@ Default is "promax".</p></dd>
 <dd><p>character vector. Any combination of "none" (default), "EFAtools",
 "psych", and "SPSS" can be entered. "none" allows the specification of various
 combinations of the arguments controlling both factor extraction methods and
-the rotations. The others ("EFAtools", "psych", and "SPSS"), control the execution
-of the respective factor extraction method and rotation to be in line with how
-it is executed in this package (i.e., the respective default procedure), in the
-psych package, and in SPSS. A specific psych implementation exists for PAF, ML, varimax,
-and promax. The SPSS implementation exists for PAF, varimax, and promax. For
-details, see <code><a href="efa_fit.html">efa_fit()</a></code>.</p></dd>
+the rotations. The others ("EFAtools", "psych", and "SPSS") take the extraction
+and rotation tuning of the respective implementation: this package's default
+procedure, the psych package's, and SPSS's. A specific psych implementation
+exists for PAF, ML, varimax, and promax. The SPSS implementation exists for
+PAF, varimax, and promax. For details, see <code><a href="efa_fit.html">efa_fit()</a></code>. The factor ordering is
+the one setting a named <code>type</code> does not bring here: every solution in the grid
+is fitted with the eigenvalue-based ordering, so that the solutions can be
+realigned to a common target before averaging.</p></dd>
 
 
 <dt id="arg-averaging">averaging<a class="anchor" aria-label="anchor" href="#arg-averaging"></a></dt>
@@ -227,7 +229,9 @@ or "oblique" is among the specified rotations. Default is <code>2:4</code>.</p><
 <dt id="arg-k-simplimax">k_simplimax<a class="anchor" aria-label="anchor" href="#arg-k-simplimax"></a></dt>
 <dd><p>numeric. The number of 'close to zero loadings' for the
 simplimax rotation if "simplimax" or "oblique" is among the specified rotations. Default
-is <code>ncol(x)</code>, where x is the entered data.</p></dd>
+is <code>ncol(x)</code>, where x is the entered data. It counts loadings, so each value must be a
+whole number no larger than the number of loadings in the solution; a simplimax fit
+given anything else fails and is reported as an errored solution in the grid.</p></dd>
 
 
 <dt id="arg-p-type">P_type<a class="anchor" aria-label="anchor" href="#arg-p-type"></a></dt>

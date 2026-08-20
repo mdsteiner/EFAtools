@@ -91,8 +91,12 @@ factor analysis output to compare to x.</p></dd>
 <dd><p>character. Whether and how elements / columns should be
 reordered. If "congruence" (default), the columns of <code>y</code> are matched to those
 of <code>x</code> by an optimal one-to-one assignment that maximizes Tucker's congruence
-coefficient, so each factor is matched exactly once; if "names", objects are
-reordered according to their names; if "none", no reordering is done.</p></dd>
+coefficient, so each factor is matched exactly once; with a single column this
+reduces to matching its sign. It applies to matrices only, and warns when <code>x</code>
+and <code>y</code> are vectors. If "names", the columns of a matrix – or the elements of
+a vector – are put in alphabetical order of their names; the rows of a matrix
+are assumed to be aligned already and are left untouched. If "none", no
+reordering is done.</p></dd>
 
 
 <dt id="arg-corres">corres<a class="anchor" aria-label="anchor" href="#arg-corres"></a></dt>
@@ -147,7 +151,9 @@ loading makes the correspondence counts undefined (<code>NA</code>). Default is 
 <dt id="arg-x-labels">x_labels<a class="anchor" aria-label="anchor" href="#arg-x-labels"></a></dt>
 <dd><p>character. A vector of length two containing identifying
 labels for the two objects x and y that will be compared. These will be used
-as labels on the x-axis of the plot. Default is "x" and "y".</p></dd>
+as labels on the x-axis of the plot, and to name the direction of the signed
+elementwise differences in the printed report (see <code><a href="print.efa_compare.html">print.efa_compare()</a></code>).
+Default is "x" and "y".</p></dd>
 
 
 <dt id="arg-plot">plot<a class="anchor" aria-label="anchor" href="#arg-plot"></a></dt>
@@ -196,11 +202,15 @@ parts, or <code>na.rm = FALSE</code> and an element is missing.</p></dd>
 
 <dt>diff_corres</dt>
 <dd><p>The number of differing variable-to-factor correspondences
-between x and y, when only the highest loading is considered.</p></dd>
+between x and y, when only the highest loading is considered. <code>NA</code> whenever the
+correspondences were not compared: for vector input, for a matrix with a single
+column, with <code>corres = FALSE</code>, and when a loading is missing under
+<code>na.rm = FALSE</code>.</p></dd>
 
 <dt>diff_corres_cross</dt>
 <dd><p>The number of differing variable-to-factor correspondences
-between x and y when all loadings <code>&gt;= thresh</code> are considered.</p></dd>
+between x and y when all loadings <code>&gt;= thresh</code> are considered. <code>NA</code> under the same
+conditions as <code>diff_corres</code>.</p></dd>
 
 <dt>g</dt>
 <dd><p>The root mean squared distance (RMSE) between x and y.</p></dd>
@@ -239,9 +249,12 @@ one solution onto another before comparing.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Median absolute difference: <span style="color: #00BB00; font-weight: bold;"> .0008</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Root mean squared distance (RMSE): <span style="font-weight: bold;"> .0048</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Max decimals where all numbers agree in absolute value: <span style="color: #BB0000; font-weight: bold;">0</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading), <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading),</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Elementwise differences</span> ─────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Differences: SPSS - psych.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">F1</span>      <span style="font-weight: bold;">F2</span>      <span style="font-weight: bold;">F3</span>      <span style="font-weight: bold;">F4</span>      <span style="font-weight: bold;">F5</span>      <span style="font-weight: bold;">F6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> V1    .0000  -.0001  -.0003  <span style="color: #BB0000;">-.0053</span>  <span style="color: #BB0000;">-.0015</span>  <span style="color: #BB0000;">-.0012</span></span>

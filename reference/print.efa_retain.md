@@ -43,7 +43,7 @@ efa_retain(test_models$baseline$cormat, criteria = c("EKC", "SMT"), N = 500)
 #> 4 suggestions from 2 criteria, ranging from 2 to 3 factors (most common: 3).
 #> 
 #> Empirical Kaiser Criterion
-#> • Original implementation (Braeken & van Assen, 2017): 3
+#> • Braeken & van Assen (2017): 3
 #> 
 #> Sequential model tests
 #> • Sequential chi-square model tests: 3

@@ -78,7 +78,7 @@ https://doi.org/10.1037/met0000200</p>
 Human Assessment: Honoring Douglas N. Jackson at Seventy</em> (pp. 41–71). Boston: Kluwer.</p>
 <p>Zwick, W. R., &amp; Velicer, W. F. (1986). Comparison of five rules for
 determining the number of components to retain. <em>Psychological Bulletin, 99</em>,
-432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432</p>
+432–442. https://doi.org/10.1037/0033-2909.99.3.432</p>
     </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
@@ -108,7 +108,8 @@ print method). MAP has no plot; <code><a href="plot.efa_retention.html">plot.efa
 message for it. Its main elements are:</p><ul><li><p><code>n_factors</code>: A named numeric vector (<code>"TR2"</code>, <code>"TR4"</code>) with the index
 \(m\) that minimizes the original (TR2) and revised (TR4) MAP criterion.</p></li>
 <li><p><code>results</code>: A list with one record per criterion, each holding the
-criterion values over \(m\).</p></li>
+criterion values over \(m\) and, in <code>m_last</code>, the largest \(m\) at which
+the criterion could be evaluated (see details).</p></li>
 <li><p><code>settings</code>: A list containing <code>use</code> and <code>cor_method</code>.</p></li>
 </ul></div>
     <div class="section level2">
@@ -131,12 +132,26 @@ correlations relative to the large ones, which can sharpen the minimum.
 Unlike TR2, \(\mathrm{tr}(M^4)\) is <em>not</em> the sum of the fourth powers of the
 individual partial correlations; the matrix power is intended and is what
 Velicer, Eaton, and Fava (2000) describe.</p></li>
-</ul><p>MAP is most dependable when the components are well determined, that is with many
+</ul><p>Both criteria are returned for every call and they can suggest different numbers
+of factors on the same correlation matrix. Both are in use in the literature and
+neither is treated as the default here, so be sure to state which of the two you
+report, as you would for any other analysis choice.</p>
+<p>MAP is most dependable when the components are well determined, that is with many
 indicators per factor and substantial loadings. It has a well-documented tendency
 to under-extract, particularly with few indicators per factor or weak loadings
 (Zwick &amp; Velicer, 1986; Auerswald &amp; Moshagen, 2019), so it is best read as a lower
 bound and paired with a criterion that errs in the other direction, such as the
 Kaiser-Guttman criterion (<code><a href="efa_kgc.html">efa_kgc()</a></code>).</p>
+<p>The criterion is evaluated over \(m = 0, \ldots, p - 1\). Each step standardizes
+the partial covariance matrix by its residual standard deviations, which requires
+every residual variance to stay positive. Partialling out all but one component
+leaves a rank-one residual, so the final point \(m = p - 1\) is undefined for
+most correlation matrices and is routinely returned as <code>NA</code>. A residual variance
+can also reach zero earlier, most often on a near-singular matrix; the search then
+stops there, the criterion values that could be computed are kept, the remaining
+values stay <code>NA</code>, and a warning (class <code>efa_map_truncated</code>) reports how far the
+grid was searched. In that case the suggested \(m\) is the minimum over the
+evaluated range only, so it should be read together with the returned series.</p>
 <p>A non-positive-definite input correlation matrix (e.g. from sampling error) is
 smoothed with <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth()</a></code>.</p>
     </div>

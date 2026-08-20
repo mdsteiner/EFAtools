@@ -113,13 +113,16 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
   "psych", and "SPSS" can be entered. "none" allows the specification of
   various combinations of the arguments controlling both factor
   extraction methods and the rotations. The others ("EFAtools", "psych",
-  and "SPSS"), control the execution of the respective factor extraction
-  method and rotation to be in line with how it is executed in this
-  package (i.e., the respective default procedure), in the psych
-  package, and in SPSS. A specific psych implementation exists for PAF,
-  ML, varimax, and promax. The SPSS implementation exists for PAF,
-  varimax, and promax. For details, see
+  and "SPSS") take the extraction and rotation tuning of the respective
+  implementation: this package's default procedure, the psych package's,
+  and SPSS's. A specific psych implementation exists for PAF, ML,
+  varimax, and promax. The SPSS implementation exists for PAF, varimax,
+  and promax. For details, see
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
+  The factor ordering is the one setting a named `type` does not bring
+  here: every solution in the grid is fitted with the eigenvalue-based
+  ordering, so that the solutions can be realigned to a common target
+  before averaging.
 
 - averaging:
 
@@ -223,7 +226,10 @@ factor analysis. Psychometrika, 23, 187–200. doi: 10.1007/BF02289233
 
   numeric. The number of 'close to zero loadings' for the simplimax
   rotation if "simplimax" or "oblique" is among the specified rotations.
-  Default is `ncol(x)`, where x is the entered data.
+  Default is `ncol(x)`, where x is the entered data. It counts loadings,
+  so each value must be a whole number no larger than the number of
+  loadings in the solution; a simplimax fit given anything else fails
+  and is reported as an errored solution in the grid.
 
 - p_type:
 
@@ -323,7 +329,8 @@ following `averaging`.
   A list with the average, standard deviation, minimum, maximum, and
   range of the final loadings across the factor solutions. If rotation
   was "none", the unrotated loadings, otherwise the rotated loadings
-  (pattern coefficients).
+  (pattern coefficients). `average` is a cell-wise summary of the
+  solutions and not itself a fitted solution (see Details).
 
 - Phi:
 
@@ -344,7 +351,10 @@ following `averaging`.
   range of explained variances and sums of squared loadings across the
   factor solutions. Based on the unrotated loadings if rotation was
   "none" or only one factor was extracted, otherwise on the rotated
-  loadings.
+  loadings. Each entry is a matrix with rows `"SS loadings"`,
+  `"Prop Tot Var"`, and `"Prop Comm Var"`; the last is omitted for a
+  single-factor solution, where it is identically 1, so those matrices
+  have two rows there and three otherwise.
 
 - fit_indices:
 
@@ -382,12 +392,19 @@ following `averaging`.
 
 - settings:
 
-  A list of the settings used.
+  A list of the settings used, including `seed` (`NULL` when none was
+  supplied).
 
 If the supplied arguments admit only a single EFA, there is nothing to
 average across: that one
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-object is returned instead, with a warning.
+object is returned instead, with a warning. Its `settings` are that
+fit's, with `seed` recording the seed the run was governed by. They
+therefore describe the concrete arguments the fit ran under rather than
+the `type` that supplied them: a row taken from a named preset records
+`type = "none"` together with the preset's resolved values (for example
+`max_iter = 25` for "SPSS"), and `order_type = "eigen"` as for every
+other row in the grid.
 
 ## Details
 
@@ -447,6 +464,24 @@ The arguments `k_promax` and `p_type` are only evaluated if "promax" or
 
 The argument `start_method` is only evaluated if "ML" is included in
 `estimator`.
+
+Every solution in the grid is fitted with the eigenvalue-based factor
+ordering, including under a named `type`: the solutions are realigned to
+a common target before averaging, so a per-fit ordering (SPSS orders by
+the sum of squared loadings) would not survive into the averaged result.
+That target is the first solution the grid retains, in grid order;
+solutions dropped for an error, non-convergence, or a Heywood case
+cannot become it. The averaged loadings are therefore in the factor
+order and sign of that solution. This is the one setting a named `type`
+does not carry, and it is visible in the two places the individual fits
+are: the solutions returned in `efa_list` are eigenvalue-ordered, and so
+is the single
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+object returned when the grid collapses to one row. Their loadings can
+therefore appear in a different factor order than the same fit run
+through
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+under that `type`, even though the solutions are the same.
 
 To avoid a bias in the averaged factor solutions from problematic
 solutions, these are excluded prior to averaging. A solution is deemed
@@ -534,39 +569,39 @@ Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
                          start_method = "psych")
 #> ℹ Extracting data
-#> ✔ Extracting data [9ms]
+#> ✔ Extracting data [13ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [27ms]
+#> ✔ Reordering factors [38ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [23ms]
+#> ✔ Averaging data [43ms]
 #> 
 
 # \donttest{
 # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ℹ Extracting data
-#> ✔ Extracting data [11ms]
+#> ✔ Extracting data [16ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [19ms]
+#> ✔ Reordering factors [30ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [16ms]
+#> ✔ Averaging data [24ms]
 #> 
 
 # Use median instead of mean for averaging (72 EFAs)
 Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                            averaging = "median")
 #> ℹ Extracting data
-#> ✔ Extracting data [10ms]
+#> ✔ Extracting data [15ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [19ms]
+#> ✔ Reordering factors [29ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [20ms]
+#> ✔ Averaging data [29ms]
 #> 
 
 # Averaging across different implementations of PAF and promax rotation,
@@ -574,13 +609,13 @@ Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                              estimator = c("PAF", "ULS", "ML"))
 #> ℹ Extracting data
-#> ✔ Extracting data [12ms]
+#> ✔ Extracting data [18ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [30ms]
+#> ✔ Reordering factors [42ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [16ms]
+#> ✔ Averaging data [24ms]
 #> 
 
 # Averaging across different oblique rotation methods, using one implementation
@@ -589,13 +624,13 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
 #> ℹ Extracting data
-#> ✔ Extracting data [10ms]
+#> ✔ Extracting data [11ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [20ms]
+#> ✔ Reordering factors [21ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [23ms]
+#> ✔ Averaging data [24ms]
 #> 
 # }
 

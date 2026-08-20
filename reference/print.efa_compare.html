@@ -120,6 +120,10 @@ character vector with the report lines.</p>
     <p>The line reporting the minimum number of decimals provided is shown only when it
 carries information: two ordinary double matrices carry the full double precision,
 for which the count is uninformative and the line is omitted.</p>
+<p>The summary statistics are absolute differences, so they carry no direction. The
+elementwise differences are signed, and the table is headed by the direction of the
+subtraction, named with the <code>x_labels</code> recorded by <code><a href="efa_compare.html">efa_compare()</a></code> (<code>"x"</code> and <code>"y"</code> by
+default): a negative cell means the first solution is the lower of the two there.</p>
     </div>
 
     <div class="section level2">
@@ -147,9 +151,12 @@ for which the count is uninformative and the line is omitted.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Median absolute difference: <span style="color: #00BB00; font-weight: bold;"> .0009</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Root mean squared distance (RMSE): <span style="font-weight: bold;"> .0025</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Max decimals where all numbers agree in absolute value: <span style="color: #BB0000; font-weight: bold;">1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading), <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading),</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Elementwise differences</span> ─────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Differences: SPSS - psych.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">F1</span>      <span style="font-weight: bold;">F2</span>      <span style="font-weight: bold;">F3</span>      <span style="font-weight: bold;">F4</span>      <span style="font-weight: bold;">F5</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> GS    .0004   .0002  -.0002   .0002  <span style="color: #BB0000;">-.0034</span></span>
@@ -176,9 +183,12 @@ for which the count is uninformative and the line is omitted.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Median absolute difference: <span style="color: #00BB00; font-weight: bold;"> .0009</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Root mean squared distance (RMSE): <span style="font-weight: bold;"> .0025</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Max decimals where all numbers agree in absolute value: <span style="color: #BB0000; font-weight: bold;">1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading), <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading),</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Elementwise differences</span> ─────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Differences: SPSS - psych.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="font-weight: bold;">F1</span>      <span style="font-weight: bold;">F2</span>      <span style="font-weight: bold;">F3</span>      <span style="font-weight: bold;">F4</span>      <span style="font-weight: bold;">F5</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> GS    .0004   .0002  -.0002   .0002  <span style="color: #BB0000;">-.0034</span></span>
@@ -205,7 +215,8 @@ for which the count is uninformative and the line is omitted.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Median absolute difference: <span style="color: #00BB00; font-weight: bold;"> .00</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Root mean squared distance (RMSE): <span style="font-weight: bold;"> .00</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Max decimals where all numbers agree in absolute value: <span style="color: #BB0000; font-weight: bold;">1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading), <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading),</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

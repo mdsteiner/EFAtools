@@ -45,9 +45,10 @@ efa_mi(
   Character. How rotated solutions are aligned across imputations before
   pooling: `"first_target"` (the default) aligns every imputation to the
   first imputation's rotated solution, while `"consensus"` refines a
-  centroid target by Generalized Procrustes Analysis (orthogonal
-  rotations only). See *Aligning solutions across imputations* in
-  Details.
+  centroid target by Generalized Procrustes Analysis, started from the
+  medoid imputation so that the pooled rotated solution does not depend
+  on the order of `data_list` (orthogonal rotations only). See *Aligning
+  solutions across imputations* in Details.
 
 - align_unrotated:
 
@@ -71,13 +72,18 @@ efa_mi(
   when `target_method = "consensus"`. Recognised tuning parameters
   include the convergence tolerances `tol` and `loss_tol`, the iteration
   bounds `min_iter` and `max_iter`, the target-update damping `alpha`,
-  and the multi-start controls `multi_start` and `starts`.
+  the multi-start controls `multi_start` and `starts`, and `start`,
+  which overrides the medoid imputation the iteration is otherwise
+  started from.
 
 - procrustes_args:
 
-  List of additional arguments passed to
+  List of
   [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)
-  for fixed-target alignment.
+  algorithm controls for fixed-target alignment, for example
+  `oblique_maxit` or `oblique_random_starts`. The loadings `A`, the
+  alignment `Target`, the `rotation` family, and the cross-product `S`
+  are derived from the imputations and cannot be set here.
 
 - rmsea_ci_level:
 
@@ -107,7 +113,21 @@ efa_mi(
   for every imputation; see
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   for the available options, their properties, and which combinations
-  are valid.
+  are valid. Two of them shape the pooled object rather than a single
+  fit: `seed` sets the random state once for the whole `efa_mi()` call –
+  every component bootstrap and every random-start rotation draws from
+  it, so a seeded call is reproducible as a whole, and the caller's
+  random stream is restored afterwards – and `b_boot` sets the number of
+  bootstrap replicates drawn per imputation under `se = "np-boot"`,
+  which is what the pooled within-imputation variances are estimated
+  from and is recorded in `settings$b_boot`. The
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  and
+  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  objects are accepted through `...` as well, although they are not
+  declared formals: pass them as `estimate_control =` /
+  `rotate_control =` exactly as you would to
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
 
 ## Value
 
@@ -120,13 +140,46 @@ dispatch working. In addition to the slots inherited from
 (including `SE`, `CI`, and, on the bootstrap path, `replicates`), the
 object carries:
 
+- SE, CI:
+
+  Pooled standard errors and confidence intervals, named as
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  names them: where a pooled communality standard error and interval are
+  produced, they are `SE$communalities` and `CI$communalities` on every
+  route. The Rubin routes (`se = "information"`, `se = "np-boot"`)
+  additionally return them under the compatibility alias `h2`, which
+  holds the same values. The analytic route builds the communality
+  family only when a rotation was requested; an unrotated analytic pool
+  reports `uniquenesses` instead.
+
+- fit_indices:
+
+  The pooled fit indices. Every route reports `chi`, `df`, `p_chi`,
+  `CAF`, `CFI`, `TLI`, `RMSEA`, `RMSEA_LB`, `RMSEA_UB`, `AIC`, `BIC`,
+  `ECVI`, `RMSR`, `SRMR`, `chi_null`, `df_null`, `p_null`, and
+  `pool_method` under those names and in that order. `pool_method`
+  records the rule the model chi-square was pooled with (`"D2"`); it is
+  `NA` on the `se = "sandwich"` (MI2S) path, which fits once on the
+  pooled inputs and reports that fit's own scaled statistic rather than
+  pooling several. That path also carries the quantities a scaled
+  statistic comes with – `Fm`, `chi_unscaled`, `chi_scaled_type`,
+  `chi_scaling`, `chi_shift`, `chi_mean_adjusted`, `chi_mean_var`, and
+  `df_mean_var` – after the common block, so the two schemas are not
+  identical.
+
+- standardized_residuals:
+
+  The pooled residuals divided by their pooled bootstrap standard
+  errors, with a zero diagonal. Returned on the `se = "np-boot"` path
+  only, the one route that pools a residual standard error.
+
 - MI:
 
   Multiple-imputation diagnostics for each pooled parameter family. On
-  the bootstrap path: `unrot_loadings`, `h2`, `residuals`, optionally
-  `rot_loadings`, `Phi`, `Structure`, and `fit_indices_descriptive`,
-  plus integer vectors `bootstrap_source_failures` (replicates the
-  component
+  the bootstrap path: `unrot_loadings`, `communalities`, `residuals`,
+  optionally `rot_loadings`, `Phi`, `Structure`, and
+  `fit_indices_descriptive`, plus integer vectors
+  `bootstrap_source_failures` (replicates the component
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   could not fit), `bootstrap_rotation_failures` (replicates whose
   Procrustes alignment to the target was invalid), and
@@ -134,18 +187,23 @@ object carries:
   `B - source - rotation` failures). Both paths use the plain
   Rubin (1987) df. On the analytic path (`se = "information"`):
   `unrot_loadings` and `uniquenesses`, plus, when a rotation was
-  requested, `rot_loadings`, `h2`, and (oblique) `Phi` and `Structure`.
-  Each per-family entry is a list with `RIV` (relative increase in
-  variance), `FMI` (the fraction of missing information, reported as
-  Rubin's asymptotic \\\lambda = RIV / (1 + RIV)\\, equal to
-  `lavaan.mi`'s `fmi`), and `df`; the rotated families on the analytic
-  path additionally carry a `method` string recording the gauge
-  alignment used (`"gauge_invariant"` for communalities and
+  requested, `rot_loadings`, `communalities`, and (oblique) `Phi` and
+  `Structure`. The communality family is keyed by its canonical name
+  here, without the `SE`/`CI` alias, so each family is counted once in
+  the printed FMI/RIV summary. Each per-family entry is a list with
+  `RIV` (relative increase in variance), `FMI` (the fraction of missing
+  information, reported as Rubin's asymptotic \\\lambda = RIV / (1 +
+  RIV)\\, equal to `lavaan.mi`'s `fmi`), and `df`; the rotated families
+  on the analytic path additionally carry a `method` string recording
+  the gauge alignment used (`"gauge_invariant"` for communalities and
   `"signed_permutation_approx"` for rotated loadings and, for oblique
   rotations, factor correlations and structure coefficients).
-  `fit_indices_descriptive`, on the bootstrap path, pools every
-  per-imputation fit index, so the structural constants among them
-  (`df`, `df_null`) appear with a standard error of 0.
+  `fit_indices_descriptive`, on the bootstrap path, pools every fit
+  index the bootstrap replicates carry, so the structural constants
+  among them (`df`, `df_null`) appear with a standard error of 0. The
+  RMSEA confidence bounds are not among them: the replicate fits run
+  without confidence intervals, so no per-replicate value exists to
+  pool.
 
 - mi_fit:
 
@@ -153,8 +211,11 @@ object carries:
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
   fit on the pooled correlation matrix \\\bar r\\ and pooled asymptotic
   covariance \\\tilde\Gamma\\. Its `orig_R` is \\\bar r\\ and its
-  `Gamma` is \\\tilde\Gamma\\; the pooled `SE`, `CI`, and `fit_indices`
-  are taken from it. `MI` is `NULL` on this path because the imputation
+  `Gamma` is \\\tilde\Gamma\\; the pooled `SE` and `CI` are taken from
+  it, as are the pooled `fit_indices` (put into the common order above
+  and extended with `pool_method`, while `mi_fit` keeps
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)'s
+  own layout). `MI` is `NULL` on this path because the imputation
   uncertainty is carried by \\\tilde\Gamma\\ rather than by
   per-parameter Rubin pooling.
 
@@ -168,14 +229,34 @@ object carries:
   fraction of missing information it implies), and `chi_bar_naive` is
   the plain mean of the per-imputation statistics for comparison; the
   `*_null` entries are the same quantities for the independence
-  baseline. `chi_cfi` and `chi_null_cfi` are the pooled model and
-  baseline **chi-squares** on the common \\N - 1\\ noncentrality scale.
-  `chi_cfi` is the statistic the reported RMSEA is formed from; the pair
-  is also the basis on which `lavaan.mi`/`semTools` form pooled
-  incremental indices, so the reference CFI is
-  `1 - (chi_cfi - df) / (chi_null_cfi - df_null)` (and analogously for
-  TLI) – a different quantity from the reported CFI/TLI, which average
-  the per-imputation indices.
+  baseline. `D2_F` is the rule's raw statistic and is reported
+  unfloored, so it is negative whenever the between-imputation
+  variability of the component statistics exceeds the pooled discrepancy
+  – a diagnostic of the pool rather than a fit statistic. The reported
+  fit is not affected: the pooled chi-square is floored at zero and its
+  p-value is 1 in that case. `chi_cfi` and `chi_null_cfi` are the pooled
+  model and baseline **chi-squares** on the common \\N - 1\\
+  noncentrality scale. `chi_cfi` is the statistic the reported RMSEA is
+  formed from; the pair is also the basis on which
+  `lavaan.mi`/`semTools` form pooled incremental indices, so the
+  reference CFI is `1 - (chi_cfi - df) / (chi_null_cfi - df_null)` (and
+  analogously for TLI) – a different quantity from the reported CFI/TLI,
+  which average the per-imputation indices.
+
+- mi_admissibility:
+
+  Admissibility and convergence of the component fits, kept on the
+  pooled object so a saved solution carries the record independently of
+  `fits`: `m` (the number of imputations that entered the pool),
+  `heywood_imputations` (the indices of the fits with at least one
+  flagged variable), `n_heywood_items` (the number of flagged variables
+  per imputation), `nonconverged` (the indices whose extraction reported
+  a non-zero convergence code), and `iter` (the iterations each
+  extraction used). Averaging aligned solutions pulls boundary
+  communalities back inside the admissible range, so a pooled matrix
+  with no Heywood case can still rest on component fits that had them;
+  [`summary()`](https://rdrr.io/r/base/summary.html) reports the pooled
+  count together with these.
 
 - fits:
 
@@ -272,12 +353,28 @@ stays internally consistent.
 imputation's rotated solution by one Procrustes rotation each.
 `"consensus"` instead refines a centroid target by Generalized
 Procrustes Analysis (Gower 1975; van Ginkel & Kroonenberg 2014;
-Lorenzo-Seva & Van Ginkel 2016). The two give the same pooled estimate
-for orthogonal rotations (consensus is just more expensive), and
-`"consensus"` is only supported there. Anchoring on the first imputation
-can understate the between-imputation variability when the imputations
-disagree substantially, whereas `"consensus"` is more robust to an
-atypical first imputation (van Ginkel & Kroonenberg 2014).
+Lorenzo-Seva & Van Ginkel 2016), starting from the *medoid* imputation's
+rotated solution – the one closest in aligned squared distance to all
+the others. `"consensus"` is supported for orthogonal rotations only.
+
+The two differ in the rotational gauge the pooled solution ends up in,
+and so in how it responds to the order of `data_list`. The GPA iteration
+moves its target toward the centroid but keeps the gauge of the solution
+it started from, so starting it at the medoid – a property of the set,
+not of the list order – makes the pooled rotated solution invariant to
+that order, as the pooled unrotated solution already is.
+`"first_target"` anchors on the first imputation by construction: an
+atypical first imputation fixes the orientation for every other one, and
+permuting `data_list` moves the pooled pattern, by a few hundredths of a
+loading unit on a mildly heterogeneous set and by more when the
+imputations disagree substantially (the factor correlations of an
+oblique solution move with it). Where the two anchors coincide – and,
+more generally, where the imputations agree – the two methods give
+effectively the same pooled estimate and `"consensus"` is simply the
+more expensive; where they do not, the pooled patterns differ by the
+rotation between the two gauges. Passing `start` through
+`consensus_args` overrides the medoid anchor and makes the consensus
+order dependent again.
 
 `align_unrotated` controls how unrotated loadings are aligned before
 pooling: `"signed_tucker_congruence"` (the default) matches them up to
@@ -443,16 +540,31 @@ signals `efa_flat_knob_in_dots` and `efa_renamed_arg`) so they can be
 caught by class. The ones most likely to be encountered:
 
 - **Inputs.** `efa_pooled_min_fits` (at least two fits are required);
-  `efa_pooled_mixed_se` (every imputation must use the same `se`).
+  `efa_pooled_fit_failed` (an imputation could not be fitted; the
+  message names it and carries the
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  condition as its parent); `efa_pooled_mixed_se` (the component fits
+  recorded different `se` methods, which a single `se` argument can
+  still produce:
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  cannot bootstrap a correlation matrix and records `se = "none"` for
+  it, so one correlation matrix among raw datasets under
+  `se = "np-boot"` is the way this is usually reached).
 
 - **Alignment.** `efa_consensus_oblique_unsupported`
-  (`target_method = "consensus"` is orthogonal-only).
+  (`target_method = "consensus"` is orthogonal-only);
+  `efa_pooled_bad_procrustes_args` (`procrustes_args` may only carry
+  [`efa_procrustes()`](https://mdsteiner.github.io/EFAtools/reference/efa_procrustes.md)
+  algorithm controls).
 
 - **Standard errors.** `efa_pooled_se_unavailable` (a warning: pooled
   SEs could not be produced, so only point estimates are returned);
   `efa_pooled_no_vcov` and `efa_pooled_unreliable_vcov` (the analytic
   `"procrustes"` path needs a reliable `vcov_unrot_loadings` on every
-  fit).
+  fit); `efa_pooled_unrotated_se_unreliable` and
+  `efa_pooled_rotated_se_unreliable` (warnings: an imputation carried
+  NA-filled analytic standard errors, so the corresponding pooled block
+  is returned as `NA`).
 
 - **Two-stage (`se = "sandwich"`).**
   `efa_pooled_mi2s_inputs_inconsistent` (every imputation must use
@@ -554,12 +666,12 @@ Andreas Soteriades, Markus Steiner
 dat_list <- lapply(1:3, function(x) GRiPS_raw[sample(1:nrow(GRiPS_raw), replace = TRUE),])
 mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mod
 #> 
-#> Pooled EFA across 3 imputations performed with estimator = 'ML' and rotation = 'none'.
-#> Pooling settings: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+#> Pooled EFA across 3 imputations performed with estimator = 'ML' and
+#>   rotation = 'none'.
+#> Pooling settings: align_unrotated = 'signed_tucker_congruence',
+#>   fit_pool_method = 'D2'.
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
@@ -604,12 +716,12 @@ mod
 # add computation of standard errors and CIs
 mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML", se = "np-boot")
 #> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mod
 #> 
-#> Pooled EFA across 3 imputations performed with estimator = 'ML' and rotation = 'none'.
-#> Pooling settings: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+#> Pooled EFA across 3 imputations performed with estimator = 'ML' and
+#>   rotation = 'none'.
+#> Pooling settings: align_unrotated = 'signed_tucker_congruence',
+#>   fit_pool_method = 'D2'.
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 

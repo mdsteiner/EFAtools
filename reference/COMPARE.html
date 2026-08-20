@@ -94,8 +94,12 @@ factor analysis output to compare to x.</p></dd>
 <dd><p>character. Whether and how elements / columns should be
 reordered. If "congruence" (default), the columns of <code>y</code> are matched to those
 of <code>x</code> by an optimal one-to-one assignment that maximizes Tucker's congruence
-coefficient, so each factor is matched exactly once; if "names", objects are
-reordered according to their names; if "none", no reordering is done.</p></dd>
+coefficient, so each factor is matched exactly once; with a single column this
+reduces to matching its sign. It applies to matrices only, and warns when <code>x</code>
+and <code>y</code> are vectors. If "names", the columns of a matrix – or the elements of
+a vector – are put in alphabetical order of their names; the rows of a matrix
+are assumed to be aligned already and are left untouched. If "none", no
+reordering is done.</p></dd>
 
 
 <dt id="arg-corres">corres<a class="anchor" aria-label="anchor" href="#arg-corres"></a></dt>
@@ -150,7 +154,9 @@ loading makes the correspondence counts undefined (<code>NA</code>). Default is 
 <dt id="arg-x-labels">x_labels<a class="anchor" aria-label="anchor" href="#arg-x-labels"></a></dt>
 <dd><p>character. A vector of length two containing identifying
 labels for the two objects x and y that will be compared. These will be used
-as labels on the x-axis of the plot. Default is "x" and "y".</p></dd>
+as labels on the x-axis of the plot, and to name the direction of the signed
+elementwise differences in the printed report (see <code><a href="print.efa_compare.html">print.efa_compare()</a></code>).
+Default is "x" and "y".</p></dd>
 
 
 <dt id="arg-plot">plot<a class="anchor" aria-label="anchor" href="#arg-plot"></a></dt>

@@ -415,8 +415,10 @@ efa_power(p = 18, k = 3, N = 200, type = "notclose")
 ```
 
 For a multiple-group model, `group` divides the noncentrality across
-groups. The reported `N` is the *total* across groups – 259 in all,
-about 130 per group – and `N_per_group` carries that per-group figure:
+groups. The reported `N` is the *total* across groups – 260 in all, 130
+per group – and `N_per_group` carries that per-group figure. All groups
+have the same size, so a required total is rounded up to the next
+multiple of `group`:
 
 ``` r
 
@@ -428,10 +430,10 @@ pw_2g
 #> Test of close fit: H0 RMSEA ≤ .050 vs. H1 RMSEA = .080.
 #> alpha = .050 · df = 102 · groups = 2
 #> 
-#> Required N = 259 (total; 129.5 per group) for a power of .800 (achieved .801).
-#> Critical value χ²(102) = 166.326 · noncentrality H0 = 32.895, H1 = 84.211.
+#> Required N = 260 (total; 130 per group) for a power of .800 (achieved .803).
+#> Critical value χ²(102) = 166.477 · noncentrality H0 = 33.023, H1 = 84.538.
 pw_2g$N_per_group
-#> [1] 129.5
+#> [1] 130
 ```
 
 The [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method

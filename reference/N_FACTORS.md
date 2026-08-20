@@ -32,7 +32,7 @@ N_FACTORS(
   n_datasets = 1000,
   percent = 95,
   decision_rule = c("means", "percentile", "crawford"),
-  ekc_type = c("BvA2017"),
+  ekc_type = lifecycle::deprecated(),
   n_datasets_nest = 1000,
   alpha_nest = 0.05,
   show_progress = FALSE,
@@ -212,11 +212,12 @@ N_FACTORS(
 
 - ekc_type:
 
-  character. Passed to the `type` argument of
-  [`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md).
-  Either `"BvA2017"` for the original implementation by Braeken and van
-  Assen (2017), or `"AM2019"` for the adapted implementation by
-  Auerswald and Moshagen (2019).
+  **\[deprecated\]** Accepted and ignored. It selected between two ways
+  to compute the
+  [`efa_ekc()`](https://mdsteiner.github.io/EFAtools/reference/efa_ekc.md)
+  reference values. The `"AM2019"` reference values do not depend on the
+  observed eigenvalues, so they do not apply the empirical correction
+  that defines the criterion, and they are no longer computed.
 
 - n_datasets_nest:
 

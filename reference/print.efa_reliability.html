@@ -118,32 +118,36 @@ character vector with the report lines.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Total variance from the correlation matrix.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Correlated-factors solution: with no general factor, each factor's subscale</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> omega equals its total omega.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Correlated-factors solution: a factor's total omega counts the true score</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> variance its composite receives from every factor, through its cross-loadings</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and any factor correlations; its subscale omega counts only that factor's own</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> contribution.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Reliability coefficients</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      <span style="font-weight: bold;">tot</span>   <span style="font-weight: bold;">sub</span>  <span style="font-weight: bold;">alpha</span>    <span style="font-weight: bold;">H</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> g   .883         .868</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F1  .734  .734   .768  .760</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F2  .680  .680   .763  .753</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F3  .667  .667   .743  .738</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         <span style="font-weight: bold;">tot</span>   <span style="font-weight: bold;">sub</span>  <span style="font-weight: bold;">alpha</span>    <span style="font-weight: bold;">H</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> total  .883         .868</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1     .769  .734   .768  .760</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2     .765  .680   .763  .753</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3     .745  .667   .743  .738</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># format() returns the same lines as a character vector:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">rel</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Total variance from the correlation matrix.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Correlated-factors solution: with no general factor, each factor's subscale</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> omega equals its total omega.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Correlated-factors solution: a factor's total omega counts the true score</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> variance its composite receives from every factor, through its cross-loadings</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and any factor correlations; its subscale omega counts only that factor's own</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> contribution.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Reliability coefficients</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      <span style="font-weight: bold;">tot</span>   <span style="font-weight: bold;">sub</span>  <span style="font-weight: bold;">alpha</span>    <span style="font-weight: bold;">H</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> g   .883         .868</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F1  .734  .734   .768  .760</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F2  .680  .680   .763  .753</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> F3  .667  .667   .743  .738</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         <span style="font-weight: bold;">tot</span>   <span style="font-weight: bold;">sub</span>  <span style="font-weight: bold;">alpha</span>    <span style="font-weight: bold;">H</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> total  .883         .868</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F1     .769  .734   .768  .760</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F2     .765  .680   .763  .753</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> F3     .745  .667   .743  .738</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

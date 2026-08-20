@@ -74,13 +74,13 @@ factors to retain in exploratory factor analysis: A comparison of extraction
 methods under realistic conditions. Psychological Methods, 24(4), 468–491.
 https://doi.org/10.1037/met0000200</p>
 <p>Guttman, L. (1954). Some necessary conditions for common-factor analysis.
-Psychometrika, 19, 149 –161. http://dx.doi.org/10.1007/BF02289162</p>
+Psychometrika, 19, 149 –161. https://doi.org/10.1007/BF02289162</p>
 <p>Kaiser, H. F. (1960). The application of electronic computers to factor
 analysis. Educational and Psychological Measurement, 20, 141–151.
-http://dx.doi.org/10.1177/001316446002000116</p>
+https://doi.org/10.1177/001316446002000116</p>
 <p>Zwick, W. R., &amp; Velicer, W. F. (1986). Comparison of five rules for
 determining the number of components to retain. Psychological Bulletin, 99,
-432–442. http://dx.doi.org/10.1037/0033-2909.99.3.432</p>
+432–442. https://doi.org/10.1037/0033-2909.99.3.432</p>
     </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
@@ -168,10 +168,12 @@ initial communalities estimated from SMCs (done setting <code>eigen_type</code> 
 to "EFA"; see Auerswald &amp; Moshagen, 2019). However, although this variant
 of the KGC is more accurate in some cases compared to the traditional KGC, it
 is at the same time less accurate than the PCA-variant in other cases, and it
-is still often less accurate than other factor retention methods, for
-example parallel analysis (<code><a href="efa_parallel.html">efa_parallel()</a></code>), the Hull method
-<code><a href="efa_hull.html">efa_hull()</a></code>, or sequential \(chi^2\) model tests (<code><a href="efa_smt.html">efa_smt()</a></code>;
-see Auerswald &amp; Moshagen, 2019).</p>
+is still often less accurate than several of the other criteria available here,
+such as parallel analysis (<code><a href="efa_parallel.html">efa_parallel()</a></code>), the Hull method (<code><a href="efa_hull.html">efa_hull()</a></code>),
+the empirical Kaiser criterion (<code><a href="efa_ekc.html">efa_ekc()</a></code>), or sequential \(chi^2\) model
+tests (<code><a href="efa_smt.html">efa_smt()</a></code>; see Auerswald &amp; Moshagen, 2019). Which criteria are
+informative depends on the data at hand, so rather than substituting one for
+another, run several of them together and compare their suggestions.</p>
 <p>The <code>efa_kgc</code> function can also be called together with other factor
 retention criteria in the <code><a href="efa_retain.html">efa_retain()</a></code> function.</p>
     </div>
@@ -195,9 +197,10 @@ retention criteria.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">efa_kgc</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, eigen_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PCA"</span>, <span class="st">"SMC"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Kaiser-Guttman criterion ────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Eigenvalues found using PCA and SMC.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • PCA eigenvalues: 3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • SMC eigenvalues: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • PCA: 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • SMC: 1</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

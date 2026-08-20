@@ -128,7 +128,8 @@ worthwhile.</p>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Sampling adequacy and sphericity</span> ────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The overall KMO value for your data is meritorious (Overall KMO = 0.828).</span></span>
-<span><span class="co">#&gt; These data are probably suitable for factor analysis.</span></span>
+<span><span class="co">#&gt; These data are probably suitable for factor analysis (verbal bands: Kaiser &amp;</span></span>
+<span><span class="co">#&gt; Rice, 1974).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05.</span></span>
 <span><span class="co">#&gt; These data are probably suitable for factor analysis.</span></span>
@@ -136,7 +137,8 @@ worthwhile.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Multicollinearity</span> ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Determinant: 0.0357. No concern (a value near 0 signals multicollinearity).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Determinant: 0.0357. It falls as variables are added, so the condition index</span></span>
+<span><span class="co">#&gt; below carries the verdict.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition number: 7.919 (condition index 2.814). No concern (index below 10;</span></span>
 <span><span class="co">#&gt; Belsley, Kuh &amp; Welsch, 1980).</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -164,10 +166,10 @@ worthwhile.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Multivariate normality</span> ──────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Mardia's skewness: χ²(1140) = 1008.24, p = 0.998.</span></span>
-<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Mardia's kurtosis: z = -6.11, p &lt; .001.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Mardia's skewness: χ²(1140) = 1016.6, p = 0.996.</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Mardia's kurtosis: z = -5.79, p &lt; .001.</span></span>
 <span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Henze-Zirkler: HZ = 1, p &lt; .001.</span></span>
-<span><span class="co">#&gt; These data depart from multivariate normality.</span></span>
+<span><span class="co">#&gt; These data depart from multivariate normality: 2 of the 3 tests reject it.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Outliers</span> ────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -208,6 +210,8 @@ valid under the non-normality these data show.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_poly</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_ord</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>, estimator <span class="op">=</span> <span class="st">"dwls"</span>,</span>
 <span>                    rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
+<span><span class="co">#&gt; the raw data.</span></span>
 <span><span class="va">efa_poly</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">DWLS</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
@@ -309,6 +313,8 @@ compare the rotated loadings with <code><a href="../reference/efa_compare.html">
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_cont</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_ord</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"pearson"</span>, estimator <span class="op">=</span> <span class="st">"ML"</span>,</span>
 <span>                    rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
+<span><span class="co">#&gt; the raw data.</span></span>
 <span></span>
 <span><span class="va">cmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_compare.html">efa_compare</a></span><span class="op">(</span><span class="va">efa_poly</span><span class="op">$</span><span class="va">rot_loadings</span>, <span class="va">efa_cont</span><span class="op">$</span><span class="va">rot_loadings</span>,</span>
 <span>                   x_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Polychoric / DWLS"</span>, <span class="st">"Pearson / ML"</span><span class="op">)</span><span class="op">)</span></span>
@@ -320,9 +326,12 @@ compare the rotated loadings with <code><a href="../reference/efa_compare.html">
 <span><span class="co">#&gt; Median absolute difference: <span style="color: #BB0000; font-weight: bold;"> .0064</span></span></span>
 <span><span class="co">#&gt; Root mean squared distance (RMSE): <span style="font-weight: bold;"> .0252</span></span></span>
 <span><span class="co">#&gt; Max decimals where all numbers agree in absolute value: <span style="color: #BB0000; font-weight: bold;">0</span></span></span>
-<span><span class="co">#&gt; Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading), <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span></span>
+<span><span class="co">#&gt; Differing indicator-to-factor correspondences: <span style="color: #00BB00; font-weight: bold;">0</span> (highest loading),</span></span>
+<span><span class="co">#&gt;   <span style="color: #00BB00; font-weight: bold;">0</span> (all |loadings| &gt;= 0.3)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Elementwise differences</span> ─────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Differences: Polychoric / DWLS - Pearson / ML.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;        <span style="font-weight: bold;">F1</span>      <span style="font-weight: bold;">F2</span>      <span style="font-weight: bold;">F3</span></span></span>
 <span><span class="co">#&gt; V1   <span style="color: #BB0000;"> .0066</span>  <span style="color: #BB0000;"> .0024</span>  <span style="color: #BB0000;"> .0317</span></span></span>
@@ -411,6 +420,8 @@ only the complete ones. The model fit is reported as corrected two-stage
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_fiml</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_miss</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"fiml"</span>, estimator <span class="op">=</span> <span class="st">"ml"</span>,</span>
 <span>                    rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
+<span><span class="co">#&gt; the raw data.</span></span>
 <span><span class="va">efa_fiml</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
@@ -475,6 +486,27 @@ errors are available here too: for <code>estimator = "ML"</code> or
 <code>"ULS"</code>, <code>se = "information"</code> or
 <code>"sandwich"</code> return the corrected two-stage standard errors,
 and <code>se = "np-boot"</code> works with any estimator.</p>
+<p>FIML estimates the model from every case, but it does not fill in the
+missing values. Any step that needs complete rows is therefore still
+complete-case. <code>efa_scores(d_miss, f = efa_fiml)</code>, for
+example, scores only the complete cases and warns that the rest are
+<code>NA</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/complete.cases.html" class="external-link">complete.cases</a></span><span class="op">(</span><span class="va">d_miss</span><span class="op">)</span><span class="op">)</span>    <span class="co"># cases a score can be formed for</span></span>
+<span><span class="co">#&gt; [1] 63</span></span></code></pre></div>
+<p>Use the <code><a href="../reference/efa_mi.html">efa_mi()</a></code> route below if you want case-level
+scores for every respondent. Each imputed dataset is complete, so
+scoring it with the pooled loadings covers all 250 cases.</p>
+<p>The correction itself needs a well-behaved saturated covariance. When
+that cannot be formed — typically in a small sample with a high
+proportion of missing values, or with near-collinear items —
+<code><a href="../reference/efa_fit.html">efa_fit()</a></code> warns and keeps the plain two-stage
+likelihood-ratio statistic instead of discarding the test. Such a fit is
+never presented as corrected: the printed chi-square line is labelled
+<strong>uncorrected</strong>, the object carries
+<code>fit_indices$chi_scaled_type == "uncorrected.lrt"</code>, and the
+accompanying <em>p</em>-value, CFI, TLI, and RMSEA should be read as
+indicative only.</p>
 </div>
 <div class="section level3">
 <h3 id="multiple-imputation-with-efa_mi">Multiple Imputation with <code>efa_mi()</code><a class="anchor" aria-label="anchor" href="#multiple-imputation-with-efa_mi"></a>
@@ -487,7 +519,7 @@ factor-analytic pooling.</p>
 <p>Here we create five imputations with mice (a Bayesian
 linear-regression model, appropriate for these continuous items) and
 collect them into a list.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">imp</span> <span class="op">&lt;-</span> <span class="fu">mice</span><span class="fu">::</span><span class="fu"><a href="https://amices.org/mice/reference/mice.html" class="external-link">mice</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">d_miss</span><span class="op">)</span>, m <span class="op">=</span> <span class="fl">5</span>, method <span class="op">=</span> <span class="st">"norm"</span>,</span>
 <span>                  printFlag <span class="op">=</span> <span class="cn">FALSE</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">dat_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">imp</span><span class="op">$</span><span class="va">m</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="fu">mice</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/complete.html" class="external-link">complete</a></span><span class="op">(</span><span class="va">imp</span>, <span class="va">i</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -497,12 +529,16 @@ options are passed through <code>...</code> — aligns the solutions to a
 common factor space (rotation is only identified up to reflection and
 permutation, so the imputations must be matched before averaging), and
 pools them.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_pooled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_mi.html">efa_mi</a></span><span class="op">(</span><span class="va">dat_list</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, estimator <span class="op">=</span> <span class="st">"ml"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
+<span><span class="co">#&gt; the raw data.</span></span>
 <span><span class="va">efa_pooled</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Pooled EFA across <span style="font-weight: bold;">5</span> imputations performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
-<span><span class="co">#&gt; Pooling settings: target_method = 'first_target', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.</span></span>
+<span><span class="co">#&gt; Pooled EFA across <span style="font-weight: bold;">5</span> imputations performed with estimator = '<span style="font-weight: bold;">ML</span>' and</span></span>
+<span><span class="co">#&gt;   rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
+<span><span class="co">#&gt; Pooling settings: target_method = 'first_target',</span></span>
+<span><span class="co">#&gt;   align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -578,16 +614,179 @@ imputation propagates the extra uncertainty from the missing data, its
 pooled fit statistics are not directly comparable with the single FIML
 fit above; read them together with the per-imputation fits stored in the
 returned object.</p>
-<p>Multiple imputation is not limited to continuous data: since
-<code><a href="../reference/efa_mi.html">efa_mi()</a></code> forwards its arguments to <code><a href="../reference/efa_fit.html">efa_fit()</a></code>,
-imputed ordinal datasets can be pooled with
-<code>cor_method = "poly"</code> and <code>estimator = "DWLS"</code> in
-exactly the same way.</p>
 <p>Which route to prefer is largely practical. FIML is a single,
 efficient fit and is the simpler default when the analysis model is the
 whole story. Multiple imputation is more flexible when the imputation
 model should draw on auxiliary variables not in the factor model, or
 when the same imputations feed several downstream analyses.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="ordinal-and-missing-data">Ordinal <em>and</em> Missing Data<a class="anchor" aria-label="anchor" href="#ordinal-and-missing-data"></a>
+</h2>
+<p>Questionnaire data are usually both: a few response categories
+<em>and</em> some unanswered items. The two treatments above do not
+simply combine, because the ordinal machinery needs complete cases
+exactly where the FIML route needs continuous ones. We draw the same
+four-category items as before, now with 8% of the responses missing
+completely at random.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">d_ord_miss</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_simulate.html">efa_simulate</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">300</span>, Lambda <span class="op">=</span> <span class="va">Lambda</span>, Phi <span class="op">=</span> <span class="va">Phi</span>,</span>
+<span>                           categories <span class="op">=</span> <span class="fl">4</span>, match <span class="op">=</span> <span class="st">"polychoric"</span>,</span>
+<span>                           missing <span class="op">=</span> <span class="st">"MCAR"</span>, missing_prop <span class="op">=</span> <span class="fl">0.08</span>, seed <span class="op">=</span> <span class="fl">2024</span><span class="op">)</span><span class="op">$</span><span class="va">data</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">d_ord_miss</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>     <span class="co"># overall proportion missing</span></span>
+<span><span class="co">#&gt; [1] 0.083</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/complete.cases.html" class="external-link">complete.cases</a></span><span class="op">(</span><span class="va">d_ord_miss</span><span class="op">)</span><span class="op">)</span>       <span class="co"># respondents who answered every item</span></span>
+<span><span class="co">#&gt; [1] 62</span></span></code></pre></div>
+<p>Eight percent per item is mild, but spread over 18 items it leaves
+only a fifth of the sample complete. That number, not the 300 rows
+supplied, is what the ordinal route has to work with.</p>
+<div class="section level3">
+<h3 id="the-effective-sample-of-a-polychoric-dwls-fit">The Effective Sample of a Polychoric DWLS Fit<a class="anchor" aria-label="anchor" href="#the-effective-sample-of-a-polychoric-dwls-fit"></a>
+</h3>
+<p>Polychoric correlations can be estimated pair by pair, using every
+respondent who answered a given pair of items. Their asymptotic
+covariance cannot: the DWLS weights and the sandwich standard errors
+describe <em>one</em> set of estimates from <em>one</em> set of cases,
+so whenever they are requested the correlations and the covariance are
+both computed on the listwise-complete rows. <code><a href="../reference/efa_fit.html">efa_fit()</a></code>
+announces that override rather than applying it silently.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">efa_ord_miss</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_ord_miss</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>,</span>
+<span>                        estimator <span class="op">=</span> <span class="st">"dwls"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> An asymptotic covariance requires complete cases; incomplete rows were</span></span>
+<span><span class="co">#&gt;   dropped (listwise), overriding `use = "pairwise.complete.obs"`.</span></span>
+<span><span class="va">efa_ord_miss</span><span class="op">$</span><span class="va">settings</span><span class="op">$</span><span class="va">N</span>        <span class="co"># cases the fit is actually based on</span></span>
+<span><span class="co">#&gt; [1] 62</span></span></code></pre></div>
+<p>Every loading, fit index, standard error, and confidence interval of
+that fit rests on the complete cases. <code><a href="../reference/efa_screen.html">efa_screen()</a></code> names
+both denominators for the same reason — its multivariate-normality and
+outlier results state how many complete cases they used out of how many
+rows were supplied — so the reduction is visible before a model is
+fitted.</p>
+<p>Two adjustments avoid it, each with a cost:</p>
+<ul>
+<li>Ask for no asymptotic covariance. With
+<code>estimator = "ULS"</code> or <code>"ML"</code> and no sandwich
+standard errors, nothing needs the weight matrix, so the polychoric
+matrix stays pairwise-complete and every case contributes to the pairs
+it answered. In exchange you give up the DWLS weighting and the robust
+standard errors, and the reported <code>N</code> is the nominal row
+count while each correlation rests on its own smaller subset — so fit
+statistics and analytic standard errors treat the data as more complete
+than they are.</li>
+<li>Switch to FIML — but only as a continuous analysis.
+<code>cor_method = "fiml"</code> estimates a saturated <em>normal</em>
+covariance and analyses the resulting Pearson-type correlation; there is
+no polychoric asymptotic covariance in it, so it cannot supply DWLS with
+weights. Combining the two is refused rather than silently
+approximated:</li>
+</ul>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_ord_miss</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"fiml"</span>, estimator <span class="op">=</span> <span class="st">"dwls"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;"> in `efa_fit()`:</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> `estimator = "DWLS"` is not compatible with `cor_method = "fiml"`.</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> DWLS needs a polychoric asymptotic covariance, which the continuous FIML</span></span>
+<span><span class="co">#&gt;   correlation does not provide.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Use `estimator = "ML"`, <span style="color: #0000BB;">"ULS"</span>, or <span style="color: #0000BB;">"PAF"</span>, or `cor_method = "poly"`/<span style="color: #0000BB;">"tetra"</span> for</span></span>
+<span><span class="co">#&gt;   DWLS.</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="keeping-both-the-ordinal-treatment-and-the-cases">Keeping Both the Ordinal Treatment and the Cases<a class="anchor" aria-label="anchor" href="#keeping-both-the-ordinal-treatment-and-the-cases"></a>
+</h3>
+<p>Multiple imputation is the route that keeps both. Each imputed
+dataset is complete, so the polychoric correlations and their asymptotic
+covariance are estimated on all 300 cases, and the imputation
+uncertainty is carried into the pooled results. Since
+<code><a href="../reference/efa_mi.html">efa_mi()</a></code> forwards its arguments to <code><a href="../reference/efa_fit.html">efa_fit()</a></code>,
+this is the ordinal fit above applied to each imputation — here with
+predictive mean matching, which resamples observed values and so
+respects the response scale.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">imp_ord</span> <span class="op">&lt;-</span> <span class="fu">mice</span><span class="fu">::</span><span class="fu"><a href="https://amices.org/mice/reference/mice.html" class="external-link">mice</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">d_ord_miss</span><span class="op">)</span>, m <span class="op">=</span> <span class="fl">5</span>, method <span class="op">=</span> <span class="st">"pmm"</span>,</span>
+<span>                      printFlag <span class="op">=</span> <span class="cn">FALSE</span>, seed <span class="op">=</span> <span class="fl">123</span><span class="op">)</span></span>
+<span><span class="va">dat_ord</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">imp_ord</span><span class="op">$</span><span class="va">m</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="fu">mice</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/complete.html" class="external-link">complete</a></span><span class="op">(</span><span class="va">imp_ord</span>, <span class="va">i</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">efa_ord_pooled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_mi.html">efa_mi</a></span><span class="op">(</span><span class="va">dat_ord</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>,</span>
+<span>                         estimator <span class="op">=</span> <span class="st">"dwls"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
+<span><span class="co">#&gt; the raw data.</span></span>
+<span><span class="va">efa_ord_pooled</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Pooled EFA across <span style="font-weight: bold;">5</span> imputations performed with estimator = '<span style="font-weight: bold;">DWLS</span>' and</span></span>
+<span><span class="co">#&gt;   rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
+<span><span class="co">#&gt; Pooling settings: target_method = 'first_target',</span></span>
+<span><span class="co">#&gt;   align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;        <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>    <span style="font-weight: bold;">h2</span>    <span style="font-weight: bold;">u2</span></span></span>
+<span><span class="co">#&gt; V1   <span style="color: #555555;">-.060</span>  <span style="font-weight: bold;"> .538</span>  <span style="color: #555555;"> .092</span>  .317  .683</span></span>
+<span><span class="co">#&gt; V2   <span style="color: #555555;">-.059</span>  <span style="font-weight: bold;"> .544</span>  <span style="color: #555555;">-.021</span>  .285  .715</span></span>
+<span><span class="co">#&gt; V3   <span style="color: #555555;"> .033</span>  <span style="font-weight: bold;"> .581</span>  <span style="color: #555555;"> .020</span>  .352  .648</span></span>
+<span><span class="co">#&gt; V4   <span style="color: #555555;"> .049</span>  <span style="font-weight: bold;"> .583</span>  <span style="color: #555555;"> .091</span>  .392  .608</span></span>
+<span><span class="co">#&gt; V5   <span style="color: #555555;"> .088</span>  <span style="font-weight: bold;"> .700</span>  <span style="color: #555555;">-.111</span>  .474  .526</span></span>
+<span><span class="co">#&gt; V6   <span style="color: #555555;">-.014</span>  <span style="font-weight: bold;"> .573</span>  <span style="color: #555555;">-.005</span>  .325  .675</span></span>
+<span><span class="co">#&gt; V7   <span style="color: #555555;"> .049</span>  <span style="color: #555555;"> .082</span>  <span style="font-weight: bold;"> .533</span>  .339  .661</span></span>
+<span><span class="co">#&gt; V8   <span style="color: #555555;"> .010</span>  <span style="color: #555555;">-.016</span>  <span style="font-weight: bold;"> .618</span>  .381  .619</span></span>
+<span><span class="co">#&gt; V9   <span style="color: #555555;"> .135</span>  <span style="color: #555555;"> .038</span>  <span style="font-weight: bold;"> .473</span>  .304  .696</span></span>
+<span><span class="co">#&gt; V10  <span style="color: #555555;"> .012</span>  <span style="color: #555555;">-.042</span>  <span style="font-weight: bold;"> .726</span>  .517  .483</span></span>
+<span><span class="co">#&gt; V11  <span style="color: #555555;">-.035</span>  <span style="color: #555555;"> .019</span>  <span style="font-weight: bold;"> .577</span>  .325  .675</span></span>
+<span><span class="co">#&gt; V12  <span style="color: #555555;">-.024</span>  <span style="color: #555555;">-.004</span>  <span style="font-weight: bold;"> .585</span>  .331  .669</span></span>
+<span><span class="co">#&gt; V13  <span style="font-weight: bold;"> .647</span>  <span style="color: #555555;">-.017</span>  <span style="color: #555555;"> .019</span>  .425  .575</span></span>
+<span><span class="co">#&gt; V14  <span style="font-weight: bold;"> .717</span>  <span style="color: #555555;"> .052</span>  <span style="color: #555555;">-.088</span>  .484  .516</span></span>
+<span><span class="co">#&gt; V15  <span style="font-weight: bold;"> .614</span>  <span style="color: #555555;"> .056</span>  <span style="color: #555555;"> .081</span>  .437  .563</span></span>
+<span><span class="co">#&gt; V16  <span style="font-weight: bold;"> .520</span>  <span style="color: #555555;">-.118</span>  <span style="color: #555555;">-.012</span>  .264  .736</span></span>
+<span><span class="co">#&gt; V17  <span style="font-weight: bold;"> .544</span>  <span style="color: #555555;"> .022</span>  <span style="color: #555555;"> .050</span>  .323  .677</span></span>
+<span><span class="co">#&gt; V18  <span style="font-weight: bold;"> .570</span>  <span style="color: #555555;"> .057</span>  <span style="color: #555555;"> .020</span>  .347  .653</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Legend:</span></span>
+<span><span class="co">#&gt;   <span style="font-weight: bold;">bold</span> = |loading| &gt;= .300</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">grey</span> = below cutoff</span></span>
+<span><span class="co">#&gt;   <span style="color: #BB0000; font-weight: bold;">red h2/u2</span> = Heywood-relevant value</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Factor Intercorrelations</span> ────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;       <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span></span>
+<span><span class="co">#&gt; F1  1.000</span></span>
+<span><span class="co">#&gt; F2   .137  1.000</span></span>
+<span><span class="co">#&gt; F3   .381   .289  1.000</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Variances Accounted for</span> ─────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;                      <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span></span></span>
+<span><span class="co">#&gt; SS loadings        2.288  2.144  2.191</span></span>
+<span><span class="co">#&gt; Prop Tot Var        .127   .119   .122</span></span>
+<span><span class="co">#&gt; Cum Prop Tot Var    .127   .246   .368</span></span>
+<span><span class="co">#&gt; Prop Comm Var       .346   .324   .331</span></span>
+<span><span class="co">#&gt; Cum Prop Comm Var   .346   .669  1.000</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; CAF: .53</span></span>
+<span><span class="co">#&gt; SRMR: .04</span></span>
+<span><span class="co">#&gt; df: 102</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="font-style: italic;">Note:</span> With `estimator = "DWLS"`, the chi-square test and the fit indices</span></span>
+<span><span class="co">#&gt; derived from it (CFI, TLI, RMSEA, AIC, BIC, ECVI) are not available; refit with</span></span>
+<span><span class="co">#&gt; `se = "sandwich"` for the scaled chi-square.</span></span></code></pre></div>
+<p>The pooled pattern matrix is estimated from all 300 respondents
+rather than the 62 complete ones — compare it with
+<code>efa_ord_miss$rot_loadings</code> — and the between-imputation
+variability enters any pooled standard errors requested in the call. As
+always with imputation, the imputation model has to be defensible: for
+ordinal items that means a method returning values on the observed scale
+(predictive mean matching, or an ordinal model such as
+<code>method = "polr"</code>), and enough respondents per item to
+estimate it.</p>
+<p>So, for ordinal items with missing values: use <code><a href="../reference/efa_mi.html">efa_mi()</a></code>
+when the missingness is more than incidental and the ordinal treatment
+matters; fit <code>cor_method = "poly"</code> with
+<code>estimator = "DWLS"</code> directly when the complete-case sample
+is still comfortably large; and use FIML when the items have enough
+categories to be treated as continuous in the first place.</p>
 </div>
 </div>
 <div class="section level2">

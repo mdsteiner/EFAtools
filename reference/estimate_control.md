@@ -17,7 +17,9 @@ estimate_control(
   criterion_type = NA,
   max_iter = NA,
   abs_eigen = NA,
-  start_method = "psych"
+  start_method = "psych",
+  fiml_max_iter = 500,
+  fiml_tol = 1e-05
 )
 
 rotate_control(
@@ -88,6 +90,27 @@ rotate_control(
   likelihood uses it, so `NA` leaves it unset and is rejected only by a
   fit that is actually run with `estimator = "ML"`.
 
+- fiml_max_iter:
+
+  numeric. The maximum number of EM iterations used to estimate the
+  two-stage full-information maximum-likelihood moments from raw data
+  with missing values (`cor_method = "fiml"`); the last iterate is
+  returned, with a warning, if the cap is reached. A single whole number
+  of at least 1; default `500`. Not governed by `type`, and unused by
+  every other correlation method. The EM converges linearly and needs
+  more iterations the larger the fraction of missing information, so
+  raise it when a fit reports that the moments did not converge.
+
+- fiml_tol:
+
+  numeric. The convergence tolerance of that EM: iteration stops once
+  the largest change in the standardized moments (the standardized
+  means, log-variances, and correlations) falls below it, so it does not
+  depend on the variables' measurement scale. A single number greater
+  than 0 and smaller than 1 (at or above 1 the criterion is met
+  immediately and the starting moments would be returned as converged);
+  default `1e-5`. Not governed by `type`.
+
 - normalize:
 
   logical. If `TRUE` (default), a Kaiser normalization is performed
@@ -97,7 +120,20 @@ rotate_control(
 - precision:
 
   numeric. The convergence tolerance of the rotation procedure. A single
-  number greater than 0 and at most 1; default `1e-5`.
+  number greater than 0 and at most 1; default `1e-5`. Each rotation
+  stage monitors its own quantity, so the same number is not the same
+  tolerance everywhere: `varimax_type = "kaiser"` stops on the
+  *absolute* change in the varimax simplicity criterion, which is an
+  average over variables (and so does not scale with how many there are)
+  but rises with the number of factors, roughly toward
+  `1 - 1 / n_factors`, so a fixed value is a relatively weaker tolerance
+  the more factors are extracted; `varimax_type = "svd"` stops on the
+  *relative* change in the singular values (as in
+  [`stats::varimax()`](https://rdrr.io/r/stats/varimax.html)); and the
+  criterion rotations fitted by gradient projection stop when the
+  *projected-gradient norm* falls below it. Promax inherits whichever of
+  the two varimax tests its `varimax_type` selects, because it rotates a
+  varimax base.
 
 - order_type:
 
@@ -127,39 +163,50 @@ rotate_control(
   numeric. The promax power (for the target matrix) or the number of
   near-zero loadings for simplimax. A single number greater than 0; `NA`
   (default) leaves it to the fit (the `type`-dependent promax value, or
-  `nrow(loadings)` for simplimax).
+  `nrow(loadings)` for simplimax). Simplimax counts loadings, so a fit
+  using it additionally requires a whole number no larger than the
+  number of loadings in the solution; promax's power has no such
+  restriction.
 
 - random_starts:
 
   numeric. The number of random starts used by the criterion-based
   rotations to guard against local minima. A single whole number of at
   least 0, where `0` runs the rotation from its warm start only; default
-  `100`.
+  `100`. The default suffices for the smooth criteria; `simplimax`
+  remains materially start-dependent at it, so raise it there (see the
+  *Rotations* section of
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)).
 
 - ...:
 
   Additional arguments forwarded to the rotation engine. Only the names
-  a rotation engine can consume are accepted: `maxit` (the maximum
-  number of engine iterations), and the criterion parameters `gam`
-  (oblimin; `gam = 0` is the recommended default, and larger values
-  increasingly reward correlated factors and can drive the solution
-  toward factor collapse, so inspect `Phi` before interpreting a fit
-  with `gam > 0`) and `delta` (geomin); anything else is rejected as a
-  misspelling. They are stored in `extra_args` and passed on to the
-  rotation engine when the control is used to fit a model; an extra a
-  given fit's rotation does not consume is ignored by that fit, so one
-  control can serve fits with different rotations. An estimation knob
-  (which belongs in `estimate_control()`) or one of the former spellings
-  `P_type` and `randomStarts` is likewise rejected here, because the fit
-  would silently drop it.
+  a rotation engine can consume are accepted: `maxit` (a whole number of
+  at least 0 bounding a *single* gradient-projection optimization – the
+  multi-start search runs several of them and each is bounded
+  separately, so it is not a budget for the run as a whole; varimax and
+  promax have no such stage and take only `precision`), and the
+  criterion parameters `gam` (oblimin; `gam = 0` is the recommended
+  default, and larger values increasingly reward correlated factors and
+  can drive the solution toward factor collapse, so inspect `Phi` before
+  interpreting a fit with `gam > 0`) and `delta` (geomin; a positive
+  number, default `0.01`); anything else is rejected as a misspelling.
+  They are stored in `extra_args` and passed on to the rotation engine
+  when the control is used to fit a model; an extra a given fit's
+  rotation does not consume is ignored by that fit, so one control can
+  serve fits with different rotations. An estimation knob (which belongs
+  in `estimate_control()`) or one of the former spellings `P_type` and
+  `randomStarts` is likewise rejected here, because the fit would
+  silently drop it.
 
 ## Value
 
 `estimate_control()` returns a list of class `efa_estimate_control` with
 the components `type`, `init_comm`, `criterion`, `criterion_type`,
-`max_iter`, `abs_eigen`, and `start_method`. `rotate_control()` returns
-a list of class `efa_rotate_control` with the components `type`,
-`normalize`, `precision`, `order_type`, `varimax_type`, `p_type`, `k`,
+`max_iter`, `abs_eigen`, `start_method`, `fiml_max_iter`, and
+`fiml_tol`. `rotate_control()` returns a list of class
+`efa_rotate_control` with the components `type`, `normalize`,
+`precision`, `order_type`, `varimax_type`, `p_type`, `k`,
 `random_starts`, and `extra_args` (a named list of any additional
 arguments forwarded to the rotation engine).
 
@@ -200,6 +247,8 @@ estimate_control(type = "SPSS")
 #> max_iter: <from type preset>
 #> abs_eigen: <from type preset>
 #> start_method: psych
+#> fiml_max_iter: 500
+#> fiml_tol: 1e-05
 
 # A preset with one knob pinned to a non-preset value:
 estimate_control(type = "EFAtools", max_iter = 500)
@@ -211,6 +260,8 @@ estimate_control(type = "EFAtools", max_iter = 500)
 #> max_iter: 500
 #> abs_eigen: <from type preset>
 #> start_method: psych
+#> fiml_max_iter: 500
+#> fiml_tol: 1e-05
 
 # Every knob supplied explicitly (type = "none"):
 estimate_control(type = "none", init_comm = "smc", criterion = 1e-3,
@@ -223,6 +274,8 @@ estimate_control(type = "none", init_comm = "smc", criterion = 1e-3,
 #> max_iter: 300
 #> abs_eigen: TRUE
 #> start_method: psych
+#> fiml_max_iter: 500
+#> fiml_tol: 1e-05
 
 
 # Rotation knobs taken from a preset:

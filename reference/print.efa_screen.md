@@ -69,7 +69,8 @@ efa_screen(iris[, 1:4])
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
 #> ✖ The overall KMO value for your data is miserable (Overall KMO = 0.54).
-#> These data are hardly suitable for factor analysis.
+#> These data are hardly suitable for factor analysis (verbal bands: Kaiser &
+#> Rice, 1974).
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
@@ -77,7 +78,8 @@ efa_screen(iris[, 1:4])
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ✔ Determinant: 0.00811. No concern (a value near 0 signals multicollinearity).
+#> ℹ Determinant: 0.00811. It falls as variables are added, so the condition index
+#> below carries the verdict.
 #> ! Condition number: 140.889 (condition index 11.870). Moderate
 #> multicollinearity (index 10 to 30; Belsley, Kuh & Welsch, 1980).
 #> 
@@ -91,10 +93,10 @@ efa_screen(iris[, 1:4])
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
-#> ✖ Mardia's skewness: χ²(20) = 67.43, p < .001.
-#> ✔ Mardia's kurtosis: z = -0.23, p = 0.818.
+#> ✖ Mardia's skewness: χ²(20) = 69.33, p < .001.
+#> ✔ Mardia's kurtosis: z = 0.05, p = 0.956.
 #> ✖ Henze-Zirkler: HZ = 2.34, p < .001.
-#> These data depart from multivariate normality.
+#> These data depart from multivariate normality: 2 of the 3 tests reject it.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
@@ -124,7 +126,8 @@ efa_screen(test_models$baseline$cormat, N = 500)
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
 #> ✔ The overall KMO value for your data is marvellous (Overall KMO = 0.916).
-#> These data are probably suitable for factor analysis.
+#> These data are probably suitable for factor analysis (verbal bands: Kaiser &
+#> Rice, 1974).
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
@@ -132,7 +135,8 @@ efa_screen(test_models$baseline$cormat, N = 500)
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ✔ Determinant: 0.0121. No concern (a value near 0 signals multicollinearity).
+#> ℹ Determinant: 0.0121. It falls as variables are added, so the condition index
+#> below carries the verdict.
 #> ✔ Condition number: 11.680 (condition index 3.418). No concern (index below 10;
 #> Belsley, Kuh & Welsch, 1980).
 #> 
@@ -170,7 +174,8 @@ writeLines(format(efa_screen(test_models$baseline$cormat, N = 500)))
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
 #> ✔ The overall KMO value for your data is marvellous (Overall KMO = 0.916).
-#> These data are probably suitable for factor analysis.
+#> These data are probably suitable for factor analysis (verbal bands: Kaiser &
+#> Rice, 1974).
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
@@ -178,7 +183,8 @@ writeLines(format(efa_screen(test_models$baseline$cormat, N = 500)))
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ✔ Determinant: 0.0121. No concern (a value near 0 signals multicollinearity).
+#> ℹ Determinant: 0.0121. It falls as variables are added, so the condition index
+#> below carries the verdict.
 #> ✔ Condition number: 11.680 (condition index 3.418). No concern (index below 10;
 #> Belsley, Kuh & Welsch, 1980).
 #> 

@@ -71,7 +71,8 @@ efa_screen(d_ord, seed = 42)
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
 #> ✔ The overall KMO value for your data is meritorious (Overall KMO = 0.828).
-#> These data are probably suitable for factor analysis.
+#> These data are probably suitable for factor analysis (verbal bands: Kaiser &
+#> Rice, 1974).
 #> 
 #> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
@@ -79,7 +80,8 @@ efa_screen(d_ord, seed = 42)
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ✔ Determinant: 0.0357. No concern (a value near 0 signals multicollinearity).
+#> ℹ Determinant: 0.0357. It falls as variables are added, so the condition index
+#> below carries the verdict.
 #> ✔ Condition number: 7.919 (condition index 2.814). No concern (index below 10;
 #> Belsley, Kuh & Welsch, 1980).
 #> 
@@ -107,10 +109,10 @@ efa_screen(d_ord, seed = 42)
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
-#> ✔ Mardia's skewness: χ²(1140) = 1008.24, p = 0.998.
-#> ✖ Mardia's kurtosis: z = -6.11, p < .001.
+#> ✔ Mardia's skewness: χ²(1140) = 1016.6, p = 0.996.
+#> ✖ Mardia's kurtosis: z = -5.79, p < .001.
 #> ✖ Henze-Zirkler: HZ = 1, p < .001.
-#> These data depart from multivariate normality.
+#> These data depart from multivariate normality: 2 of the 3 tests reject it.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
@@ -154,6 +156,8 @@ stay valid under the non-normality these data show.
 
 efa_poly <- efa_fit(d_ord, n_factors = 3, cor_method = "poly", estimator = "dwls",
                     rotation = "oblimin", se = "sandwich")
+#> ℹ `x` is not a correlation matrix; computing correlations from
+#> the raw data.
 efa_poly
 #> 
 #> EFA performed with estimator = 'DWLS' and rotation = 'oblimin'.
@@ -264,6 +268,8 @@ compare the rotated loadings with
 
 efa_cont <- efa_fit(d_ord, n_factors = 3, cor_method = "pearson", estimator = "ML",
                     rotation = "oblimin")
+#> ℹ `x` is not a correlation matrix; computing correlations from
+#> the raw data.
 
 cmp <- efa_compare(efa_poly$rot_loadings, efa_cont$rot_loadings,
                    x_labels = c("Polychoric / DWLS", "Pearson / ML"))
@@ -275,9 +281,12 @@ cmp
 #> Median absolute difference:  .0064
 #> Root mean squared distance (RMSE):  .0252
 #> Max decimals where all numbers agree in absolute value: 0
-#> Differing indicator-to-factor correspondences: 0 (highest loading), 0 (all |loadings| >= 0.3)
+#> Differing indicator-to-factor correspondences: 0 (highest loading),
+#>   0 (all |loadings| >= 0.3)
 #> 
 #> ── Elementwise differences ─────────────────────────────────────────────────────
+#> 
+#> Differences: Polychoric / DWLS - Pearson / ML.
 #> 
 #>        F1      F2      F3
 #> V1    .0066   .0024   .0317
@@ -377,6 +386,8 @@ only the complete ones. The model fit is reported as corrected two-stage
 
 efa_fiml <- efa_fit(d_miss, n_factors = 3, cor_method = "fiml", estimator = "ml",
                     rotation = "oblimin")
+#> ℹ `x` is not a correlation matrix; computing correlations from
+#> the raw data.
 efa_fiml
 #> 
 #> EFA performed with estimator = 'ML' and rotation = 'oblimin'.
@@ -443,6 +454,33 @@ available here too: for `estimator = "ML"` or `"ULS"`,
 `se = "information"` or `"sandwich"` return the corrected two-stage
 standard errors, and `se = "np-boot"` works with any estimator.
 
+FIML estimates the model from every case, but it does not fill in the
+missing values. Any step that needs complete rows is therefore still
+complete-case. `efa_scores(d_miss, f = efa_fiml)`, for example, scores
+only the complete cases and warns that the rest are `NA`:
+
+``` r
+
+sum(complete.cases(d_miss))    # cases a score can be formed for
+#> [1] 63
+```
+
+Use the
+[`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+route below if you want case-level scores for every respondent. Each
+imputed dataset is complete, so scoring it with the pooled loadings
+covers all 250 cases.
+
+The correction itself needs a well-behaved saturated covariance. When
+that cannot be formed — typically in a small sample with a high
+proportion of missing values, or with near-collinear items —
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+warns and keeps the plain two-stage likelihood-ratio statistic instead
+of discarding the test. Such a fit is never presented as corrected: the
+printed chi-square line is labelled **uncorrected**, the object carries
+`fit_indices$chi_scaled_type == "uncorrected.lrt"`, and the accompanying
+*p*-value, CFI, TLI, and RMSEA should be read as indicative only.
+
 ### Multiple Imputation with `efa_mi()`
 
 The alternative is to impute the missing values several times, fit each
@@ -476,10 +514,14 @@ and pools them.
 ``` r
 
 efa_pooled <- efa_mi(dat_list, n_factors = 3, estimator = "ml", rotation = "oblimin")
+#> ℹ `x` is not a correlation matrix; computing correlations from
+#> the raw data.
 efa_pooled
 #> 
-#> Pooled EFA across 5 imputations performed with estimator = 'ML' and rotation = 'oblimin'.
-#> Pooling settings: target_method = 'first_target', align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+#> Pooled EFA across 5 imputations performed with estimator = 'ML' and
+#>   rotation = 'oblimin'.
+#> Pooling settings: target_method = 'first_target',
+#>   align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -557,18 +599,194 @@ uncertainty from the missing data, its pooled fit statistics are not
 directly comparable with the single FIML fit above; read them together
 with the per-imputation fits stored in the returned object.
 
-Multiple imputation is not limited to continuous data: since
-[`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
-forwards its arguments to
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
-imputed ordinal datasets can be pooled with `cor_method = "poly"` and
-`estimator = "DWLS"` in exactly the same way.
-
 Which route to prefer is largely practical. FIML is a single, efficient
 fit and is the simpler default when the analysis model is the whole
 story. Multiple imputation is more flexible when the imputation model
 should draw on auxiliary variables not in the factor model, or when the
 same imputations feed several downstream analyses.
+
+## Ordinal *and* Missing Data
+
+Questionnaire data are usually both: a few response categories *and*
+some unanswered items. The two treatments above do not simply combine,
+because the ordinal machinery needs complete cases exactly where the
+FIML route needs continuous ones. We draw the same four-category items
+as before, now with 8% of the responses missing completely at random.
+
+``` r
+
+d_ord_miss <- efa_simulate(N = 300, Lambda = Lambda, Phi = Phi,
+                           categories = 4, match = "polychoric",
+                           missing = "MCAR", missing_prop = 0.08, seed = 2024)$data
+
+round(mean(is.na(d_ord_miss)), 3)     # overall proportion missing
+#> [1] 0.083
+sum(complete.cases(d_ord_miss))       # respondents who answered every item
+#> [1] 62
+```
+
+Eight percent per item is mild, but spread over 18 items it leaves only
+a fifth of the sample complete. That number, not the 300 rows supplied,
+is what the ordinal route has to work with.
+
+### The Effective Sample of a Polychoric DWLS Fit
+
+Polychoric correlations can be estimated pair by pair, using every
+respondent who answered a given pair of items. Their asymptotic
+covariance cannot: the DWLS weights and the sandwich standard errors
+describe *one* set of estimates from *one* set of cases, so whenever
+they are requested the correlations and the covariance are both computed
+on the listwise-complete rows.
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+announces that override rather than applying it silently.
+
+``` r
+
+efa_ord_miss <- efa_fit(d_ord_miss, n_factors = 3, cor_method = "poly",
+                        estimator = "dwls", rotation = "oblimin")
+#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
+#> ℹ An asymptotic covariance requires complete cases; incomplete rows were
+#>   dropped (listwise), overriding `use = "pairwise.complete.obs"`.
+efa_ord_miss$settings$N        # cases the fit is actually based on
+#> [1] 62
+```
+
+Every loading, fit index, standard error, and confidence interval of
+that fit rests on the complete cases.
+[`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+names both denominators for the same reason — its multivariate-normality
+and outlier results state how many complete cases they used out of how
+many rows were supplied — so the reduction is visible before a model is
+fitted.
+
+Two adjustments avoid it, each with a cost:
+
+- Ask for no asymptotic covariance. With `estimator = "ULS"` or `"ML"`
+  and no sandwich standard errors, nothing needs the weight matrix, so
+  the polychoric matrix stays pairwise-complete and every case
+  contributes to the pairs it answered. In exchange you give up the DWLS
+  weighting and the robust standard errors, and the reported `N` is the
+  nominal row count while each correlation rests on its own smaller
+  subset — so fit statistics and analytic standard errors treat the data
+  as more complete than they are.
+- Switch to FIML — but only as a continuous analysis.
+  `cor_method = "fiml"` estimates a saturated *normal* covariance and
+  analyses the resulting Pearson-type correlation; there is no
+  polychoric asymptotic covariance in it, so it cannot supply DWLS with
+  weights. Combining the two is refused rather than silently
+  approximated:
+
+``` r
+
+efa_fit(d_ord_miss, n_factors = 3, cor_method = "fiml", estimator = "dwls")
+#> Error in `efa_fit()`:
+#> ! `estimator = "DWLS"` is not compatible with `cor_method = "fiml"`.
+#> ✖ DWLS needs a polychoric asymptotic covariance, which the continuous FIML
+#>   correlation does not provide.
+#> ℹ Use `estimator = "ML"`, "ULS", or "PAF", or `cor_method = "poly"`/"tetra" for
+#>   DWLS.
+```
+
+### Keeping Both the Ordinal Treatment and the Cases
+
+Multiple imputation is the route that keeps both. Each imputed dataset
+is complete, so the polychoric correlations and their asymptotic
+covariance are estimated on all 300 cases, and the imputation
+uncertainty is carried into the pooled results. Since
+[`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+forwards its arguments to
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
+this is the ordinal fit above applied to each imputation — here with
+predictive mean matching, which resamples observed values and so
+respects the response scale.
+
+``` r
+
+imp_ord <- mice::mice(as.data.frame(d_ord_miss), m = 5, method = "pmm",
+                      printFlag = FALSE, seed = 123)
+dat_ord <- lapply(seq_len(imp_ord$m), function(i) mice::complete(imp_ord, i))
+
+efa_ord_pooled <- efa_mi(dat_ord, n_factors = 3, cor_method = "poly",
+                         estimator = "dwls", rotation = "oblimin")
+#> ℹ `x` is not a correlation matrix; computing correlations from
+#> the raw data.
+efa_ord_pooled
+#> 
+#> Pooled EFA across 5 imputations performed with estimator = 'DWLS' and
+#>   rotation = 'oblimin'.
+#> Pooling settings: target_method = 'first_target',
+#>   align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
+#> 
+#> ── Rotated Loadings ────────────────────────────────────────────────────────────
+#> 
+#>        F1     F2     F3    h2    u2
+#> V1   -.060   .538   .092  .317  .683
+#> V2   -.059   .544  -.021  .285  .715
+#> V3    .033   .581   .020  .352  .648
+#> V4    .049   .583   .091  .392  .608
+#> V5    .088   .700  -.111  .474  .526
+#> V6   -.014   .573  -.005  .325  .675
+#> V7    .049   .082   .533  .339  .661
+#> V8    .010  -.016   .618  .381  .619
+#> V9    .135   .038   .473  .304  .696
+#> V10   .012  -.042   .726  .517  .483
+#> V11  -.035   .019   .577  .325  .675
+#> V12  -.024  -.004   .585  .331  .669
+#> V13   .647  -.017   .019  .425  .575
+#> V14   .717   .052  -.088  .484  .516
+#> V15   .614   .056   .081  .437  .563
+#> V16   .520  -.118  -.012  .264  .736
+#> V17   .544   .022   .050  .323  .677
+#> V18   .570   .057   .020  .347  .653
+#> 
+#> Legend:
+#>   bold = |loading| >= .300
+#>   grey = below cutoff
+#>   red h2/u2 = Heywood-relevant value
+#> 
+#> ── Factor Intercorrelations ────────────────────────────────────────────────────
+#> 
+#>       F1     F2     F3
+#> F1  1.000
+#> F2   .137  1.000
+#> F3   .381   .289  1.000
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>                      F1     F2     F3
+#> SS loadings        2.288  2.144  2.191
+#> Prop Tot Var        .127   .119   .122
+#> Cum Prop Tot Var    .127   .246   .368
+#> Prop Comm Var       .346   .324   .331
+#> Cum Prop Comm Var   .346   .669  1.000
+#> 
+#> ── Model Fit ───────────────────────────────────────────────────────────────────
+#> 
+#> CAF: .53
+#> SRMR: .04
+#> df: 102
+#> 
+#> Note: With `estimator = "DWLS"`, the chi-square test and the fit indices
+#> derived from it (CFI, TLI, RMSEA, AIC, BIC, ECVI) are not available; refit with
+#> `se = "sandwich"` for the scaled chi-square.
+```
+
+The pooled pattern matrix is estimated from all 300 respondents rather
+than the 62 complete ones — compare it with `efa_ord_miss$rot_loadings`
+— and the between-imputation variability enters any pooled standard
+errors requested in the call. As always with imputation, the imputation
+model has to be defensible: for ordinal items that means a method
+returning values on the observed scale (predictive mean matching, or an
+ordinal model such as `method = "polr"`), and enough respondents per
+item to estimate it.
+
+So, for ordinal items with missing values: use
+[`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+when the missingness is more than incidental and the ordinal treatment
+matters; fit `cor_method = "poly"` with `estimator = "DWLS"` directly
+when the complete-case sample is still comfortably large; and use FIML
+when the items have enough categories to be treated as continuous in the
+first place.
 
 ## Where to Next
 

@@ -34,8 +34,5 @@ theme; plain when colours are disabled).
 writeLines(format(efa_ekc(test_models$baseline$cormat, N = 500)))
 #> ── Empirical Kaiser Criterion ──────────────────────────────────────────────────
 #> 
-#> • Original implementation (Braeken & van Assen, 2017): 3
-#> 
-#> ℹ Multiple implementations of EKC exist; make sure to report which one you used
-#> (see the efa_ekc help page for details).
+#> • Braeken & van Assen (2017): 3
 ```

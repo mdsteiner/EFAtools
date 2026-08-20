@@ -82,8 +82,11 @@ correlation matrix is used.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data
-is given as input. Default is "pairwise.complete.obs".</p></dd>
+<dd><p>character. The missing-data policy for raw data. Passed to
+<code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> for <code>"pearson"</code>, <code>"spearman"</code>, and <code>"kendall"</code>; for <code>"poly"</code> /
+<code>"tetra"</code> the same policies are applied to the raw data before the polychoric
+estimation, where <code>"all.obs"</code> and <code>"everything"</code> abort on a missing value instead
+of returning <code>NA</code> correlations. Default is "pairwise.complete.obs".</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>

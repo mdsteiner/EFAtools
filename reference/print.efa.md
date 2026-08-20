@@ -105,7 +105,13 @@ format(x, ...)
 - max_name_length:
 
   numeric. Maximum length of the variable names to display; longer names
-  are cut from the right.
+  are cut from the right, or abbreviated where cutting would give two
+  variables the same label. Applies to every table that names variables.
+  `name_style` (see
+  [`print.efa_loadings()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_loadings.md))
+  can be passed through `...` to choose the shortening explicitly, but
+  it reaches the loading table only; the confidence-interval and
+  simple-structure tables always shorten by cutting.
 
 - sort_loadings:
 
