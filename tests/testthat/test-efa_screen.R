@@ -984,15 +984,53 @@ test_that("the multicollinearity verdict follows the condition index, not the de
   # and no recommendation sends the reader after redundant items that do not exist
   expect_no_match(txt, "nearly linearly dependent", fixed = TRUE)
 
-  # A genuinely ill-conditioned matrix still gets the verdict and the recommendation.
+  # A genuinely ill-conditioned matrix still gets the verdict and the recommendation. A
+  # duplicate perturbed by 1e-7 puts the index near 2e7, so far above the highest step of
+  # the progression (300) that the graded label cannot move with the BLAS.
   set.seed(5)
   near2 <- data.frame(a = rnorm(120), b = rnorm(120), c = rnorm(120))
   near2$copy_of_a <- near2$a + rnorm(120, sd = 1e-7)
   scr_ill <- suppressWarnings(efa_screen(near2, seed = 1))
-  expect_gt(sqrt(scr_ill$condition), 30)
+  expect_gt(sqrt(scr_ill$condition), 300)
   txt_ill <- cli::ansi_strip(paste(format(scr_ill), collapse = " "))
-  expect_match(txt_ill, "Strong multicollinearity", fixed = TRUE)
+  expect_match(txt_ill, "which indicates a near linear dependency", fixed = TRUE)
+  expect_match(txt_ill, "its relative strength is very strong", fixed = TRUE)
   expect_match(txt_ill, "A high condition index indicates multicollinearity", fixed = TRUE)
+})
+
+test_that("the condition-index verdict is graded on Belsley's progression", {
+  local_reproducible_output()
+
+  # An equicorrelated matrix of three variables has eigenvalues 1 + 2r and 1 - r (twice),
+  # so its condition index is exactly sqrt((1 + 2r) / (1 - r)). Each r below puts the
+  # index far from the band edges (10, 30, 100, 300), so the expected verdict cannot move
+  # with the BLAS: the four indexes are 17.3, 44.7, 141.4, and 447.2.
+  eqcor <- function(r) {
+    R <- matrix(r, 3, 3)
+    diag(R) <- 1
+    dimnames(R) <- list(paste0("v", 1:3), paste0("v", 1:3))
+    R
+  }
+  screened <- function(r) {
+    scr <- efa_screen(eqcor(r), N = 500)
+    expect_equal(sqrt(scr$condition), sqrt((1 + 2 * r) / (1 - r)), tolerance = 1e-6,
+                 label = paste0("condition index at r = ", r))
+    cli::ansi_strip(paste(format(scr), collapse = " "))
+  }
+
+  # Above 10 but not above the 30 that flags a near dependency: no flag, no recommendation.
+  mid <- screened(0.99)
+  expect_match(mid, "The index is above 10, but not above 30", fixed = TRUE)
+  expect_no_match(mid, "A high condition index indicates", fixed = TRUE)
+
+  # Flagged, and graded by the position on the progression the index sits at.
+  for (case in list(list(r = 0.99850,  strength = "moderate"),
+                    list(r = 0.99985,  strength = "strong"),
+                    list(r = 0.999985, strength = "very strong"))) {
+    txt <- screened(case$r)
+    expect_match(txt, paste("its relative strength is", case$strength), fixed = TRUE)
+    expect_match(txt, "A high condition index indicates", fixed = TRUE)
+  }
 })
 
 # singular / non-positive-definite inputs

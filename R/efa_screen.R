@@ -1,221 +1,138 @@
 #' Screen data for exploratory factor analysis
 #'
 #' @description
-#' Computes a set of diagnostics describing how suitable a correlation matrix (or
-#' raw data) is for exploratory factor analysis: the Kaiser-Meyer-Olkin (KMO)
-#' measure of sampling adequacy overall and per variable, Bartlett's test of
-#' sphericity, the determinant and condition number of the correlation matrix, and
-#' the squared multiple correlation (SMC) of each variable with all the others.
+#' Checks whether your data are suitable for exploratory factor analysis (EFA). From a
+#' correlation matrix or raw data, it reports the Kaiser-Meyer-Olkin (KMO) measure of
+#' sampling adequacy, Bartlett's test of sphericity, the determinant and condition number
+#' of the correlation matrix, and each variable's squared multiple correlation (SMC). When
+#' you supply raw data, it also reports each variable's variance and percentage of missing
+#' values, category counts for categorical variables, tests of multivariate normality, and
+#' multivariate outliers.
 #'
-#' @param x data.frame or matrix. Data frame or matrix of raw data, or a matrix of
-#'   correlations. At least three variables are required, and no variable may be a
-#'   perfect linear combination of the others.
-#' @param N numeric. The number of observations. Only needs to be specified when a
-#'   correlation matrix is supplied; it is required for Bartlett's test of
-#'   sphericity and is taken from the data when raw data are supplied. Default is
-#'   `NA`.
-#' @param use character. The missing-data policy for raw data. Passed to
-#'   [stats::cor()] for `"pearson"`, `"spearman"`, and `"kendall"`; for `"poly"` /
-#'   `"tetra"` the same policies are applied to the raw data before the polychoric
-#'   estimation, where `"all.obs"` and `"everything"` abort on a missing value instead
-#'   of returning `NA` correlations. Default is `"pairwise.complete.obs"`.
-#' @param cor_method character. Correlation computed from raw data: `"pearson"`,
-#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
-#'   `"tetra"` for polychoric / tetrachoric correlations of ordinal / binary data
-#'   (a two-step estimator). A Spearman or Kendall matrix is screened on its own
-#'   metric and is not transformed to the Pearson scale the factor model assumes;
-#'   Kendall's tau in particular is not a Pearson correlation. Only `"poly"` and
-#'   `"tetra"` accept ordered factors as well as numeric response codes; the other
-#'   three need numeric data. An unordered
-#'   factor or a character column is refused, because its categories carry no response
-#'   order and the alphabetical order of its levels is not a safe substitute. Default
-#'   is `"pearson"`.
-#' @param mcd_alpha numeric. The proportion of observations covered by the minimum
-#'   covariance determinant (MCD) subset used for the robust outlier diagnostics, in
-#'   \[0.5, 1\]. The default, `0.5`, gives the most robust (highest-breakdown) estimate;
-#'   larger values trade robustness for efficiency. Only used when raw data are supplied.
-#' @param outlier_cutoff numeric. The probability defining the chi-square cutoff for
-#'   flagging a multivariate outlier: an observation is flagged when its squared robust
-#'   distance exceeds `qchisq(outlier_cutoff, p)` for `p` variables, in \[0.5, 0.9999\].
-#'   Default is `0.975`. Only used when raw data are supplied.
-#' @param seed integer. Optional seed for the random subsets drawn by the MCD algorithm,
-#'   making the outlier diagnostics reproducible; the caller's random-number-generator
-#'   state is left unchanged. Default is `NULL`. Only used when raw data are supplied.
+#' @param x data.frame or matrix. Raw data, or a correlation matrix. Needs at least three
+#'   variables, none of which is a perfect linear combination of the others.
+#' @param N numeric. The number of observations. Set this only when you supply a
+#'   correlation matrix; it is needed for Bartlett's test of sphericity and is taken from
+#'   the data automatically when you supply raw data. Default is `NA`.
+#' @param use character. How to handle missing values in raw data. For
+#'   `cor_method = "pearson"`, `"spearman"`, or `"kendall"` this is passed to
+#'   [stats::cor()]. For `"poly"` or `"tetra"` the same rule is applied to the raw data
+#'   before the correlations are estimated; `"all.obs"` and `"everything"` then stop with
+#'   an error on any missing value, instead of returning `NA` correlations. Default is
+#'   `"pairwise.complete.obs"`.
+#' @param cor_method character. How to compute correlations from raw data: `"pearson"`,
+#'   `"spearman"`, or `"kendall"` (via [stats::cor()]), or `"poly"` / `"tetra"` for
+#'   polychoric / tetrachoric correlations of ordinal or binary data. A Spearman or Kendall
+#'   correlation matrix is screened on its own scale, not converted to look like a Pearson
+#'   correlation matrix; Kendall's tau in particular measures something different from a
+#'   Pearson correlation, not just a rescaled version of it. Default is `"pearson"`.
+#' @param mcd_alpha numeric. The proportion of cases used to build the robust outlier
+#'   estimate, between 0.5 and 1. The default, `0.5`, is the most robust choice; a larger
+#'   value uses more of the data but resists outliers less well. Used only with raw data.
+#' @param outlier_cutoff numeric. The probability used to set the cutoff for flagging a
+#'   multivariate outlier, between 0.5 and 0.9999. Default is `0.975`. Used only with raw
+#'   data.
+#' @param seed integer. A seed for the random subsets used by the outlier detection, so
+#'   the result is reproducible. Does not affect your random-number generator elsewhere.
+#'   Default is `NULL`. Used only with raw data.
 #'
 #' @details
 #' The diagnostics are computed from the analysis correlation matrix \eqn{R}:
 #' \describe{
-#'   \item{KMO}{The Kaiser-Meyer-Olkin measure of sampling adequacy (Kaiser, 1970;
-#'     Kaiser & Rice, 1974), overall and for each variable. Larger values (a rough
-#'     floor of .50) indicate greater suitability for factor analysis; see [efa_kmo()].}
-#'   \item{Bartlett}{Bartlett's (1951) test of sphericity, the likelihood-ratio
-#'     test of the hypothesis that \eqn{R} is an identity matrix, with
-#'     \eqn{df = p(p - 1)/2} for \eqn{p} variables. It requires the sample size
-#'     `N`; when `N` is unavailable (a correlation matrix supplied without `N`) the
-#'     test is skipped with a warning, `$bartlett` is `NULL`, and the remaining
-#'     diagnostics are still returned. A supplied `N` that is too small relative to
-#'     \eqn{p} for the correction \eqn{N - 1 - (2p + 5)/6} to be positive leaves the
-#'     statistic itself `NA`, also with a warning. See [efa_bartlett()].}
-#'   \item{Determinant}{The determinant of \eqn{R}, reported as a number. It is the
-#'     product of the \eqn{p} eigenvalues of \eqn{R}, so it falls geometrically as
-#'     variables are added even when every eigenvalue stays far from zero: on a clean
-#'     one-factor pool with all loadings 0.5 it goes from 0.24 at \eqn{p = 10} to
-#'     6.7e-07 at \eqn{p = 60} while the condition index moves only from 2.1 to 4.6. A
-#'     fixed cut-off on it, such as the 0.00001 that is commonly quoted (Field, 2018),
-#'     is therefore a statement about the number of variables as much as about the
-#'     data, and this package does not use one. The multicollinearity verdict rests on
-#'     the condition index below.}
+#'   \item{KMO}{The Kaiser-Meyer-Olkin measure of sampling adequacy (Kaiser, 1970; Kaiser
+#'     & Rice, 1974), overall and for each variable; see [efa_kmo()]. It shows how much
+#'     common variance your variables share. Higher values are better; a common rule of
+#'     thumb treats values below .50 as unacceptable.}
+#'   \item{Bartlett}{Bartlett's (1951) test of sphericity: the likelihood-ratio test of
+#'     whether the correlation matrix is an identity matrix, i.e., whether your variables
+#'     correlate with each other at all; see [efa_bartlett()]. A significant result
+#'     supports doing a factor analysis. The test needs the sample size `N`; without it,
+#'     this diagnostic is skipped with a warning and `$bartlett` is `NULL`. If `N` is too
+#'     small relative to the number of variables, the statistic is `NA`, also with a
+#'     warning.}
+#'   \item{Determinant}{The determinant of \eqn{R}, reported as a number only. It falls as
+#'     you add variables even when the variables are not collinear, so a fixed cut-off on
+#'     it (such as the 0.00001 often quoted from Field, 2018) says more about how many
+#'     variables you have than about your data. Use the condition number instead.}
 #'   \item{Condition number}{The ratio of the largest to the smallest eigenvalue of
-#'     \eqn{R}. Large values indicate an ill-conditioned matrix with near-linear
-#'     dependencies among the variables. Its square root is the condition index: an
-#'     index above 30 is a conventional sign of strong multicollinearity, and 10 to
-#'     30 of moderate multicollinearity (Belsley, Kuh & Welsch, 1980). The index is a
-#'     ratio of eigenvalues, so unlike the determinant it does not move with \eqn{p} on
-#'     its own; it carries the multicollinearity verdict in the printed report and the
-#'     multicollinearity recommendation, which fires above 30.}
-#'   \item{SMC}{The squared multiple correlation of each variable with all the
-#'     others, \eqn{1 - 1/(R^{-1})_{ii}}. A low SMC flags a variable that shares
-#'     little variance with the rest of the set.}
-#'   \item{Variance and missing data}{The variance of each variable (over its
-#'     available values) and the percentage of missing values. Ordered-factor
-#'     columns are recoded to their integer level codes, so `variance` and the
-#'     empty-category check below refer to those codes (the category counts
-#'     themselves are labelled by the original levels). Such columns reach the
-#'     correlation matrix only with `cor_method = "poly"` or `"tetra"`; a Pearson,
-#'     Spearman, or Kendall correlation of a factor frame is refused, as is any
-#'     correlation of an unordered factor or a character column.
-#'     These, and the
-#'     category tabulation below, are computed column by column from the supplied
-#'     data using every non-missing value, and so do not depend on `use`, which
-#'     governs only the correlation matrix. Under a listwise `use`
-#'     (`"complete.obs"` / `"na.or.complete"`) the correlation matrix and `N` are
-#'     based on the complete cases, while the missingness is reported over every
-#'     supplied row so that it explains why `N` is smaller; the number of supplied
-#'     rows is recorded in `settings$n_obs`. Available only from raw data.}
-#'   \item{Categories}{For each variable with fewer than ten distinct values
-#'     (treated as categorical), the response-category counts, flagging a *sparse*
-#'     category (fewer than five responses; a heuristic of this package, borrowing the
-#'     conventional minimum cell count of five from contingency-table analysis
-#'     (Cochran, 1954), because a polychoric correlation is estimated from the
-#'     bivariate response table, in which a category with very few responses leaves
-#'     its threshold poorly determined) and, for integer-coded variables, an
-#'     *empty* interior category (an unused category between the smallest and
-#'     largest observed value). A variable with ten or more distinct values is
-#'     treated as continuous and is not tabulated. As a rough guide, items with
-#'     fewer than five response categories are better analysed with an ordinal
-#'     estimator (polychoric correlations with categorical least squares) than with
-#'     normal-theory maximum likelihood (Rhemtulla et al., 2012). Available only
-#'     from raw data.}
-#'   \item{Multivariate normality}{Two tests of multivariate normality computed from
-#'     the complete cases of the raw data: Mardia's (1970) multivariate skewness and
-#'     kurtosis, and the Henze-Zirkler (1990) omnibus test. Both use the
-#'     maximum-likelihood (divisor-\eqn{n}) covariance, so Mardia's coefficients differ
-#'     from implementations using the unbiased divisor by a factor of
-#'     \eqn{(n / (n - 1))^3} for the skewness coefficient and \eqn{(n / (n - 1))^2} for
-#'     the kurtosis coefficient. The kurtosis coefficient is standardised with its exact
-#'     null moments, \eqn{p(p + 2)(n - 1) / (n + 1)} for the mean (Mardia, 1970) and
-#'     \eqn{8p(p + 2)(n - 3)(n - p - 1)(n - p + 1) / ((n + 1)^2 (n + 3)(n + 5))} for the
-#'     variance (Mardia, 1974). Both become the asymptotic pair \eqn{p(p + 2)} and
-#'     \eqn{8p(p + 2) / n} as the sample size increases. Most other implementations use
-#'     that asymptotic pair. It overstates both moments, by an amount that increases with
-#'     the ratio of variables to observations. With 40 variables and 200 observations it
-#'     rejects data from an exact multivariate normal more than half of the time at the
-#'     .05 level, where the exact moments hold the nominal rate. The skewness statistic
-#'     always carries Mardia's (1974) correction, which makes its expectation equal its
-#'     degrees of freedom at every sample size. Implementations that apply the correction
-#'     only below 20 observations leave the statistic biased low, and the bias increases
-#'     with the ratio of variables to observations until the test has no power. The
-#'     correction sets the mean exactly, but the chi-square approximation keeps an
-#'     inexact variance, so the skewness test holds a rejection rate near, but not exactly
-#'     at, its nominal level. A small p-value indicates
-#'     a departure from multivariate normality, a reason to prefer robust or ordinal
-#'     estimation over normal-theory maximum likelihood. The Henze-Zirkler p-value comes
-#'     from a lognormal approximation whose null variance falls geometrically with the
-#'     number of variables. Beyond roughly 50 to 60 variables (the exact point depends on
-#'     the sample size) that variance is no longer resolvable in double precision, and
-#'     the p-value would be exactly 0 or exactly 1 as a rounding-level residual decides,
-#'     even for data from an exact multivariate normal. It is then withheld, with a
-#'     warning, and the statistic alone is reported; the printed report says how many of
-#'     the available tests reject multivariate normality. Available only from raw data,
-#'     and skipped with a note if the complete-case covariance is singular.}
-#'   \item{Outliers}{Multivariate outliers flagged by their robust Mahalanobis
-#'     distance. A high-breakdown robust location and scatter are estimated from the
-#'     complete cases with the fast minimum covariance determinant (MCD) algorithm
-#'     (Rousseeuw & Van Driessen, 1999), using a subset covering a proportion
-#'     `mcd_alpha` of the observations; an observation whose squared robust distance
-#'     exceeds `qchisq(outlier_cutoff, p)` is flagged. The search runs on columns
-#'     divided by a robust scale and the estimate is returned to the supplied units, so
-#'     the diagnostic does not depend on how the variables happen to be measured. The
-#'     robust covariance is undefined with too few complete cases (\eqn{n \le 2p}), when
-#'     the variables are so nearly linearly dependent that no covering subset has a
-#'     usable covariance, and when a whole covering subset lies exactly on a
-#'     lower-dimensional hyperplane (an *exact fit*, common with coarse discrete items on
-#'     which many respondents answer an item pair identically). In all three cases the
-#'     classical Mahalanobis distance is used instead, with a warning naming which of the
-#'     three applies; those distances are computed from a covariance the outliers
-#'     themselves inflate, so the diagnostic is no longer high-breakdown and tends to
-#'     under-flag. If even the classical covariance is singular the diagnostic is skipped
-#'     with a note. Available only from raw data.}
+#'     \eqn{R}. Its square root, the condition index, is the collinearity diagnostic of
+#'     Belsley, Kuh & Welsch (1980); it drives the printed report and its recommendation.
+#'     An index of 10 or less is rarely of interest. An index above 30 flags a near linear
+#'     dependency: two or more variables that together carry much the same information.
+#'     An index between the two is not negligible, but it stays below the value that
+#'     flags a dependency. Belsley (1991) gives 30 as one example value and calls the
+#'     choice of a cut-off "somewhat of an art form", so the report grades an index above
+#'     30 by its position on the scale 1, 3, 10, 30, 100, 300, 1000: moderate (30 to 100),
+#'     strong (100 to 300), or very strong (above 300). These values come from regression
+#'     diagnostics on data that are not centred, but a correlation matrix is centred, so
+#'     use them as a guide and not as a test.}
+#'   \item{SMC}{The squared multiple correlation of each variable with all the others. A
+#'     low value flags a variable that has little in common with the rest of your set.}
+#'   \item{Variance and missing data}{For raw data: each variable's variance (over its
+#'     available values) and percentage of missing values, computed from every row you
+#'     supplied. These missing-value percentages explain why the correlation matrix's
+#'     sample size (`N`) can be smaller than the number of rows in your data. Ordered-factor
+#'     columns are recoded to integer levels first, so `variance` reflects those codes.}
+#'   \item{Categories}{For raw data: for each variable with fewer than ten distinct values
+#'     (treated as categorical), the count of responses in each category. A category with
+#'     fewer than five responses is flagged as sparse, and an unused category between the
+#'     smallest and largest response is flagged as empty. As a rule of thumb, items with
+#'     fewer than five response categories are better analysed with `cor_method = "poly"`
+#'     or `"tetra"` than with Pearson correlations (Rhemtulla et al., 2012).}
+#'   \item{Multivariate normality}{For raw data, using only complete cases: two tests of
+#'     multivariate normality, Mardia's (1970) test of skewness and kurtosis and the
+#'     Henze-Zirkler (1990) test. A small p-value on either test suggests your data depart
+#'     from a multivariate normal distribution, a reason to prefer a robust or ordinal
+#'     method over normal-theory maximum likelihood. In a very small sample the kurtosis
+#'     statistic is `NA`. The Henze-Zirkler p-value is not available with more than about
+#'     50 to 60 variables; its test statistic is still reported.}
+#'   \item{Outliers}{For raw data, using only complete cases: multivariate outliers, found
+#'     from a robust estimate of each case's distance from the centre of your data (the
+#'     minimum covariance determinant method; Rousseeuw & Van Driessen, 1999). A flagged
+#'     case is unusually far from the rest of your sample. When there are too few complete
+#'     cases, the variables are too collinear, or too many cases share identical answers,
+#'     a plain (non-robust) distance is used instead, with a warning explaining why.}
 #' }
 #'
 #' @returns An object of class `efa_screen`, a list containing:
-#' \item{kmo}{A list with the overall KMO (`KMO`) and the per-variable KMO
-#'   (`KMO_i`).}
-#' \item{bartlett}{A list with Bartlett's chi-square statistic (`chisq`), its
-#'   `p_value`, and its degrees of freedom (`df`); `chisq` and `p_value` are `NA`,
-#'   with a warning, when `N` is too small for the Bartlett correction. `NULL` when
-#'   `N` is unavailable.}
+#' \item{kmo}{A list with the overall KMO (`KMO`) and the per-variable KMO (`KMO_i`).}
+#' \item{bartlett}{A list with Bartlett's chi-square statistic (`chisq`), its `p_value`,
+#'   and its degrees of freedom (`df`); `chisq` and `p_value` are `NA` when `N` was too
+#'   small for the correction. `NULL` when `N` is unavailable.}
 #' \item{determinant}{The determinant of the correlation matrix.}
-#' \item{condition}{The condition number of the correlation matrix (largest over
-#'   smallest eigenvalue).}
+#' \item{condition}{The condition number of the correlation matrix (largest eigenvalue
+#'   over smallest).}
 #' \item{smc}{The per-variable squared multiple correlations.}
-#' \item{per_item}{A data frame with one row per variable (row names are the
-#'   variable names) holding the per-item diagnostics: `variance` (over the
-#'   available values), `missing` (percentage of missing values), `smc`, `kmo_i`,
-#'   and `flags` (a comma-separated list of any sparse/empty-category issues, the
-#'   empty string `""` for a categorical variable with none, and `NA` for a variable
-#'   treated as continuous). `NULL` when a correlation matrix is supplied.}
-#' \item{normality}{Multivariate-normality diagnostics computed from the complete cases
-#'   of the raw data: a list with `mardia` (Mardia's multivariate skewness statistic
-#'   `skewness`, its degrees of freedom `skewness_df` and p-value `skewness_p`,
-#'   the standardised `kurtosis` statistic and its p-value `kurtosis_p` (both
-#'   `NA` when the exact null variance is zero, as at \eqn{n = p + 1}, where the kurtosis
-#'   coefficient is constant and gives no information), and the underlying coefficients
-#'   `b1p` and `b2p`), `hz` (the
-#'   Henze-Zirkler `statistic` and its
-#'   `p_value`), and `n_complete` (the number of complete cases used). When the
-#'   complete-case covariance is singular the tests are skipped and a classed note (of
-#'   class `efa_screen_no_mvn`) is returned instead, alongside a warning. When the
-#'   Henze-Zirkler null approximation degenerates at many variables, `hz` keeps its
-#'   `statistic`, has an `NA` `p_value`, and carries a `message` and the class
-#'   `efa_screen_no_hz`, also alongside a warning; Mardia's tests are unaffected. `NULL`
-#'   when a correlation matrix is supplied.}
-#' \item{outliers}{Multivariate-outlier diagnostics from the complete cases of the raw
-#'   data: a list with `distances` (each complete case's robust Mahalanobis distance, named
-#'   by its row number in the supplied data), `cutoff` (the flagging threshold on the
-#'   distance scale, `sqrt(qchisq(outlier_cutoff, p))`, directly comparable to `distances`),
-#'   `flagged` (the row numbers, in the supplied data, whose robust distance exceeds
-#'   `cutoff`), `center` and `cov` (the robust location and scatter underlying the
-#'   distances), `method` (`"mcd"` for the robust estimate, or `"classical"` when the
-#'   fallback was used), `fallback_reason` (why the robust estimate was unavailable, or
-#'   `NULL` when `method` is `"mcd"`), and `n_complete` (the number of complete cases).
-#'   When neither a robust nor a classical covariance can be formed a classed note (of
-#'   class `efa_screen_no_outliers`) is returned instead. `NULL` when a correlation
-#'   matrix is supplied.}
-#' \item{categories}{A named list with, for each variable treated as categorical,
-#'   the response-category counts (in category order, labelled by the original levels
-#'   for a factor or character column and by the value itself otherwise); `NA` for a
-#'   variable treated as continuous. `NULL` when a correlation matrix is supplied.}
-#' \item{note}{A classed note explaining that the raw-data diagnostics need raw
-#'   data; `NULL` when raw data are supplied.}
-#' \item{settings}{A list of the settings used, including `n_obs`, the number of
-#'   rows in the supplied raw data (`NA` for a correlation-matrix input),
-#'   `outlier_cutoff`, the probability behind the outlier flagging threshold,
-#'   `mcd_alpha`, the coverage of the minimum covariance determinant subset, and
-#'   `seed` (`NULL` when none was supplied).}
+#' \item{per_item}{A data frame with one row per variable (row names are the variable
+#'   names): `variance`, `missing` (percentage), `smc`, `kmo_i`, and `flags` (any
+#'   sparse/empty-category issues). `NULL` when a correlation matrix is supplied instead
+#'   of raw data.}
+#' \item{normality}{A list with `mardia` (skewness `skewness`, `skewness_df`,
+#'   `skewness_p`, kurtosis `kurtosis` and `kurtosis_p`, and the underlying `b1p`/`b2p`),
+#'   `hz` (the Henze-Zirkler `statistic` and its `p_value`), and `n_complete` (the number
+#'   of complete cases used). `NULL` without raw data, or a note explaining why when the
+#'   complete-case data cannot support the tests.}
+#' \item{outliers}{A list with `distances` (each complete case's robust distance, named by
+#'   its row number), `cutoff` (the flagging threshold, on the same scale as `distances`),
+#'   `flagged` (the row numbers exceeding `cutoff`), `center` and `cov` (the robust
+#'   location and scatter), `method` (`"mcd"` or the `"classical"` fallback),
+#'   `fallback_reason` (why the robust estimate was unavailable, when `method` is
+#'   `"classical"`), and `n_complete`. `NULL` without raw data, or a note explaining why
+#'   when no covariance can be formed.}
+#' \item{categories}{A named list with the response-category counts for each categorical
+#'   variable (in category order); `NA` for a variable treated as continuous. `NULL`
+#'   without raw data.}
+#' \item{note}{Explains why the raw-data diagnostics (`per_item`, `normality`,
+#'   `outliers`, `categories`) are missing, when a correlation matrix is supplied instead
+#'   of raw data. `NULL` when raw data are supplied.}
+#' \item{settings}{The settings used: `N`, `n_obs` (rows in the raw data supplied, `NA`
+#'   for a correlation-matrix input), `use`, `cor_method`, `mcd_alpha`, `outlier_cutoff`,
+#'   and `seed`.}
 #'
 #' @source Bartlett, M. S. (1951). The effect of standardization on a Chi-square
 #'   approximation in factor analysis. Biometrika, 38, 337-344.
+#' @source Belsley, D. A. (1991). A guide to using the collinearity diagnostics. Computer
+#'   Science in Economics and Management, 4, 33-50.
 #' @source Belsley, D. A., Kuh, E. & Welsch, R. E. (1980). Regression diagnostics:
 #'   Identifying influential data and sources of collinearity. Wiley.
 #' @source Cochran, W. G. (1954). Some methods for strengthening the common

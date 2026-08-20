@@ -29,25 +29,23 @@ analysis output.}
 factor analysis output to compare to x.}
 
 \item{reorder}{character. Whether and how elements / columns should be
-reordered. If "congruence" (default), the columns of \code{y} are matched to those
-of \code{x} by an optimal one-to-one assignment that maximizes Tucker's congruence
-coefficient, so each factor is matched exactly once; with a single column this
-reduces to matching its sign. It applies to matrices only, and warns when \code{x}
+reordered. If "congruence" (default), the columns of \code{y} are matched to those of
+\code{x} by a joint one-to-one assignment that maximizes the total Tucker's congruence
+coefficient (a standard measure of similarity between two loading vectors) across
+all columns at once, and each matched column's sign is flipped if needed. This way,
+mismatched factor order or sign between two solutions does not distort the
+comparison. It applies to matrices only, and warns when \code{x}
 and \code{y} are vectors. If "names", the columns of a matrix -- or the elements of
 a vector -- are put in alphabetical order of their names; the rows of a matrix
 are assumed to be aligned already and are left untouched. If "none", no
 reordering is done.}
 
 \item{corres}{logical. Whether factor correspondences should be compared if a
-matrix is entered.}
+matrix is entered. Default is TRUE.}
 
-\item{thresh}{numeric. The threshold to classify a pattern coefficient as substantial. Default is .3.}
+\item{thresh}{numeric. The threshold at or above which a loading is classified as substantial. Default is .3.}
 
-\item{digits}{numeric. Number of decimals to print in the output. Default is 4.
-Like \code{m_red}, \code{range_red}, \code{round_red}, and \code{print_diff}, it is recorded in
-\code{settings} but governs only the printed report, so it can be overridden per call
-in \code{\link[=print.efa_compare]{print.efa_compare()}} without recomputing the comparison. \code{plot_red} is a
-drawing setting and is overridden the same way in \code{\link[=plot.efa_compare]{plot.efa_compare()}}.}
+\item{digits}{numeric. Number of decimals to print in the output. Default is 4.}
 
 \item{m_red}{numeric. Number above which the mean and median should be printed
 in red (i.e., if .001 is used, the mean will be in red if it is larger than
@@ -55,14 +53,14 @@ in red (i.e., if .001 is used, the mean will be in red if it is larger than
 
 \item{range_red}{numeric. Number above which the min and max should be printed
 in red (i.e., if .001 is used, min and max will be in red if the max is larger
-than .001, otherwise it will be displayed in green. Default is .001). Note that
+than .001, otherwise it will be displayed in green). Default is .001. Note that
 the color of min also depends on max, that is min will be displayed in the
 same color as max.}
 
-\item{round_red}{numeric. Number above which the max decimals to round to where
-all corresponding elements of x and y are still equal are displayed in red
-(i.e., if 3 is used, the number will be in red if it is smaller than
-3, otherwise it will be displayed in green). Default is 3.}
+\item{round_red}{numeric. The number of agreeing decimals below which the
+report highlights the agreement in red (i.e., if 3 is used, the value is
+shown in red when the compared numbers agree to fewer than 3 decimals,
+otherwise in green). Default is 3.}
 
 \item{print_diff}{logical. Whether the difference vector or matrix should be
 printed or not. Default is TRUE.}

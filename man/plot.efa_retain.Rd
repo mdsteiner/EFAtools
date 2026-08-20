@@ -17,7 +17,7 @@ plottable result, or invisibly \code{NULL} if there is none.
 }
 \description{
 Plots every factor-retention criterion in the \code{\link[=efa_retain]{efa_retain()}} result that has
-a plottable outcome (see \code{\link[=plot.efa_retention]{plot.efa_retention()}}); criteria without a plot
+a plottable outcome (see \code{\link[=plot.efa_retention]{plot.efa_retention()}}). Criteria without a plot
 (e.g. \code{\link[=efa_map]{efa_map()}} or \code{\link[=efa_smt]{efa_smt()}}) are skipped.
 }
 \examples{

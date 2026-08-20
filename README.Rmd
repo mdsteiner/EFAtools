@@ -43,10 +43,10 @@ pak::pak("mdsteiner/EFAtools")
 
 The `efa_*` functions cover the steps of an EFA workflow:
 
-* **Screening and suitability**: `efa_screen()` checks the data for multivariate normality, outliers, and suitability for factor analysis. `efa_kmo()` and `efa_bartlett()` run the Kaiser-Meyer-Olkin criterion and Bartlett's test of sphericity separately.
+* **Screening and suitability**: `efa_screen()` checks the data for multivariate normality, outliers, and suitability for factor analysis. Kaiser-Meyer-Olkin criterion and Bartlett's test of sphericity can also be run separately with `efa_kmo()` and `efa_bartlett()`.
 * **Factor retention**: `efa_retain()` runs several factor retention criteria with a single call. They are also available on their own: `efa_cd()`, `efa_ekc()`, `efa_hull()`, `efa_kgc()`, `efa_map()`, `efa_nest()`, `efa_parallel()`, `efa_scree()`, and `efa_smt()`.
 * **Fitting**: `efa_fit()` fits the factor model. `estimate_control()` and `rotate_control()` configure the estimation and rotation settings.
-* **Rotation and transformation**: `efa_procrustes()` rotates a solution onto a target. `efa_schmid_leiman()` transforms an oblique solution into a hierarchical one.
+* **Special rotation and transformation**: `efa_procrustes()` rotates a solution onto a target. `efa_schmid_leiman()` transforms an oblique solution into a hierarchical one. 
 * **Reliability**: `efa_reliability()` computes reliability and common-variance coefficients for a factor solution.
 * **Factor scores**: `efa_scores()` estimates factor scores together with score-quality diagnostics.
 * **Comparison**: `efa_compare()` compares two solutions (loadings or communalities).
@@ -56,7 +56,7 @@ The `efa_*` functions cover the steps of an EFA workflow:
 * **Simulation**: `efa_simulate()` simulates data from a common-factor population model.
 * **Power**: `efa_power()` performs analytic and simulation-based power analysis.
 
-The uppercase names (`EFA()`, `N_FACTORS()`, ...) still work and keep their arguments. Use the `efa_*` names for new code.
+The uppercase names of the older package versions (`EFA()`, `N_FACTORS()`, ...) still work and keep their arguments. Use the `efa_*` names for new code.
 
 The following vignettes and articles cover these in detail:
 
@@ -101,7 +101,7 @@ efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 
 With raw data, you can use every feature: sandwich and bootstrap standard errors, DWLS estimation with polychoric correlations, and two-stage FIML estimation of correlations.
 
-In the first example below, which uses bootstrap SEs (`se = "np-boot"`), the confidence intervals are percentile intervals over refitted resamples. For the loadings and factor correlations, the intervals are centred on the point estimate. For the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI), the intervals are located above the point estimate, because each resample carries the sample's own misfit plus fresh sampling noise. If a point estimate falls below its own lower bound, this shift is the reason, not a miscomputed interval. CFI and TLI are unaffected because they are ratios: their baseline chi-square shifts together with the model chi-square.
+In the first example below, which uses bootstrap SEs (`se = "np-boot"`), the confidence intervals are percentile intervals over refitted resamples. For the loadings and factor correlations, the intervals are centred on the point estimate. For the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI), the intervals are located above the point estimate, because each resample carries the sample's own misfit plus fresh sampling noise. So a point estimate can fall below its own lower bound in some cases. CFI and TLI are unaffected because they are ratios: their baseline chi-square shifts together with the model chi-square.
 
 ```{r fig.height=3}
 

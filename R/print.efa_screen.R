@@ -123,8 +123,8 @@ format.efa_screen <- function(x, digits = 3, ...) {
     # about the number of variables as much as about the data: it fires on wide but
     # well-conditioned item pools and contradicts the condition index printed directly
     # under it. The determinant is reported as a number only, and the condition index
-    # (above 30; Belsley-Kuh-Welsch, 1980) carries this section's verdict and the
-    # consolidated recommendation, so the one cut-off lives in one place.
+    # (above 30; Belsley, 1991) carries this section's verdict and the consolidated
+    # recommendation, so the one cut-off lives in one place.
     det_R <- x$determinant
     dstr <- format(det_R, digits = digits, scientific = FALSE)
     cli::cli_alert_info(
@@ -133,25 +133,21 @@ format.efa_screen <- function(x, digits = 3, ...) {
 
     cond <- x$condition
     cstr <- formatC(cond, format = "f", digits = digits)
-    # The 10/30 cut-offs are Belsley-Kuh-Welsch thresholds for the condition *index*, the
-    # square root of the condition number, so the index is shown alongside the number the
-    # section reports: quoting the rule without the quantity it governs invites the value
-    # to be read against the wrong scale.
+    # The verdict is on the condition *index*, and its bands live in .ci_band(). The
+    # index is shown alongside the rule that governs it: quoting the rule without the
+    # quantity invites the value to be read against the wrong scale. Above 30 the
+    # strength is named as well, because a flat label would give an index of 35 and an
+    # index of 3000 the same verdict.
     ci <- sqrt(cond)
     cistr <- formatC(ci, format = "f", digits = digits)
-    ci_strong <- !is.na(ci) && ci > 30
-    if (ci_strong) {
-      cli::cli_alert_danger(
-        "Condition number: {cstr} (condition index {cistr}). Strong multicollinearity (index above 30; Belsley, Kuh & Welsch, 1980).",
-        wrap = TRUE)
-    } else if (!is.na(ci) && ci > 10) {
-      cli::cli_alert_warning(
-        "Condition number: {cstr} (condition index {cistr}). Moderate multicollinearity (index 10 to 30; Belsley, Kuh & Welsch, 1980).",
+    ci_band <- .ci_band(ci)
+    if (ci_band$flag) {
+      ci_band$alert(
+        "Condition number: {cstr} (condition index {cistr}). The index is above 30, which indicates a near linear dependency; its relative strength is {ci_band$strength} (Belsley, 1991).",
         wrap = TRUE)
     } else {
-      cli::cli_alert_success(
-        "Condition number: {cstr} (condition index {cistr}). No concern (index below 10; Belsley, Kuh & Welsch, 1980).",
-        wrap = TRUE)
+      ci_band$alert("Condition number: {cstr} (condition index {cistr}). {ci_band$note}",
+                    wrap = TRUE)
     }
 
     # -- Per-variable diagnostics ----------------------------------------------
@@ -258,7 +254,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
     # -- Recommendations -------------------------------------------------------
     .print_efa_rule("Recommendations")
     recs <- .screen_recommendations(x, raw, kmo, bart_sig, mvn_nonnormal,
-                                    ci_strong, digits)
+                                    ci_band$flag, digits)
     # cli treats each bullet as a glue/cli template, so double any braces coming from
     # user variable names to render them literally (as .efa_emit_bullets does).
     msg <- gsub("}", "}}", gsub("{", "{{", recs$message, fixed = TRUE), fixed = TRUE)
@@ -282,6 +278,31 @@ format.efa_screen <- function(x, digits = 3, ...) {
     list(min = -Inf, label = "unacceptable", colour = cli::col_red,    alert = cli::cli_alert_danger,  symbol = "x", suitability = "not")
   )
   Find(function(b) kmo >= b$min, bands)
+}
+
+# Belsley's (1991) reading of the condition index, and the single place it is written
+# down: the highest band the index clears gives the severity as an alert function, the
+# verdict text, and `flag`, which gates both this section's verdict and the consolidated
+# recommendation so the two cannot drift apart. The bands are steps on the progression
+# 1, 3, 10, 30, 100, 300, 1000 that Belsley reads relative strength from (p. 38); they
+# are not absolute cut-offs. An index of 10 or less is rarely of interest (pp. 43 and
+# 46). Belsley gives 30 as one example value for flagging a near dependency, and a band
+# must exceed it, not only reach it (p. 38). He calls 30 to 100 moderate (p. 42), and in
+# his worked example he grades indexes of 35, 153, and 455 as moderately strong, strong,
+# and very strong (pp. 44-45).
+.ci_band <- function(ci) {
+  bands <- list(
+    list(above = 300,  alert = cli::cli_alert_danger,  flag = TRUE, strength = "very strong"),
+    list(above = 100,  alert = cli::cli_alert_danger,  flag = TRUE, strength = "strong"),
+    list(above = 30,   alert = cli::cli_alert_danger,  flag = TRUE, strength = "moderate"),
+    list(above = 10,   alert = cli::cli_alert_warning, flag = FALSE,
+         note = "The index is above 10, but not above 30, the value that flags a near linear dependency (Belsley, 1991)."),
+    list(above = -Inf, alert = cli::cli_alert_success, flag = FALSE,
+         note = "An index of 10 or less is rarely of interest (Belsley, 1991).")
+  )
+  # An index that is not available takes the lowest band, as the report has always done.
+  if (is.na(ci)) return(bands[[length(bands)]])
+  Find(function(b) ci > b$above, bands)
 }
 
 # TRUE when the complete cases the normality and outlier diagnostics use are fewer than
@@ -420,10 +441,11 @@ format.efa_screen <- function(x, digits = 3, ...) {
                     "uninformative here and rely on the KMO."))
   }
 
-  # Multicollinearity: a high condition index (Belsley, Kuh & Welsch, 1980), decided once
-  # by the caller from the same threshold used for the section verdict. A high index does
-  # not have to come from one redundant pair - a set of items that is together nearly
-  # linearly dependent gives the same result - so the remedy names both.
+  # Multicollinearity: a condition index above 30, the value Belsley (1991) gives for
+  # flagging a near linear dependency, decided once by the caller from the same band
+  # table as the section verdict. A high index does not have to come from one redundant
+  # pair - a set of items that is together nearly linearly dependent gives the same
+  # result - so the remedy names both.
   if (isTRUE(multicollinear)) {
     push("!", paste("A high condition index indicates multicollinearity; look for a redundant item",
                     "pair (r > .8) or a larger set of items that is nearly linearly dependent, and",

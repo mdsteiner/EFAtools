@@ -1,55 +1,50 @@
 #' Power analysis for exploratory factor analysis
 #'
 #' @description
-#' Power analysis for exploratory factor analysis, in two modes selected by `mode`.
+#' Analyses power for exploratory factor analysis, in one of two modes chosen with
+#' `mode`.
 #'
-#' `mode = "rmsea"` (the default) gives the analytic statistical power of the root
-#' mean square error of approximation (RMSEA) tests of close and not-close fit
-#' (MacCallum, Browne, & Sugawara, 1996): given the model degrees of freedom and a
-#' sample size it returns the power to reject the null hypothesis, and given a target
-#' power instead of a sample size it returns the sample size required to reach it.
+#' `mode = "rmsea"` (the default) gives the analytic power of the root mean square
+#' error of approximation (RMSEA) tests of close and not-close fit (MacCallum,
+#' Browne, & Sugawara, 1996). Give a sample size to get the power of the test, or
+#' give a target power to get the sample size needed to reach it.
 #'
-#' `mode = "simulation"` runs a Monte-Carlo study of a known population: it draws
-#' `n_datasets` samples of size `N` (via [efa_simulate()]) and, over the replicates,
-#' reports how often each factor-retention criterion recovers the true number of
-#' factors (the *hit-rate*), how often the fitted loadings recover the population
-#' structure (*structure recovery*, by Tucker congruence), and the convergence and
-#' Heywood-case rate of the fit.
+#' `mode = "simulation"` runs a Monte-Carlo study: it draws `n_datasets` samples from
+#' a known population (via [efa_simulate()]), analyses each one, and reports how well
+#' the analysis recovers that population. See *Details* for what is reported.
 #'
-#' The model dimensions follow the notation of MacCallum, Browne and Sugawara (1996):
-#' `p` is the number of observed variables (the `n_vars` of the rest of the package) and
-#' `k` the number of factors (`n_factors` elsewhere).
+#' Here the number of variables is `p` and the number of factors is `k` (elsewhere in
+#' the package: `n_vars` and `n_factors`).
 #'
 #' @details
 #' # RMSEA mode
 #'
-#' The RMSEA fit statistic is referred to a noncentral chi-square distribution.
-#' For a model with `df` degrees of freedom and population RMSEA \eqn{\varepsilon},
-#' the noncentrality parameter is
-#' \deqn{\lambda = (N - 1)\, df\, \varepsilon^2 / G,}
-#' where \eqn{N} is the sample size and \eqn{G} the number of groups (`group`).
+#' Power rises with a larger sample, a larger model (more degrees of freedom), and a
+#' bigger gap between the null and alternative RMSEA (MacCallum, Browne, & Sugawara,
+#' 1996).
 #'
-#' Two tests are supported, selected by `type` (never by the ordering of `eps0`
-#' and `eps1`):
+#' Two tests are supported, chosen with `type` (never by the order of `eps0` and
+#' `eps1`):
 #' \describe{
-#'   \item{`"close"`}{The test of *close fit* (MacCallum et al., 1996): the null
-#'     hypothesis is that the fit is close (RMSEA \eqn{\le} `eps0`, conventionally
-#'     0.05), and power is computed against a worse alternative (`eps1`,
+#'   \item{`"close"`}{Tests *close fit* (MacCallum et al., 1996). The null
+#'     hypothesis is that the fit is close (RMSEA \eqn{\le} `eps0`; conventionally
+#'     0.05). Power is the chance of detecting a worse alternative (`eps1`;
 #'     conventionally 0.08, so `eps0 < eps1`), in the upper tail.}
-#'   \item{`"notclose"`}{The test of *not-close fit*: the null hypothesis is that
-#'     the fit is not close (RMSEA \eqn{\ge} `eps0`), and power is computed against
-#'     a better alternative (`eps1`, conventionally 0.01, so `eps0 > eps1`), in the
+#'   \item{`"notclose"`}{Tests *not-close fit*. The null hypothesis is that the fit
+#'     is not close (RMSEA \eqn{\ge} `eps0`). Power is the chance of detecting a
+#'     better alternative (`eps1`; conventionally 0.01, so `eps0 > eps1`), in the
 #'     lower tail.}
 #' }
-#' When `eps0` and `eps1` are ordered the wrong way round for the chosen `type` a
-#' message is emitted but the requested test is still computed. Equal `eps0` and
-#' `eps1` leave nothing to detect and are an error.
+#' When `eps0` and `eps1` are in the wrong order for the chosen `type`, a message is
+#' shown but the requested test still runs. Equal `eps0` and `eps1` leave nothing to
+#' detect and are an error.
 #'
-#' Power increases monotonically with `N`, so the required sample size (the
-#' smallest `N` reaching `power`) is found by bisection. `N` is the **total**
-#' sample size across groups: with `group > 1` the noncentrality above carries the
-#' `1 / group` factor, so a fixed total spread over more groups buys less power.
-#' The corresponding per-group sample size `N / group` is returned as `N_per_group`.
+#' Power always increases with `N`, so the required sample size (the smallest `N`
+#' reaching `power`) is found by bisection. `N` is the **total** sample size across
+#' groups: with `group > 1` the power calculation divides by `group` (the
+#' `1 / group` factor), so spreading a fixed total over more groups gives less
+#' power. The matching per-group sample size, `N / group`, is returned as
+#' `N_per_group`.
 #'
 #' The `1 / group` factor makes all `group` groups the same size, so a required
 #' total is rounded up to the next multiple of `group`. A solved `N_per_group` is thus
@@ -60,31 +55,36 @@
 #'
 #' # Simulation mode
 #'
-#' The population is passed to [efa_simulate()], which draws `n_datasets` samples of size
-#' `N`. Its true number of factors `k_true` is `ncol(Lambda)` for a factor-model
-#' population, or `k` for a bare `R`. By default the population fits the factor model
-#' exactly, which overstates how well the criteria and the fit recover the structure; a
-#' misfit target makes it a more realistic one (MacCallum, 2003).
+#' The population is passed to [efa_simulate()], which draws `n_datasets` samples of
+#' size `N` from it. The population's true number of factors, `k_true`, is
+#' `ncol(Lambda)` for a factor-model population, or `k` for a bare `R`. By default
+#' the population fits the factor model exactly, which overstates how well the
+#' criteria and the fit recover its structure; setting a misfit target makes the
+#' population more realistic (MacCallum, 2003).
 #'
-#' Each replicate is analysed three ways. **Hit-rate**: every criterion in `criteria`
-#' is run and its suggested number of factors compared with `k_true`; the hit-rate is
-#' the proportion of agreements over the replicates on which the criterion returned a
-#' definite factor count (replicates where it errored or was undecided are excluded,
-#' not counted as misses). **Structure recovery** (only for a factor-model
-#' population): the `k_true`-factor model is fitted with [efa_fit()], its rotated loadings
-#' are matched to the population loadings, and the matched-factor Tucker congruences
-#' (Lorenzo-Seva & ten Berge, 2006) are compared with `recovery_threshold`; a
-#' replicate counts as a success when the smallest (`min`) or the average (`mean`)
-#' matched congruence reaches it. **Convergence**: the same fit supplies the
-#' proportion of replicates whose fit completed and, among those, the proportion that
-#' converged and that produced a Heywood case. A replicate whose fit fails outright
-#' contributes to none of the three; if any fit fails, a warning reports how many did
-#' and the first replicate's cause.
+#' Each replicate is analysed three ways:
+#' \describe{
+#'   \item{**Hit-rate**}{The share of replicates where a criterion's suggested factor
+#'     count (from `criteria`) matches `k_true`. A replicate where the criterion
+#'     errored or gave no answer is left out of this count -- it does not count as a
+#'     miss.}
+#'   \item{**Structure recovery** (factor-model populations only)}{The `k_true`-factor
+#'     model is fitted with [efa_fit()], its loadings are matched to the population
+#'     loadings, and the matched-factor Tucker congruences (Lorenzo-Seva & ten Berge,
+#'     2006) are compared with `recovery_threshold`. A replicate succeeds when its
+#'     smallest (`min`) or average (`mean`) matched congruence reaches the
+#'     threshold.}
+#'   \item{**Convergence**}{Among the replicates whose fit completed, the share that
+#'     converged and the share that produced a Heywood case.}
+#' }
+#' A replicate whose fit fails completely is not counted in any of the three
+#' measures above. If any fit fails, a warning reports how many failed and the cause
+#' of the first failure.
 #'
-#' Replicates are analysed in parallel with \pkg{future.apply}; a plan is selected with
-#' [future::plan()]. Each replicate is bound to its own reproducible random-number
-#' stream, so with a fixed `seed` the result is identical regardless of the number of
-#' workers, and the caller's random-number state is left unchanged.
+#' Replicates are analysed in parallel with \pkg{future.apply}; choose a parallel
+#' plan with [future::plan()]. Each replicate uses its own reproducible
+#' random-number stream, so with a fixed `seed` the result does not depend on the
+#' number of workers, and the caller's random-number state is left unchanged.
 #'
 #' @param mode character. The kind of power analysis: `"rmsea"` (the default; analytic
 #'   RMSEA power) or `"simulation"` (Monte-Carlo hit-rate and structure recovery).
@@ -147,25 +147,27 @@
 #'   passed to [efa_fit()]. Default is `NULL`, which matches the population: `"varimax"`
 #'   for orthogonal factors and `"promax"` for oblique ones (a single factor is left
 #'   unrotated). Recovery aligns the fitted loadings to the population pattern by
-#'   permutation and sign only, so a rotation that does not seek that structure -- for
-#'   example `"none"` with more than one factor -- understates recovery; keep the
-#'   default (or another structure-seeking rotation) for a meaningful recovery rate.
+#'   permutation and sign only. A rotation that does not seek that structure -- for
+#'   example `"none"` with more than one factor -- will understate recovery, so keep
+#'   the default (or another structure-seeking rotation) for a meaningful recovery
+#'   rate.
 #' @param recovery_threshold numeric. Simulation mode. The matched-factor Tucker
-#'   congruence a replicate must reach to count as recovered. Default is `0.95` (the
-#'   Lorenzo-Seva & ten Berge, 2006, "equal" band).
-#' @param model_error character. Simulation mode. The [efa_simulate()] method used to
-#'   perturb the population with model error: `"TKL"` (Tucker-Koopman-Linn, the
-#'   default), `"CB"` (Cudeck-Browne), `"WB"` (Wu-Browne), or `"none"` for an exact
-#'   population. It takes effect only when a target is supplied (`target_rmsea` and/or
-#'   `target_cfi`); without one the population is exact whatever the method, and only a
-#'   factor-model population can be perturbed. `"TKL"` adds minor common factors, so it
-#'   degrades both the retention hit-rate and structure recovery realistically; `"CB"`
-#'   and `"WB"` target the RMSEA only, and `"CB"` keeps the fitted loadings the exact
-#'   minimizer so structure recovery stays near-perfect. That is why the default here is
-#'   `"TKL"` while [efa_simulate()] defaults to `"CB"`: the same target passed to the two
-#'   functions perturbs the population differently unless `model_error` is set explicitly,
-#'   and the difference is material -- a `"CB"` population can leave recovery near 1 where
-#'   the same target under `"TKL"` does not.
+#'   congruence a replicate must reach to count as recovered. Default is `0.95`:
+#'   Lorenzo-Seva and ten Berge (2006) treat congruence at or above this level as
+#'   indicating the same factor.
+#' @param model_error character. Simulation mode. The [efa_simulate()] method that
+#'   perturbs the population with model error: `"TKL"` (Tucker-Koopman-Linn, the
+#'   default here), `"CB"` (Cudeck-Browne), `"WB"` (Wu-Browne), or `"none"` for an
+#'   exact population. It only takes effect when a target is supplied (`target_rmsea`
+#'   and/or `target_cfi`), and only for a factor-model population; without a target
+#'   the population stays exact whatever the method. `"TKL"` adds minor common
+#'   factors, giving a realistically imperfect population but lowering both the
+#'   hit-rate and structure recovery; `"CB"` and `"WB"` target the RMSEA only. `"CB"`
+#'   keeps the population loadings as the exact minimizer of the perturbed
+#'   population, so recovery stays close to perfect; `"WB"`'s loadings are not the
+#'   minimizer, so they carry no such guarantee. Note that [efa_simulate()] itself
+#'   defaults to `"CB"`: the same `target_rmsea` passed to both functions gives an
+#'   easier population there, unless `model_error` is also set explicitly here.
 #' @param target_rmsea numeric. Simulation mode. The population RMSEA the model should
 #'   have relative to the perturbed population, activating model error. Default is
 #'   `NULL`. Passed to [efa_simulate()].
@@ -195,17 +197,20 @@
 #' \item{hit_rate}{A named numeric vector of the retention hit-rate per criterion (and,
 #'   where a criterion has several variants, per variant); `NA` for a criterion that
 #'   returned no suggestion on any replicate.}
-#' \item{hits}{A data frame with, per criterion, the number of replicates it returned a
-#'   definite suggestion on (`n_valid`), the number of those that matched `k_true`
-#'   (`hits`), and the `hit_rate` (`hits / n_valid`).}
+#' \item{hits}{A data frame with one row per criterion (`criterion`) giving the
+#'   number of replicates it returned a definite suggestion on (`n_valid`), the
+#'   number of those that matched `k_true` (`hits`), and the `hit_rate`
+#'   (`hits / n_valid`).}
 #' \item{recovery}{For a factor-model population, a list with the structure-recovery
 #'   rates (`min_rate`, `mean_rate`), the `threshold`, and the number of usable fits
 #'   (`n_valid`); `NULL` for an `R` population. Rates are over every replicate whose fit
 #'   returned loadings, including non-converged or Heywood solutions (their rates are
 #'   reported separately in `convergence`).}
-#' \item{convergence}{A list with the number of datasets, the number of fits that
-#'   completed (`n_fit_ok`), and rates: `fit_rate` (fits completed, over all datasets)
-#'   and `convergence_rate` / `heywood_rate` (converged / Heywood, over the completed
+#' \item{convergence}{A list with the number of datasets (`n_datasets`), the number
+#'   of fits that completed (`n_fit_ok`), how many of those converged
+#'   (`n_converged`) and how many produced a Heywood case (`n_heywood`), and the
+#'   corresponding rates: `fit_rate` (fits completed, over all datasets) and
+#'   `convergence_rate` / `heywood_rate` (converged / Heywood, over the completed
 #'   fits).}
 #' \item{replicates}{The raw per-replicate values: the suggested factor counts
 #'   (`n_hat`), the matched congruences (`rec_min`, `rec_mean`), the `converged`,
@@ -227,8 +232,9 @@
 #' meaningful index of factor similarity. *Methodology, 2*(2), 57-64.
 #' \doi{10.1027/1614-2241.2.2.57}
 #'
-#' @seealso [efa_simulate()], which draws the replicate data sets in simulation mode, and
-#'   [efa_retain()] for the retention criteria whose hit rates that mode reports.
+#' @seealso [efa_simulate()] draws the replicate datasets used in simulation mode.
+#'   [efa_retain()] implements the retention criteria whose hit-rates simulation
+#'   mode reports.
 #'
 #' @family power analysis
 #'
@@ -799,17 +805,22 @@ efa_power <- function(mode = c("rmsea", "simulation"),
 
 #' Print and format an efa_power object
 #'
-#' `print()` turns an [efa_power()] result into a short report. For an RMSEA-mode
-#' object this is a header naming the test, the null and alternative hypotheses
-#' with the significance level and degrees of freedom, the headline result (the
-#' power at the sample size, or the required sample size for the target power), and
-#' the critical value and noncentrality parameters. For a simulation-mode object it
-#' is instead the population and design, the retention hit-rate per criterion, the
-#' structure-recovery rate, and the convergence and Heywood-case rate. `format()`
-#' assembles the same report and returns it as a character vector; `print()` is
-#' `cat(format(x), sep = "\n")`. The lines follow the active console theme, so they
-#' are plain when colours are disabled (for example when captured into a file or
-#' stripped with [cli::ansi_strip()]).
+#' `print()` turns an [efa_power()] result into a short report, and `format()`
+#' builds the same report as a character vector (`print()` is
+#' `cat(format(x), sep = "\n")`).
+#'
+#' For an RMSEA-mode object, the report has a header naming the test, the null and
+#' alternative hypotheses with the significance level and degrees of freedom, the
+#' headline result (the power at the sample size, or the required sample size for
+#' the target power), and the critical value and noncentrality parameters.
+#'
+#' For a simulation-mode object, the report instead has the population and design,
+#' the retention hit-rate per criterion, the structure-recovery rate, and the
+#' convergence and Heywood-case rate.
+#'
+#' The lines follow the active console theme, so they print as plain text when
+#' colours are disabled -- for example when captured into a file, or stripped with
+#' [cli::ansi_strip()].
 #'
 #' @param x An object of class `efa_power` (output from [efa_power()]).
 #' @param digits Integer. The number of decimal places the reported values are

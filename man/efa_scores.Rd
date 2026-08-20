@@ -37,17 +37,17 @@ efa_scores(
 }
 \arguments{
 \item{x}{data.frame or matrix. Raw data (needed to obtain factor scores) or a
-correlation matrix (yields weights and diagnostics only). A correlation matrix
-gives the correlations the weights are derived from only where \code{f} is a loading
-matrix. An \code{\link[=efa_fit]{efa_fit()}} object carries the correlations it was fitted on, and
-those are used instead, so supply \code{rho} to derive the weights from another
-matrix. \code{x} describes the model variables either way. When raw data carry
-column names, they are matched to the model variables by name (any extra
-columns are ignored, and a model variable missing from \code{x} is an error).
-A named correlation matrix is likewise matched to the loading rows by name;
-its row and column names must use the same order, and it must carry one row and
-column for each model variable. Unnamed input is matched
-by position.
+correlation matrix (yields weights and diagnostics only). When \code{f} is a
+directly supplied loading matrix, a correlation-matrix \code{x} also supplies the
+correlations the weights are derived from; when \code{f} is an \code{\link[=efa_fit]{efa_fit()}} object,
+its own fitted correlations are used instead (supply \code{rho} to derive the
+weights from another matrix). \code{x} describes the model variables either way.
+When raw data carry column names, they are matched to the model variables by
+name (any extra columns are ignored, and a model variable missing from \code{x} is
+an error). A named correlation matrix is likewise matched to the loading rows
+by name; its row and column names must use the same order, and it must carry
+one row and column for each model variable. Unnamed input is matched by
+position.
 
 Raw data are scored as supplied: no imputation is performed, so a case with a
 missing value on any model variable receives \code{NA} scores (and is reported as
@@ -82,10 +82,8 @@ An object of class \code{efa_scores}, a list containing:
 \item{scores}{The factor scores (\code{n} by \code{m}), or \code{NULL} when a correlation
 matrix was supplied. A case with a missing value on any model variable is not
 scored and keeps \code{NA} in every column.}
-\item{r.scores}{The \code{m} by \code{m} correlations of the factor-score estimates. Like
-\code{score_cor} and \code{determinacy}, these describe the standardized combination
-\code{scale(x) \%*\% W}, which for \code{method = "components"} is not the scale the
-returned \code{scores} are on.}
+\item{r.scores}{The \code{m} by \code{m} correlations of the factor-score estimates (see
+Details for the \code{"components"}-method scale caveat).}
 \item{score_cor}{The \code{m} by \code{m} score-factor correlation matrix; its diagonal
 is the determinacy (validity) of each score and its off-diagonals the
 univocality.}
@@ -95,30 +93,26 @@ squared determinacy \code{rho2}, and Guttman's indeterminacy index \code{guttman
 observations \code{n_obs} and the number of them that could be scored \code{n_scored}.}
 }
 \description{
-Computes factor-score weights (and, from raw data, the factor scores
-themselves) natively for an \code{\link[=efa_fit]{efa_fit()}} solution or a directly supplied loading
-matrix, together with the score-quality diagnostics that describe how well the
-estimated scores represent the factors: the score intercorrelations, the
+Computes factor-score weights, and (from raw data) the factor scores
+themselves, for an \code{\link[=efa_fit]{efa_fit()}} solution or a directly supplied loading matrix.
+It also returns score-quality diagnostics: the score intercorrelations, the
 determinacy (validity) and univocality of each score, and Guttman's
 indeterminacy index. Factor scores are returned only when raw data are
 supplied; a correlation matrix yields the weights and diagnostics alone.
 }
 \details{
-The \code{p} by \code{m} weight matrix \code{W} (standardized scores are \code{scale(X) \%*\% W}) is
-computed from the structure matrix \code{S = Lambda \%*\% Phi}, the model
-uniquenesses \code{Psi = diag(1 - h2)}, and the scoring correlation matrix \code{R}
-according to \code{method}:
+Each method combines the loadings with some or all of the factor correlations and the
+scoring correlation matrix into weights in a different way:
 \describe{
-\item{\code{"regression"}}{Thurstone's (1935) regression scores, \verb{W = R^-1 S}.}
-\item{\code{"Bartlett"}}{Bartlett's (1937) conditionally unbiased scores.}
-\item{\code{"Anderson"}}{Anderson & Rubin's (1956) uncorrelated, unit-variance
-scores; defined for orthogonal factors only.}
-\item{\code{"tenBerge"}}{ten Berge, Krijnen, Wansbeek & Shapiro's (1999) scores,
-which preserve the factor intercorrelations.}
-\item{\code{"Harman"}}{Harman's (1976) idealized-variable scores.}
-\item{\code{"components"}}{component scores, \code{W = Lambda}. These are formed from
-the raw, uncentered data (\code{X \%*\% W}) rather than the standardized data, so
-unlike the other methods they are on the scale of the input variables. The
+\item{\code{"regression"}}{Thurstone's (1935) regression scores.}
+\item{\code{"Bartlett"}}{Bartlett's (1937) scores.}
+\item{\code{"Anderson"}}{Anderson & Rubin's (1956) scores.}
+\item{\code{"tenBerge"}}{ten Berge, Krijnen, Wansbeek & Shapiro's (1999) scores.}
+\item{\code{"Harman"}}{Harman's (1976) scores, based on an idealized variable (a
+hypothetical variable that would correlate perfectly with the factor).}
+\item{\code{"components"}}{Component scores. These are formed from the raw,
+uncentered data (\code{X \%*\% W}) rather than the standardized data, so unlike
+the other methods they are on the scale of the input variables. The
 diagnostics below describe the standardized combination \code{scale(X) \%*\% W},
 and therefore differ from the realized correlations of the returned scores
 whenever the variables have unequal variances.}
@@ -127,12 +121,12 @@ The determinacy (validity) of a score is its correlation with the factor it
 estimates, computed from the returned weights; for regression scores it is the
 multiple correlation between the factor and the observed variables (Guttman,
 1955; Grice, 2001). The off-diagonal score-factor correlations give the
-univocality (the correlation of a score with the \emph{other} factors), and
-\verb{2 rho^2 - 1} is Guttman's (1955) indeterminacy index, the minimum correlation
-between two equally valid sets of scores. For a \code{method} other than
-\code{"regression"} both quantities are specific to those scores: the determinacy is
-the method's own score-factor correlation (never larger than the regression
-value), and the reported \code{guttman} follows from it.
+univocality (the correlation of a score with the \emph{other} factors). Guttman's
+(1955) indeterminacy index, \verb{2 rho^2 - 1}, is the minimum correlation between
+two equally valid sets of scores. For a \code{method} other than \code{"regression"}
+both quantities are specific to those scores: the determinacy is the method's
+own score-factor correlation (never larger than the regression value), and
+the reported \code{guttman} follows from it.
 
 Determinacies close to 1 mean the scores stand in for the factor with little
 loss; Grice (2001) regards values of about .90 and above as the level required

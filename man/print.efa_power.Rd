@@ -22,17 +22,23 @@ rounded to. Default is 3.}
 character vector with the report lines.
 }
 \description{
-\code{print()} turns an \code{\link[=efa_power]{efa_power()}} result into a short report. For an RMSEA-mode
-object this is a header naming the test, the null and alternative hypotheses
-with the significance level and degrees of freedom, the headline result (the
-power at the sample size, or the required sample size for the target power), and
-the critical value and noncentrality parameters. For a simulation-mode object it
-is instead the population and design, the retention hit-rate per criterion, the
-structure-recovery rate, and the convergence and Heywood-case rate. \code{format()}
-assembles the same report and returns it as a character vector; \code{print()} is
-\code{cat(format(x), sep = "\\n")}. The lines follow the active console theme, so they
-are plain when colours are disabled (for example when captured into a file or
-stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
+\code{print()} turns an \code{\link[=efa_power]{efa_power()}} result into a short report, and \code{format()}
+builds the same report as a character vector (\code{print()} is
+\code{cat(format(x), sep = "\\n")}).
+}
+\details{
+For an RMSEA-mode object, the report has a header naming the test, the null and
+alternative hypotheses with the significance level and degrees of freedom, the
+headline result (the power at the sample size, or the required sample size for
+the target power), and the critical value and noncentrality parameters.
+
+For a simulation-mode object, the report instead has the population and design,
+the retention hit-rate per criterion, the structure-recovery rate, and the
+convergence and Heywood-case rate.
+
+The lines follow the active console theme, so they print as plain text when
+colours are disabled -- for example when captured into a file, or stripped with
+\code{\link[cli:ansi_strip]{cli::ansi_strip()}}.
 }
 \examples{
 pw <- efa_power(df = 100, N = 200)

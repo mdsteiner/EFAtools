@@ -18,8 +18,8 @@
       
       i Determinant: <num>. It falls as variables are added, so the condition index
       below carries the verdict.
-      v Condition number: <num> (condition index <num>). No concern (index below 10;
-      Belsley, Kuh & Welsch, 1980).
+      v Condition number: <num> (condition index <num>). An index of 10 or less is
+      rarely of interest (Belsley, 1991).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
@@ -69,8 +69,8 @@
       
       i Determinant: <num>. It falls as variables are added, so the condition index
       below carries the verdict.
-      v Condition number: <num> (condition index <num>). No concern (index below 10;
-      Belsley, Kuh & Welsch, 1980).
+      v Condition number: <num> (condition index <num>). An index of 10 or less is
+      rarely of interest (Belsley, 1991).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
@@ -137,8 +137,8 @@
       
       i Determinant: <num>. It falls as variables are added, so the condition index
       below carries the verdict.
-      v Condition number: <num> (condition index <num>). No concern (index below 10;
-      Belsley, Kuh & Welsch, 1980).
+      v Condition number: <num> (condition index <num>). An index of 10 or less is
+      rarely of interest (Belsley, 1991).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
@@ -190,8 +190,8 @@
       
       i Determinant: <num>. It falls as variables are added, so
       the condition index below carries the verdict.
-      v Condition number: <num> (condition index <num>). No
-      concern (index below 10; Belsley, Kuh & Welsch, 1980).
+      v Condition number: <num> (condition index <num>). An
+      index of 10 or less is rarely of interest (Belsley, 1991).
       
       -- Per-variable diagnostics --------------------------------
       

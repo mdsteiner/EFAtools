@@ -48,17 +48,16 @@ smaller than the number of variables (the common factor model is not identified
 otherwise). Use \code{\link[=efa_retain]{efa_retain()}} to decide on a value.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
-correlation matrix is used. If input is a correlation matrix and \code{N} = NA
-(default), not all fit indices can be computed; \code{NA} is the only accepted way of
-saying that the sample size is unknown, and a supplied \code{N} must be at least 1.
-A positive \code{N} that is very small relative to the number of variables leaves the
-chi-square-derived indices unavailable as well, with a warning.
-When raw data with missing
-values are entered and \code{use} is \code{"complete.obs"} or \code{"na.or.complete"}, rows
-are deleted listwise, so \code{N} is taken as the number of complete cases. The same
-applies, whatever \code{use} asks for, whenever an asymptotic covariance is required
-(the "DWLS" estimator, or \code{se = "sandwich"}); with \code{cor_method = "fiml"}, \code{N} is
-instead the number of cases carrying at least one observed value.}
+correlation matrix is used; with raw data, \code{N} is found from the data instead.
+\itemize{
+\item With \code{N = NA}, not all fit indices can be computed; a positive \code{N} that is very
+small relative to the number of variables leaves the chi-square-derived indices
+unavailable as well, with a warning.
+\item With raw data, \code{N} is the number of cases the correlation matrix was actually
+computed from -- see \code{use} for the general rule and how missing values change it.
+Under \code{cor_method = "fiml"}, \code{use} is ignored and \code{N} is instead the number of
+cases carrying at least one observed value.
+}}
 
 \item{method}{character. The estimator used to fit the EFA; passed to \code{\link[=efa_fit]{efa_fit()}}
 as its \code{estimator} argument. One of "PAF", "ML", "ULS", "MINRES" (an accepted
@@ -72,12 +71,14 @@ an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
 \emph{Rotations} section in Details for their properties and known issues.}
 
 \item{se}{character. Whether and how to compute standard errors (and matching
-confidence intervals): "none" (default, no standard errors), "information" (analytic
+confidence intervals): "none" (default), "information" (analytic
 standard errors from the expected Fisher information of the ML solution), "sandwich"
-(robust Godambe sandwich standard errors from raw data), or "np-boot" (non-parametric
-bootstrap). The methods differ in their assumptions, their data requirements, and which
-estimator, rotation, and \code{cor_method} combinations they support; see the \emph{Standard
-errors} section in Details.}
+(robust "sandwich" standard errors from raw data, which stay reliable under
+non-normality or a misspecified estimator weight), or "np-boot" (non-parametric
+bootstrap). The
+methods differ in their assumptions, their data requirements, and which estimator,
+rotation, and \code{cor_method} combinations they support; see the \emph{Standard errors}
+section in Details.}
 
 \item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
 used, and the following arguments with default NA are left with
@@ -178,15 +179,7 @@ the bootstrap samples under \code{se = "np-boot"}, and the analytic Wald interva
 \item{random_starts}{numeric. The number of random starts to use in the
 rotation to guard against local minima. Default is 100.}
 
-\item{seed}{numeric. An optional seed for the random-number generator, governing every
-stochastic part of the fit: the rotation's random starts on the point estimate (the
-criterion-based rotations draw \code{random_starts} random starts; see \emph{Rotations}) and,
-under \code{se = "np-boot"}, the case resampling, the replicate rotations, and the
-Procrustes random starts. Setting it makes the fit reproducible and the bootstrap
-additionally independent of the number of parallel workers (see Details); the
-caller's random-number stream is restored afterwards, so supplying a seed leaves no
-lasting effect on it. Default is \code{NULL}, which uses (and advances) the current state
-of the generator.}
+\item{seed}{numeric. An optional seed for the random-number generator.}
 
 \item{P_type, randomStarts}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} Former names of
 \code{p_type} and \code{random_starts}. Still accepted (silently) for backwards

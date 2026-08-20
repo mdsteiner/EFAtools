@@ -23,9 +23,10 @@ imputations. Each list element is a data frame or matrix of raw data, or a
 correlation matrix. See argument \code{x} in \code{\link[=efa_fit]{efa_fit()}}. A \code{mids} object from
 \pkg{mice} must be converted first, with \code{mice::complete(x, "all")}.}
 
-\item{p}{Numeric in \eqn{(0, 1)}. One minus the confidence level used for
-pooled Wald-type bootstrap/MI confidence intervals when bootstrap replicates
-are available. For example, \code{p = .05} gives 95\% intervals.}
+\item{p}{Numeric in \eqn{(0, 1)}. One minus the confidence level for the
+pooled confidence intervals, whichever \code{se} method produced them
+(\code{"information"}, \code{"np-boot"}, or \code{"sandwich"}). For example, \code{p = .05}
+gives 95\% intervals.}
 
 \item{target_method}{Character. How rotated solutions are aligned across imputations
 before pooling: \code{"first_target"} (the default) aligns every imputation to the first
@@ -40,8 +41,8 @@ anchored on the medoid imputation and returned in the extraction's canonical
 gauge), \code{"procrustes"} (orthogonal Procrustes to the first imputation), or
 \code{"none"}. See \emph{Aligning solutions across imputations} in Details.}
 
-\item{fit_pool_method}{Character. Currently only \code{"D2"} is implemented
-for chi-square-type fit. If no chi-square is available, only residual-based
+\item{fit_pool_method}{Character. Only \code{"D2"} is implemented for pooling
+chi-square-type fit. If no chi-square is available, only residual-based
 fit and descriptive quantities are returned. See \emph{Pooling the model chi-square and
 fit indices} in Details.}
 
@@ -59,15 +60,11 @@ cross-product \code{S} are derived from the imputations and cannot be set here.}
 
 \item{rmsea_ci_level}{Numeric. Confidence level for the RMSEA CI.}
 
-\item{rmsr_upper}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. It
-selected between computing RMSR from the unique off-diagonal residual correlations
-and from the full off-diagonal matrix. The two element sets hold each residual pair
-once and twice respectively, so their sums and counts double together and the mean
-square is the same number whenever the residual matrix is symmetric, which the pooled
-residuals always are. RMSR is therefore always the root mean square of the unique
-off-diagonal residuals; SRMR, which divides the same sum by the number of
-non-redundant elements, is reported alongside it. Supplying it to \code{\link[=efa_mi]{efa_mi()}}
-signals a deprecation warning; the superseded \code{\link[=EFA_POOLED]{EFA_POOLED()}} accepts it silently.}
+\item{rmsr_upper}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Deprecated and ignored.
+\code{efa_mi()} now always computes RMSR the same way, from the unique
+off-diagonal residuals; SRMR is reported alongside it. Supplying it to
+\code{\link[=efa_mi]{efa_mi()}} signals a deprecation warning; the superseded \code{\link[=EFA_POOLED]{EFA_POOLED()}}
+accepts it silently.}
 
 \item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} (e.g. \code{estimator}, \code{rotation}, \code{se},
 \code{n_factors}, \code{N}). These select the estimator, rotation, standard-error method, and

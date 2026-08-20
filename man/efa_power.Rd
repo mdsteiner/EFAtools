@@ -111,27 +111,29 @@ is \code{"PAF"}.}
 passed to \code{\link[=efa_fit]{efa_fit()}}. Default is \code{NULL}, which matches the population: \code{"varimax"}
 for orthogonal factors and \code{"promax"} for oblique ones (a single factor is left
 unrotated). Recovery aligns the fitted loadings to the population pattern by
-permutation and sign only, so a rotation that does not seek that structure -- for
-example \code{"none"} with more than one factor -- understates recovery; keep the
-default (or another structure-seeking rotation) for a meaningful recovery rate.}
+permutation and sign only. A rotation that does not seek that structure -- for
+example \code{"none"} with more than one factor -- will understate recovery, so keep
+the default (or another structure-seeking rotation) for a meaningful recovery
+rate.}
 
 \item{recovery_threshold}{numeric. Simulation mode. The matched-factor Tucker
-congruence a replicate must reach to count as recovered. Default is \code{0.95} (the
-Lorenzo-Seva & ten Berge, 2006, "equal" band).}
+congruence a replicate must reach to count as recovered. Default is \code{0.95}:
+Lorenzo-Seva and ten Berge (2006) treat congruence at or above this level as
+indicating the same factor.}
 
-\item{model_error}{character. Simulation mode. The \code{\link[=efa_simulate]{efa_simulate()}} method used to
-perturb the population with model error: \code{"TKL"} (Tucker-Koopman-Linn, the
-default), \code{"CB"} (Cudeck-Browne), \code{"WB"} (Wu-Browne), or \code{"none"} for an exact
-population. It takes effect only when a target is supplied (\code{target_rmsea} and/or
-\code{target_cfi}); without one the population is exact whatever the method, and only a
-factor-model population can be perturbed. \code{"TKL"} adds minor common factors, so it
-degrades both the retention hit-rate and structure recovery realistically; \code{"CB"}
-and \code{"WB"} target the RMSEA only, and \code{"CB"} keeps the fitted loadings the exact
-minimizer so structure recovery stays near-perfect. That is why the default here is
-\code{"TKL"} while \code{\link[=efa_simulate]{efa_simulate()}} defaults to \code{"CB"}: the same target passed to the two
-functions perturbs the population differently unless \code{model_error} is set explicitly,
-and the difference is material -- a \code{"CB"} population can leave recovery near 1 where
-the same target under \code{"TKL"} does not.}
+\item{model_error}{character. Simulation mode. The \code{\link[=efa_simulate]{efa_simulate()}} method that
+perturbs the population with model error: \code{"TKL"} (Tucker-Koopman-Linn, the
+default here), \code{"CB"} (Cudeck-Browne), \code{"WB"} (Wu-Browne), or \code{"none"} for an
+exact population. It only takes effect when a target is supplied (\code{target_rmsea}
+and/or \code{target_cfi}), and only for a factor-model population; without a target
+the population stays exact whatever the method. \code{"TKL"} adds minor common
+factors, giving a realistically imperfect population but lowering both the
+hit-rate and structure recovery; \code{"CB"} and \code{"WB"} target the RMSEA only. \code{"CB"}
+keeps the population loadings as the exact minimizer of the perturbed
+population, so recovery stays close to perfect; \code{"WB"}'s loadings are not the
+minimizer, so they carry no such guarantee. Note that \code{\link[=efa_simulate]{efa_simulate()}} itself
+defaults to \code{"CB"}: the same \code{target_rmsea} passed to both functions gives an
+easier population there, unless \code{model_error} is also set explicitly here.}
 
 \item{target_rmsea}{numeric. Simulation mode. The population RMSEA the model should
 have relative to the perturbed population, activating model error. Default is
@@ -165,17 +167,20 @@ For \code{mode = "simulation"}, a list containing:
 \item{hit_rate}{A named numeric vector of the retention hit-rate per criterion (and,
 where a criterion has several variants, per variant); \code{NA} for a criterion that
 returned no suggestion on any replicate.}
-\item{hits}{A data frame with, per criterion, the number of replicates it returned a
-definite suggestion on (\code{n_valid}), the number of those that matched \code{k_true}
-(\code{hits}), and the \code{hit_rate} (\code{hits / n_valid}).}
+\item{hits}{A data frame with one row per criterion (\code{criterion}) giving the
+number of replicates it returned a definite suggestion on (\code{n_valid}), the
+number of those that matched \code{k_true} (\code{hits}), and the \code{hit_rate}
+(\code{hits / n_valid}).}
 \item{recovery}{For a factor-model population, a list with the structure-recovery
 rates (\code{min_rate}, \code{mean_rate}), the \code{threshold}, and the number of usable fits
 (\code{n_valid}); \code{NULL} for an \code{R} population. Rates are over every replicate whose fit
 returned loadings, including non-converged or Heywood solutions (their rates are
 reported separately in \code{convergence}).}
-\item{convergence}{A list with the number of datasets, the number of fits that
-completed (\code{n_fit_ok}), and rates: \code{fit_rate} (fits completed, over all datasets)
-and \code{convergence_rate} / \code{heywood_rate} (converged / Heywood, over the completed
+\item{convergence}{A list with the number of datasets (\code{n_datasets}), the number
+of fits that completed (\code{n_fit_ok}), how many of those converged
+(\code{n_converged}) and how many produced a Heywood case (\code{n_heywood}), and the
+corresponding rates: \code{fit_rate} (fits completed, over all datasets) and
+\code{convergence_rate} / \code{heywood_rate} (converged / Heywood, over the completed
 fits).}
 \item{replicates}{The raw per-replicate values: the suggested factor counts
 (\code{n_hat}), the matched congruences (\code{rec_min}, \code{rec_mean}), the \code{converged},
@@ -186,53 +191,48 @@ not complete (\code{NA} where it did).}
 \item{settings}{A list of the simulation inputs.}
 }
 \description{
-Power analysis for exploratory factor analysis, in two modes selected by \code{mode}.
+Analyses power for exploratory factor analysis, in one of two modes chosen with
+\code{mode}.
 
-\code{mode = "rmsea"} (the default) gives the analytic statistical power of the root
-mean square error of approximation (RMSEA) tests of close and not-close fit
-(MacCallum, Browne, & Sugawara, 1996): given the model degrees of freedom and a
-sample size it returns the power to reject the null hypothesis, and given a target
-power instead of a sample size it returns the sample size required to reach it.
+\code{mode = "rmsea"} (the default) gives the analytic power of the root mean square
+error of approximation (RMSEA) tests of close and not-close fit (MacCallum,
+Browne, & Sugawara, 1996). Give a sample size to get the power of the test, or
+give a target power to get the sample size needed to reach it.
 
-\code{mode = "simulation"} runs a Monte-Carlo study of a known population: it draws
-\code{n_datasets} samples of size \code{N} (via \code{\link[=efa_simulate]{efa_simulate()}}) and, over the replicates,
-reports how often each factor-retention criterion recovers the true number of
-factors (the \emph{hit-rate}), how often the fitted loadings recover the population
-structure (\emph{structure recovery}, by Tucker congruence), and the convergence and
-Heywood-case rate of the fit.
+\code{mode = "simulation"} runs a Monte-Carlo study: it draws \code{n_datasets} samples from
+a known population (via \code{\link[=efa_simulate]{efa_simulate()}}), analyses each one, and reports how well
+the analysis recovers that population. See \emph{Details} for what is reported.
 
-The model dimensions follow the notation of MacCallum, Browne and Sugawara (1996):
-\code{p} is the number of observed variables (the \code{n_vars} of the rest of the package) and
-\code{k} the number of factors (\code{n_factors} elsewhere).
+Here the number of variables is \code{p} and the number of factors is \code{k} (elsewhere in
+the package: \code{n_vars} and \code{n_factors}).
 }
 \section{RMSEA mode}{
-The RMSEA fit statistic is referred to a noncentral chi-square distribution.
-For a model with \code{df} degrees of freedom and population RMSEA \eqn{\varepsilon},
-the noncentrality parameter is
-\deqn{\lambda = (N - 1)\, df\, \varepsilon^2 / G,}
-where \eqn{N} is the sample size and \eqn{G} the number of groups (\code{group}).
+Power rises with a larger sample, a larger model (more degrees of freedom), and a
+bigger gap between the null and alternative RMSEA (MacCallum, Browne, & Sugawara,
+1996).
 
-Two tests are supported, selected by \code{type} (never by the ordering of \code{eps0}
-and \code{eps1}):
+Two tests are supported, chosen with \code{type} (never by the order of \code{eps0} and
+\code{eps1}):
 \describe{
-\item{\code{"close"}}{The test of \emph{close fit} (MacCallum et al., 1996): the null
-hypothesis is that the fit is close (RMSEA \eqn{\le} \code{eps0}, conventionally
-0.05), and power is computed against a worse alternative (\code{eps1},
+\item{\code{"close"}}{Tests \emph{close fit} (MacCallum et al., 1996). The null
+hypothesis is that the fit is close (RMSEA \eqn{\le} \code{eps0}; conventionally
+0.05). Power is the chance of detecting a worse alternative (\code{eps1};
 conventionally 0.08, so \code{eps0 < eps1}), in the upper tail.}
-\item{\code{"notclose"}}{The test of \emph{not-close fit}: the null hypothesis is that
-the fit is not close (RMSEA \eqn{\ge} \code{eps0}), and power is computed against
-a better alternative (\code{eps1}, conventionally 0.01, so \code{eps0 > eps1}), in the
+\item{\code{"notclose"}}{Tests \emph{not-close fit}. The null hypothesis is that the fit
+is not close (RMSEA \eqn{\ge} \code{eps0}). Power is the chance of detecting a
+better alternative (\code{eps1}; conventionally 0.01, so \code{eps0 > eps1}), in the
 lower tail.}
 }
-When \code{eps0} and \code{eps1} are ordered the wrong way round for the chosen \code{type} a
-message is emitted but the requested test is still computed. Equal \code{eps0} and
-\code{eps1} leave nothing to detect and are an error.
+When \code{eps0} and \code{eps1} are in the wrong order for the chosen \code{type}, a message is
+shown but the requested test still runs. Equal \code{eps0} and \code{eps1} leave nothing to
+detect and are an error.
 
-Power increases monotonically with \code{N}, so the required sample size (the
-smallest \code{N} reaching \code{power}) is found by bisection. \code{N} is the \strong{total}
-sample size across groups: with \code{group > 1} the noncentrality above carries the
-\code{1 / group} factor, so a fixed total spread over more groups buys less power.
-The corresponding per-group sample size \code{N / group} is returned as \code{N_per_group}.
+Power always increases with \code{N}, so the required sample size (the smallest \code{N}
+reaching \code{power}) is found by bisection. \code{N} is the \strong{total} sample size across
+groups: with \code{group > 1} the power calculation divides by \code{group} (the
+\code{1 / group} factor), so spreading a fixed total over more groups gives less
+power. The matching per-group sample size, \code{N / group}, is returned as
+\code{N_per_group}.
 
 The \code{1 / group} factor makes all \code{group} groups the same size, so a required
 total is rounded up to the next multiple of \code{group}. A solved \code{N_per_group} is thus
@@ -243,31 +243,36 @@ is 260, or 130 per group. Bisection on the total alone gives 259, which asks for
 }
 
 \section{Simulation mode}{
-The population is passed to \code{\link[=efa_simulate]{efa_simulate()}}, which draws \code{n_datasets} samples of size
-\code{N}. Its true number of factors \code{k_true} is \code{ncol(Lambda)} for a factor-model
-population, or \code{k} for a bare \code{R}. By default the population fits the factor model
-exactly, which overstates how well the criteria and the fit recover the structure; a
-misfit target makes it a more realistic one (MacCallum, 2003).
+The population is passed to \code{\link[=efa_simulate]{efa_simulate()}}, which draws \code{n_datasets} samples of
+size \code{N} from it. The population's true number of factors, \code{k_true}, is
+\code{ncol(Lambda)} for a factor-model population, or \code{k} for a bare \code{R}. By default
+the population fits the factor model exactly, which overstates how well the
+criteria and the fit recover its structure; setting a misfit target makes the
+population more realistic (MacCallum, 2003).
 
-Each replicate is analysed three ways. \strong{Hit-rate}: every criterion in \code{criteria}
-is run and its suggested number of factors compared with \code{k_true}; the hit-rate is
-the proportion of agreements over the replicates on which the criterion returned a
-definite factor count (replicates where it errored or was undecided are excluded,
-not counted as misses). \strong{Structure recovery} (only for a factor-model
-population): the \code{k_true}-factor model is fitted with \code{\link[=efa_fit]{efa_fit()}}, its rotated loadings
-are matched to the population loadings, and the matched-factor Tucker congruences
-(Lorenzo-Seva & ten Berge, 2006) are compared with \code{recovery_threshold}; a
-replicate counts as a success when the smallest (\code{min}) or the average (\code{mean})
-matched congruence reaches it. \strong{Convergence}: the same fit supplies the
-proportion of replicates whose fit completed and, among those, the proportion that
-converged and that produced a Heywood case. A replicate whose fit fails outright
-contributes to none of the three; if any fit fails, a warning reports how many did
-and the first replicate's cause.
+Each replicate is analysed three ways:
+\describe{
+\item{\strong{Hit-rate}}{The share of replicates where a criterion's suggested factor
+count (from \code{criteria}) matches \code{k_true}. A replicate where the criterion
+errored or gave no answer is left out of this count -- it does not count as a
+miss.}
+\item{\strong{Structure recovery} (factor-model populations only)}{The \code{k_true}-factor
+model is fitted with \code{\link[=efa_fit]{efa_fit()}}, its loadings are matched to the population
+loadings, and the matched-factor Tucker congruences (Lorenzo-Seva & ten Berge,
+2006) are compared with \code{recovery_threshold}. A replicate succeeds when its
+smallest (\code{min}) or average (\code{mean}) matched congruence reaches the
+threshold.}
+\item{\strong{Convergence}}{Among the replicates whose fit completed, the share that
+converged and the share that produced a Heywood case.}
+}
+A replicate whose fit fails completely is not counted in any of the three
+measures above. If any fit fails, a warning reports how many failed and the cause
+of the first failure.
 
-Replicates are analysed in parallel with \pkg{future.apply}; a plan is selected with
-\code{\link[future:plan]{future::plan()}}. Each replicate is bound to its own reproducible random-number
-stream, so with a fixed \code{seed} the result is identical regardless of the number of
-workers, and the caller's random-number state is left unchanged.
+Replicates are analysed in parallel with \pkg{future.apply}; choose a parallel
+plan with \code{\link[future:plan]{future::plan()}}. Each replicate uses its own reproducible
+random-number stream, so with a fixed \code{seed} the result does not depend on the
+number of workers, and the caller's random-number state is left unchanged.
 }
 
 \examples{
@@ -305,8 +310,9 @@ meaningful index of factor similarity. \emph{Methodology, 2}(2), 57-64.
 \doi{10.1027/1614-2241.2.2.57}
 }
 \seealso{
-\code{\link[=efa_simulate]{efa_simulate()}}, which draws the replicate data sets in simulation mode, and
-\code{\link[=efa_retain]{efa_retain()}} for the retention criteria whose hit rates that mode reports.
+\code{\link[=efa_simulate]{efa_simulate()}} draws the replicate datasets used in simulation mode.
+\code{\link[=efa_retain]{efa_retain()}} implements the retention criteria whose hit-rates simulation
+mode reports.
 
 Other power analysis:
 \code{\link[=plot.efa_power]{plot.efa_power()}},

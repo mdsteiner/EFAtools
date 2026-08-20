@@ -41,18 +41,16 @@ efa_retain(
 )
 }
 \arguments{
-\item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
-correlations. If \code{"CD"} is included as a criterion, x must be raw
-data.}
+\item{x}{data.frame or matrix. Raw data, or a correlation matrix. If \code{"CD"} is
+included as a criterion, x must be raw data.}
 
-\item{criteria}{character. A vector with the factor retention methods to
-perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"},
-\code{"KGC"}, \code{"MAP"}, \code{"NEST"},\code{"PARALLEL"}, \code{"SCREE"}, and \code{"SMT"}
-(see details). By default, a subset of often used, well-performing methods
-are performed; the details name them.}
+\item{criteria}{character. Which factor retention methods to run: one or
+more of \code{"CD"}, \code{"EKC"}, \code{"HULL"}, \code{"KGC"}, \code{"MAP"}, \code{"NEST"}, \code{"PARALLEL"},
+\code{"SCREE"}, and \code{"SMT"} (see details). The default runs a subset of commonly
+used, well-performing methods, listed in the details.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
-for factor analysis using the Bartlett's test of sphericity and the
+for factor analysis using Bartlett's test of sphericity and the
 Kaiser-Meyer-Olkin criterion (see details). Default is \code{TRUE}.}
 
 \item{N}{numeric. The number of observations. Only needed if x is a
@@ -64,11 +62,9 @@ data is given as input. Default is \code{"pairwise.complete.obs"}.}
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations (a two-step estimator).
-\code{CD}, \code{PARALLEL}, \code{NEST}, and
-\code{HULL} compare against simulated continuous data, and \code{SMT} relies on a
-normal-theory chi-square test; none of these support \code{"poly"} / \code{"tetra"},
-so they are skipped in that case.
-Default is  \code{"pearson"}.}
+\code{CD}, \code{PARALLEL}, \code{NEST}, \code{HULL}, and \code{SMT} do not support \code{"poly"} / \code{"tetra"}
+and are skipped automatically if you request them together.
+Default is \code{"pearson"}.}
 
 \item{n_factors_max}{numeric. Passed to \code{\link[=efa_cd]{efa_cd()}}. The maximum number
 of factors to test against.
@@ -87,33 +83,32 @@ the significance of the improvement added by an additional factor.
 Default is .30.}
 
 \item{...}{Further arguments passed to \code{\link[=efa_fit]{efa_fit()}} in
-\code{\link[=efa_parallel]{efa_parallel()}}, \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_nest]{efa_nest()}}. They also reach
-\code{\link[=efa_hull]{efa_hull()}}, both through the parallel analysis it runs to set its upper bound and
-through its own candidate fits, so an argument that \code{\link[=efa_fit]{efa_fit()}} rejects stops the Hull
-method even when its \code{eigen_type_HULL} fits no model.
-The estimation tuning knobs are not passed here; they live in \code{estimate_control}, and the
-standard-error arguments (\code{se}, \code{b_boot}, \code{ci}, \code{seed}) are not accepted because the
-criterion fits are internal steps whose standard errors are not reported. Note
-that the arguments listed after \code{...} must be given by their full name (R matches an abbreviated
-name only against the arguments before \code{...}), so that a tuning knob such as \code{max_iter} cannot
-be mistaken for \code{max_iter_CD}.}
+\code{\link[=efa_parallel]{efa_parallel()}}, \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, \code{\link[=efa_nest]{efa_nest()}}, and (through its parallel
+analysis and its own candidate fits) \code{\link[=efa_hull]{efa_hull()}}. An argument that \code{\link[=efa_fit]{efa_fit()}} does not
+recognize causes an error. The estimation tuning knobs are not passed here; they live in
+\code{estimate_control}. The standard-error arguments (\code{se}, \code{b_boot}, \code{ci}, \code{seed}) are not
+accepted, because the criterion fits are internal steps whose standard errors are not
+reported. Arguments listed after \code{...} must be given by their full name (R matches an
+abbreviated name only against the arguments before \code{...}), so a tuning knob such as
+\code{max_iter} cannot be mistaken for \code{max_iter_CD}.}
 
 \item{max_iter_CD}{numeric. Passed to \code{\link[=efa_cd]{efa_cd()}}. The maximum number of
 iterations to perform after which the iterative PAF procedure is halted.
 Default is 50.}
 
 \item{n_fac_theor}{numeric. Passed to \code{\link[=efa_hull]{efa_hull()}}. Theoretical number
-of factors to retain. The maximum of this number and the number of factors
-suggested by \code{\link[=efa_parallel]{efa_parallel()}} plus one will be used in the Hull method.}
+of factors to retain. The Hull method uses one plus the larger of this
+number and the number of factors suggested by \code{\link[=efa_parallel]{efa_parallel()}} as its
+upper bound.}
 
 \item{estimator}{character. Passed to \code{\link[=efa_fit]{efa_fit()}} in \code{\link[=efa_hull]{efa_hull()}},
 \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, \code{\link[=efa_parallel]{efa_parallel()}}, and \code{\link[=efa_nest]{efa_nest()}}. The
 estimator to use. One of  \code{"PAF"}, \code{"ULS"}, or  \code{"ML"},
 for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. The default here is \code{"ML"}, which is not
-the default of every criterion called standalone (for example \code{\link[=efa_hull]{efa_hull()}} defaults to
-\code{"PAF"}), so a criterion run through \code{efa_retain()} can differ from the same criterion
-called directly unless \code{estimator} is set to match. In \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and
+likelihood, respectively. The default here is \code{"ML"}. Some criteria default to
+something else when called on their own (for example, \code{\link[=efa_hull]{efa_hull()}} defaults to
+\code{"PAF"}), so results from \code{efa_retain()} can differ from calling that criterion
+directly unless you set \code{estimator} to match. In \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and
 \code{\link[=efa_parallel]{efa_parallel()}} it only takes effect when the respective \code{eigen_type} includes \code{"EFA"}.}
 
 \item{gof}{character. Passed to \code{\link[=efa_hull]{efa_hull()}}. The goodness of fit index
@@ -122,16 +117,15 @@ combination of them. With the \code{"PAF"} estimator, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
 
-\item{eigen_type_HULL}{character. Passed to  \code{\link[=efa_parallel]{efa_parallel()}} in
-\code{\link[=efa_hull]{efa_hull()}}. On what the
-eigenvalues should be found in the parallel analysis. Can be one of
-\code{"SMC"}, \code{"PCA"}, or \code{"EFA"}. If using  \code{"SMC"} (default),
-the diagonal of the correlation matrices is
-replaced by the squared multiple correlations (SMCs) of the indicators. If
-using  \code{"PCA"}, the diagonal values of the correlation
-matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
-correlation  matrices with the final communalities of an EFA solution as
-diagonal.}
+\item{eigen_type_HULL}{character. Passed to \code{\link[=efa_parallel]{efa_parallel()}} in
+\code{\link[=efa_hull]{efa_hull()}}. What the eigenvalues in the parallel analysis are based on.
+One of \code{"SMC"}, \code{"PCA"}, or \code{"EFA"} -- different ways of estimating how much
+variance each indicator shares with the others before the eigenvalues are
+computed. \code{"SMC"} (default) uses each indicator's squared multiple
+correlation with the others (its diagonal value in the correlation matrix).
+\code{"PCA"} leaves the diagonal at 1, so each indicator's total variance -- not
+just the shared part -- feeds into the eigenvalues. \code{"EFA"} uses the
+communalities from a fitted EFA solution instead.}
 
 \item{eigen_type_other}{character. Passed to \code{\link[=efa_kgc]{efa_kgc()}},
 \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}}. The same as eigen_type_HULL,
@@ -152,20 +146,23 @@ Default is 95.}
 
 \item{decision_rule}{character. Passed to \code{\link[=efa_parallel]{efa_parallel()}} (also within
 \code{\link[=efa_hull]{efa_hull()}}). Which rule to use to determine the number of
-factors to retain. Default is \code{"means"}, which will use the average
-simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
-in percent. \code{"crawford"} uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010).}
+factors to retain. Default is \code{"means"}, which uses the average simulated
+eigenvalues. \code{"percentile"} uses the percentiles specified in \code{percent}.
+\code{"crawford"} uses the 95th percentile for the first factor and the mean
+afterwards (based on Crawford et al., 2010).}
 
-\item{ekc_type}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. It selected
-between two ways to compute the \code{\link[=efa_ekc]{efa_ekc()}} reference values. The \code{"AM2019"}
-reference values do not depend on the observed eigenvalues, so they do not apply
-the empirical correction that defines the criterion, and they are no longer
-computed.}
+\item{ekc_type}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. It
+used to select between two ways to compute the \code{\link[=efa_ekc]{efa_ekc()}} reference values.
+The \code{"AM2019"} reference values do not depend on the observed eigenvalues.
+They therefore skip the empirical correction that defines the criterion, so
+they are no longer computed.}
 
-\item{n_datasets_nest}{numeric. The number of datasets to simulate in \code{\link[=efa_nest]{efa_nest()}}. Default is 1000.}
+\item{n_datasets_nest}{numeric. Passed to \code{\link[=efa_nest]{efa_nest()}}. The number of
+datasets to simulate. Default is 1000.}
 
-\item{alpha_nest}{numeric. The alpha level to use in \code{\link[=efa_nest]{efa_nest()}} (i.e., 1-alpha percentile of eigenvalues is used for reference values).}
+\item{alpha_nest}{numeric. Passed to \code{\link[=efa_nest]{efa_nest()}}. The alpha level to use.
+The reference values are the eigenvalues at the (1 - alpha_nest)
+percentile. Default is .05.}
 
 \item{show_progress}{logical. Whether a progress bar should be shown in the
 console. Default is FALSE.}
@@ -173,11 +170,11 @@ console. Default is FALSE.}
 \item{estimate_control}{an \code{\link[=estimate_control]{estimate_control()}} object with the estimation settings for the
 \code{\link[=efa_fit]{efa_fit()}} fits run by the criteria that fit a model (\code{\link[=efa_hull]{efa_hull()}}, \code{\link[=efa_kgc]{efa_kgc()}},
 \code{\link[=efa_scree]{efa_scree()}}, \code{\link[=efa_parallel]{efa_parallel()}}, \code{\link[=efa_nest]{efa_nest()}}, and \code{\link[=efa_smt]{efa_smt()}}). \code{NULL} (default) uses the
-\code{\link[=efa_fit]{efa_fit()}} defaults. \code{\link[=efa_cd]{efa_cd()}}, \code{\link[=efa_ekc]{efa_ekc()}}, and \code{\link[=efa_map]{efa_map()}} run no \code{\link[=efa_fit]{efa_fit()}} model, so
-it does not apply to them. In \code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}} it only takes
-effect when the respective \code{eigen_type} includes \code{"EFA"}, since no model is fitted otherwise,
-and \code{\link[=efa_smt]{efa_smt()}} fits with maximum likelihood by definition, so only \code{start_method} takes
-effect there. All fits are unrotated, so no rotation settings apply.}
+\code{\link[=efa_fit]{efa_fit()}} defaults. It only applies to criteria that fit a model, and only to the parts of
+that fit each criterion actually runs. \code{\link[=efa_cd]{efa_cd()}}, \code{\link[=efa_ekc]{efa_ekc()}}, and \code{\link[=efa_map]{efa_map()}} fit no model.
+\code{\link[=efa_kgc]{efa_kgc()}}, \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}} only fit one when their \code{eigen_type}
+includes \code{"EFA"}. \code{\link[=efa_smt]{efa_smt()}} fits with maximum likelihood by definition, so only
+\code{start_method} takes effect there. All fits are unrotated, so no rotation settings apply.}
 }
 \value{
 A list of class \code{c("efa_retain", "N_FACTORS")}, the trailing class
@@ -191,47 +188,43 @@ retention criterion that was run (see, e.g., \code{\link[=efa_ekc]{efa_ekc()}}).
 \item{n_factors}{A named numeric vector with the suggested number of factors
 per criterion and, where a criterion has several variants, per variant
 (e.g. \code{EKC_BvA2017} or \code{PARALLEL_SMC}). Criteria without a numeric
-suggestion (the scree plot) are not included. The "most common" value the printed
-summary line reports is counted with one vote per \emph{criterion} -- each criterion's own
-modal variant -- so that a criterion with several variants cannot outvote a
-single-variant one. A criterion whose variants tie has no modal value and abstains
-rather than casting a vote for each of them, and a value that no two criteria agree on
-is not reported as most common. Tallying this vector directly counts one vote per
-\emph{variant} and can therefore have a different mode.}
+suggestion (the scree plot) are not included. The printed summary's "most common"
+value is based on each criterion's own most frequent (modal) suggestion among its
+variants, not a plain tally of this vector, so counting entries here by hand can
+give a different answer.}
 \item{not_run}{A named character vector with the criteria that were skipped
 or failed and the reason, or \code{NULL} if all requested criteria ran.}
 \item{settings}{A list of the settings used. Its \code{criteria} element records the
 requested criteria, in the order they were given, while \code{outputs} and \code{n_factors}
 are in the order in which the criteria were run. \code{gof} records the requested Hull
-goodness-of-fit indices and \code{gof_used} the ones the Hull method actually computed
-(it reduces them to \code{"CAF"} for the PAF estimator); \code{gof_used} is \code{NA} when HULL was
-not requested, was skipped, or failed.}
+goodness-of-fit indices, and \code{gof_used} records the ones the Hull method actually
+computed (it reduces them to \code{"CAF"} for the PAF estimator). \code{gof_used} is \code{NA}
+when HULL was not requested, was skipped, or failed.}
 }
 \description{
-Among the most important decisions for an exploratory factor analysis (EFA) is
-the choice of the number of factors to retain. Several factor retention
-criteria have been developed for this. With this function, various factor
-retention criteria can be performed simultaneously. Additionally, the data
-can be checked for their suitability for factor analysis.
+Choosing the number of factors to retain is one of the most important
+decisions in an exploratory factor analysis (EFA). Many criteria exist to
+help with this choice. This function runs several of them together, and can
+also check whether the data are suitable for factor analysis.
 }
 \details{
 By default, the entered data are checked for suitability for factor analysis
-using the following methods (see respective documentations for details):
+using the following methods (see the respective documentation for details):
 \itemize{
 \item Bartlett's test of sphericity (see \code{\link[=efa_bartlett]{efa_bartlett()}})
 \item Kaiser-Meyer-Olkin criterion (see \code{\link[=efa_kmo]{efa_kmo()}})
 }
 
-The available factor retention criteria are the following (see respective
-documentations for details):
+The available factor retention criteria are the following (see the
+respective documentation for details):
 \itemize{
 \item Comparison data (see \code{\link[=efa_cd]{efa_cd()}})
 \item Empirical Kaiser criterion (see \code{\link[=efa_ekc]{efa_ekc()}})
 \item Hull method (see \code{\link[=efa_hull]{efa_hull()}})
 \item Kaiser-Guttman criterion (see \code{\link[=efa_kgc]{efa_kgc()}})
 \item Velicer's minimum average partial, MAP (see \code{\link[=efa_map]{efa_map()}})
-\item Parallel analysis (see \code{\link[=efa_parallel]{efa_parallel()}})
 \item Next Eigenvalue Sufficiency Test, NEST (see \code{\link[=efa_nest]{efa_nest()}})
+\item Parallel analysis (see \code{\link[=efa_parallel]{efa_parallel()}})
 \item Scree plot (see \code{\link[=efa_scree]{efa_scree()}})
 \item Sequential chi-square model tests, RMSEA lower bound, and AIC
 (see \code{\link[=efa_smt]{efa_smt()}})
@@ -244,10 +237,11 @@ together, and the printed summary gives the range of their suggestions and the
 most common one. Auerswald and Moshagen (2019) compare the criteria and give
 guidance on the selection.
 
-The comparison data, parallel analysis, and NEST criteria compare the data against
-simulated reference data, so their suggested numbers of factors vary slightly from run
-to run; the Hull method does too, because it calls \code{\link[=efa_parallel]{efa_parallel()}} to set its upper
-bound. Call \code{\link[base:set.seed]{base::set.seed()}} before \code{efa_retain()} to make them reproducible.
+The comparison data, parallel analysis, and NEST criteria compare the data
+against simulated reference data, so their suggested numbers of factors vary
+slightly from run to run. The Hull method also varies, because it calls
+\code{\link[=efa_parallel]{efa_parallel()}} to set its upper bound. Call \code{\link[base:set.seed]{base::set.seed()}} before
+\code{efa_retain()} to make the results reproducible.
 }
 \examples{
 \donttest{
@@ -264,14 +258,14 @@ nfac_wo_CD <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                          estimator = "ML", n_datasets = 100,
                          n_datasets_nest = 100)
 
-# Use PAF instead of ML (this will take longer). For this, gof has
-# to be set to "CAF" for the Hull method.
+# Use PAF instead of ML (this will take longer). PAF only supports "CAF" as
+# gof for the Hull method, so set it explicitly to avoid the automatic message.
 nfac_PAF <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                        "HULL", "PARALLEL", "NEST"), N = 500,
                        estimator = "PAF", gof = "CAF", n_datasets = 100,
                        n_datasets_nest = 100)
 
-# Do KGC and PARALLEL with only "PCA" type of eigenvalues
+# Back to the default ML estimator (unlike above), with only "PCA" type eigenvalues
 nfac_PCA <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
                        "HULL", "PARALLEL", "NEST"), N = 500,
                        estimator = "ML", eigen_type_other = "PCA",

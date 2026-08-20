@@ -34,9 +34,8 @@ N_FACTORS(
 )
 }
 \arguments{
-\item{x}{data.frame or matrix. Dataframe or matrix of raw data or matrix with
-correlations. If \code{"CD"} is included as a criterion, x must be raw
-data.}
+\item{x}{data.frame or matrix. Raw data, or a correlation matrix. If \code{"CD"} is
+included as a criterion, x must be raw data.}
 
 \item{criteria}{character. A vector with the factor retention methods to
 perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"}, \code{"KGC"}, \code{"MAP"},
@@ -45,7 +44,7 @@ perform. Possible inputs are: \code{"CD"}, \code{"EKC"}, \code{"HULL"}, \code{"K
 methods are performed.}
 
 \item{suitability}{logical. Whether the data should be checked for suitability
-for factor analysis using the Bartlett's test of sphericity and the
+for factor analysis using Bartlett's test of sphericity and the
 Kaiser-Meyer-Olkin criterion (see details). Default is \code{TRUE}.}
 
 \item{N}{numeric. The number of observations. Only needed if x is a
@@ -57,11 +56,9 @@ data is given as input. Default is \code{"pairwise.complete.obs"}.}
 \item{cor_method}{character. Correlation computed from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} /
 \code{"tetra"} for polychoric / tetrachoric correlations (a two-step estimator).
-\code{CD}, \code{PARALLEL}, \code{NEST}, and
-\code{HULL} compare against simulated continuous data, and \code{SMT} relies on a
-normal-theory chi-square test; none of these support \code{"poly"} / \code{"tetra"},
-so they are skipped in that case.
-Default is  \code{"pearson"}.}
+\code{CD}, \code{PARALLEL}, \code{NEST}, \code{HULL}, and \code{SMT} do not support \code{"poly"} / \code{"tetra"}
+and are skipped automatically if you request them together.
+Default is \code{"pearson"}.}
 
 \item{n_factors_max}{numeric. Passed to \code{\link[=efa_cd]{efa_cd()}}. The maximum number
 of factors to test against.
@@ -84,8 +81,9 @@ iterations to perform after which the iterative PAF procedure is halted.
 Default is 50.}
 
 \item{n_fac_theor}{numeric. Passed to \code{\link[=efa_hull]{efa_hull()}}. Theoretical number
-of factors to retain. The maximum of this number and the number of factors
-suggested by \code{\link[=efa_parallel]{efa_parallel()}} plus one will be used in the Hull method.}
+of factors to retain. The Hull method uses one plus the larger of this
+number and the number of factors suggested by \code{\link[=efa_parallel]{efa_parallel()}} as its
+upper bound.}
 
 \item{method}{character. The estimator to use in the criteria that fit EFA models;
 passed to \code{\link[=efa_retain]{efa_retain()}} as its \code{estimator} argument. One of \code{"ML"}, \code{"PAF"}, or
@@ -97,16 +95,15 @@ combination of them. With the \code{"PAF"} estimator, only
 the CAF can be used as goodness of fit index. For details on the CAF, see
 Lorenzo-Seva, Timmerman, and Kiers (2011).}
 
-\item{eigen_type_HULL}{character. Passed to  \code{\link[=efa_parallel]{efa_parallel()}} in
-\code{\link[=efa_hull]{efa_hull()}}. On what the
-eigenvalues should be found in the parallel analysis. Can be one of
-\code{"SMC"}, \code{"PCA"}, or \code{"EFA"}. If using  \code{"SMC"} (default),
-the diagonal of the correlation matrices is
-replaced by the squared multiple correlations (SMCs) of the indicators. If
-using  \code{"PCA"}, the diagonal values of the correlation
-matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
-correlation  matrices with the final communalities of an EFA solution as
-diagonal.}
+\item{eigen_type_HULL}{character. Passed to \code{\link[=efa_parallel]{efa_parallel()}} in
+\code{\link[=efa_hull]{efa_hull()}}. What the eigenvalues in the parallel analysis are based on.
+One of \code{"SMC"}, \code{"PCA"}, or \code{"EFA"} -- different ways of estimating how much
+variance each indicator shares with the others before the eigenvalues are
+computed. \code{"SMC"} (default) uses each indicator's squared multiple
+correlation with the others (its diagonal value in the correlation matrix).
+\code{"PCA"} leaves the diagonal at 1, so each indicator's total variance -- not
+just the shared part -- feeds into the eigenvalues. \code{"EFA"} uses the
+communalities from a fitted EFA solution instead.}
 
 \item{eigen_type_other}{character. Passed to \code{\link[=efa_kgc]{efa_kgc()}},
 \code{\link[=efa_scree]{efa_scree()}}, and \code{\link[=efa_parallel]{efa_parallel()}}. The same as eigen_type_HULL,
@@ -127,20 +124,23 @@ Default is 95.}
 
 \item{decision_rule}{character. Passed to \code{\link[=efa_parallel]{efa_parallel()}} (also within
 \code{\link[=efa_hull]{efa_hull()}}). Which rule to use to determine the number of
-factors to retain. Default is \code{"means"}, which will use the average
-simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
-in percent. \code{"crawford"} uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010).}
+factors to retain. Default is \code{"means"}, which uses the average simulated
+eigenvalues. \code{"percentile"} uses the percentiles specified in \code{percent}.
+\code{"crawford"} uses the 95th percentile for the first factor and the mean
+afterwards (based on Crawford et al., 2010).}
 
-\item{ekc_type}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. It selected
-between two ways to compute the \code{\link[=efa_ekc]{efa_ekc()}} reference values. The \code{"AM2019"}
-reference values do not depend on the observed eigenvalues, so they do not apply
-the empirical correction that defines the criterion, and they are no longer
-computed.}
+\item{ekc_type}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. It
+used to select between two ways to compute the \code{\link[=efa_ekc]{efa_ekc()}} reference values.
+The \code{"AM2019"} reference values do not depend on the observed eigenvalues.
+They therefore skip the empirical correction that defines the criterion, so
+they are no longer computed.}
 
-\item{n_datasets_nest}{numeric. The number of datasets to simulate in \code{\link[=efa_nest]{efa_nest()}}. Default is 1000.}
+\item{n_datasets_nest}{numeric. Passed to \code{\link[=efa_nest]{efa_nest()}}. The number of
+datasets to simulate. Default is 1000.}
 
-\item{alpha_nest}{numeric. The alpha level to use in \code{\link[=efa_nest]{efa_nest()}} (i.e., 1-alpha percentile of eigenvalues is used for reference values).}
+\item{alpha_nest}{numeric. Passed to \code{\link[=efa_nest]{efa_nest()}}. The alpha level to use.
+The reference values are the eigenvalues at the (1 - alpha_nest)
+percentile. Default is .05.}
 
 \item{show_progress}{logical. Whether a progress bar should be shown in the
 console. Default is FALSE.}
