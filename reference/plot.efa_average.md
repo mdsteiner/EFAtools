@@ -38,13 +38,13 @@ names the four marks.
 # \donttest{
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ℹ Extracting data
-#> ✔ Extracting data [24ms]
+#> ✔ Extracting data [28ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [25ms]
+#> ✔ Reordering factors [28ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [21ms]
+#> ✔ Averaging data [24ms]
 #> 
 plot(EFA_aver)
 

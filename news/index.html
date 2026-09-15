@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EFAtools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,141 +43,89 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.0.0.9000" id="efatools-1009000">EFAtools 1.0.0.9000<a class="anchor" aria-label="anchor" href="#efatools-1009000"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.1.0" id="efatools-110">EFAtools 1.1.0<a class="anchor" aria-label="anchor" href="#efatools-110"></a></h2><p class="text-muted">CRAN release: 2026-08-21</p>
 <div class="section level3">
-<h3 id="comparing-and-averaging-solutions-1-0-0-9000">Comparing and Averaging Solutions<a class="anchor" aria-label="anchor" href="#comparing-and-averaging-solutions-1-0-0-9000"></a></h3>
-<ul><li><p><code><a href="../reference/efa_compare.html">efa_compare()</a></code> display settings (as set via <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>, <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code>, or <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>) are now saved and reused, so you can change them after the fact without rerunning the comparison.</p></li>
-<li><p><code><a href="../reference/efa_compare.html">efa_compare()</a></code>’s <code>are_equal</code> is now <code>NA</code> when the compared integer parts differ; <code>0</code> is reserved for values whose integer parts agree but decimals do not.</p></li>
-<li><p>Fixed <code><a href="../reference/efa_average.html">efa_average()</a></code>’s progress bar, which could previously trigger spurious warnings.</p></li>
-<li><p><code><a href="../reference/efa_group.html">efa_group()</a></code> now declares <code>se</code> as a formal argument; a supplied value is dropped with a warning pointing to <code>b_boot</code> (previously it was silently matched to <code>seed</code> and raised a confusing error).</p></li>
-<li><p><code><a href="../reference/efa_compare.html">efa_compare()</a></code>’s elementwise differences are now signed (previously unsigned).</p></li>
-<li><p><code>efa_compare(reorder = "congruence")</code> now also aligns the sign of single-factor solutions, so two one-factor solutions differing only in sign are no longer reported as maximally different.</p></li>
-<li><p>Fixed <code><a href="../reference/efa_compare.html">efa_compare()</a></code>’s handling of missing loadings, which previously inflated <code>diff_corres</code> and <code>diff_corres_cross</code>; both are now <code>NA</code> when no row can be compared.</p></li>
-<li><p><code><a href="../reference/efa_compare.html">efa_compare()</a></code> now rejects invalid input: empty pairs, infinite values, non-numeric content, or a negative <code>thresh</code>.</p></li>
-<li><p><code><a href="../reference/efa_group.html">efa_group()</a></code> now rejects <code>b_boot = 1</code>.</p></li>
+<h3 id="comparing-and-averaging-solutions-1-1-0">Comparing and Averaging Solutions<a class="anchor" aria-label="anchor" href="#comparing-and-averaging-solutions-1-1-0"></a></h3>
+<ul><li><p><code><a href="../reference/efa_compare.html">efa_compare()</a></code> now saves <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>, <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code>, and <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> display settings, and reuses them.</p></li>
+<li><p><code><a href="../reference/efa_compare.html">efa_compare()</a></code>’s <code>are_equal</code> now returns <code>NA</code>, not <code>0</code>, when the compared values differ before the decimal point.</p></li>
+<li><p><code><a href="../reference/efa_compare.html">efa_compare()</a></code>’s elementwise differences are now signed.</p></li>
+<li><p><code>efa_compare(reorder = "congruence")</code> now also matches the sign of single-factor solutions.</p></li>
+<li><p>Fixed <code><a href="../reference/efa_compare.html">efa_compare()</a></code>’s handling of missing loadings. This previously inflated <code>diff_corres</code> and <code>diff_corres_cross</code>.</p></li>
+<li><p>Fixed a bug that could trigger spurious warnings from <code><a href="../reference/efa_average.html">efa_average()</a></code>’s progress bar.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="data-screening-and-simulation-1-0-0-9000">Data Screening and Simulation<a class="anchor" aria-label="anchor" href="#data-screening-and-simulation-1-0-0-9000"></a></h3>
-<ul><li><p>Fixed <code><a href="../reference/efa_screen.html">efa_screen()</a></code>’s multivariate-outlier check, which could previously discard the best solution when a robust subset’s covariance matrix was singular.</p></li>
-<li><p>Fixed <code><a href="../reference/efa_screen.html">efa_screen()</a></code>’s robust covariance estimation, which previously fell back to classical Mahalanobis distances when variable scales differed greatly.</p></li>
-<li><p><code><a href="../reference/efa_screen.html">efa_screen()</a></code>’s multicollinearity verdict is now based on the condition index alone, and its bands follow Belsley (1991): an index of 10 or less is rarely of interest, an index above 30 flags a near linear dependency, and its relative strength above 30 is graded by its position on the scale 1, 3, 10, 30, 100, 300, 1000 as moderate, strong, or very strong. The determinant is reported as a plain number, since a small determinant no longer by itself flags multicollinearity.</p></li>
-<li><p><code><a href="../reference/efa_screen.html">efa_screen()</a></code> now withholds the Henze-Zirkler p-value (previously an uninformative exact 0 or 1) when its null distribution has no resolvable spread; the <code>hz</code> result then carries class <code>efa_screen_no_hz</code>.</p></li>
-<li><p>Mardia’s skewness and kurtosis in <code><a href="../reference/efa_screen.html">efa_screen()</a></code> now always apply small-sample/exact-moment corrections (previously only below 20 observations, or asymptotic); both statistics, their p-values, and the normality verdict can change. The <code>mardia$small_sample</code> flag is dropped.</p></li>
-<li><p><code><a href="../reference/efa_screen.html">efa_screen()</a></code> now requires at least 3 variables (error <code>efa_screen_too_few_vars</code>).</p></li>
-<li><p><code><a href="../reference/efa_screen.html">efa_screen()</a></code>’s <code>outlier_cutoff</code> must now lie between 0.5 and 0.9999 (default 0.975 unchanged).</p></li>
-<li><p><code><a href="../reference/efa_simulate.html">efa_simulate()</a></code> gains <code>missing_vars</code> to restrict missingness to selected variables.</p></li>
-<li><p>With <code>marginals = "VM"</code> and <code>force_pd = TRUE</code>, <code><a href="../reference/efa_simulate.html">efa_simulate()</a></code>’s returned <code>population</code> now reflects the projected correlations actually used to generate the data.</p></li>
-<li><p><code><a href="../reference/efa_simulate.html">efa_simulate()</a></code> now gives a clear error when a requested empirical-marginal category is too rare to reproduce at the sample size.</p></li>
-<li><p><code><a href="../reference/efa_simulate.html">efa_simulate()</a></code> and <code>efa_power(mode = "simulation")</code> now reject an <code>R</code> whose diagonal is not 1.</p></li>
+<h3 id="data-screening-and-simulation-1-1-0">Data Screening and Simulation<a class="anchor" aria-label="anchor" href="#data-screening-and-simulation-1-1-0"></a></h3>
+<ul><li><p>Fixed two bugs in <code><a href="../reference/efa_screen.html">efa_screen()</a></code>’s outlier detection. Both could give an incorrect or less robust result.</p></li>
+<li><p><code><a href="../reference/efa_screen.html">efa_screen()</a></code>’s multicollinearity verdict is now based on the condition index alone, following Belsley (1991).</p></li>
+<li><p><code><a href="../reference/efa_screen.html">efa_screen()</a></code> now withholds an uninformative Henze-Zirkler p-value instead of reporting an exact 0 or 1.</p></li>
+<li><p>Mardia’s skewness and kurtosis in <code><a href="../reference/efa_screen.html">efa_screen()</a></code> now use small-sample corrections.</p></li>
+<li><p><code><a href="../reference/efa_simulate.html">efa_simulate()</a></code> gains <code>missing_vars</code>, to restrict missingness to selected variables.</p></li>
+<li><p>Fixed <code><a href="../reference/efa_simulate.html">efa_simulate()</a></code>’s reported <code>population</code> under <code>marginals = "VM"</code> and <code>force_pd = TRUE</code>.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="factor-retention-1-0-0-9000">Factor Retention<a class="anchor" aria-label="anchor" href="#factor-retention-1-0-0-9000"></a></h3>
-<ul><li><p>The <code>type</code> argument of <code><a href="../reference/efa_ekc.html">efa_ekc()</a></code> and <code>ekc_type</code> of <code><a href="../reference/efa_retain.html">efa_retain()</a></code> are deprecated and ignored: the empirical Kaiser criterion is now always computed as in Braeken and van Assen (2017), so suggested factor counts can differ from earlier results, and <code><a href="../reference/efa_retain.html">efa_retain()</a></code> no longer reports <code>EKC_AM2019</code>.</p></li>
-<li><p><code><a href="../reference/efa_cd.html">efa_cd()</a></code> now gives a clear error when data contain constant variables.</p></li>
-<li><p><code><a href="../reference/efa_smt.html">efa_smt()</a></code>’s RMSEA rule now stops when the lower confidence bound cannot be computed, instead of continuing to later models.</p></li>
+<h3 id="factor-retention-1-1-0">Factor Retention<a class="anchor" aria-label="anchor" href="#factor-retention-1-1-0"></a></h3>
+<ul><li><p>The <code>type</code> argument of <code><a href="../reference/efa_ekc.html">efa_ekc()</a></code> and <code>ekc_type</code> of <code><a href="../reference/efa_retain.html">efa_retain()</a></code> no longer have any effect: the empirical Kaiser criterion now always follows Braeken and van Assen (2017). Suggested factor counts can differ from earlier results.</p></li>
 <li><p><code><a href="../reference/efa_nest.html">efa_nest()</a></code> results can now be plotted.</p></li>
-<li><p>Factor-retention functions now reject the unsupported arguments <code>seed</code>, <code>se</code>, <code>b_boot</code>, and <code>ci</code> (use <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> for randomness).</p></li>
-<li><p><code><a href="../reference/efa_parallel.html">efa_parallel()</a></code> now shares simulated datasets between <code>"PCA"</code> and <code>"SMC"</code> references when both are requested, halving simulation time; results for a given seed can differ from before.</p></li>
-<li><p>A failed simulation block in <code><a href="../reference/efa_parallel.html">efa_parallel()</a></code> is now redrawn on its own instead of restarting the whole batch.</p></li>
-<li><p><code><a href="../reference/efa_ekc.html">efa_ekc()</a></code>, <code><a href="../reference/efa_nest.html">efa_nest()</a></code>, and <code><a href="../reference/efa_smt.html">efa_smt()</a></code> now require a sample size larger than the number of variables (error <code>efa_n_too_small</code>, as <code><a href="../reference/efa_parallel.html">efa_parallel()</a></code> already required); in <code><a href="../reference/efa_retain.html">efa_retain()</a></code> the affected criterion is listed under <code>not_run</code> instead of stopping the call.</p></li>
-<li><p><code><a href="../reference/efa_map.html">efa_map()</a></code> now stops the grid and warns (<code>efa_map_truncated</code>, recording the reached point in <code>m_last</code>) when a residual variance hits zero, instead of continuing with stale, uncomputed values.</p></li>
-<li><p><code><a href="../reference/efa_cd.html">efa_cd()</a></code> now gives the error <code>efa_cd_degenerate_population</code> when <code>N_pop</code> is smaller than 2.</p></li>
-<li><p>Count arguments of the retention criteria (<code>n_factors_max</code>, <code>N_samples</code>, <code>max_iter</code> of <code><a href="../reference/efa_cd.html">efa_cd()</a></code>; <code>n_factors</code>, <code>N</code>, <code>n_vars</code>, <code>n_datasets</code> of <code><a href="../reference/efa_parallel.html">efa_parallel()</a></code>; <code>n_datasets</code> of <code><a href="../reference/efa_hull.html">efa_hull()</a></code>; <code>N</code>, <code>n_datasets</code> of <code><a href="../reference/efa_nest.html">efa_nest()</a></code>) must now be at least 1.</p></li>
-<li><p>Factor counts in retention output no longer print in scientific notation (e.g. <code>3e+00</code>) under a negative <code>options(scipen)</code>.</p></li>
+<li><p><code><a href="../reference/efa_parallel.html">efa_parallel()</a></code> now shares simulated reference data between <code>"PCA"</code> and <code>"SMC"</code>, roughly halving simulation time. Results for a given seed can differ from before.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="input-validation-and-correlation-handling-1-0-0-9000">Input Validation and Correlation Handling<a class="anchor" aria-label="anchor" href="#input-validation-and-correlation-handling-1-0-0-9000"></a></h3>
-<ul><li><p><code><a href="../reference/efa_fit.html">efa_fit()</a></code> and <code><a href="../reference/efa_average.html">efa_average()</a></code> now reject <code>N = 0</code> (<code>N = NA</code> still means an unknown sample size).</p></li>
-<li><p><code>efa_*</code> arguments with fixed choices are now case-insensitive and accept unambiguous abbreviations.</p></li>
+<h3 id="input-validation-and-correlation-handling-1-1-0">Input Validation and Correlation Handling<a class="anchor" aria-label="anchor" href="#input-validation-and-correlation-handling-1-1-0"></a></h3>
+<ul><li><p><code>efa_*</code> arguments with fixed choices are now case-insensitive and accept unambiguous abbreviations.</p></li>
 <li><p>Correlation matrices supplied as data frames are now recognised and analysed correctly.</p></li>
-<li><p>Passing <code>NULL</code> to a choice-valued argument now uses its documented default.</p></li>
-<li><p>Correlation-matrix smoothing now consistently returns a positive-definite matrix, including for nearly singular matrices.</p></li>
-<li><p>A square, non-symmetric matrix is now refused as a correlation matrix (error <code>efa_input_not_symmetric</code>) instead of being treated as raw data.</p></li>
-<li><p>A correlation matrix is now considered singular when its smallest-to-largest eigenvalue ratio falls below <code>n_vars * machine epsilon</code>, rather than only when <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">solve()</a></code> fails; some previously accepted, ill-conditioned matrices now give the error <code>efa_cor_singular</code>.</p></li>
-<li><p><code><a href="../reference/efa_fit.html">efa_fit()</a></code> now gives the error <code>efa_n_factors_object</code> when a factor-retention object is supplied as <code>n_factors</code>.</p></li>
+<li><p>Correlation-matrix smoothing now consistently returns a positive-definite matrix.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="missing-data-and-multiple-imputation-1-0-0-9000">Missing Data and Multiple Imputation<a class="anchor" aria-label="anchor" href="#missing-data-and-multiple-imputation-1-0-0-9000"></a></h3>
-<ul><li><p><code><a href="../reference/efa_mi.html">efa_mi()</a></code>’s <code>rmsr_upper</code> argument is deprecated and ignored (it never affected the reported RMSR); <code><a href="../reference/EFA_POOLED.html">EFA_POOLED()</a></code> still accepts it silently.</p></li>
-<li><p><code><a href="../reference/efa_mi.html">efa_mi()</a></code> now rejects <code>mids</code> objects from <code>mice</code>; convert them first with <code>mice::complete(x, "all")</code>.</p></li>
-<li><p>With <code>target_method = "consensus"</code>, <code><a href="../reference/efa_mi.html">efa_mi()</a></code> now starts the search for the common rotational target at the imputation closest to all others rather than the first; pooled results no longer depend on the order of <code>data_list</code> (they can differ from earlier versions). Pass <code>consensus_args = list(start = 1)</code> to recover the previous behaviour.</p></li>
-<li><p><code><a href="../reference/efa_mi.html">efa_mi()</a></code>’s pooled RMSEA is now capped at 1, and its confidence bounds are withheld when they do not contain the point estimate.</p></li>
-<li><p><code><a href="../reference/efa_mi.html">efa_mi()</a></code>’s pooled communalities are now named <code>communalities</code> (<code>MI$h2</code> is gone; use <code>MI$communalities</code>, <code>SE$communalities</code>, <code>CI$communalities</code>).</p></li>
-<li><p><code><a href="../reference/efa_mi.html">efa_mi()</a></code>’s pooled <code>fit_indices</code> now hold the same elements in the same order across every standard-error route; the sandwich route gains <code>pool_method</code> (as <code>NA</code>).</p></li>
-<li><p>An <code><a href="../reference/efa_mi.html">efa_mi()</a></code> solution now carries an <code>mi_admissibility</code> component, reporting the Heywood flags of the individual imputations.</p></li>
-<li><p>A <code>cor_method = "fiml"</code> fit with analytic standard errors now withholds loading standard errors (warning <code>efa_se_unreliable</code>) when the rotational orientation is weakly determined, matching the other standard-error routes.</p></li>
+<h3 id="missing-data-and-multiple-imputation-1-1-0">Missing Data and Multiple Imputation<a class="anchor" aria-label="anchor" href="#missing-data-and-multiple-imputation-1-1-0"></a></h3>
+<ul><li><p><code><a href="../reference/efa_mi.html">efa_mi()</a></code>’s <code>rmsr_upper</code> argument is deprecated and no longer used.</p></li>
+<li><p>With <code>target_method = "consensus"</code>, <code><a href="../reference/efa_mi.html">efa_mi()</a></code>’s pooled result no longer depends on the order of <code>data_list</code>. Results can differ from earlier versions.</p></li>
+<li><p><code><a href="../reference/efa_mi.html">efa_mi()</a></code>’s pooled RMSEA is now capped at 1, and its confidence interval is withheld when it excludes the point estimate.</p></li>
+<li><p>An <code><a href="../reference/efa_mi.html">efa_mi()</a></code> solution now reports the Heywood status of each imputation, in <code>mi_admissibility</code>.</p></li>
+<li><p>A <code>cor_method = "fiml"</code> fit with analytic standard errors now withholds loading standard errors when the rotation is weakly determined, matching the other standard-error methods.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="model-estimation-1-0-0-9000">Model Estimation<a class="anchor" aria-label="anchor" href="#model-estimation-1-0-0-9000"></a></h3>
-<ul><li><p>The <code>"uls"</code> (minimum residual) estimator’s search now matches its analytic gradient and reported <code>Fm</code>, minimising the full reduced-correlation residual including the diagonal (previously the search used only the off-diagonal residual). Results move little for well-supported solutions; over-factored models can show larger changes.</p></li>
-<li><p>Squared multiple correlations that start the <code>"paf"</code>, <code>"ml"</code>, and <code>"uls"</code> estimators are now held within [0, 1], matching <code><a href="https://rdrr.io/pkg/psych/man/smc.html" class="external-link">psych::smc()</a></code>; results can change for indefinite or badly conditioned correlation matrices (e.g. unsmoothed bootstrap resamples).</p></li>
-<li><p><code><a href="../reference/estimate_control.html">estimate_control()</a></code> gains <code>fiml_max_iter</code> and <code>fiml_tol</code> to govern the FIML two-stage EM algorithm.</p></li>
-<li><p>An <code><a href="../reference/efa_fit.html">efa_fit()</a></code> fit with <code>cor_method = "fiml"</code> now returns a <code>fiml</code> component (convergence state, iteration count, missing-data patterns, sample size), and warns (<code>efa_fiml_em_nonconvergence</code>) when the EM algorithm does not converge.</p></li>
-<li><p>A <code>cor_method = "fiml"</code> fit that cannot form the corrected two-stage chi-square now records <code>chi_scaled_type = "uncorrected.lrt"</code> and warns (<code>efa_fiml_uncorrected_chisq</code>).</p></li>
-<li><p>An RMSEA confidence interval that cannot be computed is now reported as <code>NA</code> instead of stopping the fit.</p></li>
+<h3 id="model-estimation-1-1-0">Model Estimation<a class="anchor" aria-label="anchor" href="#model-estimation-1-1-0"></a></h3>
+<ul><li><p>The <code>"uls"</code> estimator now minimises the full residual, including the diagonal, matching its analytic gradient. Results can shift for over-factored models.</p></li>
+<li><p>Starting values for the <code>"paf"</code>, <code>"ml"</code>, and <code>"uls"</code> estimators are now kept within [0, 1], matching <code><a href="https://rdrr.io/pkg/psych/man/smc.html" class="external-link">psych::smc()</a></code>.</p></li>
+<li><p><code><a href="../reference/estimate_control.html">estimate_control()</a></code> gains <code>fiml_max_iter</code> and <code>fiml_tol</code>, to control the FIML algorithm.</p></li>
+<li><p>A <code>cor_method = "fiml"</code> fit now reports its convergence status in a new <code>fiml</code> component, and warns if it does not converge.</p></li>
+<li><p>An RMSEA confidence interval that cannot be computed is now reported as <code>NA</code>, instead of stopping the fit.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="ordinal-correlations-1-0-0-9000">Ordinal Correlations<a class="anchor" aria-label="anchor" href="#ordinal-correlations-1-0-0-9000"></a></h3>
-<ul><li><p>Perfectly ordered polychoric or tetrachoric pairs are now reported as <code>0.9999</code>/<code>-0.9999</code>, with a warning listing the affected pairs.</p></li>
-<li><p>Binary pairs with an empty response cell now use a margin-preserving 0.5 continuity correction.</p></li>
-<li><p>Unavailable asymptotic variances for polychoric/tetrachoric pairs are now reported as <code>NA</code>; <code>DWLS</code> stops with a clear error, and affected robust standard errors are withheld.</p></li>
-<li><p>Rare response combinations in strongly correlated pairs are now handled more accurately, so such pairs less often block <code>DWLS</code> estimation or robust standard errors.</p></li>
+<h3 id="ordinal-correlations-1-1-0">Ordinal Correlations<a class="anchor" aria-label="anchor" href="#ordinal-correlations-1-1-0"></a></h3>
+<ul><li><p>Perfectly ordered polychoric or tetrachoric pairs are now reported as <code>0.9999</code>/<code>-0.9999</code>, with a warning.</p></li>
+<li><p>Binary pairs with an empty response cell now use a margin-preserving continuity correction.</p></li>
+<li><p>Unavailable asymptotic variances for polychoric or tetrachoric pairs are now reported as <code>NA</code>, and affected robust standard errors are withheld.</p></li>
+<li><p>Rare response patterns in strongly correlated pairs are now handled more accurately. They less often block <code>DWLS</code> or robust standard errors.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="power-analysis-1-0-0-9000">Power Analysis<a class="anchor" aria-label="anchor" href="#power-analysis-1-0-0-9000"></a></h3>
-<ul><li><p>A sample size solved by <code><a href="../reference/efa_power.html">efa_power()</a></code> with <code>group &gt; 1</code> is now a multiple of <code>group</code>, so <code>N_per_group</code> is a whole number (previously, e.g., a required total of 259 across two groups gave 129.5 per group).</p></li>
-<li><p>In simulation mode, <code><a href="../reference/efa_power.html">efa_power()</a></code> now reports an <code>NA</code> hit rate when a requested factor-retention criterion never produces a suggestion.</p></li>
-<li><p>Simulation mode now gives clear errors for missing or invalid <code>N</code> and <code>n_datasets</code>.</p></li>
-<li><p>In simulation mode, <code><a href="../reference/efa_power.html">efa_power()</a></code> now rejects a <code>p</code> that disagrees with the population model (previously replaced silently).</p></li>
-<li><p>In simulation mode, <code><a href="../reference/efa_power.html">efa_power()</a></code> now records the failure reason in <code>replicates$fit_error</code> when fits that recover the model fail (previously <code>NA</code> with no explanation).</p></li>
+<h3 id="power-analysis-1-1-0">Power Analysis<a class="anchor" aria-label="anchor" href="#power-analysis-1-1-0"></a></h3>
+<ul><li><p><code><a href="../reference/efa_power.html">efa_power()</a></code> with <code>group &gt; 1</code> now always solves for a whole-number sample size per group.</p></li>
+<li><p>In simulation mode, <code><a href="../reference/efa_power.html">efa_power()</a></code> now reports <code>NA</code>, not a misleading hit rate, when a retention criterion never gives a suggestion.</p></li>
+<li><p>In simulation mode, <code><a href="../reference/efa_power.html">efa_power()</a></code> now rejects a <code>p</code> that disagrees with the population model, instead of silently replacing it.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="printed-output-1-0-0-9000">Printed Output<a class="anchor" aria-label="anchor" href="#printed-output-1-0-0-9000"></a></h3>
-<ul><li><p>Truncated variable names in loading tables no longer collide: names that would collide are abbreviated and numbered so they stay distinguishable.</p></li>
-<li><p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>/<code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> for Schmid-Leiman loading matrices now honour <code>max_name_length</code>, <code>name_style</code>, <code>sort_loadings</code>, and <code>max_factors_per_block</code> (previously accepted but ignored).</p></li>
-<li><p>Errors from argument checks now carry the condition class <code>efa_invalid_argument</code> and name the function called.</p></li>
+<h3 id="printed-output-1-1-0">Printed Output<a class="anchor" aria-label="anchor" href="#printed-output-1-1-0"></a></h3>
+<ul><li><p>Truncated variable names that would collide in loading tables are now abbreviated and numbered, so they stay distinguishable.</p></li>
+<li><p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>/<code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> for Schmid-Leiman loading matrices now honour <code>max_name_length</code>, <code>name_style</code>, <code>sort_loadings</code>, and <code>max_factors_per_block</code>.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="reliability-and-factor-scores-1-0-0-9000">Reliability and Factor Scores<a class="anchor" aria-label="anchor" href="#reliability-and-factor-scores-1-0-0-9000"></a></h3>
-<ul><li><p>The whole-scale row of an <code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> table for a correlated-factors solution is now labelled <code>factor = "total"</code>, <code>level = "total"</code> (previously <code>"g"</code>/<code>"general"</code>, which implied a general factor such solutions do not have). Solutions with an actual general factor, and single-factor solutions, are unchanged.</p></li>
-<li><p><code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> and <code><a href="../reference/OMEGA.html">OMEGA()</a></code> now compute every omega total from the model-implied common variance, counting contributions from cross-loadings; subscale totals change for solutions with cross-loadings.</p></li>
-<li><p>With <code>variance = "correlation"</code>, the whole-scale omega total is now the model-implied common variance over observed total variance (previously total variance minus unique variances).</p></li>
-<li><p>With <code>variance = "sums_load"</code>, a subscale composite’s model-implied variance now also includes what it receives from other group factors, and this setting now applies to solutions without a general factor, including correlated-factors <code><a href="../reference/efa_fit.html">efa_fit()</a></code> solutions (previously silently overridden to <code>"correlation"</code>).</p></li>
-<li><p>A <code>Phi</code> supplied to <code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> without a <code>pattern</code> is now treated as the group-factor correlation matrix of <code>s_load</code> and enters the coefficients.</p></li>
-<li><p>A <code>Phi</code> supplied together with a loading matrix of two or more factors is no longer dropped: the pair is now scored as a correlated-factors solution regardless of the matrix’s class (previously a hierarchy’s coefficients were returned).</p></li>
-<li><p><code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> now refuses a <code>Phi</code> supplied together with an <code><a href="../reference/efa_schmid_leiman.html">efa_schmid_leiman()</a></code> loading table (previously dropped silently), since such a table already states it is a hierarchy.</p></li>
-<li><p><code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> and <code><a href="../reference/OMEGA.html">OMEGA()</a></code> now include a <code>lavaan</code> fit’s residual covariances in the model-implied composite variances; a freed residual covariance previously overstated omegas and understated standardized alpha.</p></li>
-<li><p><code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> and <code><a href="../reference/OMEGA.html">OMEGA()</a></code> now reject a bifactor or second-order <code>lavaan</code> fit whose latent variables are correlated (previously scored as though uncorrelated).</p></li>
-<li><p><code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> now correctly scores an <code><a href="../reference/efa_schmid_leiman.html">efa_schmid_leiman()</a></code> loading table as a bifactor matrix, and no longer misreads an oblique solution’s pattern matrix as one (pass the <code><a href="../reference/efa_fit.html">efa_fit()</a></code> object itself for that solution).</p></li>
-<li><p><code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> now scores a <code>lavaan</code> fit whose variables each load on a single factor as the correlated-factors solution it is.</p></li>
-<li><p><code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> now returns omega total, standardized alpha, and the H index for a single-factor solution consistently across all input routes, including a one-factor <code><a href="../reference/efa_fit.html">efa_fit()</a></code> solution or a one-column loading matrix (previously refused).</p></li>
-<li><p>The one factor of a single-factor solution is now reported under its input name, or <code>"F1"</code> if unnamed (previously always <code>"g"</code>).</p></li>
-<li><p>A <code>cormat</code> supplied in a different variable order than the solution is now reordered to match it (previously gave wrong subscale coefficients).</p></li>
-<li><p><code><a href="../reference/efa_schmid_leiman.html">efa_schmid_leiman()</a></code> and <code><a href="../reference/SL.html">SL()</a></code> now reorder a supplied <code>Phi</code> to match the loading columns (a differently ordered named <code>Phi</code> previously gave a silently wrong solution) and error if <code>Phi</code> does not match.</p></li>
-<li><p><code><a href="../reference/efa_scores.html">efa_scores()</a></code> and <code><a href="../reference/FACTOR_SCORES.html">FACTOR_SCORES()</a></code> now check and reorder a named <code>Phi</code> and scoring correlation matrix (<code>rho</code>) to match the model, instead of silently using a mismatched order.</p></li>
-<li><p><code><a href="../reference/efa_scores.html">efa_scores()</a></code> and <code><a href="../reference/FACTOR_SCORES.html">FACTOR_SCORES()</a></code> now check a correlation matrix supplied in <code>x</code> against the model and align it to the model variables, as already done for raw data; a mismatched matrix is now an error (previously returned the fitted solution’s weights regardless of the matrix supplied).</p></li>
-<li><p><code><a href="../reference/efa_scores.html">efa_scores()</a></code>/<code><a href="../reference/FACTOR_SCORES.html">FACTOR_SCORES()</a></code> with <code>method = "Bartlett"</code> or <code>"Anderson"</code> now stop on a solution with a communality at or above 1, instead of returning unusable weights with a warning.</p></li>
-<li><p>A <code>factor_map</code> (and <code><a href="../reference/OMEGA.html">OMEGA()</a></code>’s <code>factor_corres</code>) must now hold only 0 and 1, and is checked against the loading matrix’s dimensions (previously any value was accepted and silently multiplied into the coefficients).</p></li>
-<li><p><code><a href="../reference/efa_schmid_leiman.html">efa_schmid_leiman()</a></code> and <code><a href="../reference/SL.html">SL()</a></code> now reject a solution with a single first-order factor.</p></li>
-<li><p><code><a href="../reference/efa_scores.html">efa_scores()</a></code> and <code><a href="../reference/FACTOR_SCORES.html">FACTOR_SCORES()</a></code> now reject scoring data where a model variable is constant, infinite, or observed fewer than twice (previously produced <code>NaN</code> scores).</p></li>
-<li><p><code><a href="../reference/efa_scores.html">efa_scores()</a></code> now reports the count of scored cases in <code>settings$n_scored</code>.</p></li>
-<li><p><code><a href="../reference/efa_schmid_leiman.html">efa_schmid_leiman()</a></code> and <code><a href="../reference/SL.html">SL()</a></code> now reject the unsupported arguments <code>se</code>, <code>b_boot</code>, <code>ci</code>, and <code>seed</code>.</p></li>
+<h3 id="reliability-and-factor-scores-1-1-0">Reliability and Factor Scores<a class="anchor" aria-label="anchor" href="#reliability-and-factor-scores-1-1-0"></a></h3>
+<ul><li><p><code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> and <code><a href="../reference/OMEGA.html">OMEGA()</a></code> now compute every omega total from the model’s full implied common variance, including cross-loadings and contributions from other group factors. Results can change for solutions with cross-loadings.</p></li>
+<li><p>The whole-scale row of a correlated-factors solution is now labelled <code>"total"</code>, not <code>"g"</code>/<code>"general"</code>, which implied a general factor such solutions do not have.</p></li>
+<li><p><code><a href="../reference/efa_reliability.html">efa_reliability()</a></code> now recognises several solution types correctly, including Schmid-Leiman tables and single-factor solutions, which were previously misclassified, mislabeled, or refused.</p></li>
+<li><p><code><a href="../reference/efa_scores.html">efa_scores()</a></code> and <code><a href="../reference/FACTOR_SCORES.html">FACTOR_SCORES()</a></code> with <code>method = "Bartlett"</code> or <code>"Anderson"</code> now stop on a communality at or above 1, instead of returning unusable weights.</p></li>
+<li><p><code><a href="../reference/efa_scores.html">efa_scores()</a></code> and <code><a href="../reference/FACTOR_SCORES.html">FACTOR_SCORES()</a></code> now reject scoring data with a constant, infinite, or too-short variable, instead of silently returning <code>NaN</code> scores.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="rotation-1-0-0-9000">Rotation<a class="anchor" aria-label="anchor" href="#rotation-1-0-0-9000"></a></h3>
-<ul><li><p>Oblique rotations now refuse a nearly singular transformation matrix (smallest singular value below 0.0001) at every evaluation point, including the oblique Procrustes solver; results can differ for near-degenerate solutions (typically more factors than the data support). Well-conditioned solutions are unaffected.</p></li>
-<li><p>A gradient-projection rotation is now reported as converged only when the projected gradient meets tolerance (except simplimax, whose kinked objective still uses a stalled-progress criterion); convergence flags and diagnostics can differ from before for the same data.</p></li>
-<li><p>Rotation criterion parameters from <code><a href="../reference/estimate_control.html">rotate_control()</a></code> (<code>gam</code>, <code>delta</code>, <code>maxit</code>, simplimax <code>k</code>) are now validated before rotation runs, rejecting invalid values that previously reached the rotation engine silently or with an opaque error.</p></li>
-<li><p><code><a href="../reference/efa_procrustes.html">efa_procrustes()</a></code> now refuses an <code>S</code> that is not <code>crossprod(A)</code> (previously a mismatched matrix silently minimised a different criterion), and refuses a badly conditioned <code>T_init</code>, not only a singular one.</p></li>
-<li><p><code>varimax</code>/<code>promax</code> with <code>varimax_type = "svd"</code> and Kaiser normalisation no longer fail on a solution containing a zero-communality variable.</p></li>
+<h3 id="rotation-1-1-0">Rotation<a class="anchor" aria-label="anchor" href="#rotation-1-1-0"></a></h3>
+<ul><li><p>Oblique rotations, including <code><a href="../reference/efa_procrustes.html">efa_procrustes()</a></code>, now refuse a nearly singular transformation matrix at every step. Results can differ for near-degenerate solutions.</p></li>
+<li><p>A gradient-projection rotation is now reported as converged only when its projected gradient meets tolerance. Convergence flags can differ from before.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="standard-errors-1-0-0-9000">Standard Errors<a class="anchor" aria-label="anchor" href="#standard-errors-1-0-0-9000"></a></h3>
-<ul><li><p><code><a href="../reference/efa_fit.html">efa_fit()</a></code> now rejects <code>b_boot</code> below 2 (error <code>efa_b_boot_too_small</code>) and <code>ci</code> of 0 or 1 (error <code>efa_ci_out_of_bounds</code>).</p></li>
-<li><p><code>efa_fit(se = "sandwich")</code> now withholds standard errors and confidence intervals when a Heywood case occurs.</p></li>
-<li><p>Bootstrap output now reports the number of usable replicates when fewer than requested are available (for both single fits and pooled <code><a href="../reference/efa_mi.html">efa_mi()</a></code> fits).</p></li>
-<li><p>A bootstrap replicate whose rotation cannot be aligned now warns under the classed condition <code>efa_boot_rotation_failed</code>.</p></li>
-<li><p>Analytic standard-error output now includes factor names in <code>SE$Phi</code> and variable-factor labels in <code>vcov_unrot_loadings</code>.</p></li>
+<h3 id="standard-errors-1-1-0">Standard Errors<a class="anchor" aria-label="anchor" href="#standard-errors-1-1-0"></a></h3>
+<ul><li><p><code>efa_fit(se = "sandwich")</code> now withholds standard errors and confidence intervals when a Heywood case occurs.</p></li>
+<li><p>Bootstrap output now reports the number of usable replicates when fewer than requested are available.</p></li>
+<li><p>Analytic standard-error output now includes factor and variable names in <code>SE$Phi</code> and <code>vcov_unrot_loadings</code>.</p></li>
 </ul></div>
 </div>
     <div class="section level2">

@@ -569,7 +569,7 @@ Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
                          start_method = "psych")
 #> ℹ Extracting data
-#> ✔ Extracting data [12ms]
+#> ✔ Extracting data [13ms]
 #> 
 #> ℹ Reordering factors
 #> ✔ Reordering factors [39ms]
@@ -595,13 +595,13 @@ Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                            averaging = "median")
 #> ℹ Extracting data
-#> ✔ Extracting data [15ms]
+#> ✔ Extracting data [14ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [27ms]
+#> ✔ Reordering factors [25ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [29ms]
+#> ✔ Averaging data [26ms]
 #> 
 
 # Averaging across different implementations of PAF and promax rotation,
@@ -612,10 +612,10 @@ Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500
 #> ✔ Extracting data [18ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [42ms]
+#> ✔ Reordering factors [33ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [23ms]
+#> ✔ Averaging data [38ms]
 #> 
 
 # Averaging across different oblique rotation methods, using one implementation
@@ -624,13 +624,13 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = "ML", rotation = "oblique", type = "EFAtools",
                          start_method = "psych")
 #> ℹ Extracting data
-#> ✔ Extracting data [11ms]
+#> ✔ Extracting data [10ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [20ms]
+#> ✔ Reordering factors [18ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [23ms]
+#> ✔ Averaging data [20ms]
 #> 
 # }
 
@@ -649,7 +649,7 @@ Aver_fiml <- efa_average(x_miss, n_factors = 1, estimator = c("PAF", "ML"),
 #> ✔ Extracting data [7ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [15ms]
+#> ✔ Averaging data [14ms]
 #> 
 # }
 ```
