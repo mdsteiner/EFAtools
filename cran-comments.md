@@ -1,27 +1,21 @@
 ## Summary
 
-This is a major release. The public interface of the package is now the
-lowercase `efa_*` function family (`efa_fit()`, `efa_retain()`, `efa_screen()`,
-and friends), configured through the new control objects `estimate_control()`
-and `rotate_control()`. The release also adds a vignette on migrating to the new
-interface and one on EFA with ordinal and missing data, and rewrites the
-workflow vignette.
+This release fixes statistical and input-validation defects. NEWS.md lists
+all relevant changes.
 
-The uppercase function names of earlier versions (`EFA()`, `N_FACTORS()`,
-`CD()`, `HULL()`, and the others) are superseded by their `efa_*` equivalents,
-but they remain exported with unchanged arguments and emit no deprecation
-warning. Existing code therefore needs no changes, and neither do the reverse
-dependencies.
-
-The submission also includes various bug-fixes, including fixes for the additional issues raised in the CRAN tests.
+This release also fixes the test failures that CRAN currently reports for
+macOS x86_64. The old tests checked implementation details of the
+polychoric/tetrachoric ACOV code. The new tests check the statistical result
+instead.
 
 ## Test environments
 
-* local Windows 11 installation, R 4.6.0
-* win-builder (release, devel, and oldrelease)
-* mac-builder (release)
-* GitHub Actions: macOS (release), Windows (release), Ubuntu (devel, release,
-  and oldrel-1)
+* Windows 11, R 4.6.0 (local)
+* win-builder: oldrel, release, devel
+* GitHub Actions: ubuntu (oldrel, release, devel, full test suite), windows,
+  macOS (incl. macos-15-intel, vecLib)
+* R-hub: linux, windows, macos, macos-arm64, atlas, mkl, nold, clang-asan,
+  gcc-asan, clang-ubsan
 
 ## R CMD check results
 
