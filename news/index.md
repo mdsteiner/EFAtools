@@ -1,5 +1,12 @@
 # Changelog
 
+## EFAtools 1.1.0.9000
+
+- Removed unnecessary warning from
+  [`efa_map()`](https://mdsteiner.github.io/EFAtools/reference/efa_map.md)
+  that warned when the residual variance reached 0 and thus the search
+  ended early.
+
 ## EFAtools 1.1.0
 
 CRAN release: 2026-08-21

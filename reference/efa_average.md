@@ -572,36 +572,36 @@ Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #> ✔ Extracting data [13ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [39ms]
+#> ✔ Reordering factors [40ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [33ms]
+#> ✔ Averaging data [35ms]
 #> 
 
 # \donttest{
 # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ℹ Extracting data
-#> ✔ Extracting data [15ms]
+#> ✔ Extracting data [16ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [27ms]
+#> ✔ Reordering factors [30ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [23ms]
+#> ✔ Averaging data [24ms]
 #> 
 
 # Use median instead of mean for averaging (72 EFAs)
 Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                            averaging = "median")
 #> ℹ Extracting data
-#> ✔ Extracting data [14ms]
+#> ✔ Extracting data [16ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [25ms]
+#> ✔ Reordering factors [30ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [26ms]
+#> ✔ Averaging data [29ms]
 #> 
 
 # Averaging across different implementations of PAF and promax rotation,
@@ -615,7 +615,7 @@ Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500
 #> ✔ Reordering factors [33ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [38ms]
+#> ✔ Averaging data [33ms]
 #> 
 
 # Averaging across different oblique rotation methods, using one implementation
@@ -627,10 +627,10 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #> ✔ Extracting data [10ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [18ms]
+#> ✔ Reordering factors [20ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [20ms]
+#> ✔ Averaging data [23ms]
 #> 
 # }
 

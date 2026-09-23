@@ -125,13 +125,11 @@ standardizes the partial covariance matrix by its residual standard
 deviations, which requires every residual variance to stay positive.
 Partialling out all but one component leaves a rank-one residual, so the
 final point \\m = p - 1\\ is undefined for most correlation matrices and
-is routinely returned as `NA`. A residual variance can also reach zero
-earlier, most often on a near-singular matrix; the search then stops
-there, the criterion values that could be computed are kept, the
-remaining values stay `NA`, and a warning (class `efa_map_truncated`)
-reports how far the grid was searched. In that case the suggested \\m\\
-is the minimum over the evaluated range only, so it should be read
-together with the returned series.
+is routinely returned as `NA`. With strongly correlated data, a residual
+variance can reach zero some steps earlier. The search then stops there,
+the criterion values that could be computed are kept, and the remaining
+values stay `NA`. The suggested \\m\\ is thus the minimum over the range
+that the function evaluated; `m_last` gives the end of that range.
 
 A non-positive-definite input correlation matrix (e.g. from sampling
 error) is smoothed with

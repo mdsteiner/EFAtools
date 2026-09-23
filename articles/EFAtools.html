@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EFAtools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -352,12 +352,6 @@ Bartlett’s test and computes the KMO. You can pick a subset with the
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ret</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_retain.html">efa_retain</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>,</span>
 <span>                  criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"parallel"</span>, <span class="st">"ekc"</span>, <span class="st">"kgc"</span>, <span class="st">"smt"</span>, <span class="st">"map"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The MAP criterion could only be evaluated up to 27 partialled components of 29.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> A residual variance reached zero there, so the criterion is `NA` beyond that</span></span>
-<span><span class="co">#&gt;   point and the suggestion is the minimum over the range that could be</span></span>
-<span><span class="co">#&gt;   computed.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> A stop well before the end of the grid usually indicates a near-singular</span></span>
-<span><span class="co">#&gt;   correlation matrix.</span></span>
 <span><span class="co">#&gt; Warning: The sequential model tests selected an inadmissible solution: chi: 13 factors</span></span>
 <span><span class="co">#&gt; (Heywood case) and AIC: 13 factors (Heywood case).</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> The selected solution has a Heywood case or did not converge, so the</span></span>

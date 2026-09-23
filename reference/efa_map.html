@@ -13,7 +13,7 @@ factors/components to retain. The function implements the original MAP criterion
 
     <a class="navbar-brand me-2" href="../index.html">EFAtools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -146,12 +146,11 @@ Kaiser-Guttman criterion (<code><a href="efa_kgc.html">efa_kgc()</a></code>).</p
 the partial covariance matrix by its residual standard deviations, which requires
 every residual variance to stay positive. Partialling out all but one component
 leaves a rank-one residual, so the final point \(m = p - 1\) is undefined for
-most correlation matrices and is routinely returned as <code>NA</code>. A residual variance
-can also reach zero earlier, most often on a near-singular matrix; the search then
-stops there, the criterion values that could be computed are kept, the remaining
-values stay <code>NA</code>, and a warning (class <code>efa_map_truncated</code>) reports how far the
-grid was searched. In that case the suggested \(m\) is the minimum over the
-evaluated range only, so it should be read together with the returned series.</p>
+most correlation matrices and is routinely returned as <code>NA</code>. With strongly
+correlated data, a residual variance can reach zero some steps earlier. The search
+then stops there, the criterion values that could be computed are kept, and the
+remaining values stay <code>NA</code>. The suggested \(m\) is thus the minimum over the
+range that the function evaluated; <code>m_last</code> gives the end of that range.</p>
 <p>A non-positive-definite input correlation matrix (e.g. from sampling error) is
 smoothed with <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth()</a></code>.</p>
     </div>

@@ -334,12 +334,6 @@ Bartlett’s test and computes the KMO. You can pick a subset with the
 
 ret <- efa_retain(DOSPERT_sub,
                   criteria = c("parallel", "ekc", "kgc", "smt", "map"))
-#> Warning: The MAP criterion could only be evaluated up to 27 partialled components of 29.
-#> ℹ A residual variance reached zero there, so the criterion is `NA` beyond that
-#>   point and the suggestion is the minimum over the range that could be
-#>   computed.
-#> ℹ A stop well before the end of the grid usually indicates a near-singular
-#>   correlation matrix.
 #> Warning: The sequential model tests selected an inadmissible solution: chi: 13 factors
 #> (Heywood case) and AIC: 13 factors (Heywood case).
 #> ℹ The selected solution has a Heywood case or did not converge, so the
