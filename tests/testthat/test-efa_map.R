@@ -88,12 +88,10 @@ test_that("TR4 is the trace of the fourth matrix power", {
   expect_gt(abs(tr4 - .2^4), .1)
 })
 
-test_that("an ordinary run searches the whole grid and stays silent", {
+test_that("an ordinary run searches the whole grid", {
   # Partialling out all but one component leaves a rank-one residual, so the final
-  # point m = p - 1 is undefined on this matrix; that is the expected end of the
-  # grid and must not raise the truncation warning.
-  expect_no_warning(res <- efa_map(test_models$baseline$cormat),
-                    class = "efa_map_truncated")
+  # point m = p - 1 is undefined on this matrix; that is the expected end of the grid.
+  expect_no_warning(res <- efa_map(test_models$baseline$cormat))
   expect_equal(.retention_record(res, "TR2")$m_last,
                ncol(test_models$baseline$cormat) - 2)
   expect_null(res$note)
@@ -103,12 +101,14 @@ test_that("an ordinary run searches the whole grid and stays silent", {
   expect_false(any(is.na(.retention_record(map_raw, "TR2")$y)))
 })
 
-test_that("a truncated grid warns, keeps the computed prefix, and records how far it got", {
-  expect_warning(res <- efa_map(map_trunc_cor), class = "efa_map_truncated")
+test_that("a short grid stays silent, keeps the computed prefix, and records how far it got", {
+  # A stop before the end of the grid is usual on strongly correlated data, so it is
+  # reported in the returned series and in m_last only, never as a warning.
+  expect_no_warning(res <- efa_map(map_trunc_cor))
 
   for (nm in c("TR2", "TR4")) {
     rec <- .retention_record(res, nm)
-    # the search stopped well short of the grid, which is what the warning reports
+    # the search stopped well short of the grid
     expect_equal(rec$m_last, 0)
     expect_lt(rec$m_last, ncol(map_trunc_cor) - 2)
     # the prefix that could be computed is kept, the rest stays NA -- asserted
@@ -120,16 +120,14 @@ test_that("a truncated grid warns, keeps the computed prefix, and records how fa
     expect_equal(res$n_factors[[nm]], rec$x[which.min(rec$y)])
   }
 
-  # the print says so too, rather than presenting a fully searched grid
-  expect_length(res$note, 1)
-  expect_match(res$note, "not over the full grid", fixed = TRUE)
+  # the print does not flag the short grid either
+  expect_null(res$note)
 })
 
-test_that("a truncated MAP does not take the criterion out of efa_retain()", {
-  expect_warning(
+test_that("a short grid does not take MAP out of efa_retain()", {
+  expect_no_warning(
     nf <- efa_retain(map_trunc_cor, N = 500, suitability = FALSE,
-                     criteria = "MAP"),
-    class = "efa_map_truncated"
+                     criteria = "MAP")
   )
   expect_named(nf$outputs, "MAP")
   expect_null(nf$not_run)

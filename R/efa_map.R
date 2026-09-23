@@ -46,12 +46,11 @@
 #' the partial covariance matrix by its residual standard deviations, which requires
 #' every residual variance to stay positive. Partialling out all but one component
 #' leaves a rank-one residual, so the final point \eqn{m = p - 1} is undefined for
-#' most correlation matrices and is routinely returned as `NA`. A residual variance
-#' can also reach zero earlier, most often on a near-singular matrix; the search then
-#' stops there, the criterion values that could be computed are kept, the remaining
-#' values stay `NA`, and a warning (class `efa_map_truncated`) reports how far the
-#' grid was searched. In that case the suggested \eqn{m} is the minimum over the
-#' evaluated range only, so it should be read together with the returned series.
+#' most correlation matrices and is routinely returned as `NA`. With strongly
+#' correlated data, a residual variance can reach zero some steps earlier. The search
+#' then stops there, the criterion values that could be computed are kept, and the
+#' remaining values stay `NA`. The suggested \eqn{m} is thus the minimum over the
+#' range that the function evaluated; `m_last` gives the end of that range.
 #'
 #' A non-positive-definite input correlation matrix (e.g. from sampling error) is
 #' smoothed with [psych::cor.smooth()].
@@ -151,12 +150,11 @@ efa_map <- function(x,
   # m=0, Rstar = R
   criteria[1, ] <- map_from_partials(R)
 
-  # Largest m at which the criterion could be evaluated, and whether that stop cut
-  # the grid short. Partialling out all but one component leaves a rank-one residual,
-  # so the final point m = p - 1 is undefined for most matrices; only a stop before
-  # that shortens the searched range in a way the user needs to know about.
+  # Largest m at which the criterion could be evaluated. Partialling out all but one
+  # component leaves a rank-one residual, so the final point m = p - 1 is undefined
+  # for most matrices, and a stop some steps before it is usual on strongly
+  # correlated data.
   m_last <- m_max
-  truncated <- FALSE
 
   # run through ms
   for (m in seq_len(m_max)) {
@@ -170,7 +168,6 @@ efa_map <- function(x,
     # Guard against zero/negative residual variances (can happen at very high m or numerical issues)
     if (any(!is.finite(d)) || any(d <= 1e-5)) {
       m_last <- m - 1L
-      truncated <- m < m_max
       break
     }
     # D^(-1/2) to standardize to correlation matrix
@@ -179,15 +176,6 @@ efa_map <- function(x,
     Rstar <- Dm %*% Cm %*% Dm
     criteria[m + 1, ] <- map_from_partials(Rstar)
 
-  }
-
-  if (isTRUE(truncated)) {
-    cli::cli_warn(
-      c("The MAP criterion could only be evaluated up to {m_last} partialled component{?s} of {m_max}.",
-        "i" = "A residual variance reached zero there, so the criterion is {.code NA} beyond that point and the suggestion is the minimum over the range that could be computed.",
-        "i" = "A stop well before the end of the grid usually indicates a near-singular correlation matrix."),
-      class = "efa_map_truncated"
-    )
   }
 
   n_factors_TR2 <- ms[which.min(criteria[, "TR2 (orig. MAP)"])]
@@ -207,12 +195,7 @@ efa_map <- function(x,
   out <- .new_efa_retention(
     "MAP",
     results = results,
-    settings = list(use = use, cor_method = cor_method),
-    note = if (isTRUE(truncated)) {
-      paste0("The criterion could only be evaluated up to ", m_last, " of ",
-             m_max, " partialled components; the suggestion is the minimum over ",
-             "that range, not over the full grid.")
-    }
+    settings = list(use = use, cor_method = cor_method)
   )
 
   return(out)

@@ -1,3 +1,7 @@
+# EFAtools 1.1.0.9000
+
+* Removed unnecessary warning from `efa_map()` that warned when the residual variance reached 0 and thus the search ended early.
+
 # EFAtools 1.1.0
 
 ## Comparing and Averaging Solutions
