@@ -1,19 +1,15 @@
 #' Print and format an efa_screen object
 #'
-#' `print()` turns the factor-analysis screening diagnostics computed by
-#' [efa_screen()] into a sectioned report with banded, colour-coded verdicts:
-#' sampling adequacy and sphericity (the Kaiser-Meyer-Olkin measure and Bartlett's
-#' test of sphericity), multicollinearity (the determinant and condition number of
-#' the correlation matrix), the per-variable diagnostics, and, when raw data were
-#' supplied, multivariate normality and multivariate outliers. It closes with a
-#' consolidated list of actionable recommendations (for example, which items to
-#' consider dropping, whether to prefer an ordinal or a robust estimator, and a
-#' caveat that keeps an over-powered Bartlett's test from being over-trusted).
-#' `format()` assembles the same report and returns it as a character vector;
-#' `print()` is `cat(format(x), sep = "\n")`. The lines follow the active console
-#' theme, so they are plain when colours are disabled (for example when captured
-#' into a file or stripped with [cli::ansi_strip()]). `print()` does not draw a
-#' plot.
+#' `print()` turns the diagnostics computed by [efa_screen()] into a sectioned report
+#' with colour-coded verdicts: sampling adequacy and sphericity (the Kaiser-Meyer-Olkin
+#' measure and Bartlett's test of sphericity), multicollinearity (the condition index),
+#' the per-variable diagnostics, and, when raw data were supplied, multivariate normality
+#' and multivariate outliers. It closes with a list of recommendations (for example,
+#' which items to consider dropping, or whether to prefer an ordinal or a robust
+#' estimator). `format()` assembles the same report and returns it as a character
+#' vector; `print()` is `cat(format(x), sep = "\n")`. The lines follow the active console
+#' theme, so they are plain when colours are disabled (for example when captured into a
+#' file or stripped with [cli::ansi_strip()]). `print()` does not draw a plot.
 #'
 #' @param x An object of class `efa_screen` (output from [efa_screen()]).
 #' @param digits Integer. The number of decimal places the reported values are
@@ -50,23 +46,16 @@ print.efa_screen <- function(x, digits = 3, ...) {
 format.efa_screen <- function(x, digits = 3, ...) {
 
   raw <- !is.null(x$per_item)
-
-  # Overall KMO band (reused Kaiser & Rice, 1974 cut-offs) and the significance flags
-  # that several sections and the recommendations share.
   kmo <- x$kmo$KMO
-  bart_sig <- .screen_is_sig(x$bartlett$p_value)
-  # The multivariate-normality verdict is a count over the tests that are available. The
-  # Henze-Zirkler p-value is withheld when its null approximation degenerates at many
-  # variables, so the set is not always all three. `mvn_nonnormal` gates the
-  # recommendations as before; the counts let the verdict sentence separate one marginal
-  # rejection from a unanimous one.
+  # The normality verdict counts the available tests: the kurtosis statistic is NA in a very
+  # small sample.
   mvn_p <- if (raw && !inherits(x$normality, "efa_screen_no_mvn")) {
-    c(x$normality$mardia$skewness_p, x$normality$mardia$kurtosis_p,
-      x$normality$hz$p_value)
+    c(x$normality$mardia$skewness_p, x$normality$mardia$kurtosis_p)
   }
   mvn_n_avail <- sum(!is.na(mvn_p))
   mvn_n_rej <- sum(vapply(mvn_p, .screen_is_sig, logical(1)))
   mvn_nonnormal <- mvn_n_rej > 0L
+  ci_band <- .ci_band(sqrt(x$condition))
 
   cli::cli_format_method({
 
@@ -76,40 +65,24 @@ format.efa_screen <- function(x, digits = 3, ...) {
     if (!is.null(kmo) && !is.na(kmo)) {
       band <- .kmo_band(kmo)
       kval <- round(kmo, digits)
-      band$alert("The overall KMO value for your data is {band$label} (Overall KMO = {kval}).",
-                 wrap = TRUE)
-      # The bands are named on screen for the same reason the condition-index rule is:
-      # a verbal band is a convention, not a finding, and an unattributed cut-off
-      # standing next to an attributed one reads as the latter.
-      cli::cli_text(paste("These data are {band$suitability} suitable for factor",
-                          "analysis (verbal bands: Kaiser & Rice, 1974)."))
+      band$alert("Overall KMO = {kval}: {band$label} (Kaiser & Rice, 1974).", wrap = TRUE)
     } else {
-      cli::cli_alert_warning("The overall KMO value for your data is not available.",
-                             wrap = TRUE)
+      cli::cli_alert_warning("The overall KMO value is not available.", wrap = TRUE)
     }
-
-    cli::cli_text("")
 
     bart <- x$bartlett
     if (is.null(bart)) {
       cli::cli_alert_warning(
         "Bartlett's test of sphericity was not computed; no sample size (N) was supplied.",
         wrap = TRUE)
-    } else if (!is.null(bart$p_value) && !is.na(bart$p_value)) {
-      # Bartlett significance wording reused verbatim from format.efa_bartlett.
-      if (bart$p_value < .05) {
-        cli::cli_alert_success(
-          "The Bartlett's test of sphericity was significant at an alpha level of .05.",
-          wrap = TRUE)
-        cli::cli_text("These data are probably suitable for factor analysis.")
-      } else {
-        cli::cli_alert_danger(
-          "The Bartlett's test of sphericity was not significant at an alpha level of .05.",
-          wrap = TRUE)
-        cli::cli_text("These data are probably not suitable for factor analysis.")
-      }
-      cli::cli_verbatim(paste0("\U03C7\U00B2(", bart$df, ") = ", round(bart$chisq, 2),
-                               ", ", cli::style_italic("p"), .screen_p_str(bart$p_value)))
+    } else if (!is.na(bart$p_value)) {
+      # A fixed-format statistic line, so it is not wrapped.
+      sig <- bart$p_value < .05
+      text <- paste0("Bartlett's test of sphericity: \U03C7\U00B2(", bart$df, ") = ",
+                     round(bart$chisq, 2), ", ", cli::style_italic("p"),
+                     .screen_p_str(bart$p_value),
+                     if (sig) " (significant)." else " (not significant).")
+      if (sig) cli::cli_alert_success(text) else cli::cli_alert_danger(text)
     } else {
       .print_bartlett_no_result()
     }
@@ -117,48 +90,18 @@ format.efa_screen <- function(x, digits = 3, ...) {
     # -- Multicollinearity -----------------------------------------------------
     .print_efa_rule("Multicollinearity")
 
-    # The determinant is the product of the p eigenvalues of R, so it shrinks
-    # geometrically as variables are added even when every eigenvalue stays far from
-    # zero. A fixed cut-off on it (below 0.00001; Field, 2018) is therefore a statement
-    # about the number of variables as much as about the data: it fires on wide but
-    # well-conditioned item pools and contradicts the condition index printed directly
-    # under it. The determinant is reported as a number only, and the condition index
-    # (above 30; Belsley, 1991) carries this section's verdict and the consolidated
-    # recommendation, so the one cut-off lives in one place.
-    det_R <- x$determinant
-    dstr <- format(det_R, digits = digits, scientific = FALSE)
-    cli::cli_alert_info(
-      "Determinant: {dstr}. It falls as variables are added, so the condition index below carries the verdict.",
-      wrap = TRUE)
-
-    cond <- x$condition
-    cstr <- formatC(cond, format = "f", digits = digits)
-    # The verdict is on the condition *index*, and its bands live in .ci_band(). The
-    # index is shown alongside the rule that governs it: quoting the rule without the
-    # quantity invites the value to be read against the wrong scale. Above 30 the
-    # strength is named as well, because a flat label would give an index of 35 and an
-    # index of 3000 the same verdict.
-    ci <- sqrt(cond)
-    cistr <- formatC(ci, format = "f", digits = digits)
-    ci_band <- .ci_band(ci)
+    cistr <- formatC(sqrt(x$condition), format = "f", digits = digits)
     if (ci_band$flag) {
       ci_band$alert(
-        "Condition number: {cstr} (condition index {cistr}). The index is above 30, which indicates a near linear dependency; its relative strength is {ci_band$strength} (Belsley, 1991).",
+        "Condition index: {cistr}, above 30: a {ci_band$strength} near linear dependency (Belsley, 1991).",
         wrap = TRUE)
     } else {
-      ci_band$alert("Condition number: {cstr} (condition index {cistr}). {ci_band$note}",
-                    wrap = TRUE)
+      ci_band$alert("Condition index: {cistr}. {ci_band$note}", wrap = TRUE)
     }
 
     # -- Per-variable diagnostics ----------------------------------------------
     .print_efa_rule("Per-variable diagnostics")
-    # The standard display names are MSA (the per-variable measure of sampling adequacy,
-    # stored as kmo_i) and SMC (the squared multiple correlation). The per-variable
-    # values are laid out as base R's data-frame print, emitted verbatim so cli does not
-    # reflow the aligned columns (as format.efa_kmo does for the KMO vector). This is the
-    # one table not routed through .efa_num(), so it is also the one place a leading zero
-    # is kept: the frame mixes bounded coefficients with variances and missing-data
-    # percentages on the data's own scale, for which the leading zero is not redundant.
+    # Emitted verbatim so cli does not reflow the aligned columns.
     disp <- .screen_per_item_display(x, digits)
     cli::cli_verbatim(utils::capture.output(print(disp)))
 
@@ -167,16 +110,13 @@ format.efa_screen <- function(x, digits = 3, ...) {
       .print_efa_rule("Multivariate normality")
       nm <- x$normality
       if (inherits(nm, "efa_screen_no_mvn")) {
-        cli::cli_alert_warning(
-          "Multivariate normality tests were skipped (singular complete-case covariance).",
-          wrap = TRUE)
+        cli::cli_alert_info(nm$message, wrap = TRUE)
       } else {
         md <- nm$mardia
         .screen_mvn_line(.screen_is_sig(md$skewness_p),
                          paste0("Mardia's skewness: \U03C7\U00B2(", md$skewness_df, ") = ",
                                 round(md$skewness, 2), ", p", .screen_p_str(md$skewness_p), "."))
-        # An undefined kurtosis statistic is neither a pass nor a rejection, so it gets
-        # an info alert, as a withheld Henze-Zirkler p-value does below.
+        # An undefined kurtosis statistic is neither a pass nor a rejection.
         if (is.na(md$kurtosis)) {
           cli::cli_alert_info(
             "Mardia's kurtosis: not available at this number of complete cases.")
@@ -185,28 +125,17 @@ format.efa_screen <- function(x, digits = 3, ...) {
                            paste0("Mardia's kurtosis: z = ", round(md$kurtosis, 2),
                                   ", p", .screen_p_str(md$kurtosis_p), "."))
         }
-        # A withheld Henze-Zirkler p-value is neither a pass nor a rejection, so it gets
-        # an info alert rather than the success/danger pair the other two lines use.
-        if (inherits(nm$hz, "efa_screen_no_hz")) {
-          cli::cli_alert_info(
-            paste0("Henze-Zirkler: HZ = ", round(nm$hz$statistic, 2),
-                   ", p not available at this number of variables."))
+        both <- mvn_n_avail == 2L
+        cli::cli_text(if (mvn_nonnormal) {
+          paste0("These data depart from multivariate normality: ",
+                 if (!both) "the test rejects it."
+                 else if (mvn_n_rej == 2L) "both tests reject it."
+                 else "one of the two tests rejects it.")
         } else {
-          .screen_mvn_line(.screen_is_sig(nm$hz$p_value),
-                           paste0("Henze-Zirkler: HZ = ", round(nm$hz$statistic, 2),
-                                  ", p", .screen_p_str(nm$hz$p_value), "."))
-        }
-        cli::cli_text(if (isTRUE(mvn_nonnormal)) {
-          paste0("These data depart from multivariate normality: ", mvn_n_rej, " of the ",
-                 mvn_n_avail, " tests ", .screen_plural(mvn_n_rej, "rejects", "reject"),
-                 " it.")
-        } else {
-          paste0("These data are consistent with multivariate normality: none of the ",
-                 mvn_n_avail, " tests rejects it.")
+          paste0("These data are consistent with multivariate normality: ",
+                 if (both) "neither test rejects it." else "the test does not reject it.")
         })
-        # The tests use the complete cases, which under non-ignorable missingness are not
-        # a random subsample: with missing data the verdict above is a statement about a
-        # subset, so say which one. Silent when every row is complete.
+        # With missing data the tests describe the complete cases only, so name them.
         if (.screen_incomplete(nm$n_complete, x$settings$n_obs)) {
           cli::cli_text("(Computed from {nm$n_complete} complete cases of the
                          {x$settings$n_obs} rows supplied.)")
@@ -219,30 +148,26 @@ format.efa_screen <- function(x, digits = 3, ...) {
       .print_efa_rule("Outliers")
       o <- x$outliers
       if (inherits(o, "efa_screen_no_outliers")) {
-        cli::cli_alert_warning("Outlier diagnostics were skipped.")
-        # The recorded reason, as in the classical-fallback branch below: which of the
-        # three ways the complete-case covariance failed decides what the user should do,
-        # and "singular" alone points at collinearity even when the cause is missingness.
-        if (!is.null(o$reason)) cli::cli_text(o$reason)
+        cli::cli_alert_warning(o$message, wrap = TRUE)
+      } else if (identical(o$method, "ranking")) {
+        top <- names(sort(o$distances, decreasing = TRUE))[seq_len(min(5L, length(o$distances)))]
+        cli::cli_alert_info(
+          "No case is flagged: some variables have fewer than ten distinct values (categorical), and a chi-square cutoff is not valid for their Mahalanobis distances. The largest distances are in rows {top}.",
+          wrap = TRUE)
+        if (.screen_incomplete(o$n_complete, x$settings$n_obs)) {
+          cli::cli_text("(Computed from {o$n_complete} complete cases of the
+                         {x$settings$n_obs} rows supplied.)")
+        }
       } else {
-        if (identical(o$method, "classical")) {
-          cli::cli_alert_warning(paste(
-            "A robust (MCD) covariance could not be computed; classical Mahalanobis",
-            "distances were used."), wrap = TRUE)
-          # The recorded reason (too few complete cases, near-collinear variables, or an
-          # exact fit) and the consequence of the fallback: the classical covariance is
-          # computed from every observation, outliers included, so the diagnostic no longer
-          # has the high-breakdown property the MCD gives it.
-          if (!is.null(o$fallback_reason)) cli::cli_text(o$fallback_reason)
-          cli::cli_text(paste(
-            "These distances come from a covariance the outliers themselves inflate, so",
-            "the diagnostic is no longer high-breakdown and tends to under-flag."))
+        classical <- identical(o$method, "classical")
+        if (classical) {
+          cli::cli_alert_warning(
+            "No robust (MCD) estimate: {o$fallback_reason}. Classical Mahalanobis distances were used; they tend to under-flag.",
+            wrap = TRUE)
         }
         nf <- length(o$flagged)
         cstr_o <- format(o$cutoff, digits = digits, scientific = FALSE)
-        # Name the distance for the estimate actually used (robust MCD, or classical
-        # Mahalanobis when the robust covariance could not be formed).
-        dist_label <- if (identical(o$method, "classical")) "Mahalanobis distance" else "robust distance"
+        dist_label <- if (classical) "Mahalanobis distance" else "robust distance"
         cli::cli_alert_info(paste0(
           nf, " of ", .screen_case_base(o$n_complete, x$settings$n_obs), " ",
           .screen_plural(nf, "was", "were"), " flagged as ",
@@ -253,21 +178,18 @@ format.efa_screen <- function(x, digits = 3, ...) {
 
     # -- Recommendations -------------------------------------------------------
     .print_efa_rule("Recommendations")
-    recs <- .screen_recommendations(x, raw, kmo, bart_sig, mvn_nonnormal,
-                                    ci_band$flag, digits)
-    # cli treats each bullet as a glue/cli template, so double any braces coming from
-    # user variable names to render them literally (as .efa_emit_bullets does).
+    recs <- .screen_recommendations(x, raw, kmo, mvn_nonnormal, ci_band$flag, digits)
+    # cli reads each bullet as a template, so double the braces that variable names can
+    # carry (as .efa_emit_bullets does).
     msg <- gsub("}", "}}", gsub("{", "{{", recs$message, fixed = TRUE), fixed = TRUE)
     cli::cli_bullets(stats::setNames(msg, recs$symbol))
 
   })
 }
 
-# Kaiser & Rice (1974) verbal bands for the overall KMO value, and the single place they
-# are written down: the highest band the value clears gives its label, the suitability it
-# implies, and the severity (success >= .7, warning >= .6, danger below) as an alert
-# function, the matching colour, and the equivalent cli_bullets() symbol, so that callers
-# reporting the same value as an alert, a coloured label, or a bullet cannot drift apart.
+# Kaiser & Rice (1974) verbal bands for the overall KMO value, in one place: the highest band
+# the value clears gives its label, the suitability it implies, and its severity as an alert
+# function, a colour, and a cli_bullets() symbol, so all reports band a value identically.
 .kmo_band <- function(kmo) {
   bands <- list(
     list(min = .9,   label = "marvellous",   colour = cli::col_green,  alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
@@ -280,16 +202,13 @@ format.efa_screen <- function(x, digits = 3, ...) {
   Find(function(b) kmo >= b$min, bands)
 }
 
-# Belsley's (1991) reading of the condition index, and the single place it is written
-# down: the highest band the index clears gives the severity as an alert function, the
-# verdict text, and `flag`, which gates both this section's verdict and the consolidated
-# recommendation so the two cannot drift apart. The bands are steps on the progression
-# 1, 3, 10, 30, 100, 300, 1000 that Belsley reads relative strength from (p. 38); they
-# are not absolute cut-offs. An index of 10 or less is rarely of interest (pp. 43 and
-# 46). Belsley gives 30 as one example value for flagging a near dependency, and a band
-# must exceed it, not only reach it (p. 38). He calls 30 to 100 moderate (p. 42), and in
-# his worked example he grades indexes of 35, 153, and 455 as moderately strong, strong,
-# and very strong (pp. 44-45).
+# Belsley's (1991) reading of the condition index: the highest band the index clears gives
+# the alert, the verdict text, and `flag`, which gates both the section verdict and the
+# recommendation. The bands are steps on the progression 1, 3, 10, 30, 100, 300, 1000 that
+# Belsley reads relative strength from (p. 38). An index of 10 or less is rarely of interest
+# (pp. 43, 46); 30 is his example value for a near dependency, which an index must exceed
+# (p. 38); 30 to 100 is moderate (p. 42), and his worked example grades indexes of 35, 153,
+# and 455 as moderately strong, strong, and very strong (pp. 44-45).
 .ci_band <- function(ci) {
   bands <- list(
     list(above = 300,  alert = cli::cli_alert_danger,  flag = TRUE, strength = "very strong"),
@@ -300,20 +219,19 @@ format.efa_screen <- function(x, digits = 3, ...) {
     list(above = -Inf, alert = cli::cli_alert_success, flag = FALSE,
          note = "An index of 10 or less is rarely of interest (Belsley, 1991).")
   )
-  # An index that is not available takes the lowest band, as the report has always done.
+  # An index that is not available takes the lowest band.
   if (is.na(ci)) return(bands[[length(bands)]])
   Find(function(b) ci > b$above, bands)
 }
 
-# TRUE when the complete cases the normality and outlier diagnostics use are fewer than
-# the rows supplied, i.e. when the two possible denominators differ.
+# TRUE when the complete cases used by the normality and outlier diagnostics are fewer than
+# the rows supplied.
 .screen_incomplete <- function(n_complete, n_obs) {
   !is.null(n_obs) && !is.na(n_obs) && !is.null(n_complete) && n_obs > n_complete
 }
 
-# The denominator of the complete-case diagnostics, named as such -- together with the
-# number of rows supplied -- whenever missing values make the two differ, so a count or a
-# rate cannot be read against the wrong base.
+# The base of a complete-case count: with missing values, both the complete cases and the
+# rows supplied are named, so a count cannot be read against the wrong base.
 .screen_case_base <- function(n_complete, n_obs) {
   if (.screen_incomplete(n_complete, n_obs)) {
     paste0(n_complete, " complete cases of the ", n_obs, " rows supplied")
@@ -334,9 +252,8 @@ format.efa_screen <- function(x, digits = 3, ...) {
 .screen_plural <- function(n, singular, plural) if (n == 1L) singular else plural
 
 # One multivariate-normality test line: a danger alert when significant, a success alert
-# otherwise. `text` already carries the test statistic and p-value (no cli braces). Left
-# unwrapped, unlike the prose alerts around it: it is a fixed-format statistic line, and
-# wrapping would let a break fall inside the statistic.
+# otherwise. `text` carries the statistic and p-value (no cli braces) and is not wrapped, so
+# a break cannot fall inside the statistic.
 .screen_mvn_line <- function(sig, text) {
   if (sig) cli::cli_alert_danger(text) else cli::cli_alert_success(text)
 }
@@ -348,49 +265,44 @@ format.efa_screen <- function(x, digits = 3, ...) {
   paste0(paste(x[-length(x)], collapse = ", "), ", and ", x[length(x)])
 }
 
-# Build the per-variable display data frame: the full per-item table for raw data
-# (columns renamed to the standard MSA/SMC abbreviations), or MSA and SMC alone for a
-# correlation-matrix input. Numeric columns are rounded to `digits`.
+# The per-variable display table, with numeric columns rounded to `digits`: the full
+# per-item table for raw data (MSA/SMC headers; `missing%` only when a value is missing;
+# `flags` only when a variable was screened for categories), or MSA and SMC alone for a
+# correlation-matrix input.
 .screen_per_item_display <- function(x, digits) {
   if (!is.null(x$per_item)) {
     disp <- x$per_item
+    if (all(disp$missing == 0)) disp$missing <- NULL
     num <- vapply(disp, is.numeric, logical(1))
     disp[num] <- lapply(disp[num], round, digits)
     names(disp)[names(disp) == "smc"] <- "SMC"
     names(disp)[names(disp) == "kmo_i"] <- "MSA"
-    # `missing` is a percentage; the bare header reads as a count next to `variance`,
-    # which is on the data's own scale.
     names(disp)[names(disp) == "missing"] <- "missing%"
-    # A `flags` entry is NA for a variable treated as continuous, i.e. "no category
-    # screening applies". Printed as <NA> that reads as a failed computation, so drop
-    # the column when it says nothing at all and render the remaining NAs as a dash.
+    # NA flags mean "treated as continuous"; <NA> would read as a failed computation.
     if (all(is.na(disp$flags))) disp$flags <- NULL
     else disp$flags[is.na(disp$flags)] <- "-"
     disp
   } else {
-    # make.unique() guards against duplicate variable names (a correlation matrix with
-    # duplicate dimnames is a valid input), which base data.frame() row names reject; it
-    # matches how the raw per-item table is keyed (efa_screen()).
+    # make.unique(): duplicate dimnames are valid in a correlation matrix, but not as
+    # data-frame row names.
     data.frame(MSA = round(x$kmo$KMO_i, digits),
                SMC = round(x$smc, digits),
                row.names = make.unique(names(x$kmo$KMO_i)))
   }
 }
 
-# Assemble the consolidated recommendations as parallel symbol/message vectors. Each
-# check fires only when it applies; when no warning fires a single success line is
-# returned, and a correlation-matrix input always closes with a raw-data note. Every
-# recommendation is anchored in the literature cited in efa_screen()'s @source.
-.screen_recommendations <- function(x, raw, kmo, bart_sig, mvn_nonnormal, multicollinear,
-                                    digits) {
+# The recommendations as parallel symbol/message vectors. Each check fires only when it
+# applies; a single success line is returned when none fires, and a correlation-matrix input
+# always closes with the raw-data note.
+.screen_recommendations <- function(x, raw, kmo, mvn_nonnormal, multicollinear, digits) {
   sym <- character(0)
   msg <- character(0)
   push <- function(s, m) { sym[[length(sym) + 1L]] <<- s; msg[[length(msg) + 1L]] <<- m }
 
-  # Few-category items (fewer than 5 response categories) are detected up front because
-  # they steer the estimator recommendation away from the continuous-non-normal advice.
+  # Items with fewer than five response categories, for the ordinal advice. Not relevant when
+  # the correlations are already polychoric or tetrachoric.
   few <- character(0)
-  if (raw && !is.null(x$categories)) {
+  if (raw && !is.null(x$categories) && !.is_poly_cor(x$settings$cor_method)) {
     n_cat <- vapply(x$categories, function(ct) {
       if (length(ct) == 1L && is.na(ct[1])) NA_integer_ else length(ct)
     }, integer(1))
@@ -404,10 +316,21 @@ format.efa_screen <- function(x, digits = 3, ...) {
                      "); the variables may not form a factorable set."))
   }
 
+  # Bartlett's test is almost always significant at usual N, so only its failure is news.
+  bart <- x$bartlett
+  if (!is.null(bart)) {
+    if (is.na(bart$p_value)) {
+      push("!", paste("Bartlett's test of sphericity has no result: N is too small relative",
+                      "to the number of variables for a factor analysis."))
+    } else if (bart$p_value >= .05) {
+      push("x", paste0("Bartlett's test of sphericity is not significant (p",
+                       .screen_p_str(bart$p_value),
+                       "); the variables may not correlate enough for a factor analysis."))
+    }
+  }
+
   # Variables with a low individual MSA (< .5) share little variance and are drop
-  # candidates (Kaiser & Rice, 1974). make.unique() keys the names as the per-item table
-  # and the sparse/empty recommendations do, so a variable is labelled consistently even
-  # when the input has duplicate variable names.
+  # candidates (Kaiser & Rice, 1974). make.unique() labels them as the per-item table does.
   msa <- x$kmo$KMO_i
   low <- make.unique(names(msa))[!is.na(msa) & msa < .5]
   if (length(low)) {
@@ -426,30 +349,24 @@ format.efa_screen <- function(x, digits = 3, ...) {
                      " is less biased than normal-theory ML."))
   }
 
-  # Continuous / 5+-category non-normal data: normal-theory standard errors are biased.
-  # Suppressed when few-category items already routed the user to an ordinal estimator.
+  # Non-normal data with 5 or more categories: normal-theory standard errors are biased. Not
+  # given when the few-category advice already points to an ordinal estimator.
   if (isTRUE(mvn_nonnormal) && !length(few)) {
     push("!", paste("These data depart from multivariate normality; normal-theory standard errors",
                     "and fit statistics may be biased - prefer robust (sandwich) or bootstrapped",
                     "standard errors."))
   }
 
-  # An over-powered Bartlett's test: significant but built on the normality it violates.
-  if (bart_sig && isTRUE(mvn_nonnormal)) {
-    push("!", paste("Bartlett's test is significant, but it assumes multivariate normality and grows",
-                    "more sensitive as N increases; because these data are non-normal, treat it as",
-                    "uninformative here and rely on the KMO."))
-  }
-
-  # Multicollinearity: a condition index above 30, the value Belsley (1991) gives for
-  # flagging a near linear dependency, decided once by the caller from the same band
-  # table as the section verdict. A high index does not have to come from one redundant
-  # pair - a set of items that is together nearly linearly dependent gives the same
-  # result - so the remedy names both.
+  # A condition index above 30 (Belsley, 1991), named by the variables involved.
   if (isTRUE(multicollinear)) {
-    push("!", paste("A high condition index indicates multicollinearity; look for a redundant item",
-                    "pair (r > .8) or a larger set of items that is nearly linearly dependent, and",
-                    "consider removing some of them."))
+    cv <- x$collinear
+    push("!", if (length(cv)) {
+      paste0("A condition index above 30 points to a near linear dependency among ",
+             .screen_and_list(cv), "; consider removing one or more of them.")
+    } else {
+      paste("A condition index above 30 points to a near linear dependency among the",
+            "variables; look for redundant items and consider removing some of them.")
+    })
   }
 
   if (raw) {
@@ -472,16 +389,13 @@ format.efa_screen <- function(x, digits = 3, ...) {
       nf <- length(x$outliers$flagged)
       nominal <- 1 - (x$settings$outlier_cutoff %||% 0.975)
       frac <- nf / x$outliers$n_complete
-      # Far more flags than the cutoff nominally admits is not a contamination count to
-      # work through: a high-breakdown estimate fitted to the most concentrated half of a
-      # clustered or mixture sample legitimately calls the rest distant, so the excess is
-      # evidence that the data are not elliptically distributed. The rate alone is not
-      # enough to draw that conclusion - at a tight cutoff, or in a small sample, a couple
-      # of genuine outliers clear it - so the flagged set must also be too long to work
-      # through case by case, which is what makes the ordinary advice below unhelpful.
+      # Many more flags than the cutoff admits: a high-breakdown fit to the most concentrated
+      # subset of a clustered or mixture sample calls the rest distant, so the excess shows
+      # that the data are not elliptical. The count must also be too long to inspect case by
+      # case (at a tight cutoff or in a small sample a few genuine outliers clear the rate).
       if (nf >= 10L && frac > 5 * nominal) {
-        # The rate is over the complete cases, so with missing data both bases are named:
-        # read against the rows supplied it would look milder than it is.
+        # With missing data both bases are named: against the rows supplied the rate would
+        # look milder than it is.
         of_those <- if (.screen_incomplete(x$outliers$n_complete, x$settings$n_obs)) {
           "% of those cases"
         } else {
@@ -491,8 +405,7 @@ format.efa_screen <- function(x, digits = 3, ...) {
                          .screen_case_base(x$outliers$n_complete, x$settings$n_obs),
                          " (", round(100 * frac), of_those,
                          ") exceed the outlier cutoff, far above the ",
-                         # keep a significant digit: a tight cutoff has a nominal rate well
-                         # below 0.1%, which rounds to a self-defeating "0%"
+                         # signif() keeps a tight cutoff's nominal rate from rounding to "0%"
                          format(signif(100 * nominal, 2), trim = TRUE, scientific = FALSE),
                          "% expected under multivariate normality; this usually means the",
                          " data are not elliptically distributed (subgroups or a mixture)",
@@ -507,14 +420,11 @@ format.efa_screen <- function(x, digits = 3, ...) {
     }
   }
 
-  # A clean bill of health when nothing above fired; the raw-data note always closes a
-  # correlation-matrix report (its raw-only sections were absent above).
   if (!length(msg)) {
     push("v", "The data appear suitable for factor analysis.")
   }
   if (!raw) {
-    push("i", paste("Per-item variance, missing-data, category, normality, and outlier diagnostics",
-                    "require raw data; only a correlation matrix was supplied."))
+    push("i", x$note$message)
   }
 
   list(symbol = sym, message = msg)

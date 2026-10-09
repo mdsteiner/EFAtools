@@ -66,14 +66,14 @@ d_ord[1:5, 1:6]
 and whether the data are multivariate normal — the two things that decide whether an
 ordinal treatment is worthwhile.
 
-```{r, warning = FALSE}
-efa_screen(d_ord, seed = 42)
+```{r}
+efa_screen(d_ord)
 ```
 
 The sampling adequacy (KMO) and sphericity checks confirm the data are factorable. The
 telling parts are the multivariate-normality section and the recommendations: Mardia's
-kurtosis and the Henze-Zirkler test reject normality, and the recommendations flag that every
-item has fewer than five response categories. Together, these point to the same conclusion.
+kurtosis test rejects normality, and the recommendations flag that every item has fewer than
+five response categories. Together, these point to the same conclusion.
 With few categories and non-normal data, a polychoric correlation with a categorical
 estimator such as DWLS is less biased than normal-theory maximum likelihood. The
 normal-theory standard errors and fit indices are also better replaced by robust (sandwich)

@@ -61,45 +61,32 @@ Before extracting factors it is worth checking whether the data are suitable for
 analysis, and whether they satisfy the assumptions of the estimator you plan to use.
 `efa_screen()` collects the relevant diagnostics in one place. From raw data it reports the
 Kaiser-Meyer-Olkin (KMO) measure of sampling adequacy (overall and per variable), Bartlett's
-test of sphericity, the determinant and condition number of the correlation matrix, the
-squared multiple correlation (SMC) and per-variable diagnostics for each item, tests of
-multivariate normality (Mardia and Henze-Zirkler), and multivariate outliers, and it closes
-with a set of recommendations.
+test of sphericity, the condition index of the correlation matrix, the squared multiple
+correlation (SMC) and per-variable diagnostics for each item, Mardia's tests of multivariate
+normality, and multivariate outliers, and it closes with a set of recommendations.
 
-```{r, warning = FALSE}
-efa_screen(DOSPERT_sub, seed = 2)
+```{r}
+efa_screen(DOSPERT_sub)
 ```
 
 KMO measures, on a 0-1 scale, how well each variable is predicted by the others, and
 Bartlett's test checks that the correlations are not all zero. The overall KMO is
-meritorious and Bartlett's test is clearly significant, so the data are factorable. The determinant looks small, but it is a product of 30 eigenvalues and falls as
-variables are added; the condition index (6.8) is the measure that does not move with the
-number of variables, and it is well below the value of 30 that flags a near linear
-dependency.
-More interesting are the last few
-sections: three items have a sparse response category, and both the Mardia and the
-Henze-Zirkler tests reject multivariate normality. A consequence is that normal-theory
+meritorious and Bartlett's test is clearly significant, so the data are factorable. The
+condition index (6.8) is well below the value of 30 that flags a near linear dependency.
+More interesting are the last few sections: three items have a sparse response category, and
+both of Mardia's tests reject multivariate normality. A consequence is that normal-theory
 standard errors and fit indices may be biased, so robust (sandwich) or bootstrapped standard
-errors are preferable, and Bartlett's test should be read with caution. For a fully ordinal
-treatment you would move to polychoric correlations with a diagonally weighted least-squares
-(DWLS) estimator.
+errors are preferable. For a fully ordinal treatment you would move to polychoric
+correlations with a diagonally weighted least-squares (DWLS) estimator.
 
-The outlier section reports something other than the usual case, and it says so. The
-diagnostic normally measures each case against a high-breakdown location and scatter,
-estimated from a minimum covariance determinant (MCD) subset found by a randomized search.
-For these data the search keeps landing on a subset where one item is constant (several
-DOSPERT items have a very common lowest response), so the covariance is singular and no valid
-subset exists.
-
-`efa_screen()` falls back to classical Mahalanobis distances. It names the reason and labels
-the distances it reports. A classical covariance uses every observation, outliers included, so
-the outliers inflate the scatter that measures them. The diagnostic is no longer
-high-breakdown and it tends to under-flag. Read the 60 flagged cases as a lower bound, and as
-a sign of the non-normality the tests above report, rather than as a list of cases to remove.
-The MCD does not run, so its random subset search does not run either and `seed` changes
-nothing here. `seed` matters only when the robust estimate is available, as in the ordinal
-example in the [EFA with ordinal and missing data](Ordinal_and_missing_data.html) vignette.
-Inspect the flagged cases (via `$outliers$flagged`) rather than deleting them automatically.
+The outlier section flags no case. The DOSPERT items are rating scales, and for categorical
+variables no distance-based cutoff is valid: many respondents give the same answers, which
+can make a robust (MCD) estimate of the centre and scatter degenerate, and the distances do
+not follow the chi-square distribution that a cutoff needs. `efa_screen()` therefore names the
+cases with the largest Mahalanobis distances (all distances are in `$outliers$distances`).
+Inspect these cases, for example for careless responding, rather than deleting them
+automatically. With continuous variables, `efa_screen()` flags outliers against a robust
+estimate.
 
 Bartlett's test and the KMO criterion, introduced above, are also available as standalone
 functions if you only want the two classic factorability tests:

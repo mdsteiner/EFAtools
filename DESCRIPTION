@@ -87,6 +87,7 @@ Suggests:
     rmarkdown,
     vdiffr,
     polycor,
+    robustbase,
     mnormt,
     semTools,
     withr

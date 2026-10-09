@@ -121,7 +121,7 @@ efa_retain(GRiPS_raw)
 #> ℹ Setting it to 3.
 #> ── Tests for the suitability of the data for factor analysis ───────────────────
 #> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:
+#> ✔ Bartlett's test of sphericity was significant at an alpha level of .05:
 #>   χ²(28) = 5054.06, p < .001. These data are probably suitable for factor
 #>   analysis.
 #> ✔ The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.955). These data are
@@ -165,7 +165,7 @@ efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 #> ℹ Skipping "CD".
 #> ── Tests for the suitability of the data for factor analysis ───────────────────
 #> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:
+#> ✔ Bartlett's test of sphericity was significant at an alpha level of .05:
 #>   χ²(780) = 16071.13, p < .001. These data are probably suitable for factor
 #>   analysis.
 #> ✔ The Kaiser-Meyer-Olkin criterion is meritorious (KMO = 0.9). These data are

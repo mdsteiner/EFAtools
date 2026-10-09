@@ -4,7 +4,7 @@
       print(bart_cor)
     Output
       
-      v The Bartlett's test of sphericity was significant at an alpha level of <num>.
+      v Bartlett's test of sphericity was significant at an alpha level of <num>.
       These data are probably suitable for factor analysis.
       
       χ²(153) = <num>, p < <num>
@@ -15,8 +15,7 @@
       print(bart_rand)
     Output
       
-      x The Bartlett's test of sphericity was not significant at an alpha level of
-       <num>.
+      x Bartlett's test of sphericity was not significant at an alpha level of <num>.
       These data are probably not suitable for factor analysis.
       
       χ²(6) = <num>, p = <num>
@@ -27,7 +26,7 @@
       print(bart_na)
     Output
       
-      ! The Bartlett's test of sphericity did not render a result.
+      ! Bartlett's test of sphericity did not render a result.
       The Bartlett multiplier N - 1 - (2p + 5)/6 is not positive for a sample this
       small relative to the number of variables.
       
@@ -39,7 +38,7 @@
       print(bart_null)
     Output
       
-      ! The Bartlett's test of sphericity did not render a result.
+      ! Bartlett's test of sphericity did not render a result.
       The Bartlett multiplier N - 1 - (2p + 5)/6 is not positive for a sample this
       small relative to the number of variables.
       

@@ -522,18 +522,18 @@ format.efa_retain <- function(x, ...) {
                              round(bart$chisq, 2), ", p", .screen_p_str(pval), ".")
         if (.screen_is_sig(pval)) {
           cli::cli_bullets(c("v" = paste0(
-            "The Bartlett's test of sphericity was significant at an alpha level of .05: ",
+            "Bartlett's test of sphericity was significant at an alpha level of .05: ",
             stats_text,
             " These data are probably suitable for factor analysis.")))
         } else {
           cli::cli_bullets(c("x" = paste0(
-            "The Bartlett's test of sphericity was not significant at an alpha level of .05: ",
+            "Bartlett's test of sphericity was not significant at an alpha level of .05: ",
             stats_text,
             " These data are probably not suitable for factor analysis.")))
         }
       } else {
         cli::cli_bullets(c("!" =
-          "The Bartlett's test of sphericity did not render a result."))
+          "Bartlett's test of sphericity did not render a result."))
       }
 
       kmo <- x$suitability$kmo$KMO

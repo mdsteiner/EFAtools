@@ -13,9 +13,6 @@ Science in Economics and Management, 4, 33-50.
 Belsley, D. A., Kuh, E. & Welsch, R. E. (1980). Regression diagnostics:
 Identifying influential data and sources of collinearity. Wiley.
 
-Cochran, W. G. (1954). Some methods for strengthening the common
-\eqn{\chi^2} tests. Biometrics, 10, 417-451.
-
 Croux, C. & Haesbroeck, G. (1999). Influence function and efficiency of the
 minimum covariance determinant scatter matrix estimator. Journal of Multivariate
 Analysis, 71, 161-190.
@@ -23,15 +20,22 @@ Analysis, 71, 161-190.
 Field, A. (2018). Discovering statistics using IBM SPSS statistics (5th
 ed.). Sage.
 
-Henze, N. & Zirkler, B. (1990). A class of invariant consistent tests for
-multivariate normality. Communications in Statistics - Theory and Methods, 19,
-3595-3617.
+Hubert, M., Debruyne, M. & Rousseeuw, P. J. (2018). Minimum covariance
+determinant and extensions. WIREs Computational Statistics, 10, e1421.
+
+Hubert, M., Rousseeuw, P. J. & Verdonck, T. (2012). A deterministic algorithm
+for robust location and scatter. Journal of Computational and Graphical Statistics,
+21, 618-637.
 
 Kaiser, H. F. (1970). A second generation little jiffy. Psychometrika,
 35, 401-415.
 
 Kaiser, H. F. & Rice, J. (1974). Little jiffy, mark IV. Educational and
 Psychological Measurement, 34, 111-117.
+
+Leys, C., Delacre, M., Mora, Y. L., Lakens, D. & Ley, C. (2019). How to
+classify, detect, and manage univariate and multivariate outliers, with emphasis on
+pre-registration. International Review of Social Psychology, 32, 5.
 
 Mardia, K. V. (1970). Measures of multivariate skewness and kurtosis with
 applications. Biometrika, 57, 519-530.
@@ -49,6 +53,9 @@ Methods, 17, 354-373.
 
 Rousseeuw, P. J. & Van Driessen, K. (1999). A fast algorithm for the minimum
 covariance determinant estimator. Technometrics, 41, 212-223.
+
+Zijlstra, W. P., van der Ark, L. A. & Sijtsma, K. (2007). Outlier detection in
+test and questionnaire data. Multivariate Behavioral Research, 42, 531-555.
 }
 \usage{
 efa_screen(
@@ -57,9 +64,9 @@ efa_screen(
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
-  mcd_alpha = 0.5,
+  mcd_alpha = 0.75,
   outlier_cutoff = 0.975,
-  seed = NULL
+  seed = lifecycle::deprecated()
 )
 }
 \arguments{
@@ -79,22 +86,22 @@ an error on any missing value, instead of returning \code{NA} correlations. Defa
 
 \item{cor_method}{character. How to compute correlations from raw data: \code{"pearson"},
 \code{"spearman"}, or \code{"kendall"} (via \code{\link[stats:cor]{stats::cor()}}), or \code{"poly"} / \code{"tetra"} for
-polychoric / tetrachoric correlations of ordinal or binary data. A Spearman or Kendall
-correlation matrix is screened on its own scale, not converted to look like a Pearson
-correlation matrix; Kendall's tau in particular measures something different from a
-Pearson correlation, not just a rescaled version of it. Default is \code{"pearson"}.}
+polychoric / tetrachoric correlations of ordinal or binary data. Spearman and Kendall
+matrices are screened as they are, without conversion to the Pearson scale. Default is
+\code{"pearson"}.}
 
 \item{mcd_alpha}{numeric. The proportion of cases used to build the robust outlier
-estimate, between 0.5 and 1. The default, \code{0.5}, is the most robust choice; a larger
-value uses more of the data but resists outliers less well. Used only with raw data.}
+estimate, between 0.5 and 1. \code{0.5} resists the most outliers (up to half the cases).
+The default, \code{0.75}, resists up to a quarter but is more efficient (Hubert et al.,
+2018), and Leys et al. (2019) recommend it. Used only with raw data in which all
+variables are continuous.}
 
 \item{outlier_cutoff}{numeric. The probability used to set the cutoff for flagging a
 multivariate outlier, between 0.5 and 0.9999. Default is \code{0.975}. Used only with raw
-data.}
+data in which all variables are continuous.}
 
-\item{seed}{integer. A seed for the random subsets used by the outlier detection, so
-the result is reproducible. Does not affect your random-number generator elsewhere.
-Default is \code{NULL}. Used only with raw data.}
+\item{seed}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Accepted and ignored. The outlier
+detection is deterministic, so it needs no seed.}
 }
 \value{
 An object of class \code{efa_screen}, a list containing:
@@ -104,41 +111,43 @@ and its degrees of freedom (\code{df}); \code{chisq} and \code{p_value} are \cod
 small for the correction. \code{NULL} when \code{N} is unavailable.}
 \item{determinant}{The determinant of the correlation matrix.}
 \item{condition}{The condition number of the correlation matrix (largest eigenvalue
-over smallest).}
+over smallest). Its square root is the condition index.}
+\item{collinear}{The names of the variables involved in a near linear dependency (see
+Details). \code{NULL} when no condition index is above 30.}
 \item{smc}{The per-variable squared multiple correlations.}
 \item{per_item}{A data frame with one row per variable (row names are the variable
 names): \code{variance}, \code{missing} (percentage), \code{smc}, \code{kmo_i}, and \code{flags} (any
 sparse/empty-category issues). \code{NULL} when a correlation matrix is supplied instead
 of raw data.}
 \item{normality}{A list with \code{mardia} (skewness \code{skewness}, \code{skewness_df},
-\code{skewness_p}, kurtosis \code{kurtosis} and \code{kurtosis_p}, and the underlying \code{b1p}/\code{b2p}),
-\code{hz} (the Henze-Zirkler \code{statistic} and its \code{p_value}), and \code{n_complete} (the number
-of complete cases used). \code{NULL} without raw data, or a note explaining why when the
-complete-case data cannot support the tests.}
-\item{outliers}{A list with \code{distances} (each complete case's robust distance, named by
-its row number), \code{cutoff} (the flagging threshold, on the same scale as \code{distances}),
-\code{flagged} (the row numbers exceeding \code{cutoff}), \code{center} and \code{cov} (the robust
-location and scatter), \code{method} (\code{"mcd"} or the \code{"classical"} fallback),
-\code{fallback_reason} (why the robust estimate was unavailable, when \code{method} is
-\code{"classical"}), and \code{n_complete}. \code{NULL} without raw data, or a note explaining why
-when no covariance can be formed.}
+\code{skewness_p}, kurtosis \code{kurtosis} and \code{kurtosis_p}, and the underlying \code{b1p}/\code{b2p})
+and \code{n_complete} (the number of complete cases used). \code{NULL} without raw data, or a
+note (\verb{$message}) that tells why the tests were skipped.}
+\item{outliers}{A list with \code{distances} (each complete case's distance, named by its
+row number), \code{cutoff} (the flagging threshold, on the same scale as \code{distances}),
+\code{flagged} (the row numbers above \code{cutoff}), \code{center} and \code{cov} (the location and
+scatter used), \code{method}, \code{fallback_reason}, and \code{n_complete}. \code{method} is \code{"mcd"},
+\code{"classical"} (the fallback for continuous data; \code{fallback_reason} tells why), or
+\code{"ranking"} (categorical data: classical distances, \code{cutoff} is \code{NA}, and \code{flagged}
+is empty). \code{NULL} without raw data, or a note (\verb{$message}) that tells why no
+distances could be computed.}
 \item{categories}{A named list with the response-category counts for each categorical
 variable (in category order); \code{NA} for a variable treated as continuous. \code{NULL}
 without raw data.}
-\item{note}{Explains why the raw-data diagnostics (\code{per_item}, \code{normality},
-\code{outliers}, \code{categories}) are missing, when a correlation matrix is supplied instead
-of raw data. \code{NULL} when raw data are supplied.}
+\item{note}{A note (\verb{$message}) that tells why the raw-data diagnostics (\code{per_item},
+\code{normality}, \code{outliers}, \code{categories}) are missing, when a correlation matrix is
+supplied instead of raw data. \code{NULL} when raw data are supplied.}
 \item{settings}{The settings used: \code{N}, \code{n_obs} (rows in the raw data supplied, \code{NA}
-for a correlation-matrix input), \code{use}, \code{cor_method}, \code{mcd_alpha}, \code{outlier_cutoff},
-and \code{seed}.}
+for a correlation-matrix input), \code{use}, \code{cor_method}, \code{mcd_alpha}, and
+\code{outlier_cutoff}.}
 }
 \description{
 Checks whether your data are suitable for exploratory factor analysis (EFA). From a
 correlation matrix or raw data, it reports the Kaiser-Meyer-Olkin (KMO) measure of
-sampling adequacy, Bartlett's test of sphericity, the determinant and condition number
-of the correlation matrix, and each variable's squared multiple correlation (SMC). When
-you supply raw data, it also reports each variable's variance and percentage of missing
-values, category counts for categorical variables, tests of multivariate normality, and
+sampling adequacy, Bartlett's test of sphericity, the condition index of the correlation
+matrix, and each variable's squared multiple correlation (SMC). When you supply raw data,
+it also reports each variable's variance and percentage of missing values, category
+counts for categorical variables, Mardia's tests of multivariate normality, and
 multivariate outliers.
 }
 \details{
@@ -150,62 +159,76 @@ common variance your variables share. Higher values are better; a common rule of
 thumb treats values below .50 as unacceptable.}
 \item{Bartlett}{Bartlett's (1951) test of sphericity: the likelihood-ratio test of
 whether the correlation matrix is an identity matrix, i.e., whether your variables
-correlate with each other at all; see \code{\link[=efa_bartlett]{efa_bartlett()}}. A significant result
-supports doing a factor analysis. The test needs the sample size \code{N}; without it,
-this diagnostic is skipped with a warning and \verb{$bartlett} is \code{NULL}. If \code{N} is too
-small relative to the number of variables, the statistic is \code{NA}, also with a
-warning.}
-\item{Determinant}{The determinant of \eqn{R}, reported as a number only. It falls as
-you add variables even when the variables are not collinear, so a fixed cut-off on
-it (such as the 0.00001 often quoted from Field, 2018) says more about how many
-variables you have than about your data. Use the condition number instead.}
-\item{Condition number}{The ratio of the largest to the smallest eigenvalue of
-\eqn{R}. Its square root, the condition index, is the collinearity diagnostic of
-Belsley, Kuh & Welsch (1980); it drives the printed report and its recommendation.
-An index of 10 or less is rarely of interest. An index above 30 flags a near linear
-dependency: two or more variables that together carry much the same information.
-An index between the two is not negligible, but it stays below the value that
-flags a dependency. Belsley (1991) gives 30 as one example value and calls the
-choice of a cut-off "somewhat of an art form", so the report grades an index above
-30 by its position on the scale 1, 3, 10, 30, 100, 300, 1000: moderate (30 to 100),
-strong (100 to 300), or very strong (above 300). These values come from regression
-diagnostics on data that are not centred, but a correlation matrix is centred, so
-use them as a guide and not as a test.}
+correlate with each other at all; see \code{\link[=efa_bartlett]{efa_bartlett()}}. At usual sample sizes the
+test is almost always significant, so a significant result is weak evidence of
+suitability, but a non-significant result is a strong warning. The test needs the
+sample size \code{N}; without it, \verb{$bartlett} is \code{NULL}. If \code{N} is too small relative to
+the number of variables, the statistic is \code{NA}.}
+\item{Determinant}{The determinant of \eqn{R}, returned but not used for a verdict. It
+falls as you add variables, also when they are not collinear, so a fixed cut-off on
+it (such as the 0.00001 often quoted from Field, 2018) mostly reflects the number of
+variables.}
+\item{Condition index}{The square root of the condition number (the ratio of the
+largest to the smallest eigenvalue of \eqn{R}): the collinearity diagnostic of
+Belsley, Kuh & Welsch (1980). An index of 10 or less is rarely of interest; an index
+above 30 flags a near linear dependency (Belsley, 1991). The report grades such an
+index as moderate (30 to 100), strong (100 to 300), or very strong (above 300), and
+names the variables involved: those whose variance-decomposition proportions, summed
+over all indices above 30, are above .5 (Belsley, Kuh & Welsch, 1980). These values
+come from regression on data that are not centred, but a correlation matrix is
+centred, so use them as a guide and not as a test.}
 \item{SMC}{The squared multiple correlation of each variable with all the others. A
 low value flags a variable that has little in common with the rest of your set.}
 \item{Variance and missing data}{For raw data: each variable's variance (over its
-available values) and percentage of missing values, computed from every row you
-supplied. These missing-value percentages explain why the correlation matrix's
-sample size (\code{N}) can be smaller than the number of rows in your data. Ordered-factor
-columns are recoded to integer levels first, so \code{variance} reflects those codes.}
+available values) and percentage of missing values over all rows you supplied.
+Factor columns are recoded to integer levels first, so \code{variance} reflects those
+codes. With \code{use = "complete.obs"} or \code{"na.or.complete"}, \code{N} is the number of
+complete rows; otherwise it is the number of rows.}
 \item{Categories}{For raw data: for each variable with fewer than ten distinct values
 (treated as categorical), the count of responses in each category. A category with
 fewer than five responses is flagged as sparse, and an unused category between the
 smallest and largest response is flagged as empty. As a rule of thumb, items with
 fewer than five response categories are better analysed with \code{cor_method = "poly"}
 or \code{"tetra"} than with Pearson correlations (Rhemtulla et al., 2012).}
-\item{Multivariate normality}{For raw data, using only complete cases: two tests of
-multivariate normality, Mardia's (1970) test of skewness and kurtosis and the
-Henze-Zirkler (1990) test. A small p-value on either test suggests your data depart
-from a multivariate normal distribution, a reason to prefer a robust or ordinal
-method over normal-theory maximum likelihood. In a very small sample the kurtosis
-statistic is \code{NA}. The Henze-Zirkler p-value is not available with more than about
-50 to 60 variables; its test statistic is still reported.}
-\item{Outliers}{For raw data, using only complete cases: multivariate outliers, found
-from a robust estimate of each case's distance from the centre of your data (the
-minimum covariance determinant method; Rousseeuw & Van Driessen, 1999). A flagged
-case is unusually far from the rest of your sample. When there are too few complete
-cases, the variables are too collinear, or too many cases share identical answers,
-a plain (non-robust) distance is used instead, with a warning explaining why.}
+\item{Multivariate normality}{For raw data, using only complete cases: Mardia's (1970)
+tests of multivariate skewness and kurtosis, with the small-sample corrections of
+Mardia (1974). A small p-value suggests your data depart from a multivariate normal
+distribution, a reason to prefer robust standard errors over normal-theory ones. In
+a very small sample the kurtosis statistic is \code{NA}. With \code{cor_method = "poly"} or
+\code{"tetra"} the tests are skipped: they test the observed codes, but a polychoric
+analysis assumes normality only of the underlying continuous variables.}
+\item{Outliers}{For raw data, using only complete cases: each case's distance from
+the centre of your data.
+\itemize{
+\item If all variables are continuous, the distance is a robust one: it uses the
+reweighted minimum covariance determinant (MCD; Rousseeuw & Van Driessen, 1999),
+found with the deterministic DetMCD algorithm (Hubert, Rousseeuw & Verdonck,
+2012) and corrected for consistency (Croux & Haesbroeck, 1999) and small
+samples (Pison et al., 2002). A case is flagged when its squared distance is
+above the \code{outlier_cutoff} quantile of the chi-square distribution. When there
+are too few complete cases or the variables are nearly collinear, the classical
+(non-robust) distance is used instead, and \verb{$outliers$fallback_reason} tells
+why.
+\item If any variable is categorical (fewer than ten distinct values, e.g. a
+rating-scale item), no case is flagged, and the report names the cases with the
+largest classical distances. The MCD theory needs continuous data (Hubert,
+Debruyne & Rousseeuw, 2018): with tied answers, many cases can share a
+hyperplane, which makes the MCD degenerate. Also, the distances of rating-scale
+data do not
+follow the chi-square distribution, so a chi-square cutoff flags many clean
+cases when items are skewed (Zijlstra, van der Ark & Sijtsma, 2007). To screen
+for careless responding, use indices made for that purpose.
+}
+Distance-based screening does not detect straight-lining (the same answer to all
+items).}
 }
 }
 \examples{
 # From a correlation matrix (supply N for Bartlett's test of sphericity)
 efa_screen(test_models$baseline$cormat, N = 500)
 
-# From raw data (N is taken from the data; the seed makes the outlier
-# diagnostics reproducible)
-efa_screen(GRiPS_raw, seed = 1)
+# From raw data (N is taken from the data)
+efa_screen(GRiPS_raw)
 
 }
 \seealso{

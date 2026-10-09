@@ -1,11 +1,10 @@
+# The report as one plain line with single spaces, so a match does not depend on where cli
+# wraps a line or how far it indents a continuation.
+flat <- function(x) gsub("\\s+", " ", cli::ansi_strip(paste(format(x), collapse = " ")))
+
 scr_cor <- efa_screen(test_models$baseline$cormat, N = 500)
-# GRiPS has an exact collinearity (enjoy == commonly for most respondents), so the robust
-# MCD covariance is (near-)singular and the outlier diagnostic falls back to classical
-# distances with a warning; suppress it here (it is asserted in its own test below). A seed
-# makes the MCD random subsets - and hence the outlier diagnostics and the print snapshot -
-# reproducible; it does not affect the seed-independent KMO/Bartlett/per-item/normality parts.
-scr_raw <- suppressWarnings(efa_screen(GRiPS_raw, seed = 1))
-scr_iris <- efa_screen(iris[, 1:4], seed = 1)
+scr_raw <- efa_screen(GRiPS_raw)
+scr_iris <- efa_screen(iris[, 1:4])
 
 dat_nonames <- test_models$baseline$cormat
 colnames(dat_nonames) <- NULL
@@ -13,7 +12,7 @@ rownames(dat_nonames) <- NULL
 scr_nona <- efa_screen(dat_nonames, N = 500)
 
 # correlation matrix without N: Bartlett's test skipped
-scr_non <- suppressWarnings(efa_screen(test_models$baseline$cormat))
+scr_non <- efa_screen(test_models$baseline$cormat)
 
 test_that("output class and structure are correct", {
   expect_s3_class(scr_cor, "efa_screen")
@@ -87,7 +86,7 @@ test_that("KMO, Bartlett, and SMC match psych", {
 test_that("the raw-data path is silent and matches the standalone tools", {
   # inform_from_data = FALSE: the "computing correlations from the raw data" note
   # is suppressed here (unlike the standalone suitability tools)
-  expect_no_message(suppressWarnings(efa_screen(GRiPS_raw)), class = "efa_cor_from_data")
+  expect_silent(efa_screen(GRiPS_raw))
 
   # the correlation-side diagnostics on the raw path go through the same pipeline
   # as the standalone KMO(), including the per-variable naming
@@ -103,9 +102,9 @@ test_that("per-variable diagnostics get a V-fallback when unnamed", {
   expect_equal(names(scr_nona$smc), paste0("V", seq_len(ncol(dat_nonames))))
 })
 
-test_that("Bartlett's test is skipped with a note when N is unavailable", {
-  expect_warning(efa_screen(test_models$baseline$cormat),
-                 class = "efa_suitability_no_n")
+test_that("Bartlett's test is skipped when N is unavailable, without a warning", {
+  # the report says so itself, so a warning would only repeat it
+  expect_no_warning(efa_screen(test_models$baseline$cormat))
 
   expect_null(scr_non$bartlett)
   expect_true(is.na(scr_non$settings$N))
@@ -118,29 +117,40 @@ test_that("Bartlett's test is skipped with a note when N is unavailable", {
 
 test_that("a too-small N is reported rather than left as a bare NA", {
   # N is known here, so the test is attempted and comes back undefined: the multiplier
-  # N - 1 - (2p + 5)/6 is non-positive at N = 5 for p = 18. Same condition and class as
-  # efa_bartlett(), so a user reads the same reason from either entry point.
-  expect_warning(scr_small <- efa_screen(test_models$baseline$cormat, N = 5),
-                 class = "efa_bartlett_n_too_small")
+  # N - 1 - (2p + 5)/6 is non-positive at N = 5 for p = 18. The report gives the reason
+  # (as efa_bartlett() does) and a recommendation, so no warning repeats it.
+  expect_no_warning(scr_small <- efa_screen(test_models$baseline$cormat, N = 5))
   expect_true(is.na(scr_small$bartlett$chisq))
   expect_true(is.na(scr_small$bartlett$p_value))
   # the remaining suitability diagnostics are unaffected
   expect_true(is.finite(scr_small$kmo$KMO))
   expect_true(is.finite(scr_small$determinant))
 
-  # the printed report carries the same reason, so it is not only in the warning. Matched on
-  # the collapsed report rather than line by line, so the assertion does not depend on where
-  # cli happens to break the sentence.
-  expect_match(paste(cli::ansi_strip(format(scr_small)), collapse = " "),
-               "Bartlett multiplier", fixed = TRUE)
+  # Matched on the collapsed report, so the assertion does not depend on where cli breaks
+  # the sentence.
+  txt <- flat(scr_small)
+  expect_match(txt, "Bartlett multiplier", fixed = TRUE)
+  expect_match(txt, "N is too small relative to the number of variables", fixed = TRUE)
+  expect_no_match(txt, "appear suitable", fixed = TRUE)
+})
 
-  expect_no_warning(efa_screen(test_models$baseline$cormat, N = 500),
-                    class = "efa_bartlett_n_too_small")
+test_that("a non-significant Bartlett's test cancels the all-clear recommendation", {
+  local_reproducible_output()
+  R <- matrix(.3, 6, 6)
+  diag(R) <- 1
+  scr <- efa_screen(R, N = 12)
+  expect_gt(scr$bartlett$p_value, .05)
+  recs <- EFAtools:::.screen_recommendations(scr, raw = FALSE, kmo = scr$kmo$KMO,
+                                             mvn_nonnormal = FALSE, multicollinear = FALSE,
+                                             digits = 3)
+  expect_true("x" %in% recs$symbol)
+  expect_true(any(grepl("is not significant", recs$message, fixed = TRUE)))
+  expect_false(any(grepl("appear suitable", recs$message, fixed = TRUE)))
 })
 
 test_that("settings are returned correctly", {
   expect_named(scr_cor$settings, c("N", "n_obs", "use", "cor_method", "mcd_alpha",
-                                   "outlier_cutoff", "seed"))
+                                   "outlier_cutoff"))
   expect_equal(scr_cor$settings$N, 500)
   expect_equal(scr_cor$settings$use, "pairwise.complete.obs")
   expect_equal(scr_cor$settings$cor_method, "pearson")
@@ -150,16 +160,13 @@ test_that("settings are returned correctly", {
   expect_true(is.na(scr_cor$settings$n_obs))
   expect_equal(scr_raw$settings$n_obs, nrow(GRiPS_raw))
 
-  # the MCD arguments that govern the outlier diagnostics are recorded, so a saved
-  # object says how its robust distances were obtained
-  expect_equal(scr_cor$settings$mcd_alpha, 0.5)
-  expect_null(scr_cor$settings$seed)
-  # on the raw path both are the values the outlier diagnostics actually ran with
-  expect_equal(scr_raw$settings$seed, 1)
-  expect_equal(scr_raw$settings$mcd_alpha, 0.5)
+  # the MCD coverage is recorded, so a saved object says how its robust distances were
+  # obtained
+  expect_equal(scr_cor$settings$mcd_alpha, 0.75)
+  expect_equal(scr_raw$settings$mcd_alpha, 0.75)
   expect_equal(
-    efa_screen(test_models$baseline$cormat, N = 500, mcd_alpha = 0.75)$settings$mcd_alpha,
-    0.75)
+    efa_screen(test_models$baseline$cormat, N = 500, mcd_alpha = 0.5)$settings$mcd_alpha,
+    0.5)
 })
 
 test_that("raw-data per-item diagnostics: variance, missing, and category flags (GRiPS)", {
@@ -316,63 +323,72 @@ test_that("a wide-span integer code is flagged empty without enumerating its ran
 
 test_that("multivariate normality diagnostics are present on the raw path", {
   nm <- scr_raw$normality
-  expect_named(nm, c("mardia", "hz", "n_complete"))
+  expect_named(nm, c("mardia", "n_complete"))
   expect_named(nm$mardia, c("skewness", "skewness_df", "skewness_p",
                             "kurtosis", "kurtosis_p", "b1p", "b2p"))
-  expect_named(nm$hz, c("statistic", "p_value"))
 
   # GRiPS is complete, so every row feeds the tests
   expect_equal(nm$n_complete, nrow(GRiPS_raw))
 
   # statistics finite and p-values in [0, 1]
-  expect_true(all(is.finite(c(nm$mardia$skewness, nm$mardia$kurtosis, nm$hz$statistic))))
+  expect_true(all(is.finite(c(nm$mardia$skewness, nm$mardia$kurtosis))))
   expect_true(nm$mardia$skewness_p >= 0 && nm$mardia$skewness_p <= 1)
   expect_true(nm$mardia$kurtosis_p >= 0 && nm$mardia$kurtosis_p <= 1)
-  expect_true(nm$hz$p_value >= 0 && nm$hz$p_value <= 1)
 
   # NULL for a correlation-matrix input
   expect_null(scr_cor$normality)
 })
 
-test_that("the Henze-Zirkler p-value is withheld where its null approximation degenerates", {
-  # The lognormal null variance si2 falls geometrically with the number of variables
-  # while the null mean mu goes to 1, so si2 + mu^2 rounds to mu^2 and the z-score
-  # divides by a zero psi. Without the guard the p-value is then exactly 0 or exactly 1,
-  # decided by a rounding-level residual, on data from an exact multivariate normal.
-  set.seed(4)
-  X <- matrix(stats::rnorm(150 * 60), 150, 60)
-
-  expect_warning(nm <- EFAtools:::.screen_normality(X), class = "efa_screen_no_hz")
-  expect_s3_class(nm$hz, "efa_screen_no_hz")
-  expect_true(is.na(nm$hz$p_value))
-  # only the null approximation fails: the statistic and Mardia's tests are unaffected
-  expect_true(is.finite(nm$hz$statistic))
-  expect_true(is.finite(nm$mardia$skewness_p))
-  expect_true(is.finite(nm$mardia$kurtosis_p))
-
-  # and the report neither passes nor rejects on it, and counts the tests that remain
-  local_reproducible_output()
-  colnames(X) <- paste0("v", seq_len(60))
-  expect_warning(scr <- efa_screen(X, seed = 1), class = "efa_screen_no_hz")
-  txt <- cli::ansi_strip(paste(format(scr), collapse = " "))
-  expect_match(txt, "p not available at this number of variables", fixed = TRUE)
-  expect_match(txt, "of the 2 tests", fixed = TRUE)
+test_that("Mardia's skewness is the same in its tensor and Gram forms", {
+  # .mardia() switches from the O(n^2 p) Gram form to the O(n p^3) tensor form at
+  # n > p^2. The two are the same sum, so either side of the switch must agree with a
+  # direct evaluation of b1p = n^-2 sum_ij (y_i'y_j)^3.
+  set.seed(21)
+  for (np in list(c(30L, 8L), c(200L, 8L))) {       # n <= p^2, then n > p^2
+    X <- matrix(stats::rexp(np[1] * np[2]), np[1], np[2])
+    Xc <- scale(X, scale = FALSE)
+    Sinv <- solve(crossprod(Xc) / np[1])
+    b1p_direct <- sum((Xc %*% Sinv %*% t(Xc))^3) / np[1]^2
+    expect_equal(EFAtools:::.screen_normality(X)$mardia$b1p, b1p_direct,
+                 tolerance = 1e-10)
+  }
 })
 
 test_that("the multivariate normality verdict counts the tests that reject", {
   local_reproducible_output()
-  # GRiPS departs from normality on all three tests, so the verdict names all three; the
-  # count is what separates a unanimous rejection from a single marginal one.
-  expect_match(cli::ansi_strip(paste(format(scr_raw), collapse = " ")),
-               "3 of the 3 tests reject it", fixed = TRUE)
-  # a clean multivariate normal sample takes the other branch, which names the
-  # denominator too (all three p-values here are above .96, so the fixture is not tied)
+  # GRiPS departs from normality on both tests; the count separates a unanimous rejection
+  # from a single marginal one.
+  expect_match(flat(scr_raw),
+               "both tests reject it", fixed = TRUE)
+  # a clean multivariate normal sample takes the other branch (both p-values here are
+  # above .96, so the fixture is not tied)
   set.seed(381)
   clean <- matrix(stats::rnorm(200 * 5), 200, 5)
   colnames(clean) <- paste0("v", seq_len(5))
-  expect_match(cli::ansi_strip(paste(format(efa_screen(clean, seed = 1)), collapse = " ")),
-               "consistent with multivariate normality: none of the 3 tests rejects it",
+  expect_match(flat(efa_screen(clean)),
+               "consistent with multivariate normality: neither test rejects it",
                fixed = TRUE)
+})
+
+test_that("polychoric and tetrachoric screening skips the normality tests and ordinal advice", {
+  local_reproducible_output()
+  scr <- efa_screen(GRiPS_raw, cor_method = "poly")
+  expect_s3_class(scr$normality, "efa_screen_no_mvn")
+  txt <- flat(scr)
+  expect_match(txt, "do not apply to a polychoric or tetrachoric analysis", fixed = TRUE)
+  expect_no_match(txt, "depart from multivariate normality", fixed = TRUE)
+
+  # few-category items: the ordinal advice fires for Pearson, not when the correlations are
+  # already polychoric
+  set.seed(22)
+  d4 <- as.data.frame(matrix(sample(1:3, 300 * 4, replace = TRUE), 300, 4))
+  d4 <- d4 + (rowSums(d4) > 8)                        # 4 categories, some shared variance
+  recs <- function(s) EFAtools:::.screen_recommendations(
+    s, raw = TRUE, kmo = s$kmo$KMO, mvn_nonnormal = FALSE, multicollinear = FALSE,
+    digits = 3)$message
+  expect_true(any(grepl("fewer than 5 response categories", recs(efa_screen(d4)))))
+  expect_false(any(grepl("fewer than 5 response categories",
+                         recs(efa_screen(d4, cor_method = "poly")))))
 })
 
 test_that("Mardia's skewness/kurtosis match psych after the divisor rescaling", {
@@ -451,18 +467,9 @@ test_that("Mardia's kurtosis is NA when its exact null variance is zero", {
   set.seed(4)
   Xn <- matrix(stats::rnorm(12 * 11), 12, 11)
   colnames(Xn) <- paste0("v", seq_len(11))
-  txt <- cli::ansi_strip(paste(suppressWarnings(format(efa_screen(Xn, seed = 1))),
-                               collapse = " "))
+  txt <- flat(efa_screen(Xn))
   expect_match(txt, "Mardia's kurtosis: not available", fixed = TRUE)
-  expect_match(txt, "of the 2 tests", fixed = TRUE)
-})
-
-test_that("the Henze-Zirkler statistic and p-value match the reference value on iris", {
-  # Henze-Zirkler (1990) statistic for the four numeric iris columns, computed once from
-  # this implementation and cross-checked against MVN::hz(iris[, 1:4]) = 2.336.
-  expect_equal(scr_iris$normality$hz$statistic, 2.3363942003, tolerance = 1e-6)
-  # p-value pinned relatively (an absolute tolerance is meaningless at ~1e-19)
-  expect_equal(scr_iris$normality$hz$p_value / 4.1413116299e-19, 1, tolerance = 1e-6)
+  expect_match(txt, "multivariate normality: the test", fixed = TRUE)
 })
 
 test_that("the corrected Mardia skewness statistic matches psych below 20 observations", {
@@ -516,18 +523,13 @@ test_that("the corrected Mardia skewness statistic is centred on its degrees of 
   expect_lt(abs(mean(s) - df) / sqrt(2 * df), 0.5)
 })
 
-test_that("normality tests abort on a correlation matrix and on a singular covariance", {
-  expect_error(EFAtools:::.screen_normality(test_models$baseline$cormat),
-               class = "efa_screen_normality_cormat")
-
+test_that("normality tests return NULL on a singular covariance", {
   set.seed(1)
   # n_complete <= p: the complete-case covariance is singular (centring leaves rank at
-  # most n - 1). Both n < p and the n == p boundary abort deterministically - at n == p
-  # a rounding-positive pivot can let chol() alone succeed on the singular covariance.
-  expect_error(EFAtools:::.screen_normality(matrix(rnorm(3 * 5), 3, 5)),
-               class = "efa_screen_singular")
-  expect_error(EFAtools:::.screen_normality(matrix(rnorm(4 * 4), 4, 4)),
-               class = "efa_screen_singular")
+  # most n - 1). Both n < p and the n == p boundary are caught deterministically - at
+  # n == p a rounding-positive pivot can let chol() alone succeed on the singular covariance.
+  expect_null(EFAtools:::.screen_normality(matrix(rnorm(3 * 5), 3, 5)))
+  expect_null(EFAtools:::.screen_normality(matrix(rnorm(4 * 4), 4, 4)))
 })
 
 test_that("efa_screen skips the normality tests when the covariance is singular", {
@@ -547,19 +549,19 @@ test_that("efa_screen skips the normality tests when the covariance is singular"
   for (i in seq_len(200)) dat[i, blk[i]] <- NA
 
   # with no complete case neither the normality tests nor the robust outlier diagnostics
-  # can run, so each degrades with its own classed warning and note
-  expect_warning(
-    expect_warning(scr <- efa_screen(dat), class = "efa_screen_no_mvn"),
-    class = "efa_screen_no_outliers"
-  )
+  # can run, so each is replaced by a classed note that the report shows
+  expect_no_warning(scr <- efa_screen(dat))
   expect_s3_class(scr$normality, "efa_screen_no_mvn")
   expect_s3_class(scr$outliers, "efa_screen_no_outliers")
+  txt <- flat(scr)
+  expect_match(txt, "complete-case covariance is singular", fixed = TRUE)
+  expect_match(txt, "Outlier diagnostics were skipped", fixed = TRUE)
   # the remaining diagnostics are still returned
   expect_false(is.null(scr$kmo))
   expect_s3_class(scr$per_item, "data.frame")
 })
 
-# ---- robust-Mahalanobis outlier diagnostics (FAST-MCD) ----
+# ---- robust-Mahalanobis outlier diagnostics (DetMCD) ----
 
 # injected-outlier fixture: a clean multivariate-normal core with a block of far
 # outliers; a robust covariance should recover the clean centre/scatter and flag the
@@ -576,7 +578,7 @@ inj <- 1:12
 # point, which would make their own covariance degenerate)
 X_out[inj, ] <- matrix(rep(c(7, -7, 7, -7), each = length(inj)), ncol = p_out) +
   matrix(rnorm(length(inj) * p_out), ncol = p_out)
-scr_out <- efa_screen(X_out, seed = 1)
+scr_out <- efa_screen(X_out)
 
 test_that("robust outlier diagnostics have the expected structure", {
   o <- scr_out$outliers
@@ -593,7 +595,7 @@ test_that("robust outlier diagnostics have the expected structure", {
   expect_equal(sort(as.integer(names(o$distances)[o$distances > o$cutoff])), o$flagged)
   expect_true(all(is.finite(o$distances)))
   # the cutoff probability is exposed
-  expect_equal(efa_screen(X_out, seed = 1, outlier_cutoff = 0.99)$outliers$cutoff,
+  expect_equal(efa_screen(X_out, outlier_cutoff = 0.99)$outliers$cutoff,
                sqrt(qchisq(0.99, p_out)))
   # NULL on a correlation-matrix input
   expect_null(scr_cor$outliers)
@@ -617,18 +619,45 @@ test_that("the MCD flags the injected outliers and recovers the clean centre", {
   expect_true(all(o$flagged %in% seq_len(n_out)))
 })
 
-test_that("robust outlier diagnostics are reproducible via a seed and leave the RNG alone", {
-  a <- efa_screen(X_out, seed = 7)
-  b <- efa_screen(X_out, seed = 7)
-  expect_identical(a$outliers$flagged, b$outliers$flagged)
-  expect_equal(a$outliers$distances, b$outliers$distances)
-  # a different seed can give a different (still-valid) solution but still flags injected
-  expect_true(all(inj %in% efa_screen(X_out, seed = 99)$outliers$flagged))
-  # the caller's random-number-generator stream is preserved
+test_that("the outlier search is deterministic and a supplied seed is deprecated", {
+  set.seed(4321)
+  a <- efa_screen(X_out)
+  set.seed(99)
+  b <- efa_screen(X_out)
+  expect_identical(a$outliers, b$outliers)
+  # no random numbers are drawn, so the caller's stream is untouched
   set.seed(4321)
   before <- .Random.seed
-  invisible(efa_screen(X_out, seed = 3))
+  invisible(efa_screen(X_out))
   expect_identical(before, .Random.seed)
+
+  rlang::local_options(lifecycle_verbosity = "warning")
+  expect_warning(s <- efa_screen(X_out, seed = 1), class = "lifecycle_warning_deprecated")
+  expect_identical(s$outliers, a$outliers)
+})
+
+test_that("DetMCD matches robustbase's deterministic MCD", {
+  skip_on_cran()
+  skip_if_not_installed("robustbase")
+  # robustbase::covMcd(nsamp = "deterministic") is the reference implementation of DetMCD
+  # (Hubert, Rousseeuw & Verdonck, 2012); with the same scale function (MAD) and the same
+  # corrections the reweighted estimate, and so the flags, agree.
+  set.seed(33)
+  for (np in list(c(150L, 3L), c(400L, 8L))) {
+    X <- matrix(stats::rnorm(np[1] * np[2]), np[1]) %*% chol(0.4 + 0.6 * diag(np[2]))
+    X[1:15, 1:2] <- X[1:15, 1:2] + 5
+    X <- sweep(X, 2L, c(1, 10, rep(3, np[2] - 2L)), "*")     # unequal units
+    for (alpha in c(0.5, 0.75)) {
+      o <- EFAtools:::.screen_outliers(X, mcd_alpha = alpha, outlier_cutoff = 0.975)
+      m <- robustbase::covMcd(X, alpha = alpha, nsamp = "deterministic",
+                              scalefn = stats::mad)
+      expect_equal(o$method, "mcd")
+      expect_equal(unname(o$center), unname(m$center), tolerance = 1e-8)
+      expect_equal(unname(o$cov), unname(m$cov), tolerance = 1e-8)
+      d_rb <- sqrt(stats::mahalanobis(X, m$center, m$cov))
+      expect_identical(o$flagged, which(d_rb > o$cutoff))
+    }
+  }
 })
 
 test_that("outlier row indices map back to the supplied rows when data are incomplete", {
@@ -645,7 +674,7 @@ test_that("outlier row indices map back to the supplied rows when data are incom
   X2[out2, ] <- matrix(rep(c(7, -7, 7, -7), each = length(out2)), ncol = p_out) +
     matrix(rnorm(length(out2) * p_out), ncol = p_out)
   X2[1:20, 1] <- NA                          # 20 incomplete rows before the outliers
-  o <- efa_screen(X2, seed = 1)$outliers
+  o <- efa_screen(X2)$outliers
 
   expect_equal(o$method, "mcd")
   expect_equal(o$n_complete, 200L)
@@ -658,9 +687,9 @@ test_that("outlier row indices map back to the supplied rows when data are incom
 })
 
 test_that("a non-default mcd_alpha threads through the whole outlier pipeline", {
-  # a larger coverage (alpha = 0.75) enlarges the MCD subset but still yields a robust
-  # estimate that flags the injected outliers
-  a <- efa_screen(X_out, seed = 1, mcd_alpha = 0.75)$outliers
+  # the maximum-breakdown coverage (alpha = 0.5) shrinks the MCD subset but still yields a
+  # robust estimate that flags the injected outliers
+  a <- efa_screen(X_out, mcd_alpha = 0.5)$outliers
   expect_equal(a$method, "mcd")
   expect_true(all(inj %in% a$flagged))
   # the subset size follows the coverage: larger alpha -> larger h
@@ -668,19 +697,21 @@ test_that("a non-default mcd_alpha threads through the whole outlier pipeline", 
             EFAtools:::.mcd_hsize(n_out, p_out, 0.5))
 })
 
-test_that(".fast_mcd returns a genuine concentration fixed point, never a stopped-early subset", {
-  # binary items make many h-subsets (near-)degenerate; the FAST-MCD search must return a
+test_that(".det_mcd returns a genuine concentration fixed point, never a stopped-early subset", {
+  # binary items make many h-subsets (near-)degenerate; the DetMCD search must return a
   # stable concentration fixed point (the h observations closest to its centre reproduce its
-  # covariance) or abort to the classical fallback. It must never return an unconcentrated
-  # (p + 1)-point or stopped-early over-tight scatter, which would silently over-flag.
+  # covariance) or abort to the classical fallback. It must never return a stopped-early,
+  # over-tight scatter, which would silently over-flag.
   ld <- function(S) as.numeric(determinant(S, logarithm = TRUE)$modulus)
   set.seed(4)
   Sig <- 0.5 * matrix(1, 8L, 8L) + diag(0.5, 8L)
   ok <- replicate(20L, {
     B <- (matrix(rnorm(50L * 8L), 50L, 8L) %*% chol(Sig) > 0) + 0    # binary items
     B <- B[, apply(B, 2L, function(col) length(unique(col)) > 1L), drop = FALSE]
+    B <- sweep(sweep(B, 2L, apply(B, 2L, stats::median)), 2L,
+               apply(B, 2L, EFAtools:::.robust_scale), "/")
     h <- EFAtools:::.mcd_hsize(nrow(B), ncol(B), 0.5)
-    fit <- tryCatch(EFAtools:::.fast_mcd(B, h), error = function(e) NULL)
+    fit <- tryCatch(EFAtools:::.det_mcd(B, h), error = function(e) NULL)
     if (is.null(fit)) return(TRUE)                      # aborted -> classical fallback: fine
     d2 <- stats::mahalanobis(B, fit$center, fit$cov)
     idx <- order(d2)[seq_len(h)]
@@ -693,7 +724,7 @@ test_that("the robust covariance cross-checks against MASS::cov.rob", {
   skip_on_cran()
   skip_if_not_installed("MASS")
 
-  h <- floor((n_out + p_out + 1) / 2)
+  h <- EFAtools:::.mcd_hsize(n_out, p_out, 0.75)
   # MASS::cov.rob(method = "mcd") returns a *reweighted* MCD estimate (with its own
   # consistency scaling), so the comparable quantity is efa_screen's reweighted robust
   # location/scatter; they agree closely on this well-separated fixture
@@ -702,12 +733,6 @@ test_that("the robust covariance cross-checks against MASS::cov.rob", {
   o <- scr_out$outliers
   expect_equal(unname(o$center), unname(mm$center), tolerance = 0.1)
   expect_equal(cov2cor(o$cov), cov2cor(mm$cov), tolerance = 0.05, ignore_attr = TRUE)
-
-  # the raw MCD subset location (before the finite-sample correction) is a robust centre
-  # in the same region
-  set.seed(1)
-  fm <- EFAtools:::.fast_mcd(X_out, h, nsamp = 500L)
-  expect_equal(unname(fm$center), unname(mm$center), tolerance = 0.25)
 })
 
 test_that("the MCD subset size, consistency, and small-sample factors match their forms", {
@@ -734,51 +759,37 @@ test_that("outlier diagnostics fall back to classical distances and degrade grac
   # n <= 2p: the robust covariance is undefined, so classical Mahalanobis is used
   set.seed(5)
   Xsmall <- matrix(rnorm(8 * 4), 8, 4)
-  expect_warning(
-    o <- EFAtools:::.screen_outliers(Xsmall, mcd_alpha = 0.5, outlier_cutoff = 0.975,
-                                     seed = 1),
-    class = "efa_screen_mcd_fallback"
+  expect_no_warning(
+    o <- EFAtools:::.screen_outliers(Xsmall, mcd_alpha = 0.5, outlier_cutoff = 0.975)
   )
   expect_equal(o$method, "classical")
   expect_length(o$distances, 8L)
   # the recorded reason names the branch actually taken: n <= 2p is decided before
-  # .fast_mcd() runs, so this case is "too few complete cases", never an exact fit
+  # .det_mcd() runs, so this case is "too few complete cases", never an exact fit
   expect_match(o$fallback_reason, "too few complete cases")
 
   # collinear variables with too few cases: even the classical covariance is singular,
-  # so the diagnostic is skipped with a classed note
+  # so the diagnostic is skipped with a classed note. Each of the three ways the
+  # complete-case covariance can fail names itself, so the report never sends a reader
+  # after collinearity when the cause is missingness or a non-finite value.
+  skipped <- function(X) {
+    o <- EFAtools:::.screen_outliers(X, mcd_alpha = 0.5, outlier_cutoff = 0.975)
+    expect_s3_class(o, "efa_screen_no_outliers")
+    o$message
+  }
   set.seed(6)
   Xd <- matrix(rnorm(8 * 4), 8, 4)
   Xd[, 4] <- Xd[, 1] + Xd[, 2]
-  expect_warning(
-    o2 <- EFAtools:::.screen_outliers(Xd, mcd_alpha = 0.5, outlier_cutoff = 0.975,
-                                      seed = 1),
-    class = "efa_screen_no_outliers"
-  )
-  expect_s3_class(o2, "efa_screen_no_outliers")
-  # each of the three ways the complete-case covariance can fail names itself, so the
-  # report never sends a reader after collinearity when the cause is missingness or a
-  # non-finite value
-  expect_match(o2$reason, "linearly dependent")
+  expect_match(skipped(Xd), "linearly dependent")
 
   set.seed(6)
   Xnf <- matrix(rnorm(8 * 4), 8, 4)
   Xnf[3, 2] <- Inf
-  expect_warning(
-    o4 <- EFAtools:::.screen_outliers(Xnf, mcd_alpha = 0.5, outlier_cutoff = 0.975,
-                                      seed = 1),
-    class = "efa_screen_no_outliers"
-  )
-  expect_match(o4$reason, "not finite")
+  expect_match(skipped(Xnf), "not finite")
 
   X0 <- matrix(rnorm(5 * 4), 5, 4)
   X0[, 1] <- NA                              # no complete case at all
-  expect_warning(
-    o5 <- EFAtools:::.screen_outliers(X0, mcd_alpha = 0.5, outlier_cutoff = 0.975,
-                                      seed = 1),
-    class = "efa_screen_no_outliers"
-  )
-  expect_match(o5$reason, "too few complete cases")
+  expect_match(skipped(X0), "too few complete cases")
 
   # near-collinear variables are skipped on the same terms as exactly collinear ones:
   # the covariance is numerically singular (rcond far below the double-precision epsilon)
@@ -786,48 +797,34 @@ test_that("outlier diagnostics fall back to classical distances and degrade grac
   set.seed(6)
   Xn <- matrix(rnorm(8 * 4), 8, 4)
   Xn[, 4] <- Xn[, 1] + Xn[, 2] + 1e-9 * rnorm(8)
-  expect_warning(
-    o3 <- EFAtools:::.screen_outliers(Xn, mcd_alpha = 0.5, outlier_cutoff = 0.975,
-                                      seed = 1),
-    class = "efa_screen_no_outliers"
-  )
-  expect_s3_class(o3, "efa_screen_no_outliers")
-
-  # a correlation matrix reaching the helper aborts
-  expect_error(
-    EFAtools:::.screen_outliers(test_models$baseline$cormat, mcd_alpha = 0.5,
-                                outlier_cutoff = 0.975),
-    class = "efa_screen_outliers_cormat"
-  )
+  expect_match(skipped(Xn), "linearly dependent")
 })
 
-test_that("tied responses on coarse items fall back to classical distances (GRiPS)", {
-  # GRiPS items are 6-point and heavily tied: more than h respondents give the same answer
-  # on at least one item pair, so an h-subset sits exactly on the hyperplane x_i = x_j and
-  # no robust MCD covariance exists. The outlier diagnostic then falls back to classical
-  # Mahalanobis distances with a warning. A covering subset of determinant zero is the
-  # smallest one there can be, so which random subsets the search happens to draw cannot
-  # change that conclusion: the verdict, and the whole diagnostic behind it, must come out
-  # the same at every seed rather than depending on one.
-  seeds <- c(1L, 2L, 4L, 7L, 12L)
-  scrs <- lapply(seeds, function(s) {
-    expect_warning(scr <- efa_screen(GRiPS_raw, seed = s), class = "efa_screen_mcd_fallback")
-    scr
-  })
-  outs <- lapply(scrs, `[[`, "outliers")
-  expect_true(all(vapply(outs, function(o) o$method, character(1)) == "classical"))
-  expect_true(all(vapply(outs, function(o) identical(o$flagged, outs[[1]]$flagged),
-                         logical(1))))
-
-  scr <- scrs[[1]]
-  expect_length(scr$outliers$distances, nrow(GRiPS_raw))
-  expect_equal(scr$outliers$cutoff, sqrt(qchisq(0.975, ncol(GRiPS_raw))))
-
-  # with n = 810 well above 2p = 16 the cause cannot be too few complete cases, and the
-  # correlation matrix is well conditioned, so the reported reason must be the exact fit
-  expect_gt(nrow(GRiPS_raw), 2 * ncol(GRiPS_raw))
-  expect_lt(sqrt(scr$condition), 10)
-  expect_match(scr$outliers$fallback_reason, "exact fit")
+test_that("categorical variables get a distance ranking, not flags", {
+  # Rating-scale items are tied, so the MCD is degenerate or a local optimum, and their
+  # distances do not follow the chi-square distribution. No case is flagged; the classical
+  # distances are returned and the largest ones are named.
+  o <- scr_raw$outliers
+  expect_equal(o$method, "ranking")
+  expect_true(is.na(o$cutoff))
+  expect_length(o$flagged, 0L)
+  expect_null(o$fallback_reason)
+  expect_length(o$distances, nrow(GRiPS_raw))
+  X <- data.matrix(GRiPS_raw)
+  expect_equal(unname(o$distances),
+               sqrt(unname(stats::mahalanobis(X, colMeans(X), stats::cov(X)))),
+               tolerance = 1e-8)
+  top <- names(sort(o$distances, decreasing = TRUE))[1:5]
+  txt <- flat(scr_raw)
+  expect_match(txt, "No case is flagged: some variables have fewer than ten distinct values",
+               fixed = TRUE)
+  expect_match(txt, paste0("rows ", paste(top[1:4], collapse = ", "), ", and ", top[5]),
+               fixed = TRUE)
+  # one categorical variable is enough: its ties alone can make the MCD degenerate
+  mixed <- data.frame(iris[, 1:3], cat = rep(1:3, 50))
+  expect_equal(efa_screen(mixed)$outliers$method, "ranking")
+  # and no outlier recommendation is made
+  expect_no_match(txt, "flagged as potential", fixed = TRUE)
 })
 
 test_that("the outlier diagnostic does not depend on the variables' units", {
@@ -844,8 +841,8 @@ test_that("the outlier diagnostic does not depend on the variables' units", {
   d <- c(100, 1, 1, 1)
   Xs <- sweep(X, 2L, d, "*", check.margin = FALSE)
 
-  o <- efa_screen(X, seed = 1)$outliers
-  os <- efa_screen(Xs, seed = 1)$outliers
+  o <- efa_screen(X)$outliers
+  os <- efa_screen(Xs)$outliers
 
   expect_equal(o$method, "mcd")
   expect_equal(os$method, "mcd")
@@ -858,7 +855,7 @@ test_that("the outlier diagnostic does not depend on the variables' units", {
   # units: the distances have to be taken where the conditioning was checked, or the
   # inversion inside mahalanobis() refuses a scatter that was passed as usable
   dw <- c(1e9, 1, 1, 1)
-  ow <- efa_screen(sweep(X, 2L, dw, "*", check.margin = FALSE), seed = 1)$outliers
+  ow <- efa_screen(sweep(X, 2L, dw, "*", check.margin = FALSE))$outliers
   expect_equal(ow$method, "mcd")
   expect_identical(ow$flagged, o$flagged)
 
@@ -867,7 +864,7 @@ test_that("the outlier diagnostic does not depend on the variables' units", {
   # itself missing - and quietly put the diagnostic back at the mercy of the units
   Xm <- Xs
   Xm[c(50, 120, 200), 1] <- NA
-  expect_equal(efa_screen(Xm, seed = 1)$outliers$method, "mcd")
+  expect_equal(efa_screen(Xm)$outliers$method, "mcd")
 })
 
 test_that("a near-collinear fallback is reported as collinearity, not as an exact fit", {
@@ -880,12 +877,9 @@ test_that("a near-collinear fallback is reported as collinearity, not as an exac
   set.seed(12)
   Xc <- matrix(stats::rnorm(300 * 4), 300, 4)
   Xc[, 4] <- Xc[, 1] + Xc[, 2] + 0.01 * stats::rnorm(300)
-  expect_warning(
-    o <- EFAtools:::.screen_outliers(Xc, mcd_alpha = 0.5, outlier_cutoff = 0.975, seed = 1),
-    class = "efa_screen_mcd_fallback"
-  )
+  o <- EFAtools:::.screen_outliers(Xc, mcd_alpha = 0.5, outlier_cutoff = 0.975)
   expect_equal(o$method, "classical")
-  expect_match(o$fallback_reason, "ill-conditioned")
+  expect_match(o$fallback_reason, "nearly linearly dependent")
   expect_false(grepl("exact fit", o$fallback_reason, fixed = TRUE))
 })
 
@@ -953,7 +947,7 @@ test_that("a near-singular matrix still produces the full report", {
   set.seed(5)
   near <- data.frame(a = rnorm(120), b = rnorm(120), c = rnorm(120))
   near$copy_of_a <- near$a + rnorm(120, sd = 1e-7)
-  scr <- suppressWarnings(efa_screen(near, seed = 1))
+  scr <- efa_screen(near)
   expect_s3_class(scr, "efa_screen")
   expect_lt(scr$determinant, 1e-10)
   expect_gt(scr$condition, 30)
@@ -976,26 +970,36 @@ test_that("the multicollinearity verdict follows the condition index, not the de
   expect_lt(scr_wide$determinant, 1e-5)
   expect_lt(sqrt(scr_wide$condition), 10)
 
-  txt <- cli::ansi_strip(paste(format(scr_wide), collapse = " "))
-  # the determinant is still reported as a number, but carries no verdict of its own
-  expect_match(txt, "Determinant: 0.0000006", fixed = TRUE)
-  expect_match(txt, "so the condition index below carries the verdict", fixed = TRUE)
-  expect_no_match(txt, "Multicollinearity likely", fixed = TRUE)
-  # and no recommendation sends the reader after redundant items that do not exist
-  expect_no_match(txt, "nearly linearly dependent", fixed = TRUE)
+  txt <- flat(scr_wide)
+  # the determinant stays in the object but is not reported, and nothing is flagged
+  expect_no_match(txt, "Determinant", fixed = TRUE)
+  expect_no_match(txt, "near linear dependency", fixed = TRUE)
+  expect_null(scr_wide$collinear)
 
-  # A genuinely ill-conditioned matrix still gets the verdict and the recommendation. A
-  # duplicate perturbed by 1e-7 puts the index near 2e7, so far above the highest step of
-  # the progression (300) that the graded label cannot move with the BLAS.
+  # A genuinely ill-conditioned matrix still gets the verdict and the recommendation, which
+  # names the two variables involved. A duplicate perturbed by 1e-7 puts the index near 2e7,
+  # so far above the highest step of the progression (300) that the graded label cannot move
+  # with the BLAS.
   set.seed(5)
   near2 <- data.frame(a = rnorm(120), b = rnorm(120), c = rnorm(120))
   near2$copy_of_a <- near2$a + rnorm(120, sd = 1e-7)
-  scr_ill <- suppressWarnings(efa_screen(near2, seed = 1))
+  scr_ill <- efa_screen(near2)
   expect_gt(sqrt(scr_ill$condition), 300)
-  txt_ill <- cli::ansi_strip(paste(format(scr_ill), collapse = " "))
-  expect_match(txt_ill, "which indicates a near linear dependency", fixed = TRUE)
-  expect_match(txt_ill, "its relative strength is very strong", fixed = TRUE)
-  expect_match(txt_ill, "A high condition index indicates multicollinearity", fixed = TRUE)
+  expect_identical(scr_ill$collinear, c("a", "copy_of_a"))
+  txt_ill <- flat(scr_ill)
+  expect_match(txt_ill, "a very strong near linear dependency", fixed = TRUE)
+  expect_match(txt_ill, "near linear dependency among a and copy_of_a", fixed = TRUE)
+})
+
+test_that("the variance-decomposition proportions name a dependency among three variables", {
+  # x3 is nearly x1 + x2; x4 and x5 are unrelated. Belsley's proportions on the one high
+  # index put x1, x2, and x3 above .5 and leave x4 and x5 far below.
+  set.seed(8)
+  X <- matrix(stats::rnorm(300 * 5), 300, 5, dimnames = list(NULL, paste0("x", 1:5)))
+  X[, 3] <- X[, 1] + X[, 2] + 0.01 * stats::rnorm(300)
+  scr <- efa_screen(stats::cor(X), N = 300)
+  expect_gt(sqrt(scr$condition), 100)
+  expect_identical(scr$collinear, c("x1", "x2", "x3"))
 })
 
 test_that("the condition-index verdict is graded on Belsley's progression", {
@@ -1015,21 +1019,23 @@ test_that("the condition-index verdict is graded on Belsley's progression", {
     scr <- efa_screen(eqcor(r), N = 500)
     expect_equal(sqrt(scr$condition), sqrt((1 + 2 * r) / (1 - r)), tolerance = 1e-6,
                  label = paste0("condition index at r = ", r))
-    cli::ansi_strip(paste(format(scr), collapse = " "))
+    flat(scr)
   }
 
   # Above 10 but not above the 30 that flags a near dependency: no flag, no recommendation.
   mid <- screened(0.99)
   expect_match(mid, "The index is above 10, but not above 30", fixed = TRUE)
-  expect_no_match(mid, "A high condition index indicates", fixed = TRUE)
+  expect_no_match(mid, "condition index above 30", fixed = TRUE)
 
-  # Flagged, and graded by the position on the progression the index sits at.
+  # Flagged, and graded by the position on the progression the index sits at. The two
+  # equal small eigenvalues are competing dependencies; summed over both, every variable's
+  # proportion is above .5, so all three are named.
   for (case in list(list(r = 0.99850,  strength = "moderate"),
                     list(r = 0.99985,  strength = "strong"),
                     list(r = 0.999985, strength = "very strong"))) {
     txt <- screened(case$r)
-    expect_match(txt, paste("its relative strength is", case$strength), fixed = TRUE)
-    expect_match(txt, "A high condition index indicates", fixed = TRUE)
+    expect_match(txt, paste("a", case$strength, "near linear dependency"), fixed = TRUE)
+    expect_match(txt, "near linear dependency among v1, v2, and v3", fixed = TRUE)
   }
 })
 
@@ -1048,9 +1054,11 @@ test_that("a flag rate far above the nominal one is reported as a calibration is
   # iris is three species clusters, so it is not elliptically distributed: a high-breakdown
   # estimate fitted to the most concentrated half legitimately calls a large share of the
   # rest distant. Far more flags than the 2.5% cutoff admits is evidence of that, not a list
-  # of contaminated cases to work through.
+  # of contaminated cases to work through. The maximum-breakdown coverage fits the most
+  # concentrated half, which shows it clearly.
+  scr_iris <- efa_screen(iris[, 1:4], mcd_alpha = 0.5)
   recs <- EFAtools:::.screen_recommendations(scr_iris, raw = TRUE,
-                                             kmo = scr_iris$kmo$KMO, bart_sig = TRUE,
+                                             kmo = scr_iris$kmo$KMO,
                                              mvn_nonnormal = TRUE, multicollinear = FALSE,
                                              digits = 3)
   nf <- length(scr_iris$outliers$flagged)
@@ -1060,7 +1068,7 @@ test_that("a flag rate far above the nominal one is reported as a calibration is
 
   # a rate in line with the cutoff keeps the ordinary inspect-them advice
   recs_ok <- EFAtools:::.screen_recommendations(scr_out, raw = TRUE,
-                                                kmo = scr_out$kmo$KMO, bart_sig = TRUE,
+                                                kmo = scr_out$kmo$KMO,
                                                 mvn_nonnormal = FALSE, multicollinear = FALSE,
                                                 digits = 3)
   expect_true(any(grepl("before down-weighting or excluding", recs_ok$message, fixed = TRUE)))
@@ -1071,16 +1079,19 @@ test_that("a flag rate far above the nominal one is reported as a calibration is
   few$outliers$flagged <- scr_iris$outliers$flagged[1:3]
   few$outliers$n_complete <- 20L
   recs_few <- EFAtools:::.screen_recommendations(few, raw = TRUE, kmo = few$kmo$KMO,
-                                                 bart_sig = TRUE, mvn_nonnormal = TRUE,
+                                                 mvn_nonnormal = TRUE,
                                                  multicollinear = FALSE, digits = 3)
   expect_gt(3 / 20, 5 * (1 - few$settings$outlier_cutoff))
   expect_true(any(grepl("before down-weighting or excluding", recs_few$message, fixed = TRUE)))
   expect_false(any(grepl("not elliptically distributed", recs_few$message, fixed = TRUE)))
 })
 
-test_that("the per-variable display marks the missing percentage and hides an empty flags column", {
-  # `missing` is a percentage; the display says so
-  expect_true("missing%" %in% names(EFAtools:::.screen_per_item_display(scr_raw, 3)))
+test_that("the per-variable display marks the missing percentage and hides empty columns", {
+  # `missing` is a percentage and the display says so; without a missing value it is dropped
+  expect_false("missing%" %in% names(EFAtools:::.screen_per_item_display(scr_raw, 3)))
+  g <- GRiPS_raw
+  g[1, 1] <- NA
+  expect_true("missing%" %in% names(EFAtools:::.screen_per_item_display(efa_screen(g), 3)))
 
   # all-continuous data: every flags entry is NA ("no category screening applies"), which
   # prints as a column of <NA>, so the column is dropped instead
@@ -1091,7 +1102,7 @@ test_that("the per-variable display marks the missing percentage and hides an em
   set.seed(12)
   dat <- data.frame(cont = rnorm(80), cat = sample(1:5, 80, replace = TRUE),
                     v3 = rnorm(80))
-  scr <- efa_screen(dat, seed = 1)
+  scr <- efa_screen(dat)
   disp <- EFAtools:::.screen_per_item_display(scr, 3)
   expect_true("flags" %in% names(disp))
   expect_equal(disp["cont", "flags"], "-")
@@ -1110,18 +1121,18 @@ test_that("the complete-case denominator is named when rows are incomplete", {
   X3 <- matrix(rnorm(n3 * p_out), n3, p_out) %*% chol(S3)
   colnames(X3) <- paste0("v", seq_len(p_out))
   X3[1:60, 1] <- NA
-  scr_na <- efa_screen(X3, seed = 1)
+  scr_na <- efa_screen(X3)
   expect_equal(scr_na$settings$n_obs, 240L)
   expect_equal(scr_na$normality$n_complete, 180L)
 
-  txt <- cli::ansi_strip(paste(format(scr_na), collapse = " "))
+  txt <- flat(scr_na)
   expect_match(txt, "Computed from 180 complete cases of the 240 rows supplied",
                fixed = TRUE)
   expect_match(txt, "of 180 complete cases of the 240 rows supplied", fixed = TRUE)
 
   # With no missing values the two bases coincide, so the report stays as it was.
-  scr_full <- efa_screen(X3[stats::complete.cases(X3), ], seed = 1)
-  txt_full <- cli::ansi_strip(paste(format(scr_full), collapse = " "))
+  scr_full <- efa_screen(X3[stats::complete.cases(X3), ])
+  txt_full <- flat(scr_full)
   expect_no_match(txt_full, "rows supplied", fixed = TRUE)
   expect_match(txt_full, "of 180 observations", fixed = TRUE)
 })
@@ -1134,8 +1145,8 @@ test_that("print output is stable", {
   expect_snapshot(print(scr_cor), transform = scrub_num)
 
   # raw input: the full report incl. the per-item table, multivariate normality, the
-  # classical-fallback outlier line, and the recommendations block (the non-normality,
-  # over-powered-Bartlett caveat, sparse-category, and outlier recommendations)
+  # outlier ranking for categorical items, and the recommendations block (the
+  # non-normality and sparse-category recommendations)
   expect_snapshot(print(scr_raw), transform = scrub_num)
 
   # correlation-matrix input without N: Bartlett's test is reported as not computed

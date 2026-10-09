@@ -37,7 +37,7 @@ print.efa_bartlett <- function(x, ...) {
 # other clue. Wording shared with the warning raised when that NA is computed.
 .print_bartlett_no_result <- function() {
   mult_note <- .fit_unavailable_text("bartlett_mult")
-  cli::cli_alert_warning("The Bartlett's test of sphericity did not render a result.",
+  cli::cli_alert_warning("Bartlett's test of sphericity did not render a result.",
                          wrap = TRUE)
   cli::cli_text("{mult_note}")
   invisible(NULL)
@@ -56,14 +56,14 @@ format.efa_bartlett <- function(x, ...) {
       if (pval < .05) {
         significant <- cli::col_green(cli::style_bold("significant"))
         cli::cli_alert_success(
-          "The {.strong Bartlett's test of sphericity} was {significant} at an alpha level of .05.",
+          "{.strong Bartlett's test of sphericity} was {significant} at an alpha level of .05.",
           wrap = TRUE
         )
         cli::cli_text("These data are probably suitable for factor analysis.")
       } else {
         not_significant <- cli::col_red(cli::style_bold("not significant"))
         cli::cli_alert_danger(
-          "The Bartlett's test of sphericity was {not_significant} at an alpha level of .05.",
+          "Bartlett's test of sphericity was {not_significant} at an alpha level of .05.",
           wrap = TRUE
         )
         cli::cli_text("These data are probably not suitable for factor analysis.")

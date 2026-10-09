@@ -22,20 +22,16 @@ rounded to. Default is 3.}
 character vector with the report lines.
 }
 \description{
-\code{print()} turns the factor-analysis screening diagnostics computed by
-\code{\link[=efa_screen]{efa_screen()}} into a sectioned report with banded, colour-coded verdicts:
-sampling adequacy and sphericity (the Kaiser-Meyer-Olkin measure and Bartlett's
-test of sphericity), multicollinearity (the determinant and condition number of
-the correlation matrix), the per-variable diagnostics, and, when raw data were
-supplied, multivariate normality and multivariate outliers. It closes with a
-consolidated list of actionable recommendations (for example, which items to
-consider dropping, whether to prefer an ordinal or a robust estimator, and a
-caveat that keeps an over-powered Bartlett's test from being over-trusted).
-\code{format()} assembles the same report and returns it as a character vector;
-\code{print()} is \code{cat(format(x), sep = "\\n")}. The lines follow the active console
-theme, so they are plain when colours are disabled (for example when captured
-into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}). \code{print()} does not draw a
-plot.
+\code{print()} turns the diagnostics computed by \code{\link[=efa_screen]{efa_screen()}} into a sectioned report
+with colour-coded verdicts: sampling adequacy and sphericity (the Kaiser-Meyer-Olkin
+measure and Bartlett's test of sphericity), multicollinearity (the condition index),
+the per-variable diagnostics, and, when raw data were supplied, multivariate normality
+and multivariate outliers. It closes with a list of recommendations (for example,
+which items to consider dropping, or whether to prefer an ordinal or a robust
+estimator). \code{format()} assembles the same report and returns it as a character
+vector; \code{print()} is \code{cat(format(x), sep = "\\n")}. The lines follow the active console
+theme, so they are plain when colours are disabled (for example when captured into a
+file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}). \code{print()} does not draw a plot.
 }
 \examples{
 # From raw data

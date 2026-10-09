@@ -2,6 +2,16 @@
 
 * Removed unnecessary warning from `efa_map()` that warned when the residual variance reached 0 and thus the search ended early.
 
+* `efa_screen()` changes:
+  * Outliers are now detected with the deterministic DetMCD algorithm, so the result is the same on every run and large samples are much faster. The `seed` argument is deprecated and has no effect.
+  * `mcd_alpha` now defaults to `0.75` instead of `0.5`, which flags fewer clean cases.
+  * If any variable is categorical (fewer than ten distinct values), no case is flagged as an outlier. The report names the cases with the largest Mahalanobis distances instead. A chi-square cutoff is not valid for rating-scale data, and it flagged many clean cases when items were skewed.
+  * The Henze-Zirkler test was removed; Mardia's tests remain and are much faster in large samples.
+  * With `cor_method = "poly"` or `"tetra"`, the multivariate normality tests are skipped, and the report no longer recommends polychoric correlations for items with few categories.
+  * A non-significant Bartlett's test now appears in the recommendations, instead of the note that the data appear suitable.
+  * The multicollinearity recommendation names the variables involved (Belsley's variance-decomposition proportions), and the report shows the condition index instead of the determinant and the condition number.
+  * The report is shorter, and conditions that the report already describes no longer also give a warning.
+
 # EFAtools 1.1.0
 
 ## Comparing and Averaging Solutions

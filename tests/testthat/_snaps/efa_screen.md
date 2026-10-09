@@ -6,20 +6,13 @@
       
       -- Sampling adequacy and sphericity --------------------------------------------
       
-      v The overall KMO value for your data is marvellous (Overall KMO = <num>).
-      These data are probably suitable for factor analysis (verbal bands: Kaiser &
-      Rice, 1974).
-      
-      v The Bartlett's test of sphericity was significant at an alpha level of <num>.
-      These data are probably suitable for factor analysis.
-      χ²(153) = <num>, p < <num>
+      v Overall KMO = <num>: marvellous (Kaiser & Rice, 1974).
+      v Bartlett's test of sphericity: χ²(153) = <num>, p < <num> (significant).
       
       -- Multicollinearity -----------------------------------------------------------
       
-      i Determinant: <num>. It falls as variables are added, so the condition index
-      below carries the verdict.
-      v Condition number: <num> (condition index <num>). An index of 10 or less is
-      rarely of interest (Belsley, 1991).
+      v Condition index: <num>. An index of 10 or less is rarely of interest
+      (Belsley, 1991).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
@@ -57,66 +50,46 @@
       
       -- Sampling adequacy and sphericity --------------------------------------------
       
-      v The overall KMO value for your data is marvellous (Overall KMO = <num>).
-      These data are probably suitable for factor analysis (verbal bands: Kaiser &
-      Rice, 1974).
-      
-      v The Bartlett's test of sphericity was significant at an alpha level of <num>.
-      These data are probably suitable for factor analysis.
-      χ²(28) = <num>, p < <num>
+      v Overall KMO = <num>: marvellous (Kaiser & Rice, 1974).
+      v Bartlett's test of sphericity: χ²(28) = <num>, p < <num> (significant).
       
       -- Multicollinearity -----------------------------------------------------------
       
-      i Determinant: <num>. It falls as variables are added, so the condition index
-      below carries the verdict.
-      v Condition number: <num> (condition index <num>). An index of 10 or less is
-      rarely of interest (Belsley, 1991).
+      v Condition index: <num>. An index of 10 or less is rarely of interest
+      (Belsley, 1991).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
-                variance missing%   SMC   MSA  flags
-      fun <num>        0 <num> <num>       
-      friends <num>        0 <num> <num>       
-      enjoy <num>        0 <num> <num> sparse
-      hurt <num>        0 <num> <num> sparse
-      part <num>        0 <num> <num>       
-      commonly <num>        0 <num> <num>       
-      chances <num>        0 <num> <num>       
-      attracted <num>        0 <num> <num> sparse
+                variance   SMC   MSA  flags
+      fun <num> <num> <num>       
+      friends <num> <num> <num>       
+      enjoy <num> <num> <num> sparse
+      hurt <num> <num> <num> sparse
+      part <num> <num> <num>       
+      commonly <num> <num> <num>       
+      chances <num> <num> <num>       
+      attracted <num> <num> <num> sparse
       
       -- Multivariate normality ------------------------------------------------------
       
       x Mardia's skewness: χ²(120) = <num>, p < <num>.
       x Mardia's kurtosis: z = <num>, p < <num>.
-      x Henze-Zirkler: HZ = <num>, p < <num>.
-      These data depart from multivariate normality: 3 of the 3 tests reject it.
+      These data depart from multivariate normality: both tests reject it.
       
       -- Outliers --------------------------------------------------------------------
       
-      ! A robust (MCD) covariance could not be computed; classical Mahalanobis
-      distances were used.
-      At least half the complete cases lie exactly on a lower-dimensional hyperplane
-      (an "exact fit"). This is common with coarse discrete items, where many
-      respondents give identical answers on an item pair; it does not mean the data
-      are collinear at the correlation level.
-      These distances come from a covariance the outliers themselves inflate, so the
-      diagnostic is no longer high-breakdown and tends to under-flag.
-      i 71 of 810 observations were flagged as multivariate outliers (Mahalanobis
-      distance > <num>).
+      i No case is flagged: some variables have fewer than ten distinct values
+      (categorical), and a chi-square cutoff is not valid for their Mahalanobis
+      distances. The largest distances are in rows 561, 238, 622, 549, and 186.
       
       -- Recommendations -------------------------------------------------------------
       
       ! These data depart from multivariate normality; normal-theory standard errors
         and fit statistics may be biased - prefer robust (sandwich) or bootstrapped
         standard errors.
-      ! Bartlett's test is significant, but it assumes multivariate normality and
-        grows more sensitive as N increases; because these data are non-normal, treat
-        it as uninformative here and rely on the KMO.
       ! 3 variables have a sparse response category (< 5 responses): enjoy, hurt, and
         attracted; a low-frequency category can destabilise polychoric estimates -
         consider collapsing it into an adjacent category.
-      ! 71 observations were flagged as potential multivariate outliers; inspect them
-        (see `$outliers$flagged`) before down-weighting or excluding.
 
 ---
 
@@ -126,19 +99,14 @@
       
       -- Sampling adequacy and sphericity --------------------------------------------
       
-      v The overall KMO value for your data is marvellous (Overall KMO = <num>).
-      These data are probably suitable for factor analysis (verbal bands: Kaiser &
-      Rice, 1974).
-      
+      v Overall KMO = <num>: marvellous (Kaiser & Rice, 1974).
       ! Bartlett's test of sphericity was not computed; no sample size (N) was
       supplied.
       
       -- Multicollinearity -----------------------------------------------------------
       
-      i Determinant: <num>. It falls as variables are added, so the condition index
-      below carries the verdict.
-      v Condition number: <num> (condition index <num>). An index of 10 or less is
-      rarely of interest (Belsley, 1991).
+      v Condition index: <num>. An index of 10 or less is rarely of interest
+      (Belsley, 1991).
       
       -- Per-variable diagnostics ----------------------------------------------------
       
@@ -176,22 +144,13 @@
       
       -- Sampling adequacy and sphericity ------------------------
       
-      v The overall KMO value for your data is marvellous
-      (Overall KMO = <num>).
-      These data are probably suitable for factor analysis
-      (verbal bands: Kaiser & Rice, 1974).
-      
-      v The Bartlett's test of sphericity was significant at an
-      alpha level of <num>.
-      These data are probably suitable for factor analysis.
-      χ²(153) = <num>, p < <num>
+      v Overall KMO = <num>: marvellous (Kaiser & Rice, 1974).
+      v Bartlett's test of sphericity: χ²(153) = <num>, p < <num> (significant).
       
       -- Multicollinearity ---------------------------------------
       
-      i Determinant: <num>. It falls as variables are added, so
-      the condition index below carries the verdict.
-      v Condition number: <num> (condition index <num>). An
-      index of 10 or less is rarely of interest (Belsley, 1991).
+      v Condition index: <num>. An index of 10 or less is rarely
+      of interest (Belsley, 1991).
       
       -- Per-variable diagnostics --------------------------------
       
