@@ -116,13 +116,12 @@ example, [Auerswald and Moshagen, 2019](https://doi.org/10.1037/met0000200)).
 
 ### Calling Individual Criteria
 
-Each criterion has its own function. For a parallel analysis based on squared multiple
-correlations (SMC; also called parallel analysis with principal factors), for example, you
-would run:
+Each criterion has its own function. For a parallel analysis based on the eigenvalues of the
+correlation matrix (PCA), for example, you would run:
 
 ```{r}
-# parallel analysis based on SMC eigenvalues
-pa <- efa_parallel(DOSPERT_sub, eigen_type = "smc")
+# parallel analysis based on PCA eigenvalues
+pa <- efa_parallel(DOSPERT_sub, eigen_type = "pca")
 pa
 ```
 
@@ -174,9 +173,9 @@ the Kaiser-Guttman criterion and the sequential model tests, and drops compariso
 on larger data sets), the hull method, and the next eigenvalue sufficiency test.
 
 This is the situation one would rather avoid, but it does happen: the criteria disagree, with
-suggestions ranging from four to well above ten factors. When there is no clear convergence,
+suggestions ranging from five to 13 factors. When there is no clear convergence,
 the choice becomes partly a matter of judgement. We proceed with six factors, consistent with the minimum average partial test and the RMSEA-based sequential model test above (this version of the DOSPERT scale is usually
-modeled with five factors; the sixth factor here splits the financial-risk items into two).
+modeled with five factors, as parallel analysis suggests; the sixth factor here splits the financial-risk items into two).
 
 All criteria except comparison data (which needs raw data) can also be applied to a
 correlation matrix, in which case the sample size must be supplied. On a cleaner data set the

@@ -4,6 +4,9 @@
 \alias{efa_parallel}
 \title{Parallel analysis}
 \source{
+Anderson, T. W. (2003). An introduction to multivariate statistical analysis
+(3rd ed.). Wiley.
+
 Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
 Psychological Methods, 22, 450--466. https://doi.org/10.1037/met0000074
 
@@ -50,8 +53,8 @@ than the number of variables.}
 Only has to be specified if \code{x} is left as \code{NULL} as otherwise the
 dimensions are taken from \code{x}.}
 
-\item{n_datasets}{numeric. The number of datasets to simulate. Must be at
-least 1. Default is 1000.}
+\item{n_datasets}{numeric. The number of reference correlation matrices to simulate.
+Must be at least 1. Default is 1000.}
 
 \item{percent}{numeric. The percentile to take from the simulated eigenvalues.
 Default is 95.}
@@ -62,9 +65,9 @@ matrix is replaced by the squared multiple correlations (SMCs) of the
 indicators. If using "PCA", the diagonal values of the correlation matrices
 are left to be 1. If using "EFA", eigenvalues are found on the correlation
 matrices with the final communalities of an EFA solution as diagonal. Default
-is \code{c("PCA", "SMC", "EFA")}, i.e. all three, which costs roughly six times a
-single non-EFA type: \code{"EFA"} fits an EFA to every simulated dataset and
-dominates that total. Pass a single type if the run is time-critical.}
+is \code{c("PCA", "SMC", "EFA")}, i.e. all three. \code{"EFA"} fits an EFA to every
+simulated correlation matrix and takes most of the run time. Leave out \code{"EFA"} if the run
+is time-critical.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is "pairwise.complete.obs".}
@@ -138,7 +141,15 @@ later eigenvalues are conditional on the earlier ones in the sequence and thus
 the shared variance is already accounted in the first eigenvalue (e.g.,
 Braeken & van Assen, 2017).
 
-The reference eigenvalues are obtained from simulated data, so the suggested number
+For Pearson correlations, each simulated correlation matrix comes directly from the
+exact sampling distribution of the correlation matrix of \code{N} cases of uncorrelated
+normal variables. It is a Wishart matrix scaled to correlations (Anderson, 2003,
+Sec. 7.2).
+No raw data are simulated, so the time for the simulation does not increase with \code{N}.
+Rank correlations (\code{"spearman"}, \code{"kendall"}) need raw data, so for them the data
+are simulated and then correlated.
+
+The reference eigenvalues are obtained by simulation, so the suggested number
 of factors varies slightly from run to run. Call \code{\link[base:set.seed]{base::set.seed()}} beforehand to make a
 run reproducible; the result is then also independent of the parallel plan set via
 \code{\link[future:plan]{future::plan()}}, so it can be reproduced on a machine with a different number of

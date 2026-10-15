@@ -1,8 +1,8 @@
 # Captured-output baselines for the print methods, recorded with
 # local_reproducible_output() so the text is plain (no ANSI colour) and fixed
 # width. Only methods whose printed output is integer factor counts or fixed
-# text are snapshotted; methods that print computed decimals (e.g. KMO,
-# Bartlett's chi-square) are omitted, since those digits can drift across BLAS
+# text are snapshotted; computed decimals (e.g. KMO, Bartlett's chi-square) are
+# omitted or masked with scrub_num(), since those digits can drift across BLAS
 # and platforms and would make the baselines flaky.
 #
 # Only the criteria that simulate -- PARALLEL, NEST and HULL -- carry
@@ -108,6 +108,23 @@ test_that("print.efa_retain output is stable", {
                    criteria = c("EKC", "KGC", "MAP", "SMT"),
                    eigen_type_other = c("PCA", "SMC"))
   expect_snapshot(print(nf))
+})
+
+test_that("print.efa_retain reports sampling adequacy and sphericity", {
+  local_reproducible_output()
+
+  # the same lines as efa_screen(); scrub_num masks the KMO and chi-square decimals,
+  # which can drift across BLAS implementations
+  nf <- efa_retain(test_models$baseline$cormat, N = 500, criteria = c("EKC", "MAP"))
+  expect_snapshot(print(nf), transform = scrub_num)
+
+  # without N, Bartlett's test is not computed
+  nf_no_n <- efa_retain(test_models$baseline$cormat, criteria = "MAP")
+  expect_snapshot(print(nf_no_n), transform = scrub_num)
+
+  # with polychoric correlations, Bartlett's test uses the Pearson correlations
+  nf_poly <- efa_retain(GRiPS_raw, cor_method = "poly", criteria = c("EKC", "MAP"))
+  expect_snapshot(print(nf_poly), transform = scrub_num)
 })
 
 test_that("every print method is exactly cat(format(x), sep = \"\\n\")", {

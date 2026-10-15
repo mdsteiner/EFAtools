@@ -541,25 +541,46 @@ test_that(".determine_factors returns a normal crossing and 0 without the warnin
   expect_equal(n0, 0)
 })
 
-test_that("the null-model reference draw matches the compiled fast path", {
-  # The rank-method and EFA paths draw the null model with the shared MVN kernel on the
-  # identity correlation, while the Pearson PCA/SMC path uses the compiled .parallel_sim().
-  # This pins that the two draw the same underlying stream: the kernel's eigenvalues agree
-  # with the compiled fast path up to the compiled cor() vs stats::cor() rounding (~1e-15)
-  # under a fixed seed. (That PARALLEL's rank/EFA paths actually route through the kernel is
-  # guarded by the two tests below, which drive .parallel_sim_eig() and .parallel_EFA_sim().)
+test_that("the compiled Pearson reference is a Wishart draw on the stats::rWishart() stream", {
+  # The compiled .parallel_sim() draws each null-model correlation matrix from its Wishart
+  # sampling distribution with the Bartlett draw order of stats::rWishart(). Under one seed
+  # its eigenvalues must therefore equal a recompute from stats::rWishart() with N - 1
+  # degrees of freedom, rescaled with stats::cov2cor(), up to the different linear-algebra
+  # routines of the two computations.
   N <- 60; p <- 5; nd <- 3
 
   set.seed(101)
-  e_fast <- .parallel_sim(nd, p, N, 1L)          # compiled PCA fast path
+  e_fast <- .parallel_sim(nd, p, N, 1L)
 
   set.seed(101)
-  e_kernel <- t(vapply(seq_len(nd), function(i) {
-    eigen(stats::cor(.simulate_cfm_mvn(diag(p), N)), symmetric = TRUE,
-          only.values = TRUE)$values
+  e_wishart <- t(vapply(seq_len(nd), function(i) {
+    W <- stats::rWishart(1L, N - 1, diag(p))[, , 1]
+    eigen(stats::cov2cor(W), symmetric = TRUE, only.values = TRUE)$values
   }, numeric(p)))
 
-  expect_equal(e_kernel, e_fast, tolerance = 1e-10)
+  expect_equal(e_fast, e_wishart, tolerance = 1e-10)
+})
+
+test_that("the Wishart reference has the distribution of correlated raw data", {
+  skip_on_cran()
+  # The compiled draw replaces correlating N simulated normal cases. Both must give the
+  # same distribution of reference eigenvalues: the mean PCA and SMC eigenvalues of the
+  # two simulations agree within four Monte Carlo standard errors. N is close to p, where
+  # a wrong number of degrees of freedom would show most clearly.
+  N <- 10; p <- 5; nd <- 4000
+
+  set.seed(505)
+  wishart <- .parallel_sim(nd, p, N, 3L, nd * 10L)
+  raw <- t(vapply(seq_len(nd), function(i) {
+    R <- stats::cor(matrix(stats::rnorm(N * p), N, p))
+    R_smc <- R
+    diag(R_smc) <- .smc_start(R)
+    c(eigen(R, symmetric = TRUE, only.values = TRUE)$values,
+      eigen(R_smc, symmetric = TRUE, only.values = TRUE)$values)
+  }, numeric(2 * p)))
+
+  se <- sqrt((apply(wishart, 2, stats::var) + apply(raw, 2, stats::var)) / nd)
+  expect_lt(max(abs(colMeans(wishart) - colMeans(raw)) / se), 4)
 })
 
 test_that(".parallel_sim_eig draws its rank-method reference from the shared kernel", {
@@ -679,21 +700,31 @@ test_that("a draw the SMC series cannot use is discarded for the PCA series too"
   expect_identical(rejected[3L, ], clean[4L, ])
 })
 
-test_that(".parallel_EFA_sim draws its reference from the shared kernel", {
-  # The EFA path likewise draws the null-model data with the shared kernel; under a
-  # fixed seed its eigenvalues equal a direct recompute that draws the same way.
+test_that(".parallel_EFA_sim draws its reference matrices by correlation method", {
+  # A Pearson reference matrix comes from stats::rWishart(), as in the compiled path; a
+  # rank-method reference correlates data drawn with the shared kernel. Under a fixed seed
+  # the eigenvalues equal a direct recompute that draws the same way.
   N <- 60; p <- 5; nd <- 2
+  efa_eigen <- function(R) {
+    suppressWarnings(suppressMessages(efa_fit(R, n_factors = 1, N = N)$final_eigen))
+  }
 
   set.seed(303)
   got <- .parallel_EFA_sim(nd, n_vars = p, N = N, n_factors = 1,
                            cor_method = "pearson")
-
   set.seed(303)
   want <- t(vapply(seq_len(nd), function(i) {
-    R <- stats::cor(.simulate_cfm_mvn(diag(p), N))
-    suppressWarnings(suppressMessages(EFA(R, n_factors = 1, N = N)$final_eigen))
+    efa_eigen(stats::cov2cor(stats::rWishart(1L, N - 1, diag(p))[, , 1]))
   }, numeric(p)))
+  expect_equal(got, want)
 
+  set.seed(304)
+  got <- .parallel_EFA_sim(nd, n_vars = p, N = N, n_factors = 1,
+                           cor_method = "spearman")
+  set.seed(304)
+  want <- t(vapply(seq_len(nd), function(i) {
+    efa_eigen(stats::cor(.simulate_cfm_mvn(diag(p), N), method = "spearman"))
+  }, numeric(p)))
   expect_equal(got, want)
 })
 

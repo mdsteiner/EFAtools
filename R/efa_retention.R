@@ -14,34 +14,48 @@
 # its own comparison-data generation, not an EFA), so neither applies to them.
 # `poly_ok = FALSE` marks the criteria that do not support polychoric/tetrachoric
 # correlations -- either because they compare the data against continuous
-# reference data (CD, PARALLEL, NEST, HULL) or because their normal-theory
-# chi-square test is not valid for such correlations (SMT); these are skipped
-# with an informative note by efa_retain().
+# reference data (PARALLEL, NEST, HULL) or because their normal-theory chi-square
+# test is not valid for such correlations (SMT). CD resamples the observed values,
+# so it uses Pearson correlations by design (Ruscio & Roche, 2012) and runs on them
+# instead. `needs_N = TRUE` marks the criteria that need N with a correlation matrix.
+# HULL reuses `ctl$n_fac_PA`, a parallel-analysis suggestion, when efa_retain() sets it.
 .retention_registry <- list(
   CD = list(
-    label = "Comparison data", needs_raw = TRUE, poly_ok = FALSE,
+    label = "Comparison data", needs_raw = TRUE,
     fun = function(x, ctl) {
-      efa_cd(x, n_factors_max = ctl$n_factors_max, N_pop = ctl$N_pop,
-         N_samples = ctl$N_samples, alpha = ctl$alpha,
-         cor_method = ctl$cor_method, max_iter = ctl$max_iter_CD)
+      pearson <- .is_poly_cor(ctl$cor_method)
+      # data.matrix() codes ordered factors by level, as .polychoric() does
+      out <- efa_cd(if (pearson) data.matrix(x) else x,
+                    n_factors_max = ctl$n_factors_max, N_pop = ctl$N_pop,
+                    N_samples = ctl$N_samples, alpha = ctl$alpha_CD,
+                    cor_method = if (pearson) "pearson" else ctl$cor_method,
+                    max_iter = ctl$max_iter_CD)
+      if (pearson) {
+        out$subtitle <- "Correlations: Pearson (the comparison data resample the observed values)."
+      }
+      out
     }),
   EKC = list(
-    label = "Empirical Kaiser Criterion", needs_raw = FALSE,
+    label = "Empirical Kaiser Criterion", needs_raw = FALSE, needs_N = TRUE,
     fun = function(x, ctl) {
       efa_ekc(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method)
     }),
   HULL = list(
-    label = "Hull method", needs_raw = FALSE, poly_ok = FALSE,
+    label = "Hull method", needs_raw = FALSE, poly_ok = FALSE, needs_N = TRUE,
     fun = function(x, ctl) {
-      do.call(efa_hull, c(list(x, N = ctl$N, n_fac_theor = ctl$n_fac_theor,
-                           estimator = ctl$estimator, gof = ctl$gof,
-                           eigen_type = ctl$eigen_type_HULL, use = ctl$use,
-                           cor_method = ctl$cor_method,
-                           n_datasets = ctl$n_datasets, percent = ctl$percent,
-                           decision_rule = ctl$decision_rule,
-                           n_factors = ctl$n_factors,
-                           estimate_control = ctl$estimate_control),
-                      ctl$dots))
+      # quote = TRUE passes the values as they are, so `error_call` stays a call
+      do.call(.efa_hull_run, c(list(x, N = ctl$N, n_fac_theor = ctl$n_fac_theor,
+                                    estimator = ctl$estimator, gof = ctl$gof,
+                                    eigen_type = ctl$eigen_type_HULL, use = ctl$use,
+                                    cor_method = ctl$cor_method,
+                                    n_datasets = ctl$n_datasets, percent = ctl$percent,
+                                    decision_rule = ctl$decision_rule_HULL,
+                                    n_factors = ctl$n_factors,
+                                    estimate_control = ctl$estimate_control),
+                               ctl$dots,
+                               list(n_fac_PA = ctl[["n_fac_PA"]],
+                                    error_call = quote(efa_hull()))),
+              quote = TRUE)
     }),
   KGC = list(
     label = "Kaiser-Guttman criterion", needs_raw = FALSE,
@@ -59,6 +73,7 @@
     }),
   NEST = list(
     label = "Next Eigenvalue Sufficiency Test", needs_raw = FALSE, poly_ok = FALSE,
+    needs_N = TRUE,
     fun = function(x, ctl) {
       do.call(efa_nest, c(list(x, N = ctl$N, use = ctl$use,
                            cor_method = ctl$cor_method, alpha = ctl$alpha_nest,
@@ -67,7 +82,7 @@
                       ctl$dots))
     }),
   PARALLEL = list(
-    label = "Parallel analysis", needs_raw = FALSE, poly_ok = FALSE,
+    label = "Parallel analysis", needs_raw = FALSE, poly_ok = FALSE, needs_N = TRUE,
     fun = function(x, ctl) {
       do.call(efa_parallel, c(list(x, N = ctl$N, n_datasets = ctl$n_datasets,
                                percent = ctl$percent,
@@ -88,7 +103,7 @@
                        ctl$dots))
     }),
   SMT = list(
-    label = "Sequential model tests", needs_raw = FALSE, poly_ok = FALSE,
+    label = "Sequential model tests", needs_raw = FALSE, poly_ok = FALSE, needs_N = TRUE,
     fun = function(x, ctl) {
       efa_smt(x, N = ctl$N, use = ctl$use, cor_method = ctl$cor_method,
           estimate_control = ctl$estimate_control)
@@ -97,23 +112,22 @@
 
 # Control list consumed by the factor-retention registry funs. The defaults
 # mirror the efa_retain() argument defaults so any requested criterion resolves;
-# callers pass only what they override. `gof` defaults to the Hull
-# goodness-of-fit indices valid for `estimator` (PAF supports only the CAF).
+# callers pass only what they override.
 .n_factors_ctl <- function(N = NA, use = "pairwise.complete.obs",
                            cor_method = "pearson", n_factors_max = NA,
-                           N_pop = 10000, N_samples = 500, alpha = .30,
+                           N_pop = 10000, N_samples = 500, alpha_CD = .30,
                            max_iter_CD = 50, n_fac_theor = NA, estimator = "ML",
-                           gof = if (estimator == "PAF") "CAF" else c("CAF", "CFI", "RMSEA"),
-                           eigen_type_HULL = "SMC", eigen_type_other = "SMC",
+                           gof = "CAF", eigen_type_HULL = "PCA",
+                           decision_rule_HULL = "percentile", eigen_type_other = "PCA",
                            n_factors = 1, n_datasets = 1000, percent = 95,
                            decision_rule = "means",
                            n_datasets_nest = 1000, alpha_nest = .05,
                            estimate_control = NULL, dots = list()) {
   list(N = N, use = use, cor_method = cor_method,
        n_factors_max = n_factors_max, N_pop = N_pop,
-       N_samples = N_samples, alpha = alpha, max_iter_CD = max_iter_CD,
+       N_samples = N_samples, alpha_CD = alpha_CD, max_iter_CD = max_iter_CD,
        n_fac_theor = n_fac_theor, estimator = estimator, gof = gof,
-       eigen_type_HULL = eigen_type_HULL,
+       eigen_type_HULL = eigen_type_HULL, decision_rule_HULL = decision_rule_HULL,
        eigen_type_other = eigen_type_other, n_factors = n_factors,
        n_datasets = n_datasets, percent = percent,
        decision_rule = decision_rule,

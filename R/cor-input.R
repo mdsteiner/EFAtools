@@ -195,7 +195,7 @@
 
 # Single source of truth for the correlation methods that are estimated from the
 # raw data by .polychoric() rather than stats::cor(). Used both to route the
-# computation and to reject criteria whose reference data are continuous.
+# computation and to reject the criteria that do not support these correlations.
 .is_poly_cor <- function(cor_method) cor_method %in% c("poly", "tetra")
 
 # Labels for the off-diagonal variable pairs in utils::combn(p, 2) column order
@@ -860,10 +860,12 @@
 # Polychoric/tetrachoric correlations describe the observed data only. Criteria that cannot
 # honour them reject the request with one shared classed condition rather than returning a
 # silently invalid answer. `why` states which property fails: by default that the criterion
-# compares the data against a separately generated continuous reference (efa_cd(),
-# efa_parallel(), efa_nest(), efa_hull()), and for efa_smt() that its sequential tests rest on
-# a normal-theory ML chi-square (and the RMSEA and AIC derived from it), which is not valid for
-# such correlations. It is a cli template evaluated here, so it can interpolate `fn`.
+# compares the data against a separately generated continuous reference (efa_parallel(),
+# efa_nest(), efa_hull()); for efa_smt() that its sequential tests rest on a normal-theory ML
+# chi-square (and the RMSEA and AIC derived from it), which is not valid for such
+# correlations; and for efa_cd() that its comparison data keep the observed distributions, so
+# Pearson correlations already suit ordinal data. It is a cli template evaluated here, so it
+# can interpolate `fn`.
 #
 # `fn` is the name the message shows, and every caller passes its own. Only a direct call
 # reaches this message -- efa_retain() screens the same combination off the registry's

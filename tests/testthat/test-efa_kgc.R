@@ -16,7 +16,8 @@ test_that("output class and dimensions are correct", {
   expect_named(kgc_cor_smc$n_factors, "SMC")
   expect_named(kgc_efa_ml$n_factors, "EFA")
   expect_equal(.retention_record(kgc_cor, "PCA")$plot_type, "eigen")
-  expect_equal(.retention_record(kgc_cor, "PCA")$threshold, 1)
+  # the plotted cutoff of each eigenvalue type
+  expect_equal(vapply(kgc_cor$results, function(r) r$threshold, numeric(1)), c(1, 0, 0))
 })
 
 test_that("found eigenvalues are correct", {
@@ -39,19 +40,46 @@ test_that("found eigenvalues are correct", {
 })
 
 test_that("identified number of factors is correct", {
+  # SMC and EFA count the positive eigenvalues of the reduced matrix. The eigenvalue
+  # closest to 0 is at least .004 away from it in every fixture, far above any BLAS noise.
   expect_equal(kgc_cor$n_factors[["PCA"]], 3)
-  expect_equal(kgc_cor$n_factors[["SMC"]], 1)
-  expect_equal(kgc_cor$n_factors[["EFA"]], 1)
+  expect_equal(kgc_cor$n_factors[["SMC"]], 8)
+  expect_equal(kgc_cor$n_factors[["EFA"]], 7)
 
   expect_equal(kgc_raw$n_factors[["PCA"]], 1)
-  expect_equal(kgc_raw$n_factors[["SMC"]], 1)
-  expect_equal(kgc_raw$n_factors[["EFA"]], 1)
+  expect_equal(kgc_raw$n_factors[["SMC"]], 3)
+  expect_equal(kgc_raw$n_factors[["EFA"]], 4)
 
-  expect_equal(kgc_cor_smc$n_factors[["SMC"]], 1)
+  expect_equal(kgc_cor_smc$n_factors[["SMC"]], 8)
   expect_false(any(c("PCA", "EFA") %in% names(kgc_cor_smc$n_factors)))
 
-  expect_equal(kgc_efa_ml$n_factors[["EFA"]], 1)
+  expect_equal(kgc_efa_ml$n_factors[["EFA"]], 7)
   expect_false(any(c("PCA", "SMC") %in% names(kgc_efa_ml$n_factors)))
+})
+
+test_that("PCA counts the eigenvalues above 1, SMC and EFA those above 0", {
+  # Six variables that all correlate .1 have the eigenvalues 1.5 and .9 (five times). The
+  # SMC-reduced matrix subtracts 1 - SMC = .9 * 1.5 / 1.4 from each, which leaves 15 / 28
+  # and -.9 / 14 (five times). So PCA retains 1 (the cutoff 0 would give 6), and SMC
+  # retains 1 (the cutoff 1 would give 0).
+  R <- matrix(0.1, 6, 6)
+  diag(R) <- 1
+  kgc <- efa_kgc(R, eigen_type = c("PCA", "SMC"))
+  expect_equal(.retention_record(kgc, "SMC")$y, c(15 / 28, rep(-0.9 / 14, 5)),
+               tolerance = 1e-10)
+  expect_equal(kgc$n_factors, c(PCA = 1, SMC = 1))
+
+  # the EFA eigenvalues follow the cutoff 0 too
+  rec <- .retention_record(kgc_cor, "EFA")
+  expect_equal(kgc_cor$n_factors[["EFA"]], sum(rec$y > 0))
+  expect_gt(kgc_cor$n_factors[["EFA"]], sum(rec$y > 1))
+
+  # An eigenvalue at the cutoff is not counted, whatever round-off the eigensolver adds.
+  # One correlated pair among six variables gives the eigenvalues 1.5, .5, and 1 (four
+  # times), and the SMC-reduced eigenvalues .75, -.25, and 0 (four times).
+  R2 <- diag(6)
+  R2[1, 2] <- R2[2, 1] <- 0.5
+  expect_equal(efa_kgc(R2, eigen_type = c("PCA", "SMC"))$n_factors, c(PCA = 1, SMC = 1))
 })
 
 test_that("the PCA suggestion matches nFactors::nScree", {

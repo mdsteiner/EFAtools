@@ -2,8 +2,8 @@
 # the public API. The matrix estimator itself is covered in test-polychoric.R; these
 # tests cover the routing through .prepare_cor_input() (EFA and the suitability /
 # retention functions), the `use` handling, the EFA() bootstrap recompute, the
-# tetrachoric binary assertion, and the clean rejection by the criteria whose
-# reference data are continuous (CD, PARALLEL, NEST, HULL).
+# tetrachoric binary assertion, and the clean rejection by the simulation-based
+# criteria (CD, PARALLEL, NEST, HULL).
 
 # The bootstrap reproducibility assertions below compare two separate invocations, so they
 # use expect_equal() with an explicit tolerance rather than expect_identical(): a threaded

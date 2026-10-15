@@ -42,10 +42,10 @@ Default is 500.}
 \item{alpha}{numeric. The alpha level used to test the significance of the
 improvement added by an additional factor. Default is .30.}
 
-\item{cor_method}{character. One of \code{"pearson"}, \code{"spearman"}, or \code{"kendall"},
-passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"} are not supported because
-\code{CD} compares the data against simulated continuous reference data.
-Default is "pearson".}
+\item{cor_method}{character. One of \code{"pearson"} (default), \code{"spearman"}, or
+\code{"kendall"}, passed to \code{\link[stats:cor]{stats::cor()}}. Ruscio and Roche (2012) use Pearson
+correlations, and the comparison data keep the observed values of each variable, so
+\code{"pearson"} also suits ordinal data. \code{"poly"} and \code{"tetra"} are not available.}
 
 \item{max_iter}{numeric. The maximum number of iterations after which the
 iterative PAF procedure inside the comparison-data generation is halted; it

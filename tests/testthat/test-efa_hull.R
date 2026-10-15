@@ -4,9 +4,11 @@
 # `Sys.setenv(EFATOOLS_TEST_SLOW = "true")` to run the full HULL coverage. See
 # helper-slow.R for the convention.
 if (is_slow_test()) {
-hull_cor_paf <- suppressMessages(efa_hull(test_models$baseline$cormat, N = 500))
+hull_cor_paf <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "PAF",
+                         eigen_type = "SMC")
 hull_cor_ml <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML")
-hull_cor_uls <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS")
+hull_cor_uls <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS",
+                         gof = c("CAF", "CFI", "RMSEA"))
 hull_cor_uls_CFI <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS",
                          gof = "CFI")
 hull_cor_ml_nf <- suppressWarnings(efa_hull(test_models$baseline$cormat, N = 500,
@@ -17,9 +19,11 @@ hull_PCA <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML",
 hull_EFA <- efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML",
                  eigen_type = "EFA")
 
-hull_raw_paf <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw)))
+hull_raw_paf <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw, estimator = "PAF",
+                                                           eigen_type = "SMC")))
 hull_raw_ml <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw, estimator = "ML")))
-hull_raw_uls <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw, estimator = "ULS")))
+hull_raw_uls <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw, estimator = "ULS",
+                                                           gof = c("CAF", "CFI", "RMSEA"))))
 hull_raw_uls_CFI <- suppressMessages(suppressWarnings(efa_hull(GRiPS_raw,
                                                            estimator = "ULS",
                                                            gof = "CFI")))
@@ -37,8 +41,11 @@ test_that("output class and dimensions are correct", {
   for (obj in objs) {
     expect_s3_class(obj, "efa_retention")
     expect_length(obj, 9)
-    expect_length(obj$settings, 9)
+    expect_length(obj$settings, 11)
   }
+  # the rule of the parallel analysis that set the upper bound is recorded
+  expect_identical(hull_cor_ml$settings$decision_rule, "percentile")
+  expect_identical(hull_cor_ml$settings$percent, 95)
 })
 
 test_that("n_fac_max is correctly specified", {
@@ -212,23 +219,16 @@ test_that("errors etc are thrown correctly", {
   skip_if_not_slow()
   expect_error(efa_hull(1:5), class = "efa_input_not_matrix")
   expect_message(suppressWarnings(efa_hull(GRiPS_raw)), class = "efa_cor_from_data")
-  expect_warning(suppressMessages(efa_hull(GRiPS_raw)), class = "efa_hull_min_factors")
-  expect_warning(
-    suppressWarnings(
-      suppressMessages(efa_hull(IDS2_R, N = 20)),
-      classes = "efa_hull_min_factors"
-    ),
-    class = "efa_hull_few_solutions"
-  )
-  expect_warning(
-    suppressWarnings(
-      suppressMessages(efa_hull(GRiPS_raw, N = 20)),
-      classes = "efa_hull_min_factors"
-    ),
-    class = "efa_n_from_data"
-  )
+  # parallel analysis suggests one factor for GRiPS, so the search range widens to the
+  # floor of three factors; that is a rule of the method and raises no warning
+  expect_no_warning(hull_grips <- suppressMessages(efa_hull(GRiPS_raw)))
+  expect_equal(hull_grips$settings$n_fac_max, 3)
+  expect_warning(efa_hull(IDS2_R, N = 20, estimator = "PAF"),
+                 class = "efa_hull_few_solutions")
+  expect_warning(suppressMessages(efa_hull(GRiPS_raw, N = 20)),
+                 class = "efa_n_from_data")
   expect_error(efa_hull(test_models$baseline$cormat), class = "efa_n_required")
-  expect_error(efa_hull(test_models$baseline$cormat, estimator = "ML"), class = "efa_n_required")
+  expect_error(efa_hull(test_models$baseline$cormat, estimator = "PAF"), class = "efa_n_required")
   expect_error(efa_hull(test_models$baseline$cormat, estimator = "ULS"), class = "efa_n_required")
 
   expect_error(efa_hull(sing_raw, estimator = "ML"), class = "efa_cor_singular")
@@ -237,7 +237,9 @@ test_that("errors etc are thrown correctly", {
 
   expect_error(efa_hull(matrix(rnorm(50), ncol = 5)), class = "efa_hull_min_indicators")
 
-  expect_message(suppressWarnings(efa_hull(GRiPS_raw)), class = "efa_hull_gof_caf")
+  expect_message(suppressWarnings(efa_hull(GRiPS_raw, estimator = "PAF",
+                                           gof = c("CAF", "CFI", "RMSEA"))),
+                 class = "efa_hull_gof_caf")
 
   expect_warning(efa_hull(test_models$baseline$cormat, n_fac_theor = 13, N = 500), class = "efa_hull_max_factors")
 })
@@ -247,6 +249,64 @@ test_that("the Hull method needs at least one simulated dataset", {
   # outside the slow gate above
   expect_error(efa_hull(test_models$baseline$cormat, N = 500, n_datasets = 0),
                class = "efa_invalid_argument")
+})
+
+test_that("errors raised by the internal runner name the efa_hull() call", {
+  # these are all raised before anything is fitted, so this stays outside the slow gate
+  cmat <- test_models$baseline$cormat
+  calls <- list(
+    efa_input_not_matrix = quote(efa_hull(1:5)),
+    efa_cor_method_unsupported = quote(efa_hull(cmat, N = 500, cor_method = "poly")),
+    efa_invalid_argument = quote(efa_hull(cmat, N = 500, n_datasets = 0)),
+    efa_hull_min_indicators = quote(efa_hull(cmat[1:5, 1:5], N = 500)),
+    efa_n_required = quote(efa_hull(cmat))
+  )
+  for (cls in names(calls)) {
+    cnd <- expect_error(eval(calls[[cls]]), class = cls)
+    expect_identical(conditionCall(cnd), calls[[cls]], info = cls)
+  }
+})
+
+test_that("the arguments of the internal runner are unknown arguments of efa_hull()", {
+  cmat <- test_models$baseline$cormat
+  expect_error(efa_hull(cmat, N = 500, n_fac_PA = 8), class = "efa_unused_dots")
+  expect_error(efa_hull(cmat, N = 500, error_call = NULL), class = "efa_unused_dots")
+})
+
+test_that("a given parallel-analysis suggestion replaces the internal parallel analysis", {
+  # .efa_hull_run() takes the suggestion of a parallel analysis that a caller already ran,
+  # so that the Hull method does not simulate a second time. With the suggestion that
+  # efa_hull() gets itself (same seed and inputs), the result is the same, and
+  # efa_parallel() does not run.
+  cmat <- test_models$baseline$cormat
+  set.seed(7)
+  ref <- efa_hull(cmat, N = 500, gof = "CAF", n_datasets = 20)
+  set.seed(7)
+  n_fac_PA <- efa_parallel(cmat, N = 500, eigen_type = "PCA", estimator = "ML",
+                           n_datasets = 20, decision_rule = "percentile")$n_factors[["PCA"]]
+
+  local_mocked_bindings(efa_parallel = function(...) stop("efa_parallel() ran"))
+  expect_equal(.efa_hull_run(cmat, N = 500, gof = "CAF", n_datasets = 20,
+                             n_fac_PA = n_fac_PA), ref)
+
+  # the runner takes efa_hull()'s arguments with the same defaults
+  expect_identical(as.list(formals(.efa_hull_run))[names(formals(efa_hull))],
+                   as.list(formals(efa_hull)))
+})
+
+test_that("efa_hull() has the defaults of efa_retain(): ML, the CAF, PCA, and the percentile", {
+  set.seed(1)
+  out <- efa_hull(test_models$baseline$cormat, N = 500, n_datasets = 20)
+  expect_identical(out$settings$estimator, "ML")
+  expect_identical(out$settings$gof, "CAF")
+  expect_identical(out$settings$eigen_type, "PCA")
+
+  expect_identical(formals(efa_hull)$estimator, formals(efa_retain)$estimator)
+  expect_identical(formals(efa_hull)$gof, formals(efa_retain)$gof)
+  expect_identical(formals(efa_hull)$eigen_type, formals(efa_retain)$eigen_type_HULL)
+  expect_identical(formals(efa_hull)$decision_rule, formals(efa_retain)$decision_rule_HULL)
+  expect_identical(eval(formals(efa_hull)$decision_rule)[1], "percentile")
+  expect_identical(formals(efa_hull)$percent, 95)
 })
 
 test_that("a non-positive-definite input is smoothed and its hull flagged", {
@@ -269,8 +329,9 @@ test_that("a non-positive-definite input is smoothed and its hull flagged", {
   withr::local_options(scipen = -5)
   set.seed(42)
   inadmissible <- NA_character_
+  # all three indices: the CFI selects the inadmissible one-factor solution, the CAF zero factors
   classes <- .warn_classes(withCallingHandlers(
-    efa_hull(burt, N = 20, estimator = "ML"),
+    efa_hull(burt, N = 20, estimator = "ML", gof = c("CAF", "CFI", "RMSEA")),
     efa_hull_inadmissible = function(w) inadmissible <<- conditionMessage(w)))
 
   expect_true("efa_cor_smoothed" %in% classes)

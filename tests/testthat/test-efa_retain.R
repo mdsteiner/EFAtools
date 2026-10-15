@@ -29,15 +29,16 @@ test_that("output class and dimensions are correct", {
   expect_s3_class(nf_grips$suitability$bartlett, "efa_bartlett")
   expect_s3_class(nf_grips$suitability$kmo, "efa_kmo")
 
+  # the defaults: PCA eigenvalues for parallel analysis, the CAF for the Hull method
   expect_named(nf_grips$n_factors,
-               c("CD", "EKC_BvA2017", "HULL_CAF", "HULL_CFI", "HULL_RMSEA",
-                 "MAP_TR2", "MAP_TR4", "NEST", "PARALLEL_SMC"))
+               c("CD", "EKC_BvA2017", "HULL_CAF", "MAP_TR2", "MAP_TR4", "NEST",
+                 "PARALLEL_PCA"))
 
   expect_named(nf_grips$settings, c("criteria", "suitability", "N", "use",
-                                    "n_factors_max", "N_pop", "N_samples", "alpha",
-                                    "cor_method", "max_iter_CD", "n_fac_theor",
+                                    "n_factors_max", "N_pop", "N_samples", "alpha_CD",
+                                    "alpha", "cor_method", "max_iter_CD", "n_fac_theor",
                                     "estimator", "method", "gof", "gof_used",
-                                    "eigen_type_HULL",
+                                    "eigen_type_HULL", "decision_rule_HULL",
                                     "eigen_type_other", "n_factors", "n_datasets",
                                     "percent", "decision_rule", "n_datasets_nest",
                                     "alpha_nest", "estimate_control"))
@@ -112,15 +113,17 @@ test_that("settings record the Hull goodness-of-fit indices that actually ran", 
   cormat <- test_models$baseline$cormat
 
   # PAF supports only the CAF, so the Hull method reduces the requested set to it
-  r_paf <- suppressMessages(
-    efa_retain(cormat, N = 500, suitability = FALSE, criteria = "HULL", estimator = "PAF"))
+  expect_message(
+    r_paf <- efa_retain(cormat, N = 500, suitability = FALSE, criteria = "HULL",
+                        estimator = "PAF", gof = c("CAF", "CFI", "RMSEA")),
+    class = "efa_hull_gof_caf")
   expect_equal(r_paf$settings$gof, c("CAF", "CFI", "RMSEA"))
   expect_equal(r_paf$settings$gof_used, "CAF")
   expect_named(r_paf$n_factors, "HULL_CAF")
 
   # with an estimator that supports all three, requested and used coincide
   r_ml <- efa_retain(cormat, N = 500, suitability = FALSE, criteria = "HULL",
-                     estimator = "ML")
+                     estimator = "ML", gof = c("CAF", "CFI", "RMSEA"))
   expect_equal(r_ml$settings$gof_used, r_ml$settings$gof)
 
   # no HULL result to read it off
@@ -135,7 +138,7 @@ test_that("print and plot work on the aggregate object", {
   txt <- paste(format(nf_grips), collapse = "\n")
   expect_match(txt, "Bartlett", fixed = TRUE)
   expect_match(txt, "significant", fixed = TRUE)
-  expect_match(txt, "Kaiser-Meyer-Olkin", fixed = TRUE)
+  expect_match(txt, "KMO", fixed = TRUE)
   expect_match(txt, "marvellous", fixed = TRUE)
 
   # one ggplot per plottable criterion that was run (MAP has no plot)
@@ -193,35 +196,141 @@ test_that("visual criteria and suitability = FALSE are handled", {
 
   txt <- paste(format(nf_scree), collapse = "\n")
   expect_match(txt, "no numeric suggestion", fixed = TRUE)
-  expect_false(grepl("suitability of the data", txt, fixed = TRUE))
+  expect_false(grepl("Sampling adequacy", txt, fixed = TRUE))
 })
+
+# The classes of the package warnings that `expr` gives, one element per warning. Warnings of
+# other packages (e.g. on loading one) are left out, so that they cannot fail a test.
+warning_classes <- function(expr) {
+  cls <- character(0)
+  withCallingHandlers(expr, warning = function(w) {
+    cls <<- c(cls, class(w)[1])
+    invokeRestart("muffleWarning")
+  })
+  cls[startsWith(cls, "efa_")]
+}
 
 test_that("missing N skips Bartlett's test but still runs N-free criteria", {
-  # A correlation matrix without N: Bartlett's test needs N and is skipped with a
-  # classed warning, while KMO and the N-free retention criteria still run -
-  # instead of the suitability check aborting the whole call.
-  expect_warning(
+  # A correlation matrix without N: Bartlett's test needs N and is not computed (the report
+  # says so), while KMO and the N-free retention criteria still run. KGC with EFA
+  # eigenvalues needs no N either.
+  expect_length(warning_classes(
     nf_noN <- efa_retain(test_models$baseline$cormat,
-                        criteria = c("KGC", "MAP", "SCREE")),
-    class = "efa_suitability_no_n"
-  )
+                         criteria = c("KGC", "MAP", "SCREE"),
+                         eigen_type_other = c("PCA", "SMC", "EFA"))
+  ), 0L)
   expect_null(nf_noN$suitability$bartlett)
   expect_s3_class(nf_noN$suitability$kmo, "efa_kmo")
-  expect_named(nf_noN$outputs, c("KGC", "MAP", "SCREE"), ignore.order = TRUE)
+  expect_named(nf_noN$outputs, c("KGC", "MAP", "SCREE"))
+  expect_null(nf_noN$not_run)
 })
 
-test_that("a failing criterion warns, is reported, and the others still run", {
-  # EKC needs N, which is missing for a correlation matrix; MAP still runs
-  expect_warning(
-    nf_fail <- efa_retain(test_models$baseline$cormat, suitability = FALSE,
-                         criteria = c("EKC", "MAP")),
-    class = "efa_criterion_failed"
-  )
-  expect_named(nf_fail$outputs, "MAP")
-  expect_named(nf_fail$n_factors, c("MAP_TR2", "MAP_TR4"))
-  expect_named(nf_fail$not_run, "EKC")
-  expect_match(paste(format(nf_fail), collapse = "\n"), "could not be run",
-               fixed = TRUE)
+test_that("criteria that need N are skipped, with a warning also by default", {
+  cormat <- test_models$baseline$cormat
+  needs_n <- c("EKC", "HULL", "NEST", "PARALLEL", "SMT")
+  expect_setequal(
+    names(Filter(function(e) isTRUE(e$needs_N), .retention_registry)), needs_n)
+
+  # each is skipped before it runs, not reported as a failure
+  expect_identical(
+    warning_classes(nf <- efa_retain(cormat, suitability = FALSE,
+                                     criteria = c(needs_n, "MAP"))),
+    "efa_criterion_skipped")
+  expect_named(nf$not_run, needs_n)
+  expect_named(nf$outputs, "MAP")
+
+  # a missing N is most likely a mistake, so the default criteria report it too; CD, which
+  # cannot use a correlation matrix at all, is skipped without a warning
+  expect_identical(warning_classes(nf_def <- efa_retain(cormat, suitability = FALSE)),
+                   "efa_criterion_skipped")
+  expect_named(nf_def$not_run, c("CD", "EKC", "HULL", "NEST", "PARALLEL"))
+})
+
+test_that("default criteria that cannot use the input are skipped without a warning", {
+  cormat <- test_models$baseline$cormat
+  set.seed(1)
+  expect_length(warning_classes(
+    nf <- efa_retain(cormat, N = 500, n_datasets = 20, n_datasets_nest = 20)), 0L)
+  expect_named(nf$not_run, "CD")
+  expect_named(nf$outputs, c("EKC", "HULL", "MAP", "NEST", "PARALLEL"))
+
+  # NULL selects the default criteria, so it skips silently too
+  expect_length(warning_classes(
+    nf_null <- efa_retain(cormat, N = 500, criteria = NULL, suitability = FALSE,
+                          n_datasets = 20, n_datasets_nest = 20)), 0L)
+  expect_named(nf_null$not_run, "CD")
+})
+
+test_that("with polychoric correlations, CD and Bartlett's test use Pearson correlations", {
+  # HULL, NEST, and PARALLEL compare against continuous reference data and are skipped
+  # without a warning; CD resamples the observed values, so it runs on the Pearson
+  # correlations of the same data, as in the original method (Ruscio & Roche, 2012)
+  set.seed(1)
+  expect_length(warning_classes(
+    nf <- efa_retain(GRiPS_raw, cor_method = "poly", N_pop = 500, N_samples = 20)), 0L)
+  expect_named(nf$outputs, c("CD", "EKC", "MAP"))
+  expect_named(nf$not_run, c("HULL", "NEST", "PARALLEL"))
+  expect_identical(nf$outputs$CD$settings$cor_method, "pearson")
+  expect_false(is.null(nf$outputs$CD$subtitle))
+  set.seed(1)
+  expect_equal(nf$outputs$CD$results,
+               efa_cd(GRiPS_raw, N_pop = 500, N_samples = 20)$results)
+
+  # Bartlett's test uses the Pearson correlations of the raw data, the KMO the polychoric ones
+  expect_identical(nf$suitability$bartlett$settings$cor_method, "pearson")
+  expect_equal(nf$suitability$bartlett$chisq,
+               suppressMessages(efa_bartlett(GRiPS_raw))$chisq)
+  expect_identical(nf$suitability$kmo$settings$cor_method, "poly")
+
+  # ordered factors are coded by their levels, as for the polychoric correlations
+  ord <- as.data.frame(lapply(as.data.frame(GRiPS_raw), ordered))
+  set.seed(1)
+  expect_length(warning_classes(
+    nf_ord <- efa_retain(ord, cor_method = "poly", criteria = c("CD", "MAP"),
+                         N_pop = 500, N_samples = 20)), 0L)
+  expect_equal(nf_ord$suitability$bartlett$chisq, nf$suitability$bartlett$chisq)
+  expect_equal(nf_ord$outputs$CD$results, nf$outputs$CD$results)
+
+  # without raw data there is no Pearson matrix: the matrix supplied is tested
+  expect_identical(
+    efa_retain(stats::cor(GRiPS_raw), N = 810, cor_method = "poly",
+               criteria = "MAP")$suitability$bartlett$settings$cor_method,
+    "poly")
+
+  # a criterion that you request is still reported
+  expect_warning(efa_retain(GRiPS_raw, cor_method = "poly", suitability = FALSE,
+                            criteria = c("MAP", "SMT")),
+                 class = "efa_criterion_skipped")
+
+  # pairwise-complete ordinal data with inconsistent pairs: both the polychoric and the
+  # Pearson matrix need smoothing, but only the analysed (polychoric) one is reported
+  set.seed(3)
+  n <- 150
+  cut5 <- function(v) as.integer(cut(v, c(-Inf, -1, -.3, .3, 1, Inf)))
+  a <- rnorm(n); b <- rnorm(n); s <- rnorm(n)
+  inc <- data.frame(x1 = c(cut5(a), cut5(b), rep(NA, n)),
+                    x2 = c(cut5(a + rnorm(n, sd = .2)), rep(NA, n), cut5(s)),
+                    x3 = c(rep(NA, n), cut5(b + rnorm(n, sd = .2)),
+                           cut5(-s + rnorm(n, sd = .2))))
+  expect_identical(
+    warning_classes(efa_retain(inc, cor_method = "poly", criteria = "MAP")),
+    "efa_cor_smoothed")
+})
+
+test_that("skipped and failed criteria give at most one warning of each kind", {
+  # Without N, CD (needs raw data), EKC, and SMT (need N) are skipped; KGC fails, as its ML
+  # fit has no starting values; MAP runs
+  cls <- warning_classes(
+    nf <- efa_retain(test_models$baseline$cormat, suitability = FALSE,
+                     criteria = c("CD", "EKC", "KGC", "MAP", "SMT"),
+                     eigen_type_other = "EFA",
+                     estimate_control = estimate_control(start_method = NA)))
+  expect_setequal(cls, c("efa_criterion_skipped", "efa_criterion_failed"))
+  expect_length(cls, 2L)
+  expect_named(nf$not_run, c("CD", "EKC", "KGC", "SMT"))
+  expect_named(nf$outputs, "MAP")
+  expect_named(nf$n_factors, c("MAP_TR2", "MAP_TR4"))
+  expect_match(paste(format(nf), collapse = "\n"), "Criteria not run", fixed = TRUE)
 })
 
 test_that("a skipped criterion is reported in not_run", {
@@ -237,23 +346,134 @@ test_that("a skipped criterion is reported in not_run", {
   expect_false("CD" %in% names(nf_skip$outputs))
 })
 
-test_that("an all-failed run is a hard error", {
+test_that("an all-failed run is a hard error with no warning before it", {
   # CD is the only requested criterion and is skipped on a correlation matrix
-  expect_error(
-    suppressWarnings(efa_retain(test_models$baseline$cormat, suitability = FALSE,
-                               criteria = "CD")),
+  expect_length(warning_classes(expect_error(
+    efa_retain(test_models$baseline$cormat, suitability = FALSE, criteria = "CD"),
     class = "efa_no_criteria"
-  )
+  )), 0L)
 
   # when a criterion failed with an error rather than being skipped, its condition is
   # chained onto the abort, so the cause is reported with it
-  err <- tryCatch(
-    suppressWarnings(efa_retain(test_models$baseline$cormat, suitability = FALSE,
-                                criteria = "EKC")),
+  expect_length(warning_classes(err <- tryCatch(
+    efa_retain(test_models$baseline$cormat, N = 500, suitability = FALSE,
+               criteria = "SMT", estimate_control = estimate_control(start_method = NA)),
     error = function(e) e
-  )
+  )), 0L)
   expect_s3_class(err, "efa_no_criteria")
-  expect_s3_class(err$parent, "efa_n_required")
+  expect_s3_class(err$parent, "efa_ml_start_missing")
+})
+
+test_that("a failed Hull method reports its own error", {
+  # too few indicators: the abort chains the error of the Hull method itself
+  cnd <- expect_error(
+    efa_retain(test_models$baseline$cormat[1:5, 1:5], N = 500, criteria = "HULL",
+               suitability = FALSE),
+    class = "efa_no_criteria")
+  expect_s3_class(cnd$parent, "efa_hull_min_indicators")
+
+  # with the default criteria, the reason is the headline of the error that efa_hull()
+  # gives for the same data
+  set.seed(1)
+  expect_identical(
+    warning_classes(nf <- efa_retain(GRiPS_raw[, 1:5], N_pop = 500, N_samples = 20,
+                                     n_datasets = 20, n_datasets_nest = 20)),
+    "efa_criterion_failed")
+  hull_cnd <- expect_error(efa_hull(GRiPS_raw[, 1:5]), class = "efa_hull_min_indicators")
+  expect_identical(nf$not_run[["HULL"]], unname(hull_cnd$message))
+})
+
+test_that("invalid arguments abort before any criterion runs", {
+  cormat <- test_models$baseline$cormat
+  bad <- list(list(n_datasets = 0), list(N_pop = -1), list(N_pop = 1),
+              list(N_samples = 0), list(alpha_CD = 2), list(max_iter_CD = 0),
+              list(n_factors_max = 0), list(n_fac_theor = -1), list(n_factors = 0),
+              list(percent = 101), list(n_datasets_nest = 0), list(alpha_nest = -1),
+              list(show_progress = NA), list(suitability = "yes"), list(N = 0))
+  for (b in bad) {
+    expect_error(do.call(efa_retain, c(list(cormat, criteria = "MAP"), b)),
+                 class = "efa_invalid_argument", info = names(b))
+  }
+  # also when the criterion that uses the argument is requested: an error, not a warning
+  expect_length(warning_classes(expect_error(
+    efa_retain(cormat, N = 500, criteria = c("MAP", "PARALLEL"), n_datasets = 0),
+    class = "efa_invalid_argument")), 0L)
+})
+
+test_that("parallel analysis and the Hull method use PCA eigenvalues and the CAF", {
+  cormat <- test_models$baseline$cormat
+  # CAF works with every estimator, so PAF gives no message about the indices
+  set.seed(1)
+  expect_no_message(
+    nf <- efa_retain(cormat, N = 500, suitability = FALSE, criteria = c("HULL", "PARALLEL"),
+                     estimator = "PAF", n_datasets = 20),
+    class = "efa_hull_gof_caf")
+  expect_named(nf$n_factors, c("HULL_CAF", "PARALLEL_PCA"))
+  expect_identical(nf$settings$gof_used, "CAF")
+  expect_identical(nf$outputs$HULL$settings$eigen_type, "PCA")
+})
+
+test_that("the Hull method reuses the simulated eigenvalues of the parallel analysis", {
+  # With this seed, the mean rule suggests 4 factors and the 95th percentile 3, so the
+  # two rules give different upper bounds (5 and 4). Each eigenvalue is at least 0.5%
+  # away from the reference value that decides it.
+  cormat <- WJIV_ages_3_5$cormat
+  calls <- 0L
+  pa <- efa_parallel
+  local_mocked_bindings(efa_parallel = function(...) {
+    calls <<- calls + 1L
+    pa(...)
+  })
+
+  set.seed(1)
+  nf <- efa_retain(cormat, N = 300, suitability = FALSE, criteria = c("HULL", "PARALLEL"),
+                   n_datasets = 20)
+  expect_identical(calls, 1L)
+  # the upper bound is the suggestion of the percentile rule plus one, and at least 3,
+  # read off the same reference eigenvalues that the PARALLEL criterion compares with
+  rec <- nf$outputs$PARALLEL$results[[1]]
+  n_pct <- which(rec$y <= rec$references[["95 Percentile"]])[1] - 1
+  expect_lt(n_pct, nf$n_factors[["PARALLEL_PCA"]])
+  expect_equal(nf$outputs$HULL$settings$n_fac_max, max(n_pct + 1, 3))
+  # the parallel analysis ran first, but the outputs keep the registry order
+  expect_named(nf$outputs, c("HULL", "PARALLEL"))
+  # efa_hull() gives the same result from the same reference draws
+  set.seed(1)
+  expect_equal(nf$outputs$HULL, efa_hull(cormat, N = 300, n_datasets = 20))
+
+  # with the same rule for both, the Hull method takes the suggestion of PARALLEL
+  calls <- 0L
+  set.seed(1)
+  nf_means <- efa_retain(cormat, N = 300, suitability = FALSE,
+                         criteria = c("HULL", "PARALLEL"), n_datasets = 20,
+                         decision_rule_HULL = "means")
+  expect_identical(calls, 1L)
+  expect_equal(nf_means$outputs$HULL$settings$n_fac_max,
+               max(nf_means$n_factors[["PARALLEL_PCA"]] + 1, 3))
+
+  # without a shared eigenvalue type, the Hull method runs its own parallel analysis
+  calls <- 0L
+  efa_retain(test_models$baseline$cormat, N = 500, suitability = FALSE,
+             criteria = c("HULL", "PARALLEL"), n_datasets = 20, eigen_type_HULL = "SMC")
+  expect_identical(calls, 2L)
+})
+
+test_that("alpha is deprecated in favour of alpha_CD", {
+  cormat <- test_models$baseline$cormat
+  expect_warning(
+    nf <- efa_retain(cormat, criteria = "MAP", suitability = FALSE, alpha = .2),
+    class = "lifecycle_warning_deprecated")
+  expect_identical(nf$settings$alpha_CD, .2)
+  # the former settings key stays as an alias
+  expect_identical(nf$settings$alpha, .2)
+  expect_error(efa_retain(cormat, criteria = "MAP", alpha = .2, alpha_CD = .1),
+               class = "efa_renamed_arg")
+
+  # alpha_CD reaches the comparison data
+  set.seed(1)
+  nf_cd <- efa_retain(GRiPS_raw, criteria = "CD", suitability = FALSE, alpha_CD = .1,
+                      N_pop = 500, N_samples = 20)
+  expect_identical(nf_cd$outputs$CD$settings$alpha, .1)
 })
 
 burt <- matrix(c(1.00,  0.83,  0.81,  0.80,   0.71, 0.70, 0.54, 0.53,  0.59,  0.24, 0.13,
@@ -285,7 +505,8 @@ test_that("errors etc. are thrown correctly", {
   # slow gate, because the gated bodies return before drawing).
   set.seed(42)
   expect_warning(
-    expect_warning(efa_retain(burt, N = 170, criteria = c("PARALLEL", "EKC")),
+    expect_warning(efa_retain(burt, N = 170, criteria = c("PARALLEL", "EKC"),
+                              eigen_type_other = "SMC"),
                    class = "efa_parallel_no_crossing"),
     class = "efa_cor_smoothed")
 })

@@ -61,31 +61,8 @@ format.efa_screen <- function(x, digits = 3, ...) {
 
     # -- Sampling adequacy and sphericity --------------------------------------
     .print_efa_rule("Sampling adequacy and sphericity")
-
-    if (!is.null(kmo) && !is.na(kmo)) {
-      band <- .kmo_band(kmo)
-      kval <- round(kmo, digits)
-      band$alert("Overall KMO = {kval}: {band$label} (Kaiser & Rice, 1974).", wrap = TRUE)
-    } else {
-      cli::cli_alert_warning("The overall KMO value is not available.", wrap = TRUE)
-    }
-
-    bart <- x$bartlett
-    if (is.null(bart)) {
-      cli::cli_alert_warning(
-        "Bartlett's test of sphericity was not computed; no sample size (N) was supplied.",
-        wrap = TRUE)
-    } else if (!is.na(bart$p_value)) {
-      # A fixed-format statistic line, so it is not wrapped.
-      sig <- bart$p_value < .05
-      text <- paste0("Bartlett's test of sphericity: \U03C7\U00B2(", bart$df, ") = ",
-                     round(bart$chisq, 2), ", ", cli::style_italic("p"),
-                     .screen_p_str(bart$p_value),
-                     if (sig) " (significant)." else " (not significant).")
-      if (sig) cli::cli_alert_success(text) else cli::cli_alert_danger(text)
-    } else {
-      .print_bartlett_no_result()
-    }
+    .print_kmo_line(kmo, digits)
+    .print_bartlett_line(x$bartlett)
 
     # -- Multicollinearity -----------------------------------------------------
     .print_efa_rule("Multicollinearity")
@@ -187,17 +164,50 @@ format.efa_screen <- function(x, digits = 3, ...) {
   })
 }
 
+# The overall KMO line, shared by format.efa_screen() and format.efa_retain().
+.print_kmo_line <- function(kmo, digits) {
+  if (!is.null(kmo) && !is.na(kmo)) {
+    band <- .kmo_band(kmo)
+    kval <- round(kmo, digits)
+    band$alert("Overall KMO = {kval}: {band$label} (Kaiser & Rice, 1974).", wrap = TRUE)
+  } else {
+    cli::cli_alert_warning("The overall KMO value is not available.", wrap = TRUE)
+  }
+  invisible(NULL)
+}
+
+# The Bartlett's test line, shared by format.efa_screen() and format.efa_retain(). `bart` holds
+# `chisq`, `df`, and `p_value`, or is NULL when no N was supplied.
+.print_bartlett_line <- function(bart) {
+  if (is.null(bart)) {
+    cli::cli_alert_warning(
+      "Bartlett's test of sphericity was not computed; no sample size (N) was supplied.",
+      wrap = TRUE)
+  } else if (!is.na(bart$p_value)) {
+    # A fixed-format statistic line, so it is not wrapped.
+    sig <- bart$p_value < .05
+    text <- paste0("Bartlett's test of sphericity: \U03C7\U00B2(", bart$df, ") = ",
+                   round(bart$chisq, 2), ", ", cli::style_italic("p"),
+                   .screen_p_str(bart$p_value),
+                   if (sig) " (significant)." else " (not significant).")
+    if (sig) cli::cli_alert_success(text) else cli::cli_alert_danger(text)
+  } else {
+    .print_bartlett_no_result()
+  }
+  invisible(NULL)
+}
+
 # Kaiser & Rice (1974) verbal bands for the overall KMO value, in one place: the highest band
 # the value clears gives its label, the suitability it implies, and its severity as an alert
-# function, a colour, and a cli_bullets() symbol, so all reports band a value identically.
+# function and a colour, so all reports band a value identically.
 .kmo_band <- function(kmo) {
   bands <- list(
-    list(min = .9,   label = "marvellous",   colour = cli::col_green,  alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
-    list(min = .8,   label = "meritorious",  colour = cli::col_green,  alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
-    list(min = .7,   label = "middling",     colour = cli::col_green,  alert = cli::cli_alert_success, symbol = "v", suitability = "probably"),
-    list(min = .6,   label = "mediocre",     colour = cli::col_yellow, alert = cli::cli_alert_warning, symbol = "!", suitability = "probably"),
-    list(min = .5,   label = "miserable",    colour = cli::col_red,    alert = cli::cli_alert_danger,  symbol = "x", suitability = "hardly"),
-    list(min = -Inf, label = "unacceptable", colour = cli::col_red,    alert = cli::cli_alert_danger,  symbol = "x", suitability = "not")
+    list(min = .9,   label = "marvellous",   colour = cli::col_green,  alert = cli::cli_alert_success, suitability = "probably"),
+    list(min = .8,   label = "meritorious",  colour = cli::col_green,  alert = cli::cli_alert_success, suitability = "probably"),
+    list(min = .7,   label = "middling",     colour = cli::col_green,  alert = cli::cli_alert_success, suitability = "probably"),
+    list(min = .6,   label = "mediocre",     colour = cli::col_yellow, alert = cli::cli_alert_warning, suitability = "probably"),
+    list(min = .5,   label = "miserable",    colour = cli::col_red,    alert = cli::cli_alert_danger,  suitability = "hardly"),
+    list(min = -Inf, label = "unacceptable", colour = cli::col_red,    alert = cli::cli_alert_danger,  suitability = "not")
   )
   Find(function(b) kmo >= b$min, bands)
 }

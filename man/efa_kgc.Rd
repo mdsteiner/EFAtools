@@ -10,7 +10,7 @@ methods under realistic conditions. Psychological Methods, 24(4), 468–491.
 https://doi.org/10.1037/met0000200
 
 Guttman, L. (1954). Some necessary conditions for common-factor analysis.
-Psychometrika, 19, 149 –161. https://doi.org/10.1007/BF02289162
+Psychometrika, 19, 149–161. https://doi.org/10.1007/BF02289162
 
 Kaiser, H. F. (1960). The application of electronic computers to factor
 analysis. Educational and Psychological Measurement, 20, 141–151.
@@ -80,31 +80,31 @@ eigenvalues and the retained solution used for printing and plotting.}
 \item{settings}{A list of the settings used.}
 }
 \description{
-Probably the most popular factor retention criterion. Kaiser and Guttman suggested
-to retain as many factors as there are sample eigenvalues greater than 1.
-This is why the criterion is also known as eigenvalues-greater-than-one rule.
+Retains as many factors as there are eigenvalues above a cutoff. For the
+correlation matrix (\code{"PCA"}), the cutoff is 1: the classic
+eigenvalues-greater-than-one rule (Kaiser, 1960). For the reduced correlation
+matrix, with communality estimates in the diagonal (\code{"SMC"} and \code{"EFA"}), the
+cutoff is 0 (Guttman, 1954).
 }
 \details{
-Originally, the Kaiser-Guttman criterion was intended for the use
-with principal components, hence with eigenvalues derived from the original
-correlation matrix. This can be done here by setting \code{eigen_type} to
-"PCA". However, it is well-known that this criterion is often inaccurate and
-that it tends to overestimate the number of factors, especially for unidimensional
-or orthogonal factor structures (e.g., Zwick & Velicer, 1986).
+The two cutoffs apply to different matrices. The eigenvalues of the
+correlation matrix sum to the number of variables, and an eigenvalue greater
+than 1 identifies a component that explains more variance than one standardized
+variable.
+The eigenvalues of the reduced correlation matrix sum to the sum of the
+communalities, so the cutoff 1 does not apply to them. With SMCs in the
+diagonal, the number of positive eigenvalues is a lower bound to the number of
+common factors in the population. This bound is the strongest of the three lower
+bounds of Guttman (1954). \code{"EFA"} applies the same cutoff to the final communalities of an
+EFA solution.
 
-The criterion's inaccuracy in these cases is somewhat addressed if it is
-applied on the correlation matrix with communalities in the diagonal, either
-initial communalities estimated from SMCs (done setting \code{eigen_type} to
-"SMC") or final communality estimates from an EFA (done setting \code{eigen_type}
-to "EFA"; see Auerswald & Moshagen, 2019). However, although this variant
-of the KGC is more accurate in some cases compared to the traditional KGC, it
-is at the same time less accurate than the PCA-variant in other cases, and it
-is still often less accurate than several of the other criteria available here,
-such as parallel analysis (\code{\link[=efa_parallel]{efa_parallel()}}), the Hull method (\code{\link[=efa_hull]{efa_hull()}}),
-the empirical Kaiser criterion (\code{\link[=efa_ekc]{efa_ekc()}}), or sequential \eqn{chi^2} model
-tests (\code{\link[=efa_smt]{efa_smt()}}; see Auerswald & Moshagen, 2019). Which criteria are
-informative depends on the data at hand, so rather than substituting one for
-another, run several of them together and compare their suggestions.
+Both rules are often inaccurate in samples. Because of sampling error, the reduced
+correlation matrix of a sample usually has many small positive eigenvalues, so the
+cutoff 0 tends to suggest too many factors. The classic rule also tends to
+suggest too many factors (e.g., Zwick & Velicer, 1986; see Auerswald & Moshagen,
+2019, for a comparison with other criteria). Which criteria are informative
+depends on the data at hand, so rather than substituting one for another, run
+several of them together and compare their suggestions.
 
 The \code{efa_kgc} function can also be called together with other factor
 retention criteria in the \code{\link[=efa_retain]{efa_retain()}} function.

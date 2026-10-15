@@ -2,6 +2,27 @@
 
 * Removed unnecessary warning from `efa_map()` that warned when the residual variance reached 0 and thus the search ended early.
 
+* `efa_kgc()` now counts the eigenvalues greater than 0, not greater than 1, for `eigen_type = "SMC"` and `"EFA"`. These eigenvalues come from the reduced correlation matrix, and the cutoff 1 has no basis for it. With SMCs, the number of positive eigenvalues is a lower bound to the number of factors (Guttman, 1954). These types now suggest more factors, often too many in samples. `"PCA"` keeps the cutoff 1. The report and the plot show the cutoff of each type. `KGC()` and `N_FACTORS(criteria = "KGC")` change too, and so does `efa_retain()` with `eigen_type_other = "SMC"` or `"EFA"`.
+
+* `efa_hull()` no longer gives a warning when it increases the largest number of factors that it fits to 3. This is a rule of the method, not a change to a user setting.
+
+* `efa_nest()` and `efa_parallel()` are much faster for large samples, and so are `efa_hull()` and `efa_retain()`, which use them. They now draw each simulated correlation matrix directly from its exact distribution and do not simulate raw data (`efa_parallel()` does this for Pearson correlations only). The reference eigenvalues have the same distribution as before, but the results for a given seed are different.
+
+* `efa_retain()` changes:
+  * Parallel analysis, also in the Hull method, now uses PCA eigenvalues by default (`eigen_type_other = "PCA"`, `eigen_type_HULL = "PCA"`), not SMC, which often retains too many factors (Lim & Jahng, 2019). The Kaiser-Guttman criterion and the scree plot also use PCA eigenvalues. For the upper bound of the Hull method, parallel analysis now uses the 95th percentile (new argument `decision_rule_HULL = "percentile"`; Lorenzo-Seva et al., 2011); `decision_rule` applies only to `PARALLEL`, and `N_FACTORS()` keeps the mean rule for both.
+  * The Hull method now uses only the CAF by default (`gof = "CAF"`). With strongly correlated factors, CFI and RMSEA can make the Hull method retain too few factors. The CAF works with every estimator, so `estimator = "PAF"` no longer gives a message.
+  * Because of these new defaults, the results can be different from earlier versions. `N_FACTORS()` keeps the earlier defaults.
+  * With `cor_method = "poly"` or `"tetra"`, `CD` now runs on the Pearson correlations of the raw data. This is the original method (Ruscio & Roche, 2012): its comparison data resample the observed values. Bartlett's test also uses the Pearson correlations of the raw data, because its chi-square distribution is not valid for polychoric correlations.
+  * Fewer warnings. Skipped criteria give one warning, and failed criteria give one more. A default criterion that cannot use the input is skipped without a warning; a missing `N` still gives one. A skipped Bartlett's test shows only in the report.
+  * An invalid argument (for example `n_datasets = 0`) now gives an error before any criterion runs, not a warning that a criterion could not be run.
+  * The Hull method now uses the simulated eigenvalues of the parallel analysis if both run with the same type of eigenvalues, so the simulation runs only once.
+  * The suitability report is shorter and shows the same lines as `efa_screen()`.
+  * `alpha` is renamed to `alpha_CD`, which you must give by its full name. `alpha` is deprecated.
+
+* `efa_hull()` now has the same defaults as `efa_retain()`: the ML estimator, only the CAF (`gof = "CAF"`), and PCA eigenvalues with the 95th percentile in the parallel analysis that sets the largest number of factors to fit (`eigen_type = "PCA"`, `decision_rule = "percentile"`; Lorenzo-Seva et al., 2011). Thus, the results can be different from earlier versions. `HULL()` keeps the earlier defaults (PAF, all three indices, SMC eigenvalues, and the mean rule).
+
+* `efa_power(mode = "simulation")` uses the new `efa_retain()` defaults for `KGC`, `PARALLEL`, and `HULL`, so their variants are now `KGC_PCA`, `PARALLEL_PCA`, and `HULL_CAF`.
+
 * `efa_screen()` changes:
   * Outliers are now detected with the deterministic DetMCD algorithm, so the result is the same on every run and large samples are much faster. The `seed` argument is deprecated and has no effect.
   * `mcd_alpha` now defaults to `0.75` instead of `0.5`, which flags fewer clean cases.

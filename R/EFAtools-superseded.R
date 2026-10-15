@@ -64,6 +64,13 @@
 #     in the body, which the frozen-signature test rejects (it requires the body to be
 #     exactly one call that forwards every formal by name). The one-line forwarder is
 #     worth more than the sharper label; do not "fix" this without moving that test.
+#     Pinned under this rule: `N_FACTORS()` and `HULL()` forward their own frozen defaults, so
+#     they keep the SMC eigenvalues and all three Hull goodness-of-fit indices that efa_retain()
+#     and efa_hull() no longer use by default, and `HULL()` keeps PAF. Both also keep the mean
+#     rule in the parallel analysis that bounds the Hull method. Let through for
+#     `N_FACTORS()`: under poly/tetra its CD and Bartlett's test use Pearson correlations, its
+#     skip and failure warnings are aggregated, and an invalid argument aborts before any
+#     criterion runs.
 
 # Reject the successor-only `estimator` name when it lands in a wrapper's `...`: the
 # wrappers with a frozen `method` formal splice their own `estimator = method` translation
@@ -236,7 +243,17 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 #'
 #' @inheritParams efa_hull
 #' @param method character. The estimator to use; passed to [efa_hull()] as its
-#'   `estimator` argument. One of `"PAF"`, `"ULS"`, or `"ML"`.
+#'   `estimator` argument. One of `"PAF"` (default), `"ULS"`, or `"ML"`.
+#' @param gof character. Passed to [efa_hull()]. The goodness of fit index to use:
+#'   `"CAF"`, `"CFI"`, or `"RMSEA"`, or any combination of them. Default is all three.
+#'   With the `"PAF"` method, only the CAF is available.
+#' @param eigen_type character. Passed to [efa_parallel()] in [efa_hull()]. One of
+#'   `"SMC"` (default), `"PCA"`, or `"EFA"`.
+#' @param decision_rule character. Passed to [efa_parallel()] in [efa_hull()]. Which rule
+#'   to use to determine the number of factors to retain. Default is `"means"`, which uses
+#'   the average simulated eigenvalues. `"percentile"` uses the percentiles specified in
+#'   `percent`. `"crawford"` uses the 95th percentile for the first factor and the mean
+#'   afterwards (based on Crawford et al., 2010).
 #' @param ... Further arguments passed on to the [efa_fit()] fits, including the
 #'  estimation tuning knobs (`type`, `init_comm`, `criterion`, `criterion_type`,
 #'  `max_iter`, `abs_eigen`, `start_method`), which are repacked into an
@@ -259,6 +276,11 @@ HULL <- function(x, N = NA, n_fac_theor = NA,
                  decision_rule = c("means", "percentile", "crawford"),
                  n_factors = 1, ...) {
   .reject_estimator_dot(...names(), "HULL", "efa_hull")
+  # resolved here: efa_hull() lists these choices in another order, with "ML", "PCA", and
+  # "percentile" first
+  method <- .match_arg_ci(method)
+  eigen_type <- .match_arg_ci(eigen_type)
+  decision_rule <- .match_arg_ci(decision_rule)
   do.call(efa_hull,
           c(list(x, N = N, n_fac_theor = n_fac_theor, estimator = method, gof = gof,
                  eigen_type = eigen_type, use = use, cor_method = cor_method,
@@ -421,9 +443,24 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 #'   `"NEST"`, `"PARALLEL"`, `"SCREE"`, and `"SMT"` (see the details in
 #'   [efa_retain()]). By default, a subset of often used, well-performing
 #'   methods are performed.
+#' @param alpha numeric. Passed to [efa_retain()] as `alpha_CD`. The alpha level used to
+#'   test the significance of the improvement added by an additional factor. Default is
+#'   .30.
 #' @param method character. The estimator to use in the criteria that fit EFA models;
 #'   passed to [efa_retain()] as its `estimator` argument. One of `"ML"`, `"PAF"`, or
 #'   `"ULS"`.
+#' @param gof character. Passed to [efa_hull()]. The goodness of fit index to use:
+#'   `"CAF"`, `"CFI"`, or `"RMSEA"`, or any combination of them. Default is all three.
+#'   With the `"PAF"` method, only the CAF is available.
+#' @param eigen_type_HULL character. Passed to [efa_parallel()] in [efa_hull()]. One of
+#'   `"SMC"` (default), `"PCA"`, or `"EFA"`.
+#' @param eigen_type_other character. Passed to [efa_kgc()], [efa_scree()], and
+#'   [efa_parallel()]. One or more of `"PCA"`, `"SMC"`, and `"EFA"`. Default is `"SMC"`.
+#' @param decision_rule character. Passed to [efa_parallel()] (also within
+#'  [efa_hull()]). Which rule to use to determine the number of factors to retain.
+#'  Default is `"means"`, which uses the average simulated eigenvalues. `"percentile"`
+#'  uses the percentiles specified in `percent`. `"crawford"` uses the 95th percentile
+#'  for the first factor and the mean afterwards (based on Crawford et al., 2010).
 #' @param ... Further arguments passed on to the [efa_fit()] fits, including the
 #'  estimation tuning knobs (`type`, `init_comm`, `criterion`, `criterion_type`,
 #'  `abs_eigen`, `start_method`), which are repacked into an [estimate_control()] object
@@ -456,12 +493,17 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
                       show_progress = FALSE,
                       ...) {
   .reject_estimator_dot(...names(), "N_FACTORS", "efa_retain")
+  # resolved here: efa_retain() lists these choices in another order, with "PCA" first,
+  # and the Hull method keeps the rule of `decision_rule`
+  eigen_type_HULL <- .match_arg_ci(eigen_type_HULL)
+  decision_rule <- .match_arg_ci(decision_rule)
   do.call(efa_retain,
           c(list(x, criteria = criteria, suitability = suitability, N = N,
                  use = use, cor_method = cor_method, n_factors_max = n_factors_max,
-                 N_pop = N_pop, N_samples = N_samples, alpha = alpha,
+                 N_pop = N_pop, N_samples = N_samples, alpha_CD = alpha,
                  max_iter_CD = max_iter_CD, n_fac_theor = n_fac_theor,
                  estimator = method, gof = gof, eigen_type_HULL = eigen_type_HULL,
+                 decision_rule_HULL = decision_rule,
                  eigen_type_other = eigen_type_other, n_factors = n_factors,
                  n_datasets = n_datasets, percent = percent,
                  decision_rule = decision_rule, ekc_type = ekc_type,

@@ -33,8 +33,8 @@ than the number of variables.}
 Only has to be specified if \code{x} is left as \code{NULL} as otherwise the
 dimensions are taken from \code{x}.}
 
-\item{n_datasets}{numeric. The number of datasets to simulate. Must be at
-least 1. Default is 1000.}
+\item{n_datasets}{numeric. The number of reference correlation matrices to simulate.
+Must be at least 1. Default is 1000.}
 
 \item{percent}{numeric. The percentile to take from the simulated eigenvalues.
 Default is 95.}
@@ -45,9 +45,9 @@ matrix is replaced by the squared multiple correlations (SMCs) of the
 indicators. If using "PCA", the diagonal values of the correlation matrices
 are left to be 1. If using "EFA", eigenvalues are found on the correlation
 matrices with the final communalities of an EFA solution as diagonal. Default
-is \code{c("PCA", "SMC", "EFA")}, i.e. all three, which costs roughly six times a
-single non-EFA type: \code{"EFA"} fits an EFA to every simulated dataset and
-dominates that total. Pass a single type if the run is time-critical.}
+is \code{c("PCA", "SMC", "EFA")}, i.e. all three. \code{"EFA"} fits an EFA to every
+simulated correlation matrix and takes most of the run time. Leave out \code{"EFA"} if the run
+is time-critical.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is "pairwise.complete.obs".}

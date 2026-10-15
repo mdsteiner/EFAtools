@@ -189,15 +189,19 @@
     .Call(`_EFAtools_paf_iter`, h2, criterion, R, n_fac, abs_eig, crit_type, max_iter)
 }
 
-#' Parallel analysis on simulated data.
+#' Parallel analysis on simulated correlation matrices.
 #'
 #' Function called from within efa_parallel() so usually no call to this is needed by the user.
-#' Provides a C++ implementation of the efa_parallel() simulation procedure
+#' Provides a C++ implementation of the efa_parallel() simulation procedure for Pearson
+#' correlations. Each simulated correlation matrix is drawn directly from the sampling
+#' distribution of the Pearson correlation matrix of `N` cases of `n_vars` uncorrelated
+#' normal variables: a Wishart matrix with identity covariance and `N - 1` degrees of
+#' freedom, rescaled to correlations. This is exact and does not simulate the data.
 #'
-#' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
+#' @param n_datasets numeric. Number of correlation matrices to draw.
 #' @param n_vars numeric. Number of variables / indicators in dataset.
-#' @param N numeric. Number of cases / observations in dataset.
-#' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1), SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs), or both from the same simulated datasets (eigen_type = 3), in which case the returned matrix holds the PCA eigenvalues in the first n_vars columns and the SMC eigenvalues in the next n_vars.
+#' @param N numeric. Number of cases / observations in dataset. Must be larger than `n_vars`.
+#' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1), SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs), or both from the same draws (eigen_type = 3), in which case the returned matrix holds the PCA eigenvalues in the first n_vars columns and the SMC eigenvalues in the next n_vars.
 #' @param maxit numeric. Maximum iterations to perform after which to abort.
 #'
 #' @keywords internal
@@ -637,16 +641,14 @@
 
 #' Draw multivariate-normal data from a population correlation matrix.
 #'
-#' Internal helper called from efa_simulate(). Draws `N` cases from a
-#' `p`-variate normal with correlation (or covariance) `R` by post-multiplying a
-#' matrix of standard normal deviates by a matrix square root `M` of `R` (with
-#' M' M = R, so the rows of Z * M are N(0, R)). This is the same Z * M rule used by
-#' the NEST reference simulation (.simulate_cfm_eigen): there `M` is the transposed
-#' factor-score matrix, here it is a Cholesky or eigen square root.
-#' A positive-definite `R` is factored by Cholesky; a positive-semidefinite but
-#' singular `R` (which makes the Cholesky fail although it is still a valid
-#' covariance, e.g. a no-factor block or a smoothed factor intercorrelation
-#' matrix) falls back to a symmetric eigen square root.
+#' Internal helper called from efa_simulate() and from the rank-correlation
+#' reference simulations of efa_parallel(). Draws `N` cases from a `p`-variate
+#' normal with correlation (or covariance) `R` by post-multiplying a matrix of
+#' standard normal deviates by a matrix square root `M` of `R` (with M' M = R, so
+#' the rows of Z * M are N(0, R)). A positive-definite `R` is factored by Cholesky;
+#' a positive-semidefinite but singular `R` (which makes the Cholesky fail although
+#' it is still a valid covariance, e.g. a no-factor block or a smoothed factor
+#' intercorrelation matrix) falls back to a symmetric eigen square root.
 #'
 #' @param R numeric matrix. Population correlation/covariance matrix.
 #' @param N integer. Number of cases to draw.
@@ -657,26 +659,24 @@
     .Call(`_EFAtools_simulate_cfm_mvn`, R, N, tol)
 }
 
-#' Reference eigenvalues for the efa_nest() simulation via the shared kernel.
+#' Reference eigenvalues for the efa_nest() simulation.
 #'
-#' Internal helper called from efa_nest(). Simulates `nreps` datasets from an
-#' `(nf - 1)`-factor reference model, given that model's loadings `Lambda` and
-#' uniquenesses `Psi`, and returns the `nf`-th largest eigenvalue of each simulated
-#' correlation matrix. The data are drawn with the shared Z * M rule (see
-#' .simulate_cfm_mvn()) using the factor-score square root
-#' `M = t([Lambda | diag(sqrt(Psi))])`, so a row `randn(1, nf - 1 + p) * M` is
-#' N(0, Lambda Lambda' + diag(Psi)). Drawing `nf - 1 + p` standard normals and
-#' post-multiplying by the factor-score matrix is faster than forming the model-
-#' implied correlation matrix and drawing from it, and matches the position at which
-#' efa_nest() reads the reference eigenvalue.
+#' Internal helper called from efa_nest(). Draws `nreps` correlation matrices with
+#' the sampling distribution of the Pearson correlation matrix of `N` cases from
+#' the `(nf - 1)`-factor reference model, given that model's loadings `Lambda` and
+#' uniquenesses `Psi`, and returns the `nf`-th largest eigenvalue of each. The
+#' matrices are drawn from the Wishart distribution with covariance
+#' `Lambda Lambda' + diag(Psi)` and `N - 1` degrees of freedom and rescaled to
+#' correlations, which is exact for normal data and does not simulate the data.
 #'
 #' @param nf integer. Position of the empirical eigenvalue being tested (1-based);
 #'   the `nf`-th largest simulated eigenvalue is returned per replicate.
-#' @param N integer. Number of cases / observations per simulated dataset.
+#' @param N integer. Number of cases / observations per simulated dataset. Must be
+#'   larger than the number of variables.
 #' @param Lambda numeric matrix. Loadings of the `(nf - 1)`-factor reference model
 #'   (`p x (nf - 1)`); pass a `p x 0` matrix for the `nf == 1` null (identity) model.
 #' @param Psi numeric vector. Uniquenesses (`1 - h2`) of the reference model.
-#' @param nreps integer. Number of datasets to simulate.
+#' @param nreps integer. Number of correlation matrices to draw.
 #'
 #' @keywords internal
 .simulate_cfm_eigen <- function(nf, N, Lambda, Psi, nreps = 1000L) {

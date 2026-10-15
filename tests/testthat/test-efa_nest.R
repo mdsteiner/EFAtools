@@ -142,30 +142,40 @@ test_that("settings are returned correctly", {
   expect_equal(nest_raw$settings$cor_method, "pearson")
 })
 
-# The reference-eigenvalue simulation is drawn by .simulate_cfm_eigen through the shared
-# MVN kernel. These fast tests run unconditionally: the first two pin the two draw paths
-# (the null model and a factor-score model), the third drives efa_nest() itself so the wiring
-# from each reference model into the kernel is covered without the slow fixtures.
-test_that("the null-model reference draw shares the MVN kernel's stream", {
-  # The nf == 1 reference is the null (identity) model. Under a fixed seed the largest
-  # reference eigenvalue must equal a direct recompute that draws the same null model
-  # through .simulate_cfm_mvn(diag(p)) -- pinning that both kernel entries draw the same
-  # stream. Tolerance covers arma::cor vs stats::cor (mirrors test-efa_parallel.R).
-  N <- 60; p <- 5; nd <- 4
+# The reference correlation matrices are drawn by .simulate_cfm_eigen from their Wishart
+# sampling distribution. These fast tests run unconditionally: the first two check the
+# draw against stats::rWishart() and pin it, the third drives efa_nest() itself so the
+# wiring from each reference model into the kernel is covered without the slow fixtures.
+test_that("the reference draw is a Wishart draw on the stats::rWishart() stream", {
+  # Under one seed, the nf-th reference eigenvalue must equal a recompute from
+  # stats::rWishart() with N - 1 degrees of freedom and the reference-model covariance,
+  # rescaled with stats::cov2cor(): the kernel uses the same Bartlett draw order. This
+  # checks the null (identity) model (nf = 1) and a one-factor model (nf = 2). The
+  # tolerance covers the different linear-algebra routines of the two computations.
+  N <- 60; p <- 4; nd <- 4
+  L <- matrix(c(.7, .6, .5, .4), p, 1)
+  Psi <- as.vector(1 - L^2)
+
+  wishart_eigen <- function(Sigma, nf) {
+    vapply(seq_len(nd), function(i) {
+      W <- stats::rWishart(1L, N - 1, Sigma)[, , 1]
+      eigen(stats::cov2cor(W), symmetric = TRUE, only.values = TRUE)$values[nf]
+    }, numeric(1))
+  }
 
   set.seed(11)
-  got <- .simulate_cfm_eigen(1L, N, matrix(numeric(0), p, 0), rep(1, p), nd)
-
+  got_null <- .simulate_cfm_eigen(1L, N, matrix(numeric(0), p, 0), rep(1, p), nd)
   set.seed(11)
-  want <- vapply(seq_len(nd), function(i) {
-    eigen(stats::cor(.simulate_cfm_mvn(diag(p), N)), symmetric = TRUE,
-          only.values = TRUE)$values[1]
-  }, numeric(1))
+  expect_equal(as.vector(got_null), wishart_eigen(diag(p), 1L), tolerance = 1e-10)
 
-  expect_equal(as.vector(got), want, tolerance = 1e-10)
+  set.seed(12)
+  got_one <- .simulate_cfm_eigen(2L, N, L, Psi, nd)
+  set.seed(12)
+  expect_equal(as.vector(got_one), wishart_eigen(tcrossprod(L) + diag(Psi), 2L),
+               tolerance = 1e-10)
 })
 
-test_that("the factor-score reference draw matches its pinned reference eigenvalues", {
+test_that("the factor-model reference draw matches its pinned reference eigenvalues", {
   # A one-factor reference model (the nf = 2 draw path). The reference eigenvalues are
   # pinned; the draw must reproduce them under this seed. expect_equal (not identical)
   # because the linear algebra downstream of the platform-independent RNG draw varies by
@@ -179,8 +189,8 @@ test_that("the factor-score reference draw matches its pinned reference eigenval
 
   expect_equal(
     as.vector(got),
-    c(0.851006411446006, 0.841528141373475, 0.876576983719939,
-      0.856551711327252, 0.840572878485076)
+    c(1.01450926035357, 0.972389824811252, 0.894813770054858,
+      0.860823287614562, 0.938033057140992)
   )
 })
 

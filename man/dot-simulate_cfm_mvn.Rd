@@ -14,15 +14,13 @@
 \item{tol}{numeric. Eigenvalues below \code{-tol} mark \code{R} as indefinite.}
 }
 \description{
-Internal helper called from efa_simulate(). Draws \code{N} cases from a
-\code{p}-variate normal with correlation (or covariance) \code{R} by post-multiplying a
-matrix of standard normal deviates by a matrix square root \code{M} of \code{R} (with
-M' M = R, so the rows of Z * M are N(0, R)). This is the same Z * M rule used by
-the NEST reference simulation (.simulate_cfm_eigen): there \code{M} is the transposed
-factor-score matrix, here it is a Cholesky or eigen square root.
-A positive-definite \code{R} is factored by Cholesky; a positive-semidefinite but
-singular \code{R} (which makes the Cholesky fail although it is still a valid
-covariance, e.g. a no-factor block or a smoothed factor intercorrelation
-matrix) falls back to a symmetric eigen square root.
+Internal helper called from efa_simulate() and from the rank-correlation
+reference simulations of efa_parallel(). Draws \code{N} cases from a \code{p}-variate
+normal with correlation (or covariance) \code{R} by post-multiplying a matrix of
+standard normal deviates by a matrix square root \code{M} of \code{R} (with M' M = R, so
+the rows of Z * M are N(0, R)). A positive-definite \code{R} is factored by Cholesky;
+a positive-semidefinite but singular \code{R} (which makes the Cholesky fail although
+it is still a valid covariance, e.g. a no-factor block or a smoothed factor
+intercorrelation matrix) falls back to a symmetric eigen square root.
 }
 \keyword{internal}

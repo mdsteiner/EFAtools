@@ -325,12 +325,35 @@ test_that("MAP() adds no condition and stays transparent", {
 test_that("N_FACTORS() forwards to efa_retain() identically", {
   old <- N_FACTORS(test_models$baseline$cormat, N = 500, suitability = FALSE,
                    criteria = c("EKC", "MAP"))
+  # the wrapper keeps its own frozen defaults for these, which efa_retain() no longer uses
   new <- efa_retain(test_models$baseline$cormat, N = 500, suitability = FALSE,
-                    criteria = c("EKC", "MAP"))
+                    criteria = c("EKC", "MAP"), gof = c("CAF", "CFI", "RMSEA"),
+                    eigen_type_HULL = "SMC", eigen_type_other = "SMC",
+                    decision_rule_HULL = "means")
 
   expect_equal(old, new, tolerance = fp_tol)
   expect_identical(class(old), c("efa_retain", "N_FACTORS"))
   expect_true(inherits(old, "N_FACTORS"))
+
+  # `decision_rule` sets the rule of both parallel analyses, as it always did
+  nf <- N_FACTORS(test_models$baseline$cormat, N = 500, suitability = FALSE,
+                  criteria = "EKC", decision_rule = "percentile")
+  expect_identical(nf$settings$decision_rule, "percentile")
+  expect_identical(nf$settings$decision_rule_HULL, "percentile")
+})
+
+test_that("HULL() keeps its own defaults: PAF, all three indices, SMC, and the mean rule", {
+  cm <- test_models$baseline$cormat
+  # PAF reduces the three indices to the CAF, as it always did
+  set.seed(1)
+  expect_message(old <- HULL(cm, N = 500, n_datasets = 20), class = "efa_hull_gof_caf")
+  set.seed(1)
+  new <- suppressMessages(efa_hull(cm, N = 500, n_datasets = 20, estimator = "PAF",
+                                   gof = c("CAF", "CFI", "RMSEA"), eigen_type = "SMC",
+                                   decision_rule = "means"))
+
+  expect_equal(old, new, tolerance = fp_tol)
+  expect_identical(old$settings$eigen_type, "SMC")
 })
 
 test_that("N_FACTORS() adds no condition and stays transparent", {
@@ -768,9 +791,11 @@ test_that("SL() can still supply the PAF knobs that type = 'none' requires", {
 test_that("HULL() still tunes the fit through its dots", {
   cormat <- test_models$baseline$cormat
   # the frozen wrapper still selects the estimator with `method`; the successor takes
-  # `estimator`
+  # `estimator`. HULL() keeps the SMC eigenvalues and the mean rule, so the successor call
+  # names them.
   args_old <- list(N = 500, method = "PAF", gof = "CAF")
-  args_new <- list(N = 500, estimator = "PAF", gof = "CAF")
+  args_new <- list(N = 500, estimator = "PAF", gof = "CAF", eigen_type = "SMC",
+                   decision_rule = "means")
 
   # HULL() fits every 1..J model through the estimation engine, so a flat knob passed
   # through its dots has to reach that fit. It is repacked into the control objects, and
@@ -800,7 +825,12 @@ test_that("the retention criteria wrappers add no condition", {
   expect_no_condition(KGC(cormat))
   expect_no_condition(SCREE(cormat))
   expect_no_condition(SMT(cormat, N = 500))
-  expect_no_condition(NEST(cormat, N = 500, n_datasets = 2))
+  # With very few reference datasets, an unlucky draw can carry the search past the three
+  # factors of this model to a reference model with a Heywood case, where NEST aborts by
+  # design (for a few percent of seeds at n_datasets = 2). With 50 datasets, the search
+  # stops at three factors.
+  set.seed(803)
+  expect_no_condition(NEST(cormat, N = 500, n_datasets = 50))
   expect_no_condition(HULL(cormat, N = 500, method = "ML", gof = "CAF"))
 })
 

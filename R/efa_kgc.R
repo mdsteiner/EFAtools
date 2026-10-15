@@ -1,8 +1,10 @@
 #' Kaiser-Guttman criterion
 #'
-#' Probably the most popular factor retention criterion. Kaiser and Guttman suggested
-#' to retain as many factors as there are sample eigenvalues greater than 1.
-#' This is why the criterion is also known as eigenvalues-greater-than-one rule.
+#' Retains as many factors as there are eigenvalues above a cutoff. For the
+#' correlation matrix (`"PCA"`), the cutoff is 1: the classic
+#' eigenvalues-greater-than-one rule (Kaiser, 1960). For the reduced correlation
+#' matrix, with communality estimates in the diagonal (`"SMC"` and `"EFA"`), the
+#' cutoff is 0 (Guttman, 1954).
 #'
 #' @param x data.frame or matrix. Dataframe or matrix of raw data or matrix with
 #' correlations.
@@ -35,26 +37,24 @@
 #' `b_boot`, `ci`, `seed`) are not accepted because the fit is an internal step that keeps
 #' only its communalities.
 #'
-#' @details Originally, the Kaiser-Guttman criterion was intended for the use
-#' with principal components, hence with eigenvalues derived from the original
-#' correlation matrix. This can be done here by setting `eigen_type` to
-#' "PCA". However, it is well-known that this criterion is often inaccurate and
-#' that it tends to overestimate the number of factors, especially for unidimensional
-#' or orthogonal factor structures (e.g., Zwick & Velicer, 1986).
+#' @details The two cutoffs apply to different matrices. The eigenvalues of the
+#' correlation matrix sum to the number of variables, and an eigenvalue greater
+#' than 1 identifies a component that explains more variance than one standardized
+#' variable.
+#' The eigenvalues of the reduced correlation matrix sum to the sum of the
+#' communalities, so the cutoff 1 does not apply to them. With SMCs in the
+#' diagonal, the number of positive eigenvalues is a lower bound to the number of
+#' common factors in the population. This bound is the strongest of the three lower
+#' bounds of Guttman (1954). `"EFA"` applies the same cutoff to the final communalities of an
+#' EFA solution.
 #'
-#' The criterion's inaccuracy in these cases is somewhat addressed if it is
-#' applied on the correlation matrix with communalities in the diagonal, either
-#' initial communalities estimated from SMCs (done setting `eigen_type` to
-#' "SMC") or final communality estimates from an EFA (done setting `eigen_type`
-#' to "EFA"; see Auerswald & Moshagen, 2019). However, although this variant
-#' of the KGC is more accurate in some cases compared to the traditional KGC, it
-#' is at the same time less accurate than the PCA-variant in other cases, and it
-#' is still often less accurate than several of the other criteria available here,
-#' such as parallel analysis ([efa_parallel()]), the Hull method ([efa_hull()]),
-#' the empirical Kaiser criterion ([efa_ekc()]), or sequential \eqn{chi^2} model
-#' tests ([efa_smt()]; see Auerswald & Moshagen, 2019). Which criteria are
-#' informative depends on the data at hand, so rather than substituting one for
-#' another, run several of them together and compare their suggestions.
+#' Both rules are often inaccurate in samples. Because of sampling error, the reduced
+#' correlation matrix of a sample usually has many small positive eigenvalues, so the
+#' cutoff 0 tends to suggest too many factors. The classic rule also tends to
+#' suggest too many factors (e.g., Zwick & Velicer, 1986; see Auerswald & Moshagen,
+#' 2019, for a comparison with other criteria). Which criteria are informative
+#' depends on the data at hand, so rather than substituting one for another, run
+#' several of them together and compare their suggestions.
 #'
 #' The `efa_kgc` function can also be called together with other factor
 #' retention criteria in the [efa_retain()] function.
@@ -73,7 +73,7 @@
 #' https://doi.org/10.1037/met0000200
 #'
 #' @source Guttman, L. (1954). Some necessary conditions for common-factor analysis.
-#' Psychometrika, 19, 149 –161. https://doi.org/10.1007/BF02289162
+#' Psychometrika, 19, 149–161. https://doi.org/10.1007/BF02289162
 #'
 #' @source Kaiser, H. F. (1960). The application of electronic computers to factor
 #' analysis. Educational and Psychological Measurement, 20, 141–151.
@@ -121,18 +121,18 @@ efa_kgc <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
   eigen_list <- .three_eigen(R, eigen_type, n_factors = n_factors,
                              estimate_control = estimate_control, ...)
 
-  # Kaiser-Guttman: retain as many factors as there are eigenvalues greater than
-  # 1 (NA for any eigenvalue type that was not requested)
-  nfac_list <- lapply(eigen_list, function(eig) {
-    if (length(eig) == 1L && is.na(eig)) NA else sum(eig > 1)
-  })
+  # Count the eigenvalues above the cutoff: 1 for the correlation matrix (Kaiser, 1960), 0
+  # for the reduced matrices (Guttman, 1954)
+  cutoff <- c(PCA = 1, SMC = 0, EFA = 0)
 
-  # one record per requested eigenvalue type (eigenvalues with the > 1 rule)
+  # one record per requested eigenvalue type
   results <- list()
   for (et in c("PCA", "SMC", "EFA")) {
     if (!(et %in% eigen_type)) next
     eig <- eigen_list[[et]]
-    n_fac <- nfac_list[[et]]
+    # p * eps * max|eig| absorbs eigensolver round-off, not the convergence error of an "EFA" fit
+    tol <- length(eig) * .Machine$double.eps * max(abs(eig))
+    n_fac <- sum(eig > cutoff[[et]] + tol)
     results[[et]] <- list(
       name = et,
       label = et,
@@ -141,9 +141,18 @@ efa_kgc <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
       x = seq_along(eig),
       y = eig,
       reference = NULL,
-      threshold = 1,
-      highlight = if (!is.na(n_fac) && n_fac >= 1) n_fac else NULL
+      threshold = cutoff[[et]],
+      highlight = if (n_fac >= 1) n_fac else NULL
     )
+  }
+
+  # the report states the cutoff of each requested type
+  rule <- if (all(eigen_type == "PCA")) {
+    "cutoff 1"
+  } else if (!"PCA" %in% eigen_type) {
+    "cutoff 0"
+  } else {
+    paste0("cutoff 1 (PCA), 0 (", paste(setdiff(eigen_type, "PCA"), collapse = ", "), ")")
   }
 
   output <- .new_efa_retention(
@@ -151,7 +160,7 @@ efa_kgc <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
     results = unname(results),
     settings = list(eigen_type = eigen_type, use = use,
                     cor_method = cor_method, n_factors = n_factors),
-    subtitle = .eigen_subtitle(eigen_type)
+    subtitle = .eigen_subtitle(eigen_type, rule)
   )
 
   return(output)

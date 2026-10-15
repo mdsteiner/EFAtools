@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{.simulate_cfm_eigen}
 \alias{.simulate_cfm_eigen}
-\title{Reference eigenvalues for the efa_nest() simulation via the shared kernel.}
+\title{Reference eigenvalues for the efa_nest() simulation.}
 \usage{
 .simulate_cfm_eigen(nf, N, Lambda, Psi, nreps = 1000L)
 }
@@ -10,25 +10,23 @@
 \item{nf}{integer. Position of the empirical eigenvalue being tested (1-based);
 the \code{nf}-th largest simulated eigenvalue is returned per replicate.}
 
-\item{N}{integer. Number of cases / observations per simulated dataset.}
+\item{N}{integer. Number of cases / observations per simulated dataset. Must be
+larger than the number of variables.}
 
 \item{Lambda}{numeric matrix. Loadings of the \code{(nf - 1)}-factor reference model
 (\verb{p x (nf - 1)}); pass a \verb{p x 0} matrix for the \code{nf == 1} null (identity) model.}
 
 \item{Psi}{numeric vector. Uniquenesses (\code{1 - h2}) of the reference model.}
 
-\item{nreps}{integer. Number of datasets to simulate.}
+\item{nreps}{integer. Number of correlation matrices to draw.}
 }
 \description{
-Internal helper called from efa_nest(). Simulates \code{nreps} datasets from an
-\code{(nf - 1)}-factor reference model, given that model's loadings \code{Lambda} and
-uniquenesses \code{Psi}, and returns the \code{nf}-th largest eigenvalue of each simulated
-correlation matrix. The data are drawn with the shared Z * M rule (see
-.simulate_cfm_mvn()) using the factor-score square root
-\verb{M = t([Lambda | diag(sqrt(Psi))])}, so a row \code{randn(1, nf - 1 + p) * M} is
-N(0, Lambda Lambda' + diag(Psi)). Drawing \code{nf - 1 + p} standard normals and
-post-multiplying by the factor-score matrix is faster than forming the model-
-implied correlation matrix and drawing from it, and matches the position at which
-efa_nest() reads the reference eigenvalue.
+Internal helper called from efa_nest(). Draws \code{nreps} correlation matrices with
+the sampling distribution of the Pearson correlation matrix of \code{N} cases from
+the \code{(nf - 1)}-factor reference model, given that model's loadings \code{Lambda} and
+uniquenesses \code{Psi}, and returns the \code{nf}-th largest eigenvalue of each. The
+matrices are drawn from the Wishart distribution with covariance
+\verb{Lambda Lambda' + diag(Psi)} and \code{N - 1} degrees of freedom and rescaled to
+correlations, which is exact for normal data and does not simulate the data.
 }
 \keyword{internal}

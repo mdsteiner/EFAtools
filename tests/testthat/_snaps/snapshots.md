@@ -78,11 +78,11 @@
       print(kgc)
     Output
       -- Kaiser-Guttman criterion ----------------------------------------------------
-      Eigenvalues found using PCA, SMC, and EFA.
+      Eigenvalues found using PCA, SMC, and EFA; cutoff 1 (PCA), 0 (SMC, EFA).
       
       * PCA: 3
-      * SMC: 1
-      * EFA: 1
+      * SMC: 8
+      * EFA: 7
 
 ---
 
@@ -90,9 +90,9 @@
       print(kgc_smc)
     Output
       -- Kaiser-Guttman criterion ----------------------------------------------------
-      Eigenvalues found using SMC.
+      Eigenvalues found using SMC; cutoff 0.
       
-      * SMC: 1
+      * SMC: 8
 
 # print.efa_retention output is stable for NEST
 
@@ -151,15 +151,15 @@
     Output
       -- Suggested number of factors -------------------------------------------------
       
-      8 suggestions from 4 criteria, ranging from 1 to 3 factors (most common: 3).
+      8 suggestions from 4 criteria, ranging from 1 to 8 factors (most common: 3).
       
       Empirical Kaiser Criterion
       * Braeken & van Assen (2017): 3
       
       Kaiser-Guttman criterion
-      Eigenvalues found using PCA and SMC.
+      Eigenvalues found using PCA and SMC; cutoff 1 (PCA), 0 (SMC).
       * PCA: 3
-      * SMC: 1
+      * SMC: 8
       
       Minimum average partial
       * Original implementation (TR2): 1
@@ -169,6 +169,69 @@
       * Sequential chi-square model tests: 3
       * Lower bound of RMSEA 90% CI: 2
       * Akaike Information Criterion: 3
+
+# print.efa_retain reports sampling adequacy and sphericity
+
+    Code
+      print(nf)
+    Output
+      -- Sampling adequacy and sphericity --------------------------------------------
+      
+      v Overall KMO = <num>: marvellous (Kaiser & Rice, 1974).
+      v Bartlett's test of sphericity: χ²(153) = <num>, p < <num> (significant).
+      
+      -- Suggested number of factors -------------------------------------------------
+      
+      3 suggestions from 2 criteria, ranging from 1 to 3 factors.
+      
+      Empirical Kaiser Criterion
+      * Braeken & van Assen (2017): 3
+      
+      Minimum average partial
+      * Original implementation (TR2): 1
+      * Revised implementation (TR4): 3
+
+---
+
+    Code
+      print(nf_no_n)
+    Output
+      -- Sampling adequacy and sphericity --------------------------------------------
+      
+      v Overall KMO = <num>: marvellous (Kaiser & Rice, 1974).
+      ! Bartlett's test of sphericity was not computed; no sample size (N) was
+      supplied.
+      
+      -- Suggested number of factors -------------------------------------------------
+      
+      2 suggestions from 1 criterion, ranging from 1 to 3 factors.
+      
+      Minimum average partial
+      * Original implementation (TR2): 1
+      * Revised implementation (TR4): 3
+
+---
+
+    Code
+      print(nf_poly)
+    Output
+      -- Sampling adequacy and sphericity --------------------------------------------
+      
+      v Overall KMO = <num>: marvellous (Kaiser & Rice, 1974).
+      v Bartlett's test of sphericity: χ²(28) = <num>, p < <num> (significant).
+      i Bartlett's test uses Pearson correlations: its chi-square is not valid for
+      polychoric correlations.
+      
+      -- Suggested number of factors -------------------------------------------------
+      
+      3 suggestions from 2 criteria, all suggesting 1 factor.
+      
+      Empirical Kaiser Criterion
+      * Braeken & van Assen (2017): 1
+      
+      Minimum average partial
+      * Original implementation (TR2): 1
+      * Revised implementation (TR4): 1
 
 # print.efa_retain summarises the criteria's suggestions
 
@@ -183,7 +246,7 @@
       * Braeken & van Assen (2017): 3
       
       Kaiser-Guttman criterion
-      Eigenvalues found using PCA.
+      Eigenvalues found using PCA; cutoff 1.
       * PCA: 3
       
       Minimum average partial

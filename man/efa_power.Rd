@@ -100,8 +100,9 @@ analyse. Default is \code{500}.}
 \item{criteria}{character. Simulation mode. The factor-retention criteria to
 evaluate the hit-rate for, any of \code{"CD"}, \code{"EKC"}, \code{"HULL"}, \code{"KGC"}, \code{"MAP"},
 \code{"NEST"}, \code{"PARALLEL"}, and \code{"SMT"} (see \code{\link[=efa_retain]{efa_retain()}}). Default is
-\code{c("EKC", "MAP")}. Criteria that simulate internally (\code{"CD"}, \code{"HULL"},
-\code{"NEST"}, \code{"PARALLEL"}) make each run substantially slower.}
+\code{c("EKC", "MAP")}. Apart from \code{estimator}, the criteria use the \code{\link[=efa_retain]{efa_retain()}}
+defaults, for example PCA eigenvalues for \code{"KGC"} and \code{"PARALLEL"}, and the CAF for
+\code{"HULL"}. \code{"CD"} and \code{"HULL"} make each run substantially slower.}
 
 \item{estimator}{character. Simulation mode. The estimator (\code{"PAF"}, \code{"ML"},
 or \code{"ULS"}) used for the recovery fit and the retention criteria. Default

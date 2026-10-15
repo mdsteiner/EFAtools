@@ -34,8 +34,7 @@ they are where the package's development now happens.
 The uppercase names are **superseded**, not deprecated. In practice that means:
 
 * They keep working with their **original arguments**, and calling them emits **no warning
-  or message**. Existing scripts and saved analyses continue to run byte-for-byte
-  unchanged.
+  or message**. Existing scripts continue to run without changes.
 * Their argument lists are **frozen**. New capabilities are added only to the `efa_*`
   functions, so an uppercase name will never grow a new argument.
 
@@ -74,6 +73,13 @@ pure rename: the arguments are identical and only the name changes.
 `efa_reliability()` and `efa_scores()` are broader than the `OMEGA()` and `FACTOR_SCORES()`
 they replace, but they cover the same use cases and are the recommended way to obtain those
 quantities going forward.
+
+`efa_retain()` takes `estimator` and `alpha_CD` where `N_FACTORS()` takes `method` and `alpha`.
+Its parallel analysis, Kaiser-Guttman criterion, and scree plot use PCA eigenvalues, and its
+Hull method uses the CAF and the 95th percentile in its parallel analysis by default. Thus,
+its results can differ from those of `N_FACTORS()`, which keeps its own defaults. In the same
+way, `efa_hull()` uses ML, the CAF, and PCA eigenvalues with the 95th percentile by default,
+but `HULL()` keeps PAF, all three indices, and SMC eigenvalues with the mean rule.
 
 Alongside the renamed functions, the package ships tools that have **no uppercase
 predecessor** — they are new, and available only under the `efa_*` interface (and the two

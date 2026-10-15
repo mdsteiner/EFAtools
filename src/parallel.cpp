@@ -5,15 +5,23 @@
 using namespace Rcpp;
 using namespace arma;
 
-//' Parallel analysis on simulated data.
+// Wishart draw of a simulated correlation matrix; defined and explained in sim.cpp.
+void wishart_factor(arma::mat& U, const int n);
+void cov2cor_inplace(arma::mat& W);
+
+//' Parallel analysis on simulated correlation matrices.
 //'
 //' Function called from within efa_parallel() so usually no call to this is needed by the user.
-//' Provides a C++ implementation of the efa_parallel() simulation procedure
+//' Provides a C++ implementation of the efa_parallel() simulation procedure for Pearson
+//' correlations. Each simulated correlation matrix is drawn directly from the sampling
+//' distribution of the Pearson correlation matrix of `N` cases of `n_vars` uncorrelated
+//' normal variables: a Wishart matrix with identity covariance and `N - 1` degrees of
+//' freedom, rescaled to correlations. This is exact and does not simulate the data.
 //'
-//' @param n_datasets numeric. Number of datasets with dimensions (N, n_vars) to simulate.
+//' @param n_datasets numeric. Number of correlation matrices to draw.
 //' @param n_vars numeric. Number of variables / indicators in dataset.
-//' @param N numeric. Number of cases / observations in dataset.
-//' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1), SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs), or both from the same simulated datasets (eigen_type = 3), in which case the returned matrix holds the PCA eigenvalues in the first n_vars columns and the SMC eigenvalues in the next n_vars.
+//' @param N numeric. Number of cases / observations in dataset. Must be larger than `n_vars`.
+//' @param eigen_type numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1), SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs), or both from the same draws (eigen_type = 3), in which case the returned matrix holds the PCA eigenvalues in the first n_vars columns and the SMC eigenvalues in the next n_vars.
 //' @param maxit numeric. Maximum iterations to perform after which to abort.
 //'
 //' @keywords internal
@@ -26,8 +34,8 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
   if (n_vars < 1) {
     stop("n_vars must be at least 1.");
   }
-  if (N < 2) {
-    stop("N must be at least 2.");
+  if (N <= n_vars) {
+    stop("N must be larger than n_vars.");
   }
   if (eigen_type != 1 && eigen_type != 2 && eigen_type != 3) {
     stop("eigen_type must be 1 (PCA), 2 (SMC), or 3 (both).");
@@ -39,20 +47,13 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
   const bool want_pca = (eigen_type != 2);
   const bool want_smc = (eigen_type != 1);
 
-  if (want_smc && N <= n_vars) {
-    stop("N must be larger than n_vars for SMC simulation.");
-  }
-
-  // Initialize needed objects. The simulated data `x` and their correlation matrix
-  // `R` keep their dimensions across replicates, so they are allocated once here and
-  // refilled in place instead of once per simulated dataset -- at the default
-  // n_datasets = 1000 that is 1000 fewer N x n_vars allocations in the busiest
-  // simulation loop of the package. x.randn() draws from the same random-number
-  // stream in the same (column-major) order as arma::randn(N, n_vars), so the
-  // reference eigenvalues are unchanged.
+  // Initialize needed objects. The Wishart factor `U` and the simulated correlation
+  // matrix `R` keep their dimensions across replicates, so they are allocated once here
+  // and refilled in place instead of once per draw. Only the upper triangle of `U` is
+  // redrawn; its strict lower triangle stays zero.
   arma::vec eigval(n_vars);
   arma::mat eig_vals(n_datasets, (want_pca + want_smc) * n_vars);
-  arma::mat x(N, n_vars);
+  arma::mat U(n_vars, n_vars, arma::fill::zeros);
   arma::mat R(n_vars, n_vars);
   // Only the SMC series inverts the simulated matrix, so its workspace is left empty
   // otherwise.
@@ -74,8 +75,9 @@ arma::mat parallel_sim(const int n_datasets, const int n_vars, const int N,
 
   while ((success < n_datasets) && (!want_smc || (iter < maxit))) {
     iter++;
-    x.randn();
-    R = cor(x);
+    wishart_factor(U, N - 1);
+    R = U.t() * U;
+    cov2cor_inplace(R);
 
     if (want_smc && !inv_sympd(temp, R)) {
       continue;

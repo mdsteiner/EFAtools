@@ -28,7 +28,8 @@ test_that(".n_factors_ctl() defaults mirror efa_retain()'s", {
   # efa_retain() resolves these with a single-choice match.arg(), so its effective default
   # is the first element; every other default (including the several.ok ones, whose whole
   # vector is the default) has to match .n_factors_ctl()'s in full
-  single <- c("use", "cor_method", "estimator", "eigen_type_HULL", "decision_rule")
+  single <- c("use", "cor_method", "estimator", "eigen_type_HULL", "decision_rule_HULL",
+              "decision_rule")
   ret[single] <- lapply(ret[single], `[`, 1L)
   expect_equal(ctl[shared], ret[shared])
 })
@@ -51,7 +52,7 @@ test_that(".eigen_subtitle names the eigenvalue types the same way for every cri
   expect_equal(efa_scree(test_models$baseline$cormat, eigen_type = "PCA")$subtitle,
                .eigen_subtitle("PCA"))
   expect_equal(efa_kgc(test_models$baseline$cormat, eigen_type = "PCA")$subtitle,
-               .eigen_subtitle("PCA"))
+               .eigen_subtitle("PCA", "cutoff 1"))
 })
 
 test_that("printed bullets name what the count belongs to, not the eigenvalues", {
@@ -63,7 +64,8 @@ test_that("printed bullets name what the count belongs to, not the eigenvalues",
   kgc <- efa_kgc(test_models$baseline$cormat)
   expect_equal(vapply(kgc$results, function(r) r$label, character(1)),
                c("PCA", "SMC", "EFA"))
-  expect_equal(kgc$subtitle, "Eigenvalues found using PCA, SMC, and EFA.")
+  expect_equal(kgc$subtitle,
+               "Eigenvalues found using PCA, SMC, and EFA; cutoff 1 (PCA), 0 (SMC, EFA).")
 
   scree <- efa_scree(test_models$baseline$cormat, eigen_type = "SMC")
   expect_equal(vapply(scree$results, function(r) r$label, character(1)), "SMC")

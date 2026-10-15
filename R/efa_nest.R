@@ -15,7 +15,8 @@
 #'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
 #'   `NEST` compares the data against simulated continuous reference data.
 #'  Default is  `"pearson"`.
-#' @param n_datasets numeric. The number of datasets to simulate. Default is 1000.
+#' @param n_datasets numeric. The number of reference correlation matrices to simulate.
+#'  Default is 1000.
 #' @param estimate_control an [estimate_control()] object with the estimation settings for the
 #'  [efa_fit()] reference-model fits. `NULL` (default) uses the [efa_fit()] defaults. The
 #'  reference models are unrotated, so no rotation settings apply.
@@ -48,16 +49,19 @@
 #'  Because each reference model carries the factors already retained, NEST does not
 #'  lose accuracy for the strongly correlated factor structures where parallel
 #'  analysis tends to under-extract, and it was among the more accurate criteria in
-#'  the simulation studies of Brandenburg and Papenberg (2024) and Caron (2025). The
-#'  price is runtime: a fresh set of `n_datasets` reference datasets is drawn and
-#'  eigen-decomposed at every candidate factor count, which makes NEST one of the
-#'  slowest criteria available here.
+#'  the simulation studies of Brandenburg and Papenberg (2024) and Caron (2025).
+#'
+#'  At each candidate factor count, NEST draws `n_datasets` new reference correlation
+#'  matrices. Each matrix comes directly from the exact sampling distribution of the
+#'  Pearson correlation matrix of `N` normal cases from the reference model. It is a
+#'  Wishart matrix scaled to correlations (Anderson, 2003, Sec. 7.2). No raw data are
+#'  simulated, so the time for the simulation does not increase with `N`.
 #'
 #'  The reference models are fitted without inequality constraints. A Heywood case in
 #'  one of them leaves no unique variance to simulate the reference data from, so
 #'  NEST aborts rather than continuing from an inadmissible reference.
 #'
-#'  The reference eigenvalues are obtained from simulated data, so the suggested number
+#'  The reference eigenvalues are obtained by simulation, so the suggested number
 #'  of factors varies slightly from run to run. Call [base::set.seed()] beforehand to make a
 #'  run reproducible.
 #'
@@ -79,6 +83,7 @@
 #' \item{settings}{A list of control settings used.}
 #'
 #' @source Achim, A. (2017). Testing the number of required dimensions in exploratory factor analysis. The Quantitative Methods for Psychology, 13(1), 64–74. https://doi.org/10.20982/tqmp.13.1.p064
+#' @source Anderson, T. W. (2003). An introduction to multivariate statistical analysis (3rd ed.). Wiley.
 #' @source Brandenburg, N., & Papenberg, M. (2024). Reassessment of innovative methods to determine the number of factors: A simulation-based comparison of exploratory graph analysis and Next Eigenvalue Sufficiency Test. Psychological Methods, 29(1), 21–47. https://doi.org/10.1037/met0000527
 #' @source Caron, P.-O. (2025). A Comparison of the Next Eigenvalue Sufficiency Test to Other Stopping Rules for the Number of Factors in Factor Analysis.
 #' Educational and Psychological Measurement, Online-first publication. https://doi.org/10.1177/00131644241308528
@@ -190,10 +195,11 @@ efa_nest <- function(x, N = NA,
 
     }
 
-    # Simulate the reference datasets and return the nf-th largest eigenvalue of each.
-    # The shared kernel draws via the factor-score rule X = F*L' + e from the reference
-    # model (loadings Lambda, uniquenesses Psi), which is faster than drawing from the
-    # model-implied correlation matrix.
+    # Draw the reference correlation matrices and take the nf-th largest eigenvalue of
+    # each. The kernel draws each matrix directly from the exact sampling distribution
+    # of the Pearson correlation matrix of N normal cases from the reference model
+    # (loadings Lambda, uniquenesses Psi), so no data are simulated and the cost does
+    # not grow with N.
     ref_values <- .simulate_cfm_eigen(nf, N, Lambda, Psi, n_datasets)
 
     references[nf] <- stats::quantile(ref_values, probs = 1 - alpha)

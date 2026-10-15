@@ -62,6 +62,10 @@ test_that("native simulation and polychoric entry points reject malformed inputs
   expect_error(.parallel_sim(0, 3, 20, 1, 10), "n_datasets")
   expect_error(.parallel_sim(1, 3, 20, 9, 10), "eigen_type")
   expect_error(.parallel_sim(1, 3, 3, 2, 10), "larger than n_vars")
+  # the Wishart draw needs N - 1 >= n_vars degrees of freedom for every eigen_type
+  expect_error(.parallel_sim(1, 3, 3, 1, 10), "larger than n_vars")
+  expect_error(.simulate_cfm_eigen(1L, 3L, matrix(numeric(0), 3, 0), rep(1, 3), 1L),
+               "larger than the number of variables")
 
   bad_negative <- cbind(c(0L, 1L, -1L), c(0L, 1L, 0L))
   expect_error(.polychoric_cpp(bad_negative, "none", FALSE), "non-negative")

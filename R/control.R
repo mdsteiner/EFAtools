@@ -116,9 +116,9 @@
   }
   # NULL means "use the default", as in match.arg(), but the default is the caller's formal
   # default, NOT choices[1L]: the two part company under `several.ok` whenever the formal
-  # default is a whole vector (efa_hull()'s `gof`, efa_kgc()'s `eigen_type`), and wherever an
+  # default is a whole vector (efa_kgc()'s and efa_parallel()'s `eigen_type`), and wherever an
   # explicit `choices` is a superset of the formal default (efa_retain()'s `criteria`) or
-  # orders it differently (`eigen_type_other`). Taking choices[1L] there silently runs
+  # orders it differently. Taking choices[1L] there silently runs
   # something narrower than the help page documents, with no condition raised. A formal
   # without a default, or one that is itself NULL (efa_simulate()'s `match`, documented as
   # resolving to "thresholds"), falls back to choices[1L].

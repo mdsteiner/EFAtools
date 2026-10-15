@@ -34,22 +34,14 @@ the larger of this number and the number of factors suggested by \link{efa_paral
 is used as the upper bound \emph{J} of factors to extract in the Hull method.}
 
 \item{method}{character. The estimator to use; passed to \code{\link[=efa_hull]{efa_hull()}} as its
-\code{estimator} argument. One of \code{"PAF"}, \code{"ULS"}, or \code{"ML"}.}
+\code{estimator} argument. One of \code{"PAF"} (default), \code{"ULS"}, or \code{"ML"}.}
 
-\item{gof}{character. The goodness of fit index to use. Either \code{"CAF"},
-\code{"CFI"}, or \code{"RMSEA"}, or any combination of them.
-With the \code{"PAF"} estimator, only
-the CAF can be used as goodness of fit index. For details on the CAF, see
-Lorenzo-Seva, Timmerman, and Kiers (2011).}
+\item{gof}{character. Passed to \code{\link[=efa_hull]{efa_hull()}}. The goodness of fit index to use:
+\code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any combination of them. Default is all three.
+With the \code{"PAF"} method, only the CAF is available.}
 
-\item{eigen_type}{character. On what the eigenvalues should be found in the
-parallel analysis. Can be one of \code{"SMC"}, \code{"PCA"}, or \code{"EFA"}.
-If using  \code{"SMC"} (default), the diagonal of the correlation matrices is
-replaced by the squared multiple correlations (SMCs) of the indicators. If
-using  \code{"PCA"}, the diagonal values of the correlation
-matrices are left to be 1. If using  \code{"EFA"}, eigenvalues are found on the
-correlation  matrices with the final communalities of an EFA solution as
-diagonal. This is passed to  \code{\link[=efa_parallel]{efa_parallel()}}.}
+\item{eigen_type}{character. Passed to \code{\link[=efa_parallel]{efa_parallel()}} in \code{\link[=efa_hull]{efa_hull()}}. One of
+\code{"SMC"} (default), \code{"PCA"}, or \code{"EFA"}.}
 
 \item{use}{character. Passed to \code{\link[stats:cor]{stats::cor()}} if raw data
 is given as input. Default is \code{"pairwise.complete.obs"}.}
@@ -60,17 +52,17 @@ passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"
 against continuous reference data.
 Default is  \code{"pearson"}.}
 
-\item{n_datasets}{numeric. The number of datasets to simulate. Must be at
-least 1. Default is 1000. This is passed to \code{\link[=efa_parallel]{efa_parallel()}}.}
+\item{n_datasets}{numeric. The number of reference correlation matrices to simulate.
+Must be at least 1. Default is 1000. This is passed to \code{\link[=efa_parallel]{efa_parallel()}}.}
 
 \item{percent}{numeric. The percentile to take from the simulated eigenvalues.
 Default is 95. This is passed to \code{\link[=efa_parallel]{efa_parallel()}}.}
 
-\item{decision_rule}{character. Which rule to use to determine the number of
-factors to retain. Default is \code{"means"}, which will use the average
-simulated eigenvalues. \code{"percentile"}, uses the percentiles specified
-in percent. \code{"crawford"} uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010). This is passed to \code{\link[=efa_parallel]{efa_parallel()}}.}
+\item{decision_rule}{character. Passed to \code{\link[=efa_parallel]{efa_parallel()}} in \code{\link[=efa_hull]{efa_hull()}}. Which rule
+to use to determine the number of factors to retain. Default is \code{"means"}, which uses
+the average simulated eigenvalues. \code{"percentile"} uses the percentiles specified in
+\code{percent}. \code{"crawford"} uses the 95th percentile for the first factor and the mean
+afterwards (based on Crawford et al., 2010).}
 
 \item{n_factors}{numeric. Number of factors to extract if  \code{"EFA"} is
 included in \code{eigen_type}. Default is 1. This is passed to

@@ -510,7 +510,8 @@ test_that("simulation mode runs the internally-simulating criteria", {
                    seed = 42)
   expect_true("EKC_BvA2017" %in% names(sim$hit_rate))
   expect_true(any(grepl("NEST", names(sim$hit_rate))))
-  expect_true(any(grepl("PARALLEL", names(sim$hit_rate))))
+  # the efa_retain() default: PCA eigenvalues
+  expect_true("PARALLEL_PCA" %in% names(sim$hit_rate))
   expect_gte(sim$hit_rate[["EKC_BvA2017"]], 0.8)
 })
 

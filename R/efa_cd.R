@@ -15,10 +15,10 @@
 #'  Default is 500.
 #' @param alpha numeric. The alpha level used to test the significance of the
 #'  improvement added by an additional factor. Default is .30.
-#' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
-#'   passed to [stats::cor()]. `"poly"` and `"tetra"` are not supported because
-#'   `CD` compares the data against simulated continuous reference data.
-#' Default is "pearson".
+#' @param cor_method character. One of `"pearson"` (default), `"spearman"`, or
+#'   `"kendall"`, passed to [stats::cor()]. Ruscio and Roche (2012) use Pearson
+#'   correlations, and the comparison data keep the observed values of each variable, so
+#'   `"pearson"` also suits ordinal data. `"poly"` and `"tetra"` are not available.
 #' @param max_iter numeric. The maximum number of iterations after which the
 #'  iterative PAF procedure inside the comparison-data generation is halted; it
 #'  does not cap an EFA of `x`. Default is 50.
@@ -102,7 +102,9 @@ efa_cd <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha 
   }
 
   cor_method <- .match_arg_ci(cor_method)
-  .reject_poly_reference(cor_method, "efa_cd")
+  .reject_poly_reference(
+    cor_method, "efa_cd",
+    why = "{.fn {fn}} makes its comparison data from the observed values of each variable, so {.val pearson} also suits ordinal data.")
 
   checkmate::assert_count(n_factors_max, na.ok = TRUE, positive = TRUE)
   checkmate::assert_count(N_pop)

@@ -224,7 +224,7 @@ test_that("efa_scores matches the factor-score method case-insensitively", {
     case("efa_screen", list(cmat, N = 500), "use", "cor_method"),
     case("efa_retain", list(cmat, N = 500, suitability = FALSE),
          "use", "cor_method", "decision_rule", "criteria", "estimator", "gof",
-         "eigen_type_HULL", "eigen_type_other"),
+         "eigen_type_HULL", "decision_rule_HULL", "eigen_type_other"),
     case("efa_average", list(cmat, n_factors = 3, N = 500, show_progress = FALSE),
          "use", "cor_method", "averaging"),
     case("efa_compare", list(loads, loads), "reorder"),
@@ -386,16 +386,15 @@ test_that("NULL selects the documented default at every affected call site", {
   expect_identical(efa_parallel(cmat, N = 500, n_datasets = 5,
                                 eigen_type = NULL)$settings$eigen_type,
                    c("PCA", "SMC", "EFA"))
-  expect_identical(efa_hull(cmat, N = 500, estimator = "ML", gof = NULL)$settings$gof,
-                   c("CAF", "CFI", "RMSEA"))
+  expect_identical(efa_hull(cmat, N = 500, gof = NULL)$settings$gof, "CAF")
   expect_identical(
     efa_retain(cmat, N = 500, criteria = "KGC", suitability = FALSE,
                eigen_type_other = NULL)$settings$eigen_type_other,
-    "SMC")
+    "PCA")
   expect_identical(
     efa_retain(cmat, N = 500, criteria = "HULL", suitability = FALSE, estimator = "ML",
                gof = NULL)$settings$gof,
-    c("CAF", "CFI", "RMSEA"))
+    "CAF")
 
   # efa_simulate()'s `match` documents NULL as "thresholds"; that must keep working
   sim <- efa_simulate(Lambda = sim_Lambda, Phi = sim_Phi, categories = 4,
@@ -407,14 +406,12 @@ test_that("efa_retain(criteria = NULL) runs the six documented default criteria"
   skip_if_not_slow()
 
   set.seed(500)
-  # CD is one of the six defaults and needs raw data, so a correlation matrix skips it with
-  # a warning -- which is itself evidence that all six were requested
-  expect_warning(
-    out <- efa_retain(test_models$baseline$cormat, N = 500, criteria = NULL,
-                      suitability = FALSE, n_datasets = 50, n_datasets_nest = 50,
-                      show_progress = FALSE),
-    class = "efa_criterion_skipped"
-  )
+  # CD is one of the six defaults and needs raw data, so a correlation matrix skips it --
+  # which is itself evidence that all six were requested
+  out <- efa_retain(test_models$baseline$cormat, N = 500, criteria = NULL,
+                    suitability = FALSE, n_datasets = 50, n_datasets_nest = 50,
+                    show_progress = FALSE)
+  expect_named(out$not_run, "CD")
   expect_identical(out$settings$criteria,
                    eval(formals(efa_retain)$criteria))
 })

@@ -32,7 +32,8 @@ passed to \code{\link[stats:cor]{stats::cor()}}. \code{"poly"} and \code{"tetra"
 \code{NEST} compares the data against simulated continuous reference data.
 Default is  \code{"pearson"}.}
 
-\item{n_datasets}{numeric. The number of datasets to simulate. Default is 1000.}
+\item{n_datasets}{numeric. The number of reference correlation matrices to simulate.
+Default is 1000.}
 
 \item{...}{Further arguments passed on to the \code{\link[=efa_fit]{efa_fit()}} fits. For example,
 \code{estimator}, to change the estimator (PAF is default), or one of the estimation

@@ -15,8 +15,8 @@
 #' @param n_vars numeric. The number of variables / indicators to simulate.
 #' Only has to be specified if `x` is left as `NULL` as otherwise the
 #' dimensions are taken from `x`.
-#' @param n_datasets numeric. The number of datasets to simulate. Must be at
-#'  least 1. Default is 1000.
+#' @param n_datasets numeric. The number of reference correlation matrices to simulate.
+#'  Must be at least 1. Default is 1000.
 #' @param percent numeric. The percentile to take from the simulated eigenvalues.
 #'  Default is 95.
 #' @param eigen_type character. On what the eigenvalues should be found. Can be
@@ -25,9 +25,9 @@
 #'  indicators. If using "PCA", the diagonal values of the correlation matrices
 #'  are left to be 1. If using "EFA", eigenvalues are found on the correlation
 #'  matrices with the final communalities of an EFA solution as diagonal. Default
-#'  is `c("PCA", "SMC", "EFA")`, i.e. all three, which costs roughly six times a
-#'  single non-EFA type: `"EFA"` fits an EFA to every simulated dataset and
-#'  dominates that total. Pass a single type if the run is time-critical.
+#'  is `c("PCA", "SMC", "EFA")`, i.e. all three. `"EFA"` fits an EFA to every
+#'  simulated correlation matrix and takes most of the run time. Leave out `"EFA"` if the run
+#'  is time-critical.
 #' @param use character. Passed to [stats::cor()] if raw data
 #' is given as input. Default is "pairwise.complete.obs".
 #' @param cor_method character. One of `"pearson"`, `"spearman"`, or `"kendall"`,
@@ -75,7 +75,15 @@
 #'  the shared variance is already accounted in the first eigenvalue (e.g.,
 #'  Braeken & van Assen, 2017).
 #'
-#'  The reference eigenvalues are obtained from simulated data, so the suggested number
+#'  For Pearson correlations, each simulated correlation matrix comes directly from the
+#'  exact sampling distribution of the correlation matrix of `N` cases of uncorrelated
+#'  normal variables. It is a Wishart matrix scaled to correlations (Anderson, 2003,
+#'  Sec. 7.2).
+#'  No raw data are simulated, so the time for the simulation does not increase with `N`.
+#'  Rank correlations (`"spearman"`, `"kendall"`) need raw data, so for them the data
+#'  are simulated and then correlated.
+#'
+#'  The reference eigenvalues are obtained by simulation, so the suggested number
 #'  of factors varies slightly from run to run. Call [base::set.seed()] beforehand to make a
 #'  run reproducible; the result is then also independent of the parallel plan set via
 #'  [future::plan()], so it can be reproduced on a machine with a different number of
@@ -108,6 +116,9 @@
 #'   observed eigenvalues (when real data were supplied) and the simulated reference
 #'   values (means and percentiles) used for printing and plotting.}
 #' \item{settings}{A list of the settings used.}
+#'
+#' @source Anderson, T. W. (2003). An introduction to multivariate statistical analysis
+#' (3rd ed.). Wiley.
 #'
 #' @source Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
 #' Psychological Methods, 22, 450--466. https://doi.org/10.1037/met0000074
@@ -443,26 +454,34 @@ efa_parallel <- function(x = NULL,
 }
 
 
+# Reference eigenvalues for one "EFA" simulation chunk: the final eigenvalues of an EFA fit
+# to each simulated null-model correlation matrix.
 .parallel_EFA_sim <- function(n_datasets, n_vars, N, n_factors, cor_method,
                               estimate_control = NULL, ...){
 
   eigvals <- matrix(nrow = n_datasets, ncol = n_vars)
 
-  # The null-model reference data are uncorrelated variables, drawn with the shared
-  # multivariate-normal kernel from the identity correlation (the no-factor case).
+  # The null model has uncorrelated variables (identity correlation). A Pearson
+  # reference matrix is drawn directly from its exact sampling distribution, the
+  # Wishart distribution rescaled to correlations, as .parallel_sim() does. Rank
+  # correlations need data, so for them the data are drawn with the shared
+  # multivariate-normal kernel and then correlated.
   R_null <- diag(n_vars)
+  draw_R <- if (cor_method == "pearson") {
+    function() stats::cov2cor(stats::rWishart(1L, N - 1, R_null)[, , 1])
+  } else {
+    function() stats::cor(.simulate_cfm_mvn(R_null, N), method = cor_method)
+  }
 
   for(i in seq_len(n_datasets)){
 
-    x <- .simulate_cfm_mvn(R_null, N)
-    R <- stats::cor(x, method = cor_method)
+    R <- draw_R()
     eigvals_i <- try(suppressWarnings(suppressMessages(
       efa_fit(R, n_factors = n_factors, N = N,
               estimate_control = estimate_control, ...)$final_eigen)), silent = TRUE)
     it_i <- 1
     while (inherits(eigvals_i, "try-error") && it_i < 25) {
-      x <- .simulate_cfm_mvn(R_null, N)
-      R <- stats::cor(x, method = cor_method)
+      R <- draw_R()
       eigvals_i <- try(suppressWarnings(suppressMessages(
         efa_fit(R, n_factors = n_factors, N = N,
                 estimate_control = estimate_control, ...)$final_eigen)), silent = TRUE)
@@ -542,12 +561,13 @@ efa_parallel <- function(x = NULL,
 
 # Reference eigenvalues for one simulation chunk. Horn's (1965) parallel analysis
 # requires the reference matrices to be built with the same correlation estimator
-# as the observed data. The default Pearson case uses the compiled .parallel_sim()
-# for its allocation-light, eigenvalue-only loop; rank-based estimators ("spearman",
-# "kendall") draw the null-model data with the shared multivariate-normal kernel
-# (.simulate_cfm_mvn on the identity correlation -- uncorrelated variables) and then
-# correlate them with stats::cor(), so the reference matches the observed correlation
-# estimator rather than always being Pearson.
+# as the observed data. The default Pearson case uses the compiled .parallel_sim(),
+# which draws each reference correlation matrix directly from its exact sampling
+# distribution (no data are simulated, so the cost does not grow with N). Rank-based
+# estimators ("spearman", "kendall") need data: they draw the null-model data with the
+# shared multivariate-normal kernel (.simulate_cfm_mvn on the identity correlation --
+# uncorrelated variables) and then correlate them with stats::cor(), so the reference
+# matches the observed correlation estimator rather than always being Pearson.
 .parallel_sim_eig <- function(n_datasets, n_vars, N, eigen_type, cor_method,
                               maxit = 10000) {
 

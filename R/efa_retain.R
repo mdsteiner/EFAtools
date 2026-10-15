@@ -5,25 +5,26 @@
 #' help with this choice. This function runs several of them together, and can
 #' also check whether the data are suitable for factor analysis.
 #'
-#' @param x data.frame or matrix. Raw data, or a correlation matrix. If `"CD"` is
-#' included as a criterion, x must be raw data.
-#' @param criteria character. Which factor retention methods to run: one or
-#' more of `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`, `"NEST"`, `"PARALLEL"`,
-#' `"SCREE"`, and `"SMT"` (see details). The default runs a subset of commonly
-#' used, well-performing methods, listed in the details.
+#' @param x data.frame or matrix. Raw data, or a correlation matrix. `"CD"` needs raw
+#'   data.
+#' @param criteria character. The factor retention criteria to run: one or more of
+#'   `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`, `"NEST"`, `"PARALLEL"`, `"SCREE"`, and
+#'   `"SMT"`. The default runs a subset of commonly used, well-performing criteria (see
+#'   details).
 #' @param suitability logical. Whether the data should be checked for suitability
 #' for factor analysis using Bartlett's test of sphericity and the
 #' Kaiser-Meyer-Olkin criterion (see details). Default is `TRUE`.
 #' @param N  numeric. The number of observations. Only needed if x is a
 #' correlation matrix.
-#' @param use character. Passed to [stats::cor()] if raw
-#' data is given as input. Default is `"pairwise.complete.obs"`.
+#' @param use character. Passed to [stats::cor()] if raw data is given as input. Default
+#'   is `"pairwise.complete.obs"`. `"CD"` always uses only the complete cases: it removes
+#'   the incomplete rows with a warning.
 #' @param cor_method character. Correlation computed from raw data: `"pearson"`,
-#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` /
-#'   `"tetra"` for polychoric / tetrachoric correlations (a two-step estimator).
-#'   `CD`, `PARALLEL`, `NEST`, `HULL`, and `SMT` do not support `"poly"` / `"tetra"`
-#'   and are skipped automatically if you request them together.
-#' Default is `"pearson"`.
+#'   `"spearman"`, or `"kendall"` (passed to [stats::cor()]), or `"poly"` / `"tetra"`
+#'   for polychoric / tetrachoric correlations (a two-step estimator). With `"poly"` /
+#'   `"tetra"`, `"HULL"`, `"NEST"`, `"PARALLEL"`, and `"SMT"` are skipped, and `"CD"` and
+#'   Bartlett's test use the Pearson correlations of the raw data (see details). Default
+#'   is `"pearson"`.
 #' @param n_factors_max numeric. Passed to [efa_cd()]. The maximum number
 #' of factors to test against.
 #' Larger numbers will increase the duration the procedure takes, but test more
@@ -33,9 +34,10 @@
 #' of comparison data. Default is 10000.
 #' @param N_samples numeric. Passed to [efa_cd()]. Number of samples drawn
 #'  from each population. Default is 500.
-#' @param alpha numeric. Passed to [efa_cd()]. The alpha level used to test
-#'  the significance of the improvement added by an additional factor.
-#'  Default is .30.
+#' @param alpha `r lifecycle::badge("deprecated")` Use `alpha_CD` instead.
+#' @param alpha_CD numeric. Passed to [efa_cd()] as `alpha`. The alpha level used to
+#'   test the significance of the improvement added by an additional factor. Default is
+#'   .30.
 #' @param max_iter_CD numeric. Passed to [efa_cd()]. The maximum number of
 #'  iterations to perform after which the iterative PAF procedure is halted.
 #'   Default is 50.
@@ -43,85 +45,75 @@
 #'  of factors to retain. The Hull method uses one plus the larger of this
 #'  number and the number of factors suggested by [efa_parallel()] as its
 #'  upper bound.
-#' @param estimator character. Passed to [efa_fit()] in [efa_hull()],
-#' [efa_kgc()], [efa_scree()], [efa_parallel()], and [efa_nest()]. The
-#' estimator to use. One of  `"PAF"`, `"ULS"`, or  `"ML"`,
-#' for principal axis factoring, unweighted least squares, and maximum
-#' likelihood, respectively. The default here is `"ML"`. Some criteria default to
-#' something else when called on their own (for example, [efa_hull()] defaults to
-#' `"PAF"`), so results from `efa_retain()` can differ from calling that criterion
-#' directly unless you set `estimator` to match. In [efa_kgc()], [efa_scree()], and
-#' [efa_parallel()] it only takes effect when the respective `eigen_type` includes `"EFA"`.
-#' @param gof character. Passed to [efa_hull()]. The goodness of fit index
-#' to use. Either `"CAF"`, `"CFI"`, or `"RMSEA"`, or any
-#' combination of them. With the `"PAF"` estimator, only
-#' the CAF can be used as goodness of fit index. For details on the CAF, see
-#' Lorenzo-Seva, Timmerman, and Kiers (2011).
-#' @param eigen_type_HULL character. Passed to [efa_parallel()] in
-#' [efa_hull()]. What the eigenvalues in the parallel analysis are based on.
-#' One of `"SMC"`, `"PCA"`, or `"EFA"` -- different ways of estimating how much
-#' variance each indicator shares with the others before the eigenvalues are
-#' computed. `"SMC"` (default) uses each indicator's squared multiple
-#' correlation with the others (its diagonal value in the correlation matrix).
-#' `"PCA"` leaves the diagonal at 1, so each indicator's total variance -- not
-#' just the shared part -- feeds into the eigenvalues. `"EFA"` uses the
-#' communalities from a fitted EFA solution instead.
-#' @param eigen_type_other character. Passed to [efa_kgc()],
-#' [efa_scree()], and [efa_parallel()]. The same as eigen_type_HULL,
-#' but multiple inputs are possible here (any combination of `"PCA"`, `"SMC"`,
-#' and `"EFA"`). Default is `"SMC"`.
+#' @param estimator character. The estimator for the criteria that fit a model: `"ML"`
+#'   (default), `"PAF"`, or `"ULS"`. Some criteria have a different default when called
+#'   on their own (for example, [efa_nest()] uses `"PAF"`). [efa_kgc()], [efa_scree()],
+#'   and [efa_parallel()] use it only for `"EFA"` eigenvalues. [efa_smt()] always uses
+#'   maximum likelihood.
+#' @param gof character. Passed to [efa_hull()]. The goodness of fit index to use:
+#'   `"CAF"` (default), `"CFI"`, or `"RMSEA"`, or any combination of them. With the
+#'   `"PAF"` estimator, only the CAF is available. In Lorenzo-Seva, Timmerman, and Kiers
+#'   (2011), with factor correlations up to .40, the CFI was the most accurate index. With
+#'   strongly correlated factors (e.g., .70), CFI and RMSEA can make the Hull method
+#'   retain too few factors. For details on the CAF, see Lorenzo-Seva et al. (2011).
+#' @param eigen_type_HULL character. Passed to [efa_parallel()] in [efa_hull()]. The
+#'   eigenvalues of the parallel analysis: `"PCA"` (default) uses the correlation
+#'   matrix, `"SMC"` puts the squared multiple correlations on its diagonal, and `"EFA"`
+#'   puts the communalities of an EFA solution on its diagonal (see details).
+#' @param decision_rule_HULL character. Passed to [efa_hull()] as `decision_rule`. The
+#'   rule of the parallel analysis that sets the upper bound of the Hull method, with the
+#'   same choices as `decision_rule`. Default is `"percentile"` (see details).
+#' @param eigen_type_other character. Passed to [efa_kgc()], [efa_scree()], and
+#'   [efa_parallel()]. The same types as `eigen_type_HULL`, but one or more of them.
+#'   Default is `"PCA"`.
 #' @param n_factors numeric. Passed to [efa_parallel()] (also within
 #' [efa_hull()]), [efa_kgc()], and [efa_scree()]. Number of
 #' factors to extract if `"EFA"` is included in `eigen_type_HULL` or
 #'  `eigen_type_other`. Default is 1.
 #' @param n_datasets numeric. Passed to [efa_parallel()] (also within
-#' [efa_hull()]). The number of datasets to simulate. Default is 1000.
+#' [efa_hull()]). The number of reference correlation matrices to simulate. Default is
+#' 1000.
 #' @param percent numeric. Passed to [efa_parallel()] (also within
 #' [efa_hull()]). The percentile to take from the simulated eigenvalues.
 #'  Default is 95.
-#' @param decision_rule character. Passed to [efa_parallel()] (also within
-#'  [efa_hull()]). Which rule to use to determine the number of
-#'  factors to retain. Default is `"means"`, which uses the average simulated
-#'  eigenvalues. `"percentile"` uses the percentiles specified in `percent`.
-#'  `"crawford"` uses the 95th percentile for the first factor and the mean
+#' @param decision_rule character. Passed to [efa_parallel()] for the `"PARALLEL"`
+#'  criterion only (the Hull method uses `decision_rule_HULL`). Which rule to use to
+#'  determine the number of factors to retain. Default is `"means"`, which uses the
+#'  average simulated eigenvalues. `"percentile"` uses the percentiles specified in
+#'  `percent`. `"crawford"` uses the 95th percentile for the first factor and the mean
 #'  afterwards (based on Crawford et al., 2010).
 #' @param ekc_type `r lifecycle::badge("deprecated")` Accepted and ignored. It
 #'   used to select between two ways to compute the [efa_ekc()] reference values.
 #'   The `"AM2019"` reference values do not depend on the observed eigenvalues.
 #'   They therefore skip the empirical correction that defines the criterion, so
 #'   they are no longer computed.
-#' @param n_datasets_nest numeric. Passed to [efa_nest()]. The number of
-#'   datasets to simulate. Default is 1000.
+#' @param n_datasets_nest numeric. Passed to [efa_nest()]. The number of reference
+#'   correlation matrices to simulate. Default is 1000.
 #' @param alpha_nest numeric. Passed to [efa_nest()]. The alpha level to use.
 #'   The reference values are the eigenvalues at the (1 - alpha_nest)
 #'   percentile. Default is .05.
 #' @param show_progress logical. Whether a progress bar should be shown in the
 #'   console. Default is FALSE.
-#' @param estimate_control an [estimate_control()] object with the estimation settings for the
-#'  [efa_fit()] fits run by the criteria that fit a model ([efa_hull()], [efa_kgc()],
-#'  [efa_scree()], [efa_parallel()], [efa_nest()], and [efa_smt()]). `NULL` (default) uses the
-#'  [efa_fit()] defaults. It only applies to criteria that fit a model, and only to the parts of
-#'  that fit each criterion actually runs. [efa_cd()], [efa_ekc()], and [efa_map()] fit no model.
-#'  [efa_kgc()], [efa_scree()], and [efa_parallel()] only fit one when their `eigen_type`
-#'  includes `"EFA"`. [efa_smt()] fits with maximum likelihood by definition, so only
-#'  `start_method` takes effect there. All fits are unrotated, so no rotation settings apply.
-#' @param ... Further arguments passed to [efa_fit()] in
-#' [efa_parallel()], [efa_kgc()], [efa_scree()], [efa_nest()], and (through its parallel
-#' analysis and its own candidate fits) [efa_hull()]. An argument that [efa_fit()] does not
-#' recognize causes an error. The estimation tuning knobs are not passed here; they live in
-#' `estimate_control`. The standard-error arguments (`se`, `b_boot`, `ci`, `seed`) are not
-#' accepted, because the criterion fits are internal steps whose standard errors are not
-#' reported. Arguments listed after `...` must be given by their full name (R matches an
-#' abbreviated name only against the arguments before `...`), so a tuning knob such as
-#' `max_iter` cannot be mistaken for `max_iter_CD`.
+#' @param estimate_control an [estimate_control()] object with the estimation settings
+#'   for the unrotated [efa_fit()] fits of the criteria that fit a model (all except
+#'   [efa_cd()], [efa_ekc()], and [efa_map()]). `NULL` (default) uses the [efa_fit()]
+#'   defaults. [efa_smt()] always uses maximum likelihood, so only `start_method` applies
+#'   there.
+#' @param ... Further arguments passed to [efa_fit()] in the criteria that fit a model,
+#'   except [efa_smt()]. Unknown arguments, rotation settings, estimation settings (use
+#'   `estimate_control`), and the standard-error arguments (`se`, `b_boot`, `ci`, `seed`)
+#'   cause an error. Arguments after `...` must be given by their full name.
 #'
 #' @details
-#' By default, the entered data are checked for suitability for factor analysis
-#' using the following methods (see the respective documentation for details):
-#' \itemize{
-#'   \item Bartlett's test of sphericity (see [efa_bartlett()])
-#'   \item Kaiser-Meyer-Olkin criterion (see [efa_kmo()])
-#' }
+#' By default, `efa_retain()` checks if the data are suitable for factor analysis. It
+#' uses Bartlett's test of sphericity ([efa_bartlett()]), which needs `N`, and the
+#' Kaiser-Meyer-Olkin criterion ([efa_kmo()]). A significant Bartlett's test only shows
+#' that the correlation matrix is not an identity matrix. This is almost always true for
+#' realistic sample sizes. With `cor_method = "poly"` or `"tetra"` and raw data,
+#' Bartlett's test uses the Pearson correlations of the raw data. Its chi-square
+#' distribution is not valid for polychoric correlations, because these have a larger
+#' sampling variance. Zero polychoric correlations give zero Pearson correlations, so the
+#' test has the same null hypothesis. The KMO uses the analysed correlations.
 #'
 #' The available factor retention criteria are the following (see the
 #'  respective documentation for details):
@@ -142,43 +134,66 @@
 #' Hull method, MAP, NEST, and parallel analysis. No single criterion is the most
 #' accurate in all conditions. `efa_retain()` therefore runs several criteria
 #' together, and the printed summary gives the range of their suggestions and the
-#' most common one. Auerswald and Moshagen (2019) compare the criteria and give
-#' guidance on the selection.
+#' most common one (one vote per criterion). Auerswald and Moshagen (2019) compare the
+#' criteria and give guidance on the selection.
 #'
-#' The comparison data, parallel analysis, and NEST criteria compare the data
-#' against simulated reference data, so their suggested numbers of factors vary
-#' slightly from run to run. The Hull method also varies, because it calls
-#' [efa_parallel()] to set its upper bound. Call [base::set.seed()] before
-#' `efa_retain()` to make the results reproducible.
+#' Parallel analysis, also in the Hull method, uses PCA eigenvalues by default. With
+#' the eigenvalues of the reduced correlation matrix (`"SMC"`), parallel analysis often
+#' retains too many factors, particularly when the model does not fit the data exactly.
+#' In Lim and Jahng (2019), parallel analysis with PCA eigenvalues was the most accurate
+#' in most conditions. The `"PARALLEL"` criterion compares the observed eigenvalues with
+#' the mean simulated eigenvalues by default. To set the upper bound of the Hull method,
+#' parallel analysis uses the 95th percentile instead, as Lorenzo-Seva et al. (2011)
+#' suggest. This helps to prevent overfactoring (see [efa_hull()]). The Hull method uses
+#' the CAF by default (see `gof`).
+#'
+#' A criterion that cannot use the input is skipped: `"CD"` with a correlation matrix,
+#' and `"HULL"`, `"NEST"`, `"PARALLEL"`, and `"SMT"` with `cor_method = "poly"` or
+#' `"tetra"`. If you do not set `criteria`, this occurs without a warning. With a
+#' correlation matrix and no `N`, the criteria that need `N` (`"EKC"`, `"HULL"`,
+#' `"NEST"`, `"PARALLEL"`, and `"SMT"`) are skipped with a warning. The printed result
+#' shows all criteria that did not run. With `cor_method = "poly"` or `"tetra"`,
+#' comparison data use the Pearson correlations of the raw data (see [efa_cd()]).
+#'
+#' Comparison data, parallel analysis, NEST, and the Hull method use simulated reference
+#' data, so their suggestions can change slightly from run to run. The Hull method uses
+#' simulation only for the parallel analysis that sets its upper bound. If parallel
+#' analysis also runs and `eigen_type_other` includes `eigen_type_HULL`, the Hull method
+#' uses its simulated eigenvalues with `decision_rule_HULL`, and does not simulate again.
+#' To make the results reproducible, call [base::set.seed()] first.
 #'
 #' @returns A list of class `c("efa_retain", "N_FACTORS")`, the trailing class
 #'   keeping `inherits(x, "N_FACTORS")` working for code written against the
 #'   superseded name. It contains
 #' \item{suitability}{A list with the results from [efa_bartlett()] and
 #'   [efa_kmo()] (`bartlett` and `kmo`), or `NULL` if
-#'   `suitability = FALSE`.}
+#'   `suitability = FALSE`. `bartlett` is `NULL` if `N` is missing.}
 #' \item{outputs}{A named list with one `efa_retention` object per factor
-#'   retention criterion that was run (see, e.g., [efa_ekc()]).}
-#' \item{n_factors}{A named numeric vector with the suggested number of factors
-#'   per criterion and, where a criterion has several variants, per variant
-#'   (e.g. `EKC_BvA2017` or `PARALLEL_SMC`). Criteria without a numeric
-#'   suggestion (the scree plot) are not included. The printed summary's "most common"
-#'   value is based on each criterion's own most frequent (modal) suggestion among its
-#'   variants, not a plain tally of this vector, so counting entries here by hand can
-#'   give a different answer.}
+#'   retention criterion that was run, in alphabetical order (see, e.g., [efa_ekc()]).}
+#' \item{n_factors}{A named numeric vector with the suggested number of factors per
+#'   criterion and variant (e.g. `EKC_BvA2017` or `PARALLEL_PCA`), without the scree plot.}
 #' \item{not_run}{A named character vector with the criteria that were skipped
 #'   or failed and the reason, or `NULL` if all requested criteria ran.}
-#' \item{settings}{A list of the settings used. Its `criteria` element records the
-#'   requested criteria, in the order they were given, while `outputs` and `n_factors`
-#'   are in the order in which the criteria were run. `gof` records the requested Hull
-#'   goodness-of-fit indices, and `gof_used` records the ones the Hull method actually
-#'   computed (it reduces them to `"CAF"` for the PAF estimator). `gof_used` is `NA`
-#'   when HULL was not requested, was skipped, or failed.}
+#' \item{settings}{A list of the settings used. `gof_used` records the Hull goodness of
+#'   fit indices that were computed (`NA` if the Hull method did not run).}
 #'
 #' @source Auerswald, M., & Moshagen, M. (2019). How to determine the number of
 #' factors to retain in exploratory factor analysis: A comparison of extraction
 #' methods under realistic conditions. Psychological Methods, 24(4), 468–491.
 #' https://doi.org/10.1037/met0000200
+#'
+#' @source Lim, S., & Jahng, S. (2019). Determining the number of factors using
+#' parallel analysis and its recent variants. Psychological Methods, 24(4), 452–467.
+#' https://doi.org/10.1037/met0000230
+#'
+#' @source Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011). The Hull method
+#' for selecting the number of common factors. Multivariate Behavioral Research, 46(2),
+#' 340-364. https://doi.org/10.1080/00273171.2011.564527
+#'
+#' @source Ruscio, J., & Roche, B. (2012). Determining the number of factors to
+#' retain in an exploratory factor analysis using comparison data of known
+#' factorial structure. Psychological Assessment, 24, 282–292.
+#' https://doi.org/10.1037/a0025697
 #'
 #' @seealso [efa_screen()] for data screening before retention, and [efa_fit()] to extract
 #'  the chosen number of factors.
@@ -189,58 +204,32 @@
 #'
 #' @examples
 #' \donttest{
-#' # Default criteria, with correlation matrix and estimator "ML" (where needed)
-#' # This will throw a warning for CD, as no raw data were specified
-#' # The simulation-based criteria are seeded to make the run reproducible
+#' # The simulation-based criteria are seeded to make the runs reproducible
 #' set.seed(42)
-#' nfac_all <- efa_retain(test_models$baseline$cormat, N = 500, estimator = "ML",
-#'                        n_datasets = 100, n_datasets_nest = 100)
 #'
-#' # The same as above, but without "CD"
-#' nfac_wo_CD <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
-#'                          "HULL", "PARALLEL", "NEST"), N = 500,
-#'                          estimator = "ML", n_datasets = 100,
-#'                          n_datasets_nest = 100)
+#' # Correlation matrix: the default criteria except "CD", which needs raw data
+#' efa_retain(test_models$baseline$cormat, N = 500, n_datasets = 100,
+#'            n_datasets_nest = 100)
 #'
-#' # Use PAF instead of ML (this will take longer). PAF only supports "CAF" as
-#' # gof for the Hull method, so set it explicitly to avoid the automatic message.
-#' nfac_PAF <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
-#'                        "HULL", "PARALLEL", "NEST"), N = 500,
-#'                        estimator = "PAF", gof = "CAF", n_datasets = 100,
-#'                        n_datasets_nest = 100)
-#'
-#' # Back to the default ML estimator (unlike above), with only "PCA" type eigenvalues
-#' nfac_PCA <- efa_retain(test_models$baseline$cormat, criteria = c("EKC",
-#'                        "HULL", "PARALLEL", "NEST"), N = 500,
-#'                        estimator = "ML", eigen_type_other = "PCA",
-#'                        n_datasets = 100, n_datasets_nest = 100)
-#'
-#' # Use raw data, such that CD can also be performed
-#' nfac_raw <- efa_retain(GRiPS_raw, estimator = "ML", N_pop = 500,
-#'                         N_samples = 20, n_datasets = 100,
-#'                         n_datasets_nest = 100)
-#'}
+#' # Raw data: "CD" runs too
+#' efa_retain(GRiPS_raw, N_pop = 500, N_samples = 20, n_datasets = 100,
+#'            n_datasets_nest = 100)
+#' }
 efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARALLEL"),
                        suitability = TRUE, N = NA,
                        use = c("pairwise.complete.obs", "all.obs",
                                "complete.obs", "everything", "na.or.complete"),
                        cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
                        n_factors_max = NA, N_pop = 10000, N_samples = 500,
-                       alpha = .30,
-                       # `...` sits here deliberately, and must stay ahead of `max_iter_CD`: R
-                       # matches an argument to a formal by unique prefix, but only for the
-                       # formals BEFORE `...`. With `max_iter_CD` behind it, a bare `max_iter`
-                       # can no longer be taken for it -- silently capping the comparison-data
-                       # iterations instead of tuning the fits -- and lands in the dots, where
-                       # the flat-knob guard below names the control object it belongs to. Every
-                       # argument below must therefore be passed by its full name. Keep any new
-                       # formal here too unless it can never be confused with a tuning knob.
+                       alpha = lifecycle::deprecated(),
+                       # arguments after `...` must be given by their full name
                        ...,
-                       max_iter_CD = 50, n_fac_theor = NA,
+                       alpha_CD = .30, max_iter_CD = 50, n_fac_theor = NA,
                        estimator = c("ML", "PAF", "ULS"),
-                       gof = c("CAF", "CFI", "RMSEA"),
-                       eigen_type_HULL = c("SMC", "PCA", "EFA"),
-                       eigen_type_other = c("SMC"),
+                       gof = "CAF",
+                       eigen_type_HULL = c("PCA", "SMC", "EFA"),
+                       decision_rule_HULL = c("percentile", "means", "crawford"),
+                       eigen_type_other = "PCA",
                        n_factors = 1, n_datasets = 1000,
                        percent = 95,
                        decision_rule = c("means", "percentile", "crawford"),
@@ -249,28 +238,32 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                        show_progress = FALSE,
                        estimate_control = NULL){
 
-  # Perform argument checks
-  # Reject a flat tuning knob here rather than letting it travel into the criteria that fit a
-  # model: each criterion is run under a tryCatch, so the knob would surface as an opaque
-  # "criterion could not be run" instead of naming the control object it belongs to.
+  # default criteria that cannot use the input are skipped without a warning
+  default_criteria <- missing(criteria) || is.null(criteria)
+
+  # refuse here the dots that the criterion fits cannot take (see R/control.R)
   .reject_flat_knobs(...names(), fn = "efa_retain")
-  # A dot the criteria cannot forward to a fit is a misspelling; reject it here rather than
-  # letting it be silently dropped (when the selected criteria run no fit) or surface as an
-  # opaque "criterion could not be run". The criterion fits are always unrotated, so a
-  # rotation setting is refused too (the N_FACTORS() wrapper's repacked rotate_control() object
-  # is exempt -- see .reject_rotation_dots()), as are efa_fit()'s inference arguments
-  # (`se`/`b_boot`/`ci`/`seed`), which a criterion fit computes and then discards -- see
-  # .reject_inference_dots().
   .reject_unknown_fit_dots(...names(), fn = "efa_retain", unrotated = TRUE)
   .reject_rotation_dots(list(...), fn = "efa_retain")
   .assert_cor_input(x)
   .assert_estimate_control(estimate_control)
 
-  ## Perform argument checks and prepare input
+  if (lifecycle::is_present(alpha)) {
+    if (!missing(alpha_CD)) {
+      cli::cli_abort(
+        c("{.arg alpha} and {.arg alpha_CD} cannot both be supplied.",
+          "i" = "{.arg alpha} is the former name of {.arg alpha_CD}; pass only one."),
+        class = "efa_renamed_arg"
+      )
+    }
+    lifecycle::deprecate_warn(when = "1.2.0", what = "efa_retain(alpha)",
+                              with = "efa_retain(alpha_CD)")
+    alpha_CD <- alpha
+  }
+
   criteria <- .match_arg_ci(criteria, several.ok = TRUE,
                             choices = c("CD", "EKC", "HULL", "KGC", "PARALLEL",
                                         "SCREE", "SMT", "NEST", "MAP"))
-  suitability <- checkmate::assert_flag(suitability)
   eigen_type_HULL <- .match_arg_ci(eigen_type_HULL)
   eigen_type_other <- .match_arg_ci(eigen_type_other, several.ok = TRUE,
                                     choices = c("PCA", "SMC", "EFA"))
@@ -279,9 +272,26 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
   use <- .match_arg_ci(use)
   estimator <- .match_arg_ci(estimator)
   decision_rule <- .match_arg_ci(decision_rule)
+  decision_rule_HULL <- .match_arg_ci(decision_rule_HULL)
   if (lifecycle::is_present(ekc_type)) .deprecate_ekc_type("efa_retain(ekc_type)")
-  checkmate::assert_number(alpha_nest, lower = 0, upper = 1)
-  checkmate::assert_count(n_datasets_nest, na.ok = FALSE, positive = TRUE)
+
+  # the checks of the criteria, done before any of them runs
+  .assert_args({
+    checkmate::assert_flag(suitability)
+    checkmate::assert_count(N, na.ok = TRUE, positive = TRUE)
+    checkmate::assert_count(n_factors_max, na.ok = TRUE, positive = TRUE)
+    checkmate::assert_int(N_pop, lower = 2)
+    checkmate::assert_count(N_samples, positive = TRUE)
+    checkmate::assert_number(alpha_CD, lower = 0, upper = 1)
+    checkmate::assert_count(max_iter_CD, positive = TRUE)
+    checkmate::assert_count(n_fac_theor, na.ok = TRUE)
+    checkmate::assert_count(n_factors, positive = TRUE)
+    checkmate::assert_count(n_datasets, positive = TRUE)
+    checkmate::assert_number(percent, lower = 0, upper = 100)
+    checkmate::assert_count(n_datasets_nest, positive = TRUE)
+    checkmate::assert_number(alpha_nest, lower = 0, upper = 1)
+    checkmate::assert_flag(show_progress)
+  })
 
   # Detect or compute the correlation matrix, check it, and smooth it if needed
   prep <- .prepare_cor_input(x, N = N, use = use, cor_method = cor_method,
@@ -291,18 +301,18 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
 
   ## Tests for suitability of factor analysis
   suitability_out <- NULL
-  if (isTRUE(suitability)) {
-    # Bartlett's test of sphericity needs N; the KMO criterion does not. When N
-    # is unavailable (a correlation matrix without N), skip Bartlett's test with a
-    # note and still report KMO, instead of aborting and thereby blocking the
-    # N-free retention criteria too.
+  if (suitability) {
+    # Bartlett's chi-square is not valid for polychoric correlations, so with raw data
+    # it tests the Pearson correlations, which are zero if the polychoric ones are
+    # (data.matrix() codes ordered factors by level, as .polychoric() does)
     bartlett_out <- if (is.na(N)) {
-      cli::cli_warn(
-        c("{.arg N} is {.val NA}; Bartlett's test of sphericity was skipped.",
-          "i" = "Provide {.arg N} or raw data to include it."),
-        class = "efa_suitability_no_n"
-      )
       NULL
+    } else if (.is_poly_cor(cor_method) && !prep$is_cormat) {
+      # a smoothing of this auxiliary matrix is not a smoothing of the analysed one
+      pearson <- withCallingHandlers(
+        .prepare_cor_input(data.matrix(x), use = use, inform_from_data = FALSE),
+        efa_cor_smoothed = function(w) invokeRestart("muffleWarning"))
+      efa_bartlett(pearson$R, N = pearson$N, use = use, cor_method = "pearson")
     } else {
       efa_bartlett(R, N = N, use = use, cor_method = cor_method)
     }
@@ -312,13 +322,14 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
     )
   }
 
-  ## Factor retention criteria, driven by the registry (run in registry order)
+  ## Factor retention criteria, driven by the registry
   ctl <- .n_factors_ctl(N = N, use = use, cor_method = cor_method,
                         n_factors_max = n_factors_max, N_pop = N_pop,
-                        N_samples = N_samples, alpha = alpha,
+                        N_samples = N_samples, alpha_CD = alpha_CD,
                         max_iter_CD = max_iter_CD, n_fac_theor = n_fac_theor,
                         estimator = estimator, gof = gof,
                         eigen_type_HULL = eigen_type_HULL,
+                        decision_rule_HULL = decision_rule_HULL,
                         eigen_type_other = eigen_type_other,
                         n_factors = n_factors, n_datasets = n_datasets,
                         percent = percent, decision_rule = decision_rule,
@@ -327,69 +338,64 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                         estimate_control = estimate_control, dots = list(...))
 
   run <- intersect(names(.retention_registry), criteria)
+  # the Hull method reuses the parallel analysis, so that one runs first
+  hull_from_pa <- all(c("HULL", "PARALLEL") %in% run) && eigen_type_HULL %in% eigen_type_other
+  if (hull_from_pa) {
+    run <- setdiff(run, "PARALLEL")
+    run <- append(run, "PARALLEL", after = match("HULL", run) - 1L)
+  }
+
   outputs <- list()
   not_run <- character(0)   # id -> reason it was skipped or failed
-  # the first criterion error, chained into the all-failed abort below so the underlying
-  # cause travels with it (a criterion that was skipped raises no condition to chain)
-  first_cnd <- NULL
+  kind <- character(0)      # id -> "silent" or "skipped" (both not run), or "failed"
+  first_cnd <- NULL         # the first criterion error, chained into the abort below
+  no_n <- "needs N, which was not supplied"
 
   for (id in run) {
 
-    if (isTRUE(show_progress)) {
-      # the message is a glue template evaluated when the bar is terminated -- by which time
-      # `id` has advanced to the next criterion -- so build the string eagerly and freeze the
-      # criterion name in it, or every completed step is labelled with its successor's name
+    if (show_progress) {
+      # cli evaluates the label when the step ends, after `id` changed, so build it now
       cli::cli_progress_step(paste0("Running ", id))
     }
 
     entry <- .retention_registry[[id]]
 
-    if (isTRUE(entry$needs_raw) && .is_cormat(x)) {
-      cli::cli_warn(
-        c("{.arg x} is a correlation matrix, but {.val {id}} needs raw data.",
-          "i" = "Skipping {.val {id}}."),
-        class = "efa_criterion_skipped"
-      )
-      not_run[[id]] <- "needs raw data, but a correlation matrix was supplied"
+    skip <- if (isTRUE(entry$needs_raw) && prep$is_cormat) {
+      "needs raw data, but a correlation matrix was supplied"
+    } else if (.is_poly_cor(cor_method) && isFALSE(entry$poly_ok)) {
+      paste0("does not support cor_method = \"", cor_method, "\"")
+    } else if (isTRUE(entry$needs_N) && is.na(N)) {
+      no_n
+    }
+    if (!is.null(skip)) {
+      not_run[[id]] <- skip
+      # a missing N is likely a mistake, so it is reported also for a default criterion
+      kind[[id]] <- if (default_criteria && skip != no_n) "silent" else "skipped"
       next
     }
 
-    # Some criteria do not support polychoric/tetrachoric correlations (they
-    # compare against continuous reference data, or their normal-theory test is
-    # invalid for such correlations); skip them with a clear note rather than
-    # letting them run on an inappropriate matrix.
-    if (.is_poly_cor(cor_method) && isFALSE(entry$poly_ok)) {
-      cli::cli_warn(
-        c("{.val {id}} does not support {.code cor_method = {.val {cor_method}}}.",
-          "i" = "Skipping {.val {id}}."),
-        class = "efa_criterion_skipped"
-      )
-      not_run[[id]] <- paste0("does not support cor_method = \"", cor_method, "\"")
-      next
+    if (id == "HULL" && hull_from_pa && !is.null(outputs[["PARALLEL"]])) {
+      pa <- outputs[["PARALLEL"]]
+      ctl$n_fac_PA <- if (decision_rule_HULL == decision_rule) {
+        unname(pa$n_factors[[eigen_type_HULL]])
+      } else {
+        # the same simulated eigenvalues, compared with the rule of the Hull method
+        rec <- pa$results[[match(eigen_type_HULL, names(pa$n_factors))]]
+        .determine_factors(decision_rule_HULL, rec$y, do.call(cbind, rec$references),
+                           percent)
+      }
     }
 
-    # a failing criterion is excluded with a warning; the others still run
-    out_id <- try(entry$fun(if (isTRUE(entry$needs_raw)) x else R, ctl),
-                  silent = TRUE)
+    out_id <- tryCatch(entry$fun(if (isTRUE(entry$needs_raw)) x else R, ctl),
+                       error = function(e) e)
 
-    if (inherits(out_id, "try-error")) {
-      # `conditionMessage()` returns the message already wrapped to the console width, so its
-      # first line is only the first *wrapped* line -- truncating the reason mid-sentence at
-      # narrow widths. A cli condition keeps the unwrapped headline in `$message` (the bullets
-      # live in `$body`), so take that and squish the newlines the source string carries.
-      # A condition whose headline is absent or empty carries its text in `$body` instead, so
-      # fall back to the formatted message there rather than reporting an empty reason.
-      cnd <- attr(out_id, "condition")
-      reason <- trimws(paste(cnd$message, collapse = " "))
-      if (!nzchar(reason)) reason <- conditionMessage(cnd)
-      reason <- gsub("\\s+", " ", trimws(reason))
-      if (is.null(first_cnd)) first_cnd <- cnd
-      cli::cli_warn(
-        c("{.val {id}} could not be run and is excluded from the results.",
-          "i" = "Error: {reason}"),
-        class = "efa_criterion_failed"
-      )
-      not_run[[id]] <- reason
+    if (inherits(out_id, "error")) {
+      # the unwrapped cli headline, or the formatted message if the headline is empty
+      reason <- trimws(paste(out_id$message, collapse = " "))
+      if (!nzchar(reason)) reason <- conditionMessage(out_id)
+      not_run[[id]] <- gsub("\\s+", " ", trimws(reason))
+      kind[[id]] <- "failed"
+      if (is.null(first_cnd)) first_cnd <- out_id
       next
     }
 
@@ -397,24 +403,49 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
 
   }
 
-  if (isTRUE(show_progress)) {
+  if (show_progress) {
     cli::cli_progress_done()
   }
+
+  # report in registry order, whatever order the criteria ran in
+  outputs <- outputs[intersect(names(.retention_registry), names(outputs))]
+  ord <- intersect(names(.retention_registry), names(not_run))
+  not_run <- not_run[ord]
+  kind <- kind[ord]
 
   # nothing ran: a result with no criteria is not meaningful
   if (length(outputs) == 0) {
     cli::cli_abort(
       c("None of the requested factor retention criteria could be run.",
-        "x" = "Could not run: {.val {names(not_run)}}.",
-        "i" = "See the warnings above for the reason in each case."),
+        .retain_reason_bullets(not_run)),
       class = "efa_no_criteria",
-      # chains the first criterion error onto the abort, so the cause is reported with it
-      # rather than only in the warning that has already scrolled past
       parent = first_cnd
     )
   }
 
-  # Prepare settings here
+  skipped <- not_run[kind == "skipped"]
+  if (length(skipped) > 0) {
+    n_skip <- length(skipped)
+    cli::cli_warn(
+      c("{n_skip} factor retention criteri{?on was/a were} skipped:",
+        .retain_reason_bullets(skipped),
+        if (any(skipped == no_n)) {
+          c("i" = "Supply {.arg N}, or raw data, to run the criteria that need it.")
+        }),
+      class = "efa_criterion_skipped"
+    )
+  }
+
+  failed <- not_run[kind == "failed"]
+  if (length(failed) > 0) {
+    n_fail <- length(failed)
+    cli::cli_warn(
+      c("{n_fail} factor retention criteri{?on/a} failed:",
+        .retain_reason_bullets(failed)),
+      class = "efa_criterion_failed"
+    )
+  }
+
   settings <- list(criteria = criteria,
                    suitability = suitability,
                    N = N,
@@ -422,7 +453,9 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                    n_factors_max = n_factors_max,
                    N_pop = N_pop,
                    N_samples = N_samples,
-                   alpha = alpha,
+                   alpha_CD = alpha_CD,
+                   # back-compat alias of alpha_CD
+                   alpha = alpha_CD,
                    cor_method = cor_method,
                    max_iter_CD = max_iter_CD,
                    n_fac_theor = n_fac_theor,
@@ -430,13 +463,11 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
                    # back-compat alias, as for the frozen P_type key
                    method = estimator,
                    gof = gof,
-                   # `gof` above is what was requested; the Hull method reduces it to CAF
-                   # whenever the PAF estimator is used, so record what actually ran
-                   # alongside it. NA when HULL was not among the criteria, was skipped, or
-                   # failed -- no Hull goodness-of-fit index was computed in those cases.
+                   # the Hull indices actually computed (PAF reduces them to the CAF)
                    gof_used = if (is.null(outputs[["HULL"]])) NA_character_
                               else outputs[["HULL"]]$settings$gof,
                    eigen_type_HULL = eigen_type_HULL,
+                   decision_rule_HULL = decision_rule_HULL,
                    eigen_type_other = eigen_type_other,
                    n_factors = n_factors,
                    n_datasets = n_datasets,
@@ -468,6 +499,14 @@ efa_retain <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARA
 
   return(output)
 
+}
+
+# One cli bullet "<id>: <reason>" per element of a named character vector, with the
+# braces doubled so that cli shows a reason (often an error message) as it is.
+.retain_reason_bullets <- function(reasons) {
+  txt <- paste0(names(reasons), ": ", reasons)
+  txt <- gsub("}", "}}", gsub("{", "{{", txt, fixed = TRUE), fixed = TRUE)
+  stats::setNames(txt, rep("*", length(txt)))
 }
 
 #' Print method for efa_retain objects
@@ -512,42 +551,18 @@ format.efa_retain <- function(x, ...) {
 
     if (!is.null(x$suitability)) {
 
-      cli::cli_rule(left = "Tests for the suitability of the data for factor analysis")
+      cli::cli_rule(left = "Sampling adequacy and sphericity")
       cli::cli_text("")
 
+      # the same lines as in format.efa_screen()
       bart <- x$suitability$bartlett
-      pval <- bart$p_value
-      if (!is.null(pval) && !is.na(pval)) {
-        stats_text <- paste0("\u03c7\u00b2(", bart$df, ") = ",
-                             round(bart$chisq, 2), ", p", .screen_p_str(pval), ".")
-        if (.screen_is_sig(pval)) {
-          cli::cli_bullets(c("v" = paste0(
-            "Bartlett's test of sphericity was significant at an alpha level of .05: ",
-            stats_text,
-            " These data are probably suitable for factor analysis.")))
-        } else {
-          cli::cli_bullets(c("x" = paste0(
-            "Bartlett's test of sphericity was not significant at an alpha level of .05: ",
-            stats_text,
-            " These data are probably not suitable for factor analysis.")))
-        }
-      } else {
-        cli::cli_bullets(c("!" =
-          "Bartlett's test of sphericity did not render a result."))
-      }
-
-      kmo <- x$suitability$kmo$KMO
-      if (!is.null(kmo) && !is.na(kmo)) {
-        # Kaiser's verbal bands, shared with efa_kmo() and efa_screen() so that the same
-        # value is never reported at two different severities
-        band <- .kmo_band(kmo)
-        kmo_text <- paste0("The Kaiser-Meyer-Olkin criterion is ", band$label,
-                           " (KMO = ", round(kmo, 3), "). These data are ",
-                           band$suitability, " suitable for factor analysis.")
-        cli::cli_bullets(stats::setNames(kmo_text, band$symbol))
-      } else {
-        cli::cli_bullets(c("!" =
-          "The overall KMO value for your data is not available."))
+      pearson <- !is.null(bart) && .is_poly_cor(x$settings$cor_method) &&
+        identical(bart$settings$cor_method, "pearson")
+      .print_kmo_line(x$suitability$kmo$KMO, digits = 3)
+      .print_bartlett_line(bart)
+      if (pearson) {
+        cli::cli_alert_info(paste("Bartlett's test uses Pearson correlations: its chi-square",
+                                  "is not valid for polychoric correlations."), wrap = TRUE)
       }
 
       cli::cli_text("")
@@ -559,31 +574,25 @@ format.efa_retain <- function(x, ...) {
 
     cli::cli_rule(left = "Suggested number of factors")
 
-    # one line answering "how many factors, and how much do the criteria disagree?"
-    # before the per-criterion detail; interpolated as a variable so that cli
-    # substitutes the value instead of re-parsing it as a template
+    # the range and most common suggestion, interpolated as a variable so that cli does
+    # not parse it as a template
     summary_line <- .retention_summary(x$outputs[!is_visual])
     if (!is.null(summary_line)) {
       cli::cli_text("")
       cli::cli_text("{summary_line}")
     }
 
-    # criteria with a numeric suggestion: one group with one bullet per variant
-    # (a variant the criterion could not determine shows as "not applicable"),
-    # separated by a blank line for readability
+    # one group per criterion with a numeric suggestion: label, context line, bullets
     for (out in x$outputs[!is_visual]) {
       cli::cli_text("")
       cli::cli_text("{out$criterion[['label']]}")
-      # the criterion's own context line, where it has one (which eigenvalues, which
-      # estimator): the bullets below are keyed by eigenvalue type or fit index, so
-      # without it the aggregate report would not say what those keys refer to
       if (!is.null(out$subtitle)) {
         cli::cli_text("{out$subtitle}")
       }
       cli::cli_ul(.retention_bullets(out$results))
     }
 
-    # visual criteria (e.g. the scree plot) are pointed to the plot
+    # visual criteria (e.g. the scree plot) point to the plot
     for (out in x$outputs[is_visual]) {
       cli::cli_text("")
       label <- out$criterion[["label"]]
@@ -594,26 +603,18 @@ format.efa_retain <- function(x, ...) {
     # criteria that were skipped or failed
     if (!is.null(x$not_run)) {
       cli::cli_text("")
-      cli::cli_rule(left = "Criteria that could not be run")
+      cli::cli_rule(left = "Criteria not run")
       cli::cli_text("")
-      for (id in names(x$not_run)) {
-        reason <- x$not_run[[id]]
-        cli::cli_bullets(c("!" = "{id}: {reason}"))
-      }
+      cli::cli_bullets(.retain_reason_bullets(x$not_run))
     }
 
   })
 }
 
-# One-line summary of the criteria's suggestions for format.efa_retain(): how many
-# suggestions how many criteria made, the range they span, and, when they disagree, the
-# most common suggestion. The most common value is counted with ONE VOTE PER CRITERION --
-# each criterion's own modal variant -- and never per variant, so that a criterion with
-# several variants (e.g. the Hull method with three goodness-of-fit indices) does not
-# outvote a single-variant one. A criterion whose variants have no single modal value is
-# undecided and casts no vote. `outputs` are the criterion results with a numeric
-# suggestion (the visual ones are excluded by the caller); returns NULL when none of them
-# determined a number, or when a single suggestion would only restate the bullet below.
+# One-line summary of the suggestions for format.efa_retain(): their number, range, and, if
+# they disagree, the most common one. Each criterion has ONE vote, its own modal variant (none
+# if its variants tie), so several variants cannot outvote one. NULL if no criterion
+# determined a number, or if a single suggestion would only repeat the bullet below.
 .retention_summary <- function(outputs) {
 
   # per criterion, the numbers it determined (a variant that came out NA determined none)
@@ -652,10 +653,7 @@ format.efa_retain <- function(x, ...) {
                    .retention_count(max(nf)), " factors")
   if (is.null(votes)) return(paste0(spread, "."))
 
-  # a most common value only means something once some value was chosen by more than one
-  # criterion. Where every deciding criterion picked a different number there is none, and
-  # listing them all under "most common" would read as agreement where there is the
-  # maximum possible disagreement, so the range is left to speak for itself.
+  # a most common value needs a value that more than one criterion chose
   best <- modal(votes)
   if (best$n == 1L) return(paste0(spread, "."))
 

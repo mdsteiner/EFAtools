@@ -138,8 +138,9 @@
 #' @param criteria character. Simulation mode. The factor-retention criteria to
 #'   evaluate the hit-rate for, any of `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
 #'   `"NEST"`, `"PARALLEL"`, and `"SMT"` (see [efa_retain()]). Default is
-#'   `c("EKC", "MAP")`. Criteria that simulate internally (`"CD"`, `"HULL"`,
-#'   `"NEST"`, `"PARALLEL"`) make each run substantially slower.
+#'   `c("EKC", "MAP")`. Apart from `estimator`, the criteria use the [efa_retain()]
+#'   defaults, for example PCA eigenvalues for `"KGC"` and `"PARALLEL"`, and the CAF for
+#'   `"HULL"`. `"CD"` and `"HULL"` make each run substantially slower.
 #' @param estimator character. Simulation mode. The estimator (`"PAF"`, `"ML"`,
 #'   or `"ULS"`) used for the recovery fit and the retention criteria. Default
 #'   is `"PAF"`.
@@ -598,9 +599,8 @@ efa_power <- function(mode = c("rmsea", "simulation"),
   datasets <- sim$data
   if (!is.list(datasets)) datasets <- list(datasets)
 
-  # Shared retention control list: the N_FACTORS() defaults with the sample size `N`
-  # and `estimator` threaded in (`gof` follows `estimator` inside
-  # .n_factors_ctl(): PAF supports only the CAF), both fixed across replicates.
+  # Shared retention control list: the efa_retain() defaults with the sample size `N`
+  # and `estimator` threaded in, both fixed across replicates.
   ctl <- .n_factors_ctl(N = N, estimator = estimator)
 
   # Analyse every replicate; future.seed = TRUE binds each to its own reproducible

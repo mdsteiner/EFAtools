@@ -2,23 +2,27 @@
 % Please edit documentation in R/RcppExports.R
 \name{.parallel_sim}
 \alias{.parallel_sim}
-\title{Parallel analysis on simulated data.}
+\title{Parallel analysis on simulated correlation matrices.}
 \usage{
 .parallel_sim(n_datasets, n_vars, N, eigen_type, maxit = 10000L)
 }
 \arguments{
-\item{n_datasets}{numeric. Number of datasets with dimensions (N, n_vars) to simulate.}
+\item{n_datasets}{numeric. Number of correlation matrices to draw.}
 
 \item{n_vars}{numeric. Number of variables / indicators in dataset.}
 
-\item{N}{numeric. Number of cases / observations in dataset.}
+\item{N}{numeric. Number of cases / observations in dataset. Must be larger than \code{n_vars}.}
 
-\item{eigen_type}{numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1), SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs), or both from the same simulated datasets (eigen_type = 3), in which case the returned matrix holds the PCA eigenvalues in the first n_vars columns and the SMC eigenvalues in the next n_vars.}
+\item{eigen_type}{numeric. Whether PCA (eigen_type = 1; i.e., leaving diagonal of correlation matrix at 1), SMC (eigen_type = 2; i.e., setting diagonal of correlation matrix to SMCs), or both from the same draws (eigen_type = 3), in which case the returned matrix holds the PCA eigenvalues in the first n_vars columns and the SMC eigenvalues in the next n_vars.}
 
 \item{maxit}{numeric. Maximum iterations to perform after which to abort.}
 }
 \description{
 Function called from within efa_parallel() so usually no call to this is needed by the user.
-Provides a C++ implementation of the efa_parallel() simulation procedure
+Provides a C++ implementation of the efa_parallel() simulation procedure for Pearson
+correlations. Each simulated correlation matrix is drawn directly from the sampling
+distribution of the Pearson correlation matrix of \code{N} cases of \code{n_vars} uncorrelated
+normal variables: a Wishart matrix with identity covariance and \code{N - 1} degrees of
+freedom, rescaled to correlations. This is exact and does not simulate the data.
 }
 \keyword{internal}
