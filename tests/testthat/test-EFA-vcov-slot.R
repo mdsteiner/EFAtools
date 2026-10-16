@@ -5,9 +5,16 @@
 #     se = "sandwich" (in both unrotated and rotated paths), NA-filled at a Heywood/unreliable
 #     fit, NULL for se = "none" and se = "np-boot".
 #   * `Gamma`: n x n asymptotic covariance of the off-diagonal correlations on the
-#     variance scale (n = p(p-1)/2, ordered by utils::combn(p, 2)). Populated for
-#     se = "sandwich" only, NULL otherwise.
+#     variance scale (n = p(p-1)/2, ordered by utils::combn(p, 2)). Kept only while efa_mi()
+#     fits its imputations (`.efa_state$keep_gamma`, set by .with_gamma() below); then
+#     populated for se = "sandwich" and NULL otherwise.
 # Downstream MI pooling depends on these slots; the assertions below are the storage contract.
+
+.with_gamma <- function(expr) {
+  .efa_state$keep_gamma <- TRUE
+  on.exit(.efa_state$keep_gamma <- FALSE)
+  expr
+}
 
 # Self-contained continuous fixture (skewed simple-structure factor model, ~unit variance per
 # column). Independent of test-se-sandwich.R so the file can run in isolation.
@@ -51,8 +58,8 @@ make_adf_fixture <- function(N, loadings, seed) {
   cache <- NULL
   function() {
     if (is.null(cache)) {
-      cache <<- EFA(DOSPERT_raw[, 1:8], n_factors = 1, cor_method = "poly", method = "ULS",
-                    rotation = "none", se = "sandwich")
+      cache <<- .with_gamma(EFA(DOSPERT_raw[, 1:8], n_factors = 1, cor_method = "poly",
+                                method = "ULS", rotation = "none", se = "sandwich"))
     }
     cache
   }
@@ -259,7 +266,7 @@ test_that("the top-level name vector under analytic SE is pinned", {
   expect_named(fit, c("orig_R", "h2", "orig_eigen", "final_eigen", "iter",
                       "convergence", "heywood", "unrot_loadings", "vars_accounted",
                       "fit_indices", "model_implied_R", "residuals", "settings",
-                      "vcov_unrot_loadings", "Gamma", "SE", "CI", "replicates"))
+                      "vcov_unrot_loadings", "SE", "CI", "replicates"))
 })
 
 
@@ -341,8 +348,8 @@ test_that("se = 'sandwich' persists Gamma on the continuous Pearson path with th
                           seed = 14)
   p <- ncol(dat); n_pairs <- p * (p - 1L) / 2L
 
-  fit <- EFA(dat, n_factors = 1, cor_method = "pearson", method = "ML", rotation = "none",
-             se = "sandwich")
+  fit <- .with_gamma(EFA(dat, n_factors = 1, cor_method = "pearson", method = "ML",
+                         rotation = "none", se = "sandwich"))
 
   G <- fit$Gamma
   expect_true(is.matrix(G) && is.numeric(G))
@@ -357,19 +364,21 @@ test_that("se = 'sandwich' persists Gamma on the continuous Pearson path with th
 })
 
 
-test_that("Gamma is present but NULL outside the sandwich path", {
+test_that("Gamma is returned only while efa_mi() asks for it, and NULL outside the sandwich", {
   cormat <- test_models$baseline$cormat
+  dat <- make_adf_fixture(N = 300,
+                          loadings = matrix(c(.7, .65, .6, .75, .55, .5), ncol = 1L),
+                          seed = 16)
 
-  fit_none <- EFA(cormat, n_factors = 3, N = 500, method = "ML", rotation = "none",
-                  se = "none")
-  fit_info <- EFA(cormat, n_factors = 3, N = 500, method = "ML", rotation = "none",
-                  se = "information")
-  fit_boot <- suppressWarnings(
-    EFA(cormat, n_factors = 3, N = 500, method = "ML", rotation = "none",
-        se = "np-boot", b_boot = 10, seed = 1)
-  )
+  fit_sand <- EFA(dat, n_factors = 1, cor_method = "pearson", method = "ML",
+                  rotation = "none", se = "sandwich")
+  expect_false("Gamma" %in% names(fit_sand))
 
-  for (fit in list(fit_none, fit_info, fit_boot)) {
+  fit_none <- .with_gamma(EFA(cormat, n_factors = 3, N = 500, method = "ML",
+                              rotation = "none", se = "none"))
+  fit_info <- .with_gamma(EFA(cormat, n_factors = 3, N = 500, method = "ML",
+                              rotation = "none", se = "information"))
+  for (fit in list(fit_none, fit_info)) {
     expect_true("Gamma" %in% names(fit))
     expect_null(fit$Gamma)
   }
@@ -386,8 +395,8 @@ test_that("Gamma matches lavaan's correlation NACOV up to the N scale (continuou
   vn <- colnames(dat)
   N <- nrow(dat)
 
-  fit <- EFA(dat, n_factors = 1, cor_method = "pearson", method = "ML", rotation = "none",
-             se = "sandwich")
+  fit <- .with_gamma(EFA(dat, n_factors = 1, cor_method = "pearson", method = "ML",
+                         rotation = "none", se = "sandwich"))
 
   # The persisted Gamma is the variance-scale ADF covariance; lavaan's NACOV is N * Gamma.
   mod <- paste0("f =~ ", paste(vn, collapse = " + "))

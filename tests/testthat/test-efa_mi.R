@@ -494,19 +494,10 @@ test_that("efa_mi validates its arguments with classed conditions", {
   )
 })
 
-test_that("the raw-data correlation note is given once, not once per imputation", {
-  # The imputations are versions of one data set, so the note the per-imputation efa_fit()
-  # calls raise states one fact about the input. It stays a catchable classed condition.
-  n_notes <- 0L
-  withCallingHandlers(
-    efa_mi(grips_list, n_factors = 1, estimator = "ML"),
-    efa_cor_from_data = function(cnd) {
-      n_notes <<- n_notes + 1L
-      invokeRestart("muffleMessage")
-    },
-    message = function(cnd) invokeRestart("muffleMessage")
-  )
-  expect_identical(n_notes, 1L)
+test_that("efa_mi uses efa_fit()'s oblimin default and refuses a bare rotation extra", {
+  pooled <- suppressWarnings(efa_mi(grips_list, n_factors = 2, estimator = "ML", seed = 1))
+  expect_identical(pooled$settings$rotation, "oblimin")
+  expect_error(efa_mi(grips_list, n_factors = 1, gam = 0.5), class = "efa_unused_dots")
 })
 
 test_that("a failing component fit names its imputation and keeps the original condition", {
@@ -577,13 +568,16 @@ test_that("efa_mi warns when N cannot be recovered", {
     )
   )
 
-  # N recoverable for the raw-data imputation but not the correlation matrix
-  expect_warning(
-    suppressMessages(
-      efa_mi(list(GRiPS_raw, stats::cor(GRiPS_raw)), n_factors = 1,
-                 estimator = "PAF", rotation = "none")
-    ),
-    class = "efa_pooled_partial_n"
+  # N recoverable for the raw-data imputation but not the correlation matrix (the
+  # component fit without N warns too; muffle it)
+  suppressWarnings(
+    expect_warning(
+      suppressMessages(
+        efa_mi(list(GRiPS_raw, stats::cor(GRiPS_raw)), n_factors = 1,
+               estimator = "PAF", rotation = "none")
+      ),
+      class = "efa_pooled_partial_n"
+    )
   )
 })
 
@@ -645,18 +639,19 @@ test_that("bootstrap arrays are pooled into MI SEs and CIs", {
   expect_identical(dim(pooled_boot$standardized_residuals),
                    dim(pooled_boot$residuals))
 
+  # The component fits bootstrap RMSEA, CFI, and TLI only.
   fit_ci <- pooled_boot$CI$fit_indices_descriptive
-  expect_true(all(is.finite(fit_ci$lower[c("SRMR", "TLI", "ECVI")])))
-  expect_true(all(is.finite(fit_ci$upper[c("SRMR", "TLI", "ECVI")])))
+  expect_setequal(names(fit_ci$lower), c("RMSEA", "CFI", "TLI"))
+  expect_true(all(is.finite(c(fit_ci$lower, fit_ci$upper))))
   expect_true("RMSR" %in% names(pooled_boot$fit_indices))
 
   summary_lines <- cli::ansi_strip(format(summary(pooled_boot)))
   expect_false(any(grepl("^RMSR\\b", summary_lines)))
-  expect_true(any(grepl("^SRMR \\[95% bootstrap/MI-CI\\]:", summary_lines)))
-  # The incremental indices carry the averaged-over-imputations label ahead of the CI tag
-  expect_true(any(grepl("^TLI \\(avg\\. over imputations\\) \\[95% bootstrap/MI-CI\\]:",
-                        summary_lines)))
-  expect_true(any(grepl("^ECVI \\[95% bootstrap/MI-CI\\]:", summary_lines)))
+  # The pooled descriptive intervals of the fit indices are not printed; the incremental
+  # indices keep their averaged-over-imputations label.
+  expect_false(any(grepl("bootstrap/MI-CI", summary_lines, fixed = TRUE)))
+  expect_true(any(grepl("^SRMR: ", summary_lines)))
+  expect_true(any(grepl("^TLI \\(avg\\. over imputations\\): ", summary_lines)))
 
   # summary() additionally shows the MI uncertainty summary
   expect_snapshot(print(summary(pooled_boot)), transform = scrub_num)

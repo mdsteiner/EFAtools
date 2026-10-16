@@ -66,20 +66,10 @@ off-diagonal residuals; SRMR is reported alongside it. Supplying it to
 \code{\link[=efa_mi]{efa_mi()}} signals a deprecation warning; the superseded \code{\link[=EFA_POOLED]{EFA_POOLED()}}
 accepts it silently.}
 
-\item{...}{Additional arguments passed to \code{\link[=efa_fit]{efa_fit()}} (e.g. \code{estimator}, \code{rotation}, \code{se},
-\code{n_factors}, \code{N}). These select the estimator, rotation, standard-error method, and
-fit indices used for every imputation; see \code{\link[=efa_fit]{efa_fit()}} for the available options, their
-properties, and which combinations are valid. Two of them shape the pooled object
-rather than a single fit: \code{seed} sets the random state once for the whole
-\code{efa_mi()} call -- every component bootstrap and every random-start rotation draws
-from it, so a seeded call is reproducible as a whole, and the caller's random stream
-is restored afterwards -- and \code{b_boot} sets the number of bootstrap replicates drawn
-per imputation under \code{se = "np-boot"}, which is what the pooled within-imputation
-variances are estimated from and is recorded in \code{settings$b_boot}. The
-\code{\link[=estimate_control]{estimate_control()}} and
-\code{\link[=rotate_control]{rotate_control()}} objects are accepted through \code{...} as well, although they are not
-declared formals: pass them as \verb{estimate_control =} / \verb{rotate_control =} exactly as you
-would to \code{\link[=efa_fit]{efa_fit()}}.}
+\item{...}{Additional arguments passed to \code{\link[=efa_mi]{efa_mi()}} and from there to \code{\link[=efa_fit]{efa_fit()}}, in
+the flat form of the former interface (e.g. \code{method}, \code{rotation}, \code{type}, \code{max_iter},
+or the extras of the selected rotation such as \code{gam}). Names that the former
+interface could not use are ignored.}
 }
 \value{
 The value of \code{\link[=efa_mi]{efa_mi()}}, normally a list of class

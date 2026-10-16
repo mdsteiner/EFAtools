@@ -274,7 +274,7 @@ efa_parallel <- function(x = NULL,
         # forwarded estimator that does not converge does not raise a warning from
         # inside efa_parallel().
         eigvals_real_EFA <- matrix(suppressWarnings(
-          efa_fit(R, n_factors = n_factors, N = N,
+          efa_fit(R, n_factors = n_factors, N = N, rotation = "none",
                   estimate_control = estimate_control, ...)$final_eigen),  ncol = 1)
         colnames(eigvals_real_EFA) <- "Real Eigenvalues"
       }
@@ -477,13 +477,13 @@ efa_parallel <- function(x = NULL,
 
     R <- draw_R()
     eigvals_i <- try(suppressWarnings(suppressMessages(
-      efa_fit(R, n_factors = n_factors, N = N,
+      efa_fit(R, n_factors = n_factors, N = N, rotation = "none",
               estimate_control = estimate_control, ...)$final_eigen)), silent = TRUE)
     it_i <- 1
     while (inherits(eigvals_i, "try-error") && it_i < 25) {
       R <- draw_R()
       eigvals_i <- try(suppressWarnings(suppressMessages(
-        efa_fit(R, n_factors = n_factors, N = N,
+        efa_fit(R, n_factors = n_factors, N = N, rotation = "none",
                 estimate_control = estimate_control, ...)$final_eigen)), silent = TRUE)
       it_i <- it_i + 1
     }

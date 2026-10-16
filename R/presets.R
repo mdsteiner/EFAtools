@@ -4,7 +4,7 @@
 # "SPSS") that fills a block of tuning arguments, plus "none" which requires the
 # user to set them explicitly. `.resolve_settings()` is the one place that turns
 # a chosen `type` and the user-supplied (possibly NA) arguments into the final
-# settings, warning once about any argument pinned alongside a preset.
+# settings.
 
 # Per-function argument defaults for each preset. One source of truth, consumed
 # by .PAF() (via .estimate_model()) and by .rotate_model() for every rotation.
@@ -88,9 +88,8 @@
     return(user[setting_names])
   }
 
-  # A `type` that names no block of this preset slice would make `defaults` NULL, and
-  # `resolved[[nm]] <- defaults[[nm]]` then DELETES the element instead of filling it --
-  # handing the engine a settings list with holes rather than failing. Every public caller
+  # A `type` that names no block of this preset slice would fill the unset settings with
+  # NULL, handing the engine a settings list with holes rather than failing. Every public caller
   # matches `type` against the four supported names first, so reaching this is an internal
   # fault: a preset slice added without one of the type names.
   if (!type %in% names(preset)) {
@@ -102,41 +101,9 @@
     )
   }
 
-  defaults <- preset[[type]]
+  # A supplied value wins over the preset value.
   resolved <- user[setting_names]
-  pinned <- character(0)
-
-  for (nm in setting_names) {
-
-    if (identical(nm, "normalize")) {
-      if (isFALSE(user[[nm]])) pinned <- c(pinned, nm)
-    } else if (is.na(user[[nm]])) {
-      resolved[[nm]] <- defaults[[nm]]
-    } else {
-      pinned <- c(pinned, nm)
-    }
-
-  }
-
-  if (length(pinned) > 0) {
-
-    # `pairs` is interpolated as a variable (never baked into the glue template)
-    # so user-supplied values cannot be parsed as cli markup.
-    pairs <- paste0(.knob_display_names(pinned), " = ",
-                    vapply(pinned, function(nm) format(resolved[[nm]]),
-                           character(1)))
-
-    cli::cli_warn(
-      c(
-        paste("{cli::qty(pinned)} {?An argument was/Arguments were} set",
-              "together with {.arg type} = {.val {type}}; the supplied",
-              "value{?s} {?is/are} used and may differ from the",
-              "{.val {type}} preset:"),
-        "*" = "{pairs}"
-      ),
-      class = "efa_type_override"
-    )
-  }
-
+  unset <- setdiff(setting_names[vapply(user[setting_names], is.na, logical(1))], "normalize")
+  resolved[unset] <- preset[[type]][unset]
   resolved
 }

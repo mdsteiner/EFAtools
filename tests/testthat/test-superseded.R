@@ -68,20 +68,12 @@ test_that("efa_fit() carries the new classes and its methods dispatch", {
   expect_no_error(invisible(format(mod)))
 })
 
-test_that("efa_fit() rejects a former flat knob forwarded through `...`, keeps rotation extras", {
+test_that("a caller that forwards its dots to efa_fit() rejects a former flat knob", {
   cm <- test_models$baseline$cormat
 
-  # A knob that moved into the control objects (`k`, `type`, `max_iter`, ...) is no longer an
-  # efa_fit() formal. Left to reach `.efa_core()` -- which still declares those names -- it
-  # would supply the formal twice and abort with "matched by multiple actual arguments"; left
-  # to be dropped, it would quietly run the default preset instead of the requested one.
-  # Neither is acceptable, so it is rejected up front with a classed error that names the
-  # control object owning the knob.
-  expect_error(efa_fit(cm, n_factors = 3, N = 500, rotation = "promax", k = 4),
-               class = "efa_flat_knob_in_dots")
-
-  # a caller that forwards its user `...` (here efa_group) surfaces the same error rather
-  # than silently ignoring the knob
+  # A knob that moved into the control objects (`k`, `type`, `max_iter`, ...) is not an
+  # efa_fit() argument; efa_group surfaces a classed error that names the control object
+  # owning the knob, rather than ignoring the knob
   expect_error(
     suppressWarnings(efa_group(list(a = cm, b = cm), n_factors = 2, type = "SPSS")),
     class = "efa_flat_knob_in_dots"
@@ -93,27 +85,14 @@ test_that("efa_fit() rejects a former flat knob forwarded through `...`, keeps r
                                rotate_control = rotate_control(type = "SPSS"))),
     "efa_group"
   )
-
-  # Genuine rotation extras still reach the rotation engine, via `...` or via rotate_control().
-  # geominQ screens a hundred random starts drawn from the ambient stream, so the two routes
-  # are seeded alike: unseeded they would search different candidate sets and could land in
-  # different minima, which says nothing about whether the extra arrived.
-  set.seed(1)
-  via_dots <- efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ", maxit = 3000)
-  set.seed(1)
-  via_ctrl <- efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ",
-                      rotate_control = rotate_control(maxit = 3000))
-  expect_equal(via_dots$rot_loadings, via_ctrl$rot_loadings, tolerance = fp_tol)
 })
 
 test_that("EFA() keeps silently ignoring a rotation extra its engine cannot consume", {
   cm <- test_models$baseline$cormat
 
   # the flat interface froze the silent-ignore contract: promax consumes no engine extras,
-  # so the call that is an error in efa_fit() still runs through EFA() -- and runs
-  # identically to the call without the extra
-  expect_error(efa_fit(cm, n_factors = 3, N = 500, rotation = "promax", maxit = 100),
-               class = "efa_unused_dots")
+  # so the call still runs through EFA() -- and runs identically to the call without the
+  # extra
   set.seed(1)
   with_extra <- EFA(cm, n_factors = 3, N = 500, rotation = "promax", maxit = 100)
   set.seed(1)
@@ -124,7 +103,8 @@ test_that("EFA() keeps silently ignoring a rotation extra its engine cannot cons
   set.seed(1)
   old <- EFA(cm, n_factors = 3, N = 500, rotation = "oblimin", maxit = 750)
   set.seed(1)
-  new <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", maxit = 750)
+  new <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin",
+                 rotate_control = rotate_control(maxit = 750))
   expect_equal(old$rot_loadings, new$rot_loadings, tolerance = fp_tol)
 
   # rotation = "none" -- EFA()'s own default -- runs no engine, so the flat interface
@@ -249,9 +229,11 @@ test_that("EFA() stays transparent to efa_fit()'s conditions", {
   # no condition of its own on a clean correlation-matrix path
   expect_no_condition(EFA(test_models$baseline$cormat, n_factors = 3, N = 500))
 
-  # it neither swallows nor adds to efa_fit()'s conditions: the raw-data path still
-  # signals that the correlations were computed from the data
-  expect_message(EFA(GRiPS_raw, n_factors = 1), class = "efa_cor_from_data")
+  # it neither swallows nor adds to efa_fit()'s conditions: an invalid input still gives
+  # efa_fit()'s classed error
+  expect_no_condition(EFA(GRiPS_raw, n_factors = 1))
+  expect_error(EFA(test_models$baseline$cormat, n_factors = 3, N = 500, se = "np-boot"),
+               class = "efa_boot_cormat")
 })
 
 test_that("BARTLETT() forwards to efa_bartlett() identically", {
@@ -691,8 +673,9 @@ test_that(".repack_flat_dots() splits the flat knobs into the two controls", {
   expect_identical(out$rotate_control$type, "SPSS")
   expect_equal(out$estimate_control$max_iter, 42)
   expect_equal(out$rotate_control$k, 3)
-  # a genuine rotation extra is not a control knob and rides on untouched
-  expect_equal(out$maxit, 900)
+  # a rotation extra travels in the rotation control, the only route efa_fit() offers
+  expect_equal(out$rotate_control$extra_args$maxit, 900)
+  expect_false("maxit" %in% names(out))
 
   # an unnamed dot rides on too: the leftovers are kept by position, not by name
   pos <- .repack_flat_dots(list(42, max_iter = 5))
@@ -715,8 +698,11 @@ test_that(".repack_flat_dots() splits the flat knobs into the two controls", {
   # a knob named without a `type` resolves against the preset the flat interface defaulted to
   expect_identical(.repack_flat_dots(list(k = 2))$rotate_control$type, "EFAtools")
 
+  # an extra alone is translated too
+  expect_equal(.repack_flat_dots(list(maxit = 5))$rotate_control$extra_args$maxit, 5)
+
   # nothing to translate: the dots are handed on exactly as they came in
-  expect_identical(.repack_flat_dots(list(maxit = 5)), list(maxit = 5))
+  expect_identical(.repack_flat_dots(list(N = 5)), list(N = 5))
 
   # an explicit control object is the current interface and is never second-guessed
   ctl <- list(estimate_control = estimate_control(type = "psych"), type = "SPSS")
@@ -846,28 +832,14 @@ test_that("CD() adds no condition and stays transparent", {
   expect_identical(class(old), "efa_retention")
 })
 
-# A flat tuning knob no longer has an efa_fit() formal, so a bare copy would land in the
-# rotation extras and be dropped -- the fit would silently run the default preset. It is
-# rejected instead, and the superseded names (which repack it into the controls) keep working.
+# A flat tuning knob has no efa_fit() argument. The functions that forward their dots to a
+# fit reject it with a classed error, and the superseded names (which repack it into the
+# controls) keep working.
 
-test_that("efa_fit() rejects a flat tuning knob passed as a bare dot", {
+test_that("the functions that forward their dots reject a flat tuning knob", {
   cormat <- test_models$baseline$cormat
 
-  for (knob in list(list(type = "SPSS"), list(max_iter = 500), list(init_comm = "mac"),
-                    list(criterion = 1e-4), list(criterion_type = "sum"),
-                    list(abs_eigen = TRUE), list(start_method = "factanal"),
-                    list(normalize = FALSE), list(precision = 1e-6),
-                    list(order_type = "eigen"), list(varimax_type = "kaiser"),
-                    list(p_type = "norm"), list(k = 3), list(random_starts = 2),
-                    list(P_type = "norm"), list(randomStarts = 2))) {
-    expect_error(
-      do.call(efa_fit, c(list(cormat, n_factors = 3, N = 500, estimator = "PAF",
-                              rotation = "promax"), knob)),
-      class = "efa_flat_knob_in_dots")
-  }
-
-  # the functions that forward their dots to a fit surface the same classed error, rather
-  # than an opaque "criterion could not be run"
+  # a classed error, rather than an opaque "criterion could not be run"
   expect_error(efa_retain(cormat, N = 500, criteria = "HULL", type = "psych"),
                class = "efa_flat_knob_in_dots")
   expect_error(efa_hull(cormat, N = 500, estimator = "PAF", gof = "CAF", max_iter = 500),
@@ -881,24 +853,17 @@ test_that("efa_fit() rejects a flat tuning knob passed as a bare dot", {
   expect_no_error(suppressWarnings(
     efa_retain(cormat, N = 500, criteria = "HULL", estimator = "PAF")))
 
-  # a genuine rotation extra is still forwarded, not rejected
-  expect_no_error(efa_fit(cormat, n_factors = 3, N = 500, estimator = "PAF",
-                          rotation = "oblimin", maxit = 750))
-  # and the control objects remain the supported route (pinning a knob alongside a `type`
-  # raises the usual preset-override notice, which is not what this test is about)
-  expect_no_error(suppressWarnings(
+  # and the control objects remain the supported route
+  expect_no_error(
     efa_fit(cormat, n_factors = 3, N = 500, estimator = "PAF", rotation = "promax",
-            estimate_control = estimate_control(type = "SPSS", max_iter = 500))))
+            estimate_control = estimate_control(type = "SPSS", max_iter = 500)))
 })
 
 test_that("the former `method` argument is rejected with a pointer to `estimator`", {
   cormat <- test_models$baseline$cormat
 
-  # Forwarded bare, `method` would either be rejected as an unconsumed rotation extra
-  # (efa_fit) or travel into the per-criterion fits and surface as an opaque failure
-  # (efa_retain); both name the rename instead.
-  expect_error(efa_fit(cormat, n_factors = 3, N = 500, method = "ML"),
-               class = "efa_renamed_arg")
+  # Forwarded bare, `method` would travel into the per-criterion fits and surface as an
+  # opaque failure (efa_retain); the error names the rename instead.
   expect_error(efa_retain(cormat, N = 500, criteria = "EKC", method = "ML"),
                class = "efa_renamed_arg")
   expect_error(efa_schmid_leiman(oblique_efa, method = "PAF"),
@@ -972,4 +937,11 @@ test_that("N_FACTORS() keeps partial-matching `max_iter` to its frozen `max_iter
 
   expect_error(efa_retain(cormat, N = 500, criteria = "EKC", max_iter = 5),
                class = "efa_flat_knob_in_dots")
+})
+
+test_that("EFA_POOLED() keeps no rotation as its default", {
+  # efa_mi() follows efa_fit()'s oblimin default; the frozen wrapper keeps unrotated fits.
+  imps <- list(test_models$baseline$cormat, test_models$baseline$cormat)
+  old <- suppressWarnings(EFA_POOLED(imps, n_factors = 3, N = 500))
+  expect_identical(old$settings$rotation, "none")
 })

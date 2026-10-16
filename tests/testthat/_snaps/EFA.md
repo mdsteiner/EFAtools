@@ -20,7 +20,7 @@
       print(efa_psych)
     Output
       
-      EFA performed with estimator = 'PAF' and rotation = 'promax'.
+      EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).
       
       -- Rotated Loadings ------------------------------------------------------------
       
@@ -62,9 +62,11 @@
       
       -- Model Fit -------------------------------------------------------------------
       
-      CAF: <num>
+      χ²(102) = <num>, p = <num>
+      CFI: <num>
+      TLI: <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
       SRMR: <num>
-      df: 102
 
 # print.efa output is stable (ML, promax)
 
@@ -72,7 +74,7 @@
       print(efa_ml_moderate)
     Output
       
-      EFA performed with estimator = 'ML' and rotation = 'promax'.
+      EFA performed with estimator = 'ML' and rotation = 'promax' (N = 500).
       
       -- Rotated Loadings ------------------------------------------------------------
       
@@ -118,10 +120,6 @@
       CFI: <num>
       TLI: <num>
       RMSEA [90% CI]: <num> [ <num>; <num>]
-      AIC: <num>
-      BIC: <num>
-      ECVI: <num>
-      CAF: <num>
       SRMR: <num>
 
 # summary.efa output is stable (PAF, promax)
@@ -130,19 +128,12 @@
       print(summary(efa_psych))
     Output
       
-      EFA performed with estimator = 'PAF' and rotation = 'promax'.
+      EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).
       
       -- Model Diagnostics -----------------------------------------------------------
       
-      Factors: 3
-      Variables: 18
       N: 500
       Heywood cases: 0
-      Cross-loading items (|loading| >= <num>): 0
-      Items without salient loading (|loading| >= <num>): 0
-      Factors with fewer than 3 salient indicators: 0
-      Items with primary-loading gap < <num>: 1
-      Largest |residual|: <num>
       Factor intercorrelations > <num>: none
       
       -- Rotated Loadings ------------------------------------------------------------
@@ -213,9 +204,14 @@
       
       -- Model Fit -------------------------------------------------------------------
       
-      CAF: <num>
+      χ²(102) = <num>, p = <num>
+      CFI: <num>
+      TLI: <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
       SRMR: <num>
-      df: 102
+      AIC: <num>
+      BIC: <num>
+      ECVI: <num>
       
       -- Residual Diagnostics --------------------------------------------------------
       
@@ -233,19 +229,12 @@
       print(summary(efa_ml_moderate))
     Output
       
-      EFA performed with estimator = 'ML' and rotation = 'promax'.
+      EFA performed with estimator = 'ML' and rotation = 'promax' (N = 500).
       
       -- Model Diagnostics -----------------------------------------------------------
       
-      Factors: 3
-      Variables: 18
       N: 500
       Heywood cases: 0
-      Cross-loading items (|loading| >= <num>): 0
-      Items without salient loading (|loading| >= <num>): 0
-      Factors with fewer than 3 salient indicators: 0
-      Items with primary-loading gap < <num>: 0
-      Largest |residual|: <num>
       Factor intercorrelations > <num>: none
       
       -- Rotated Loadings ------------------------------------------------------------
@@ -299,6 +288,12 @@
       V17 <num> <num> <num>
       V18 <num> <num> <num>
       
+      -- Simple Structure Diagnostics ------------------------------------------------
+      
+      All items have a salient loading (|loading| >= <num>) and no cross-loading
+      (|loading| >= <num>), all primary-loading gaps are at least <num>, and all
+      factors have at least 3 salient indicators.
+      
       -- Variances Accounted for -----------------------------------------------------
       
                            F1 F2 F3
@@ -314,11 +309,10 @@
       CFI: <num>
       TLI: <num>
       RMSEA [90% CI]: <num> [ <num>; <num>]
+      SRMR: <num>
       AIC: <num>
       BIC: <num>
       ECVI: <num>
-      CAF: <num>
-      SRMR: <num>
       
       -- Residual Diagnostics --------------------------------------------------------
       
@@ -336,7 +330,7 @@
       print(efa_1fac)
     Output
       
-      EFA performed with estimator = 'PAF' and rotation = 'promax'.
+      EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).
       
       -- Rotated Loadings ------------------------------------------------------------
       
@@ -366,9 +360,11 @@
       
       -- Model Fit -------------------------------------------------------------------
       
-      CAF: <num>
+      χ²(135) = <num>, p < <num>
+      CFI: <num>
+      TLI: <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
       SRMR: <num>
-      df: 135
 
 ---
 
@@ -376,19 +372,12 @@
       print(summary(efa_1fac))
     Output
       
-      EFA performed with estimator = 'PAF' and rotation = 'promax'.
+      EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).
       
       -- Model Diagnostics -----------------------------------------------------------
       
-      Factors: 1
-      Variables: 18
       N: 500
       Heywood cases: 0
-      Cross-loading items (|loading| >= <num>): 0
-      Items without salient loading (|loading| >= <num>): 0
-      Factors with fewer than 3 salient indicators: 0
-      Items with primary-loading gap < <num>: 0
-      Largest |residual|: <num>
       
       -- Rotated Loadings ------------------------------------------------------------
       
@@ -412,15 +401,26 @@
       V17 <num> <num> <num>
       V18 <num> <num> <num>
       
+      -- Simple Structure Diagnostics ------------------------------------------------
+      
+      All items have a salient loading (|loading| >= <num>) and no cross-loading
+      (|loading| >= <num>), all primary-loading gaps are at least <num>, and all
+      factors have at least 3 salient indicators.
+      
       -- Variances Accounted for -----------------------------------------------------
       
       No variance-accounted table available.
       
       -- Model Fit -------------------------------------------------------------------
       
-      CAF: <num>
+      χ²(135) = <num>, p < <num>
+      CFI: <num>
+      TLI: <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
       SRMR: <num>
-      df: 135
+      AIC: <num>
+      BIC: <num>
+      ECVI: <num>
       
       -- Residual Diagnostics --------------------------------------------------------
       

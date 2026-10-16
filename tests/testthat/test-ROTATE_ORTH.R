@@ -99,20 +99,20 @@ test_that("settings are returned correctly", {
 test_that("errors etc. are thrown correctly", {
   expect_error(.rotate_model(unrot, rotation = "equamax", type = "none"), class = "efa_type_none")
 
-  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "EFAtools",
-                              normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "EFAtools",
-                              order_type = "ss_factors"), class = "efa_type_override")
+  expect_no_warning(.rotate_model(unrot, rotation = "equamax", type = "EFAtools",
+                              normalize = FALSE))
+  expect_no_warning(.rotate_model(unrot, rotation = "equamax", type = "EFAtools",
+                              order_type = "ss_factors"))
 
-  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "psych",
-                              normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "psych",
-                              order_type = "ss_factors"), class = "efa_type_override")
+  expect_no_warning(.rotate_model(unrot, rotation = "equamax", type = "psych",
+                              normalize = FALSE))
+  expect_no_warning(.rotate_model(unrot, rotation = "equamax", type = "psych",
+                              order_type = "ss_factors"))
 
-  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "SPSS",
-                              normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "equamax", type = "SPSS",
-                              order_type = "ss_factors"), class = "efa_type_override")
+  expect_no_warning(.rotate_model(unrot, rotation = "equamax", type = "SPSS",
+                              normalize = FALSE))
+  expect_no_warning(.rotate_model(unrot, rotation = "equamax", type = "SPSS",
+                              order_type = "ss_factors"))
 
   expect_warning(.rotate_model(unrot_1, rotation = "equamax", type = "EFAtools"), class = "efa_single_factor")
 })
@@ -161,7 +161,10 @@ test_that("the orthogonal engines validate their arguments before the compiled e
   # R gives all of them one class that user code can catch. The oblique criterion parameters
   # are covered in test-ROTATE_OBLQ.R.
   cm <- test_models$baseline$cormat
-  fit <- function(...) efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", ...)
+  fit <- function(rotation, ...) {
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", rotation = rotation,
+            rotate_control = rotate_control(...))
+  }
 
   expect_error(fit(rotation = "geominT", delta = 0), class = "efa_rotation_arg")
   expect_error(fit(rotation = "geominT", delta = -0.01), class = "efa_rotation_arg")

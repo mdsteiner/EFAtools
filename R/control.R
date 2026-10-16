@@ -6,9 +6,8 @@
 # `.estimate_model()` (via `.PAF()`) and `.rotate_model()`. The constructors only
 # validate and store: they carry the chosen `type` preset and the declared knobs
 # (with `NA` marking "unset, resolve from the preset") and leave the actual preset
-# resolution -- and any override warning -- to the fitting cores, because which
-# preset applies depends on the estimator and rotation, which a control object does
-# not know.
+# resolution to the fitting cores, because which preset applies depends on the estimator
+# and rotation, which a control object does not know.
 
 # TRUE when a knob is left unset: a single genuine NA, the "resolve from the type
 # preset" sentinel. NaN is deliberately not treated as unset (is.na(NaN) is TRUE) so a
@@ -205,10 +204,10 @@
 #' knob to the preset". Setting `type` to one of `"EFAtools"`, `"psych"`, or
 #' `"SPSS"` fills those knobs from the corresponding preset when the fit is run;
 #' setting `type = "none"` requires the relevant knobs to be supplied explicitly.
-#' The control object only records the chosen `type` and the knobs you set: the
-#' preset is resolved (and any "argument set alongside `type`" warning issued) when
-#' the object is used to fit a model, exactly as it is today, because which preset
-#' applies depends on the estimator and rotation.
+#' A knob you set is used as given and takes precedence over the preset. The control
+#' object only records the chosen `type` and the knobs you set: the preset is resolved
+#' when the object is used to fit a model, because which preset applies depends on the
+#' estimator and rotation.
 #'
 #' @param type character. One of `"EFAtools"` (default), `"psych"`, `"SPSS"`, or
 #'   `"none"`. Selects the preset that fills the `NA`-defaulted knobs below when the
@@ -400,9 +399,8 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
                          int = TRUE, na_ok = FALSE)
 
   extra_args <- list(...)
-  # A misplaced tuning knob is not a rotation engine extra: its name collides with a formal
-  # of the fit, so the extras splice in efa_fit() would drop it and the fit would quietly run
-  # the preset value instead. Refuse to carry it rather than let it be silently ignored.
+  # A misplaced tuning knob is not a rotation engine extra: it belongs in its own formal or in
+  # estimate_control(), and carried as an extra it would never reach its setting. Refuse it.
   bad_est <- intersect(names(extra_args), .flat_estimate_knobs)
   bad_flat <- intersect(names(extra_args), c("P_type", "randomStarts"))
   if (length(bad_est) > 0L || length(bad_flat) > 0L) {
@@ -460,13 +458,12 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 # an internal step whose standard errors are discarded (see .reject_inference_dots()).
 .fit_inference_args <- c("se", "b_boot", "ci", "seed")
 
-# Reject a flat tuning knob that reached a fit as a bare dot. No fitting function has a formal
-# for any of these any more -- they live in the control objects -- so a bare copy would be taken
-# for a rotation extra and dropped, and the fit would quietly run the default preset instead
-# of the requested settings. Takes the argument NAMES (`...names()`), so the dots are never
-# forced; `fn` names the function the caller actually reached, so the message points at the call
-# that has to change.
-.reject_flat_knobs <- function(nms, fn = "efa_fit") {
+# Reject a flat tuning knob that reached the dots of a function that forwards them to a fit.
+# No fitting function has a formal for any of these -- they live in the control objects -- so a
+# bare copy would fail inside the fit or be dropped. Takes the argument NAMES (`...names()`), so
+# the dots are never forced; `fn` names the function the caller actually reached, so the message
+# points at the call that has to change.
+.reject_flat_knobs <- function(nms, fn) {
   # The renamed `method` argument is checked first: it is the more specific mistake, and
   # every function that must reject the flat knobs must reject the former estimator
   # spelling too, so one call site covers both.
@@ -493,34 +490,35 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 # orchestrator forward their `...` into efa_fit(), but only when a fit actually runs (e.g.
 # eigen_type includes "EFA", or a criterion that fits a model is selected). A misspelled name
 # is otherwise silently dropped and the criterion runs with the default it looks like it was
-# told to change. A name that is neither an efa_fit() formal nor a rotation-engine extra is
-# such a misspelling and is refused here, independently of whether a fit runs. Takes the
-# argument NAMES (`...names()`) so the dots are never forced; `fn` names the function reached.
+# told to change. A name that is not an efa_fit() formal is such a misspelling (or a rotation
+# extra that belongs in rotate_control()) and is refused here, independently of whether a fit
+# runs. Takes the argument NAMES (`...names()`) so the dots are never forced; `fn` names the
+# function reached.
 #
 # It must stay lenient for the superseded wrappers, which repack their flat tuning knobs into
 # `estimate_control` / `rotate_control` objects and splice those into these same dots: both
 # control names are efa_fit() formals, so they are in the accepted set by construction.
-.reject_unknown_fit_dots <- function(nms, fn, unrotated = FALSE) {
+.reject_unknown_fit_dots <- function(nms, fn, unrotated = FALSE,
+                                     call = rlang::caller_env()) {
   nms <- nms[nzchar(nms)]
   if (length(nms) == 0L) return(invisible(NULL))
-  known <- c(setdiff(names(formals(efa_fit)), "..."), .rotation_extra_union)
-  # A caller whose fits are always unrotated runs no rotation engine, so an engine extra
-  # can never be consumed there. Refusing it here, rather than letting it reach the fit,
-  # is what makes the error name the function the user called and arrive before the
-  # criterion does its work (`rotation` itself is refused by .reject_rotation_dots()).
-  # efa_fit()'s inference arguments are refused for the same reason, but with a message of
-  # their own: they ARE efa_fit() arguments, so "check for a misspelled name" would be wrong.
-  if (unrotated) {
-    known <- setdiff(known, .rotation_extra_union)
-    .reject_inference_dots(nms, fn = fn)
-  }
+  # A caller whose fits are always unrotated keeps only a few quantities of its fits, so
+  # efa_fit()'s inference arguments are refused there, with a message of their own: they ARE
+  # efa_fit() arguments, so "check for a misspelled name" would be wrong.
+  if (unrotated) .reject_inference_dots(nms, fn = fn)
   # setdiff() already returns unique values, so the offenders are named once each
-  bad <- setdiff(nms, known)
+  bad <- setdiff(nms, names(formals(efa_fit)))
   if (length(bad) == 0L) return(invisible(NULL))
+  extra <- intersect(bad, .rotation_extra_union)
   cli::cli_abort(
     c("{.arg {bad}} {?is/are} not {?an argument/arguments} of {.fn {fn}} or {.fn efa_fit}.",
-      "i" = "Check for a misspelled argument name."),
-    class = "efa_unused_dots"
+      "i" = if (length(extra) > 0L && !unrotated) {
+        "Give rotation engine extras to {.fn rotate_control}, for example
+         {.code rotate_control = rotate_control(gam = 0.5)}."
+      } else {
+        "Check for a misspelled argument name."
+      }),
+    class = "efa_unused_dots", call = call
   )
 }
 
@@ -616,10 +614,10 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 # The frozen wrappers that forward their `...` (N_FACTORS(), PARALLEL(), KGC(), SCREE(),
 # HULL(), NEST(), EFA_POOLED()) keep the flat interface's silent-ignore contract: a name
 # that nothing on the old surface could ever consume was dropped without comment, so it is
-# dropped here too -- before .repack_flat_dots() translates the flat knobs and before the
-# successors' guards (.reject_unknown_fit_dots(), .reject_rotation_dots(), efa_fit()'s
-# per-rotation extras whitelist) would refuse it. The kept universe is everything the old
-# surface consumed: the efa_fit() formals, the flat tuning knobs, and the alias spellings.
+# dropped here too -- before .repack_flat_dots() translates the flat knobs and extras and
+# before the successors' guards (.reject_unknown_fit_dots(), .reject_rotation_dots()) would
+# refuse it. The kept universe is everything the old surface consumed: the efa_fit()
+# formals, the flat tuning knobs, and the alias spellings.
 # Keeping the flat knobs matters when a control object rides alongside one (the repack then
 # translates nothing), so such a mixed call still fails loudly in the successor's flat-knob
 # guard instead of losing the knob here. The retention wrappers' criterion fits are always
@@ -645,7 +643,7 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 .drop_unknown_frozen_dots <- function(dots, extras = character(), unrotated = TRUE) {
   nms <- names(dots)
   if (is.null(nms)) return(dots)
-  known <- c(setdiff(names(formals(efa_fit)), "..."),
+  known <- c(names(formals(efa_fit)),
              .flat_estimate_knobs, .flat_rotate_knobs, .flat_alias_names, extras)
   if (unrotated) known <- setdiff(known, "rotation")
   # charmatch(), not %in%: the flat interface reached its target through do.call(), where R
@@ -656,13 +654,12 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
   dots[!nzchar(nms) | !is.na(charmatch(nms, known))]
 }
 
-# Repack the flat tuning knobs a call may still carry in its `...` into the control objects the
-# fitting interface now takes. `efa_fit()` has no flat tuning formals left, so a bare knob
-# forwarded through `...` would otherwise be dropped and the fit would quietly run the default
-# preset instead of the requested one. Returns the arguments to splice into the call: the two
-# controls -- built only when the caller actually named `type` or a knob -- followed by every
-# remaining dot (the genuine rotation extras, e.g. `maxit`/`gam`) unchanged. One `type` governs
-# both presets, exactly as the single flat `type` always did.
+# Repack the flat tuning knobs and the rotation-engine extras (`maxit`/`gam`/`delta`) a call may
+# still carry in its `...` into the control objects the fitting interface now takes. `efa_fit()`
+# has neither flat tuning formals nor `...`, so a bare knob or extra forwarded to it would fail.
+# Returns the arguments to splice into the call: the two controls -- built only when the caller
+# actually named `type`, a knob, or an extra -- followed by every remaining dot unchanged. One
+# `type` governs both presets, exactly as the single flat `type` always did.
 .repack_flat_dots <- function(dots, type = NULL) {
 
   # The flat interface selected the estimator with `method`; the fitting functions take
@@ -699,7 +696,7 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
   dots$type <- NULL
 
   est_named <- intersect(names(dots), .flat_estimate_knobs)
-  rot_named <- intersect(names(dots), .flat_rotate_knobs)
+  rot_named <- intersect(names(dots), c(.flat_rotate_knobs, .rotation_extra_union))
 
   # nothing to translate: hand the dots on exactly as they came in
   if (is.null(type) && length(est_named) == 0L && length(rot_named) == 0L) return(dots)

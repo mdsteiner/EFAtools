@@ -51,8 +51,8 @@ test_that("a correlation matrix supplied as a data frame is detected and coerced
   expect_equal(efa_kgc(cormat_df), efa_kgc(cormat))
   expect_equal(efa_scree(cormat_df), efa_scree(cormat))
   expect_equal(efa_ekc(cormat_df, N = 500), efa_ekc(cormat, N = 500))
-  expect_equal(efa_fit(cormat_df, n_factors = 3, N = 500),
-               efa_fit(cormat, n_factors = 3, N = 500))
+  expect_equal(efa_fit(cormat_df, n_factors = 3, N = 500, seed = 1),
+               efa_fit(cormat, n_factors = 3, N = 500, seed = 1))
   expect_equal(efa_screen(cormat_df, N = 500), efa_screen(cormat, N = 500))
   expect_equal(efa_retain(cormat_df, N = 500, criteria = c("KGC", "MAP")),
                efa_retain(cormat, N = 500, criteria = c("KGC", "MAP")))

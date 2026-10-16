@@ -84,45 +84,18 @@ test_that("bad estimate_control inputs abort with a classed condition", {
                   "efa_estimate_control")
 })
 
-test_that("efa_fit rejects unused dots when no rotation runs", {
-  # with rotation = "none" no rotation engine runs, so nothing can consume the dots;
-  # this also catches a misspelled control argument instead of silently ignoring it
-  expect_error(
-    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, rotation = "none",
-            estimate_controls = estimate_control(max_iter = 500)),
-    class = "efa_unused_dots")
-  expect_error(
-    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, gam = 0.5),
-    class = "efa_unused_dots")
-})
-
-test_that("efa_fit rejects a dot argument the selected rotation does not consume", {
+test_that("rotation extras reach the engine through rotate_control()", {
   cm <- test_models$baseline$cormat
 
-  # a misspelled criterion parameter would silently run the engine default (gam = 0)
-  expect_error(
-    efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", gamma = 0.5),
-    class = "efa_unused_dots")
-  # another criterion's parameter is just as unconsumable as a misspelling
-  expect_error(
-    efa_fit(cm, n_factors = 3, N = 500, rotation = "geominT", gam = 0.5),
-    class = "efa_unused_dots")
-  # varimax and promax run outside the native engines and take no extras at all
-  expect_error(
-    efa_fit(cm, n_factors = 3, N = 500, rotation = "varimax", bogus_arg = 1),
-    class = "efa_unused_dots")
-  expect_error(
-    efa_fit(cm, n_factors = 3, N = 500, rotation = "promax", maxit = 100),
-    class = "efa_unused_dots")
-
-  # the consumable extras still reach the engine: oblimin's gam changes the criterion.
-  # gam = 0.5 rewards correlated factors strongly enough to trip the extreme-Phi check on
-  # this fixture, which is beside the point here -- only that the extra reaches the engine.
-  fit_default <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin")
+  # oblimin's gam changes the criterion. gam = 0.5 rewards correlated factors strongly
+  # enough to trip the extreme-Phi check on this fixture, which is beside the point here.
+  fit_default <- efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", seed = 1)
   fit_gam <- suppressWarnings(
-    efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin", gam = 0.5))
+    efa_fit(cm, n_factors = 3, N = 500, rotation = "oblimin",
+            rotate_control = rotate_control(gam = 0.5), seed = 1))
   expect_false(identical(fit_default$rot_loadings, fit_gam$rot_loadings))
-  expect_no_error(efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ", delta = 0.05))
+  expect_no_error(efa_fit(cm, n_factors = 3, N = 500, rotation = "geominQ",
+                          rotate_control = rotate_control(delta = 0.05)))
 
   # a control-carried extra stays lenient per rotation: one control may serve fits whose
   # rotation never consumes it (efa_average() carries maxit across its whole grid)
@@ -132,31 +105,11 @@ test_that("efa_fit rejects a dot argument the selected rotation does not consume
                           rotate_control = rotate_control(maxit = 5e4)))
 })
 
-test_that("the fit stays the backstop for a control edited after construction", {
-  # The constructor's bounds mirror the fit's, so a control it builds can never carry a value the
-  # fit rejects. A control is a plain list, though, so it can be edited afterwards -- the fit
-  # keeps its own guard for that, and it must not be mistaken for dead code.
-  ec <- estimate_control(criterion = 1e-3)
-  ec$criterion <- 1
-
-  expect_error(
-    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
-            estimate_control = ec),
-    class = "efa_criterion_too_large")
-})
-
 test_that("efa_fit's argument assertions abort with a classed condition", {
   cm <- test_models$baseline$cormat
 
   expect_error(efa_fit(cm, n_factors = 3, N = -5), class = "efa_invalid_argument")
   expect_error(efa_fit(cm, n_factors = -1, N = 500), class = "efa_invalid_argument")
-
-  # a value routed through a control reaches the same guard
-  ec <- estimate_control()
-  ec$max_iter <- -1
-  expect_error(
-    efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", estimate_control = ec),
-    class = "efa_invalid_argument")
 })
 
 test_that("estimate_control accepts the start_method spellings the flat interface took", {

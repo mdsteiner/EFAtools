@@ -641,8 +641,8 @@
 # without one; every caller NA-fills on that.
 #
 # `gauge = FALSE` skips the transversal diagnostic for a caller that does not read it (the
-# corrected two-stage chi-square, which runs once per bootstrap replicate and is gauge-invariant),
-# so that caller does not pay for a QR and an SVD it discards.
+# corrected two-stage chi-square, which is gauge-invariant), so that caller does not pay for a
+# QR and an SVD it discards.
 .offdiag_sandwich_pieces <- function(L, method, Gamma = NULL, optimal_weight = FALSE,
                                      gauge = TRUE) {
 
@@ -1016,8 +1016,7 @@
 # mean-and-variance-adjusted statistics and the scaling/shift are added as extra fields. CFI/TLI/
 # RMSEA come from the scaled model and baseline statistics via the shared .chi_fit_indices().
 # `ci` is the caller's own "solve the analytic RMSEA bounds" flag, threaded through rather than
-# fixed: `.gof()` runs this on every cor_method = "fiml" fit, including the bootstrap replicates it
-# calls with ci = FALSE, whose bounds are discarded by `.boot_se_ci()` anyway.
+# fixed.
 .apply_scaled_test <- function(fit_indices, st, N, ci = TRUE) {
 
   if (is.null(st)) return(fit_indices)
@@ -1073,20 +1072,9 @@
   L_unrot_boot <- array(NA_real_, c(nrow_L, ncol_L, b),
                         dimnames = list(rownam_L, colnam_L,
                                         NULL))
-  # The bootstrap aggregates only the numeric fit indices: a scaled chi-square fit (the
-  # cor_method = "fiml" two-stage statistic, or any se = "sandwich" fit) adds the character
-  # `chi_scaled_type` tag and the extra scaled-statistic components, which the quantile/SD
-  # aggregation below cannot consume. Aligning each replicate to these names also lets a
-  # replicate whose scaled statistic degenerated (and so lacks a component) contribute NA
-  # there rather than shifting every column.
-  gof_names <- names(fit_target$fit_indices)[
-    vapply(fit_target$fit_indices, is.numeric, logical(1))]
-  # The RMSEA confidence bounds are dropped: the replicate fits are run with ci = FALSE, so
-  # they are NA in every replicate, and a bootstrap standard error of an interval bound is
-  # not a meaningful quantity in the first place.
-  gof_names <- setdiff(gof_names, c("RMSEA_LB", "RMSEA_UB"))
-  gof_boot <- matrix(NA_real_, ncol = length(gof_names), nrow = b,
-                     dimnames = list(NULL, gof_names))
+  # The fit indices are not aggregated here: these resamples add sampling misfit to the misfit
+  # the sample already has, which shifts their fit-index intervals. efa_fit() bootstraps RMSEA,
+  # CFI, and TLI from transformed cases instead (.yhy_fit_boot()).
   residuals_boot <- array(NA_real_, c(nrow_L, nrow_L, b),
                           dimnames = list(rownam_L, rownam_L,
                                           NULL))
@@ -1110,11 +1098,6 @@
     }
 
     L_unrot_boot[,, boot_i] <- aligned$loadings
-    fi_i <- boot_fit[[boot_i]]$fit_indices
-    gof_boot[boot_i, ] <- vapply(gof_names, function(nm) {
-      v <- fi_i[[nm]]
-      if (is.null(v) || !is.numeric(v)) NA_real_ else as.numeric(v[1L])
-    }, numeric(1))
     residuals_boot[,, boot_i] <- boot_fit[[boot_i]]$residuals
 
   }
@@ -1152,11 +1135,7 @@
   # se = sd of bootstrap replications (Zhang, 2014, Estimating Standard Errors
   # in Exploratory Factor Analysis)
   L_unrot_se_ci <- .array_se_ci(L_unrot_boot, ps)
-  gof_se_ci <- .array_se_ci(gof_boot, ps, M = 2)
   residuals_se_ci <- .array_se_ci(residuals_boot, ps)
-  names(gof_se_ci$se) <- gof_names
-  names(gof_se_ci$ci$lower) <- gof_names
-  names(gof_se_ci$ci$upper) <- gof_names
 
   if(boot_rot == "oblique") {
 
@@ -1221,7 +1200,6 @@
         rot_loadings = L_rot_se_ci$se,
         Phi = Phi_rot_se_ci$se,
         Structure = Structure_se_ci$se,
-        fit_indices = gof_se_ci$se,
         residuals = residuals_se_ci$se,
         valid_replicates = valid_reps,
         valid_target_rotations = valid_rot
@@ -1231,7 +1209,6 @@
         rot_loadings = L_rot_se_ci$ci,
         Phi = Phi_rot_se_ci$ci,
         Structure = Structure_se_ci$ci,
-        fit_indices = gof_se_ci$ci,
         residuals = residuals_se_ci$ci
       ),
       replicates = list(
@@ -1239,7 +1216,6 @@
         rot_loadings = L_rot_boot,
         Phi = Phi_rot_boot,
         Structure = Structure_boot,
-        fit_indices = gof_boot,
         residuals = residuals_boot
       )
     )
@@ -1283,7 +1259,6 @@
       SE = list(
         unrot_loadings = L_unrot_se_ci$se,
         rot_loadings = L_rot_se_ci$se,
-        fit_indices = gof_se_ci$se,
         residuals = residuals_se_ci$se,
         valid_replicates = valid_reps,
         valid_target_rotations = valid_rot
@@ -1291,13 +1266,11 @@
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,
         rot_loadings = L_rot_se_ci$ci,
-        fit_indices = gof_se_ci$ci,
         residuals = residuals_se_ci$ci
       ),
       replicates = list(
         unrot_loadings = L_unrot_boot,
         rot_loadings = L_rot_boot,
-        fit_indices = gof_boot,
         residuals = residuals_boot
       )
     )
@@ -1308,18 +1281,15 @@
     out <- list(
       SE = list(
         unrot_loadings = L_unrot_se_ci$se,
-        fit_indices = gof_se_ci$se,
         residuals = residuals_se_ci$se,
         valid_replicates = valid_reps
       ),
       CI = list(
         unrot_loadings = L_unrot_se_ci$ci,
-        fit_indices = gof_se_ci$ci,
         residuals = residuals_se_ci$ci
       ),
       replicates = list(
         unrot_loadings = L_unrot_boot,
-        fit_indices = gof_boot,
         residuals = residuals_boot
       )
     )

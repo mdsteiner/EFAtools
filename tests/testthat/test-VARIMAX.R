@@ -59,15 +59,15 @@ test_that("errors etc. are thrown correctly", {
 
   expect_error(.rotate_model(unrot, rotation = "varimax", type = "none"), class = "efa_type_none")
 
-  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "EFAtools", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "EFAtools", order_type = "ss_factors"), class = "efa_type_override")
+  expect_no_warning(.rotate_model(unrot, rotation = "varimax", type = "EFAtools", normalize = FALSE))
+  expect_no_warning(.rotate_model(unrot, rotation = "varimax", type = "EFAtools", order_type = "ss_factors"))
 
-  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "psych", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "psych", order_type = "ss_factors"), class = "efa_type_override")
+  expect_no_warning(.rotate_model(unrot, rotation = "varimax", type = "psych", normalize = FALSE))
+  expect_no_warning(.rotate_model(unrot, rotation = "varimax", type = "psych", order_type = "ss_factors"))
 
-  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "SPSS", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "SPSS", order_type = "eigen"), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "varimax", type = "SPSS", varimax_type = "svd"), class = "efa_type_override")
+  expect_no_warning(.rotate_model(unrot, rotation = "varimax", type = "SPSS", normalize = FALSE))
+  expect_no_warning(.rotate_model(unrot, rotation = "varimax", type = "SPSS", order_type = "eigen"))
+  expect_no_warning(.rotate_model(unrot, rotation = "varimax", type = "SPSS", varimax_type = "svd"))
   expect_warning(.rotate_model(unrot_1, rotation = "varimax", type = "EFAtools"), class = "efa_single_factor")
 })
 

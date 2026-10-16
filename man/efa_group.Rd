@@ -84,12 +84,7 @@ Default is \code{NULL}.}
 example \code{estimator}, \code{rotation}, or \code{cor_method}). The \code{\link[=estimate_control]{estimate_control()}} and
 \code{\link[=rotate_control]{rotate_control()}} objects are accepted through \code{...} as well, although they are not
 declared formals: pass them as \verb{estimate_control =} / \verb{rotate_control =} exactly
-as you would to \code{\link[=efa_fit]{efa_fit()}}. A name that is neither an \code{\link[=efa_fit]{efa_fit()}} argument nor a
-rotation-engine extra is rejected.
-
-A rotation-engine extra that shares a name with an \code{efa_group()} argument cannot reach
-the rotation through \code{...}, because the argument takes the name first (for example
-geomin's \code{delta}; see \code{delta} above).}
+as you would to \code{\link[=efa_fit]{efa_fit()}}. A name that is not an \code{\link[=efa_fit]{efa_fit()}} argument is rejected.}
 }
 \value{
 An object of class \code{efa_group}, a list containing:

@@ -4,10 +4,6 @@
 \alias{efa_fit}
 \title{Exploratory factor analysis (EFA)}
 \source{
-Bollen, K. A., & Stine, R. A. (1992). Bootstrapping goodness-of-fit measures
-in structural equation models. Sociological Methods & Research, 21, 205–229.
-doi: 10.1177/0049124192021002004
-
 Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A comparison
 of implementations of principal axis factoring and promax rotation in R and SPSS.
 Behavior Research Methods, 54, 54–74. doi: 10.3758/s13428-021-01581-x
@@ -89,6 +85,22 @@ Sociological Methods & Research, 21, 230–258. doi: 10.1177/0049124192021002005
 
 Bentler, P. M. (1995). EQS structural equations program manual. Multivariate
 Software.
+
+Jöreskog, K. G., & van Thillo, M. (1971). New rapid algorithms for factor
+analysis by unweighted least squares, generalized least squares and maximum likelihood
+(Research Memorandum RM-71-5). Educational Testing Service.
+
+Marsh, H. W. (1998). Pairwise deletion for missing data in structural equation
+models: Nonpositive definite matrices, parameter estimates, goodness of fit, and adjusted
+sample sizes. Structural Equation Modeling, 5, 22–36. doi: 10.1080/10705519809540087
+
+Yuan, K.-H., Hayashi, K., & Yanagihara, H. (2007). A class of population
+covariance matrices in the bootstrap approach to covariance structure analysis.
+Multivariate Behavioral Research, 42, 261–281. doi: 10.1080/00273170701360662
+
+Zhang, X., & Savalei, V. (2016). Bootstrapping confidence intervals for fit
+indexes in structural equation modeling. Structural Equation Modeling, 23, 392–408.
+doi: 10.1080/10705511.2015.1118692
 }
 \usage{
 efa_fit(
@@ -96,8 +108,8 @@ efa_fit(
   n_factors,
   N = NA,
   estimator = c("PAF", "ML", "ULS", "MINRES", "DWLS"),
-  rotation = c("none", "varimax", "equamax", "quartimax", "geominT", "bentlerT",
-    "bifactorT", "promax", "oblimin", "quartimin", "simplimax", "bentlerQ", "geominQ",
+  rotation = c("oblimin", "none", "varimax", "equamax", "quartimax", "geominT",
+    "bentlerT", "bifactorT", "promax", "quartimin", "simplimax", "bentlerQ", "geominQ",
     "bifactorQ"),
   se = c("none", "information", "sandwich", "np-boot"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra", "fiml"),
@@ -107,8 +119,7 @@ efa_fit(
   rotate_control = NULL,
   b_boot = 1000,
   ci = 0.95,
-  seed = NULL,
-  ...
+  seed = NULL
 )
 }
 \arguments{
@@ -121,15 +132,17 @@ smaller than the number of variables (the common factor model is not identified
 otherwise). Use \code{\link[=efa_retain]{efa_retain()}} to decide on a value.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
-correlation matrix is used; with raw data, \code{N} is found from the data instead.
+correlation matrix is used. Without \code{N}, the chi-square-based fit indices are not
+available, with a warning; the same applies to a positive \code{N} that is very small
+relative to the number of variables. With raw data, \code{N} is found from the data:
 \itemize{
-\item With \code{N = NA}, not all fit indices can be computed; a positive \code{N} that is very
-small relative to the number of variables leaves the chi-square-derived indices
-unavailable as well, with a warning.
-\item With raw data, \code{N} is the number of cases the correlation matrix was actually
-computed from -- see \code{use} for the general rule and how missing values change it.
-Under \code{cor_method = "fiml"}, \code{use} is ignored and \code{N} is instead the number of
-cases carrying at least one observed value.
+\item the number of rows under the default pairwise deletion (\code{use}), with a warning
+if values are missing, because each correlation then rests on fewer cases, so the
+chi-square is too large and the standard errors are too small (Marsh, 1998);
+\item the number of complete cases under listwise deletion, and whenever an asymptotic
+covariance is needed (\code{estimator = "DWLS"} or \code{se = "sandwich"}, except under
+\code{cor_method = "fiml"});
+\item the number of rows with at least one observed value under \code{cor_method = "fiml"}.
 }}
 
 \item{estimator}{character. The estimator used to fit the EFA: "PAF" (principal axis
@@ -138,21 +151,21 @@ accepted alias returning identical results), or "DWLS" (diagonally weighted leas
 squares, for ordinal data). See the \emph{Estimators} section in Details for their
 properties and data requirements. Lower-case versions (e.g., "paf") are also accepted.}
 
-\item{rotation}{character. Either perform no rotation ("none"; default),
-an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
-"bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
-"quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ"). See the
-\emph{Rotations} section in Details for their properties and known issues.}
+\item{rotation}{character. An oblique rotation ("oblimin", the default, "promax",
+"quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ"), an orthogonal
+rotation ("varimax", "equamax", "quartimax", "geominT", "bentlerT", or "bifactorT"),
+or no rotation ("none"). A single factor cannot be rotated, so with \code{n_factors = 1}
+the default is "none". See the \emph{Rotations} section in Details for their properties
+and known issues.}
 
 \item{se}{character. Whether and how to compute standard errors (and matching
-confidence intervals): "none" (default), "information" (analytic
-standard errors from the expected Fisher information of the ML solution), "sandwich"
-(robust "sandwich" standard errors from raw data, which stay reliable under
-non-normality or a misspecified estimator weight), or "np-boot" (non-parametric
-bootstrap). The
-methods differ in their assumptions, their data requirements, and which estimator,
-rotation, and \code{cor_method} combinations they support; see the \emph{Standard errors}
-section in Details.}
+confidence intervals): "none" (default), "information" (analytic standard errors
+from the expected Fisher information of the ML solution), "sandwich" (robust
+standard errors from raw data, which stay reliable under non-normality or a
+misspecified estimator weight), or "np-boot" (non-parametric bootstrap). The methods
+differ in their assumptions, their data requirements, and which estimator, rotation,
+and \code{cor_method} combinations they support; see the \emph{Standard errors} section in
+Details.}
 
 \item{cor_method}{character. How the correlation is computed from raw data:
 \code{"pearson"}, \code{"spearman"}, or \code{"kendall"} (passed to \code{\link[stats:cor]{stats::cor()}}); \code{"poly"} /
@@ -177,9 +190,10 @@ the \code{"EFAtools"} type. See \code{\link[=estimate_control]{estimate_control(
 \item{rotate_control}{a control object from \code{\link[=rotate_control]{rotate_control()}} bundling the rotation
 control arguments: the \code{type} preset; Kaiser \code{normalize}; the convergence \code{precision}; the
 factor \code{order_type}; the varimax/promax settings \code{varimax_type} and \code{p_type}; the
-simplimax/promax \code{k}; and \code{random_starts}. Defaults to \code{rotate_control()}, which uses
-the \code{"EFAtools"} type. The estimation and rotation presets
-are independent. See \code{\link[=rotate_control]{rotate_control()}} for details.}
+simplimax/promax \code{k}; \code{random_starts}; and the rotation-engine arguments \code{gam}
+(oblimin), \code{delta} (geomin), and \code{maxit}. Defaults to \code{rotate_control()}, which uses
+the \code{"EFAtools"} type. The estimation and rotation presets are independent. See
+\code{\link[=rotate_control]{rotate_control()}} for details.}
 
 \item{b_boot}{numeric. The number of bootstrap samples to draw. Default is 1000.
 Must be at least 2, the smallest number from which a standard error is defined.
@@ -193,9 +207,6 @@ the bootstrap samples under \code{se = "np-boot"}, and the analytic Wald interva
 .95 for 95\% CIs.}
 
 \item{seed}{numeric. An optional seed for the random-number generator.}
-
-\item{...}{Additional arguments forwarded to the rotation engine (usually not needed);
-an unrecognized one is an error, not a setting that is silently ignored.}
 }
 \value{
 A list of class \code{c("efa", "EFA")} containing (a subset of) the following:
@@ -228,20 +239,13 @@ omitted for a single-factor solution, where they would only repeat the two above
 code that indexes a row by name (for example \verb{["Prop Comm Var", ]}) must allow for the
 two-row form at \code{n_factors = 1}.}
 \item{fit_indices}{A named list of fit indices computed from the unrotated
-loadings. ML and ULS report the full set: the model Chi Square (with its
-p-value and df), CFI, TLI, RMSEA with its 90\% confidence interval, AIC, BIC,
-ECVI, RMSR, SRMR, and CAF. PAF and DWLS report only RMSR, SRMR, CAF, and df;
-the Chi-Square-based indices are \code{NA} there, unless DWLS uses
-\code{se = "sandwich"}, which fills the full block from a scaled Chi Square
-instead. RMSR and SRMR are both included, but the print and summary methods
-display only SRMR (see \emph{Fit indices} in Details). Whenever the Chi Square is
-scaled (\code{se = "sandwich"}, or a \code{cor_method = "fiml"} fit whose correction
-could be formed), AIC, BIC, and ECVI are \code{NA}, and a few extra
-scaled-statistic fields are appended for advanced diagnostics (see
-\emph{Fit indices} in Details). The list also carries \code{Fm}, the estimator's own
-objective value at the solution -- on its own scale, not the discrepancy
-the Chi Square is built from -- and the independence-model baseline
-\code{chi_null}, \code{df_null}, and \code{p_null} that CFI and TLI are computed from.}
+loadings (see \emph{Fit indices} in Details): the model Chi Square (\code{chi}, with \code{p_chi} and
+\code{df}), \code{CFI}, \code{TLI}, \code{RMSEA} with its 90\% confidence interval (\code{RMSEA_LB}, \code{RMSEA_UB}),
+\code{AIC}, \code{BIC}, \code{ECVI}, \code{RMSR}, \code{SRMR}, \code{CAF}, and the independence-model baseline
+\code{chi_null}, \code{df_null}, and \code{p_null} that CFI and TLI are computed from. Whenever the Chi
+Square is scaled, a few extra scaled-statistic fields are appended for advanced
+diagnostics. The list also carries \code{Fm}, the estimator's own objective value at the
+solution -- on its own scale, not the discrepancy the Chi Square is built from.}
 \item{model_implied_R}{The model implied correlation
 matrix.}
 \item{residuals}{Residual correlations, i.e., orig_R - model_implied_R}
@@ -299,20 +303,23 @@ FIML estimate; this is flagged in the printed output. Set
 \item{SE}{A named list of standard error matrices, returned only when \code{se} is not
 \code{"none"} (see \emph{Standard errors} in Details for what each method assumes and when a
 component comes back \code{NA}). For \code{se = "np-boot"}: bootstrap SDs of the loadings
-(rotated too, if a rotation was applied), the residuals, and the fit indices, plus
+(rotated too, if a rotation was applied), the residuals, and, where available, RMSEA,
+CFI, and TLI (\code{fit_indices}, from the transformed cases), plus
 -- for oblique rotations -- \code{Phi} and the structure coefficients; \code{valid_replicates}
 (and, when rotated, \code{valid_target_rotations}) records how many bootstrap replicates
-each of those is based on. For \code{se = "information"} and \code{se = "sandwich"}: Wald-type
+each of those is based on (for \code{fit_indices}, count the rows of
+\code{replicates$fit_indices} without \code{NA}). For \code{se = "information"} and \code{se = "sandwich"}: Wald-type
 SEs for the loadings, the uniquenesses, and the communalities -- identical to each
 other, since communality is just \code{1 - uniqueness} -- plus \code{Phi} and the structure
 coefficients for oblique rotations. \code{"sandwich"} stays valid under non-normality;
 \code{"information"} assumes the model is correctly specified.}
 \item{CI}{A named list of confidence intervals of width \code{ci}, matching the
 components of \code{SE}: percentile intervals for \code{se = "np-boot"}, Wald intervals for
-\code{se = "information"} and \code{se = "sandwich"}. Only returned if \code{se} is not \code{"none"}.}
+\code{se = "information"} and \code{se = "sandwich"}. Only returned if \code{se} is not \code{"none"}.
+See \emph{Standard errors} in Details for when the bootstrap gives \code{fit_indices}.}
 \item{replicates}{A named list of raw bootstrap replicate arrays -- the aligned
-loadings, \code{Phi}, structure coefficients, residuals, and fit indices behind \code{SE} and
-\code{CI} -- with one replicate per array's last dimension (first dimension for
+loadings, \code{Phi}, structure coefficients, residuals, and RMSEA, CFI, and TLI behind \code{SE}
+and \code{CI} -- with one replicate per array's last dimension (first dimension for
 \code{fit_indices}). Failed replicates are left \code{NA}. Populated only for
 \code{se = "np-boot"}; \code{NULL} otherwise.}
 \item{vcov_unrot_loadings}{The full unrotated-loading covariance matrix behind
@@ -324,18 +331,10 @@ is unreliable (a Heywood case or a singular information matrix); \code{NULL} for
 \code{se = "np-boot"} and \code{se = "none"}. It can be populated even when
 \code{SE$unrot_loadings} is \code{NA}: a weakly determined rotational orientation invalidates
 only the marginal SEs, not the underlying covariance.}
-\item{Gamma}{The asymptotic covariance of the off-diagonal sample correlations --
-the meat of the robust sandwich SEs. A \code{p (p - 1) / 2} by \code{p (p - 1) / 2} matrix,
-rows and columns ordered by \code{\link[utils:combn]{utils::combn()}} over the column pairs and labelled
-\code{"<var_i>-<var_j>"}. Populated for \code{se = "sandwich"} on the polychoric/tetrachoric
-and Pearson paths; \code{NULL} otherwise (including under \code{cor_method = "fiml"}, whose
-meat is not returned). It typically dominates a sandwich fit's size (about 11 MB at
-\code{p = 50}) and is kept because \code{\link[=efa_mi]{efa_mi()}} needs it from each per-imputation fit to
-build the pooled covariance.}
 }
 \description{
-This function does an EFA with either \code{PAF}, \code{ML}, \code{ULS}/\code{MINRES},
-or \code{DWLS} with or without subsequent rotation.
+This function does an EFA with \code{PAF}, \code{ML}, \code{ULS}/\code{MINRES}, or \code{DWLS} estimation,
+by default followed by an oblimin rotation.
 Estimation and rotation are controlled through the control objects built by
 \code{\link[=estimate_control]{estimate_control()}} and \code{\link[=rotate_control]{rotate_control()}}; each accepts a \code{type}
 ("EFAtools", "SPSS", "psych", or "none") that fills in its remaining settings.
@@ -347,25 +346,25 @@ The estimator is chosen with \code{estimator}.
 \itemize{
 \item \strong{PAF} (principal axis factoring) iteratively estimates the communalities and makes
 no distributional assumptions, which makes it robust and a good general-purpose
-default. Because it minimises no likelihood or weighted discrepancy it provides no
-model chi-square, and hence no chi-square-based fit indices (see \emph{Fit indices}).
-\item \strong{ML} (maximum likelihood) maximises the normal-theory likelihood. It yields the
-full set of fit indices and is the only estimator with analytic expected-information
-standard errors (\code{se = "information"}), but it assumes multivariate normality and is
-the most prone to Heywood (improper) cases. Its starting values are set by
-\code{start_method}.
+default. A converged PAF solution is a stationary point of the ULS criterion
+(Jöreskog & van Thillo, 1971), so PAF and ULS give practically the same solution and
+the same fit indices (see \emph{Fit indices}).
+\item \strong{ML} (maximum likelihood) maximises the normal-theory likelihood. It is the only
+estimator with analytic expected-information standard errors
+(\code{se = "information"}), but it assumes multivariate normality and is the most prone
+to Heywood (improper) cases. Its starting values are set by \code{start_method}.
 \item \strong{ULS} (unweighted least squares) minimises the sum of squared correlation
 residuals. "MINRES" (minimum residual) is the same estimator under a different name
-and returns identical results. It makes no normality assumption, is robust to mild
-non-normality, and yields the full set of fit indices.
+and returns identical results. It makes no normality assumption and is robust to mild
+non-normality.
 \item \strong{DWLS} (diagonally weighted least squares) is the recommended estimator for ordinal
 data. It weights each off-diagonal correlation residual by the inverse asymptotic
 variance of the corresponding polychoric correlation (Muthén, du Toit, & Spisic, 1997),
 reproducing the loadings of a diagonally weighted least squares fit. It therefore
 requires raw ordinal data with \code{cor_method = "poly"} or \code{"tetra"}. Because the
-weighting follows the polychoric
-asymptotic covariance, the matrix and the weights are estimated on the
-listwise-complete cases. Its fit-index behaviour is described under \emph{Fit indices}.
+weighting follows the polychoric asymptotic covariance, the matrix and the weights are
+estimated on the listwise-complete cases. Its fit-index behaviour is described under
+\emph{Fit indices}.
 }
 }
 
@@ -382,29 +381,27 @@ For ordinal items prefer \code{"poly"} / \code{"tetra"} below, which estimate th
 of the underlying continuous variables.
 \item \strong{"poly"} / \strong{"tetra"} compute polychoric / tetrachoric correlations for ordinal /
 binary data, assuming an underlying bivariate-normal latent variable. They use a
-two-step estimator. The polychoric asymptotic covariance that
-underlies both the DWLS weights and the scaled (sandwich) statistic relies on
-large-sample theory that degrades for empty or near-empty response-category
-combinations; with very sparse cells the resulting weights and standard errors can be
-unreliable (a warning is issued when empty cells are present), so interpret them with
-caution and consider collapsing rare categories.
-Each of the \code{p(p - 1)/2} variable pairs is a separate numerical optimisation, so a
-polychoric matrix takes much longer to compute than a Pearson one, and the difference grows
-quadratically in the number of variables; with \code{se = "np-boot"} the whole matrix is
-re-estimated for every bootstrap replicate.
+two-step estimator. The polychoric asymptotic covariance that underlies both the DWLS
+weights and the scaled (sandwich) statistic relies on large-sample theory that
+degrades for empty or near-empty response-category combinations; with very sparse
+cells the resulting weights and standard errors can be unreliable (a warning is issued
+when empty cells are present), so interpret them with caution and consider collapsing
+rare categories. Each of the \code{p(p - 1)/2} variable pairs is a separate numerical
+optimisation, so a polychoric matrix takes much longer to compute than a Pearson one,
+and the difference grows quadratically in the number of variables; with
+\code{se = "np-boot"} the whole matrix is re-estimated for every bootstrap replicate.
 \item \strong{"fiml"} estimates a two-stage full-information maximum-likelihood correlation. The
 saturated multivariate-normal mean and covariance are estimated from raw data with
 missing values by an EM algorithm assuming the data are missing at random (Yuan,
 Marshall, & Bentler, 2002; Little & Rubin, 2002), and the standardized covariance is
-then analysed. The model fit indices are corrected
-two-stage statistics wherever the correction can be formed (see \emph{Fit indices}).
-\code{"fiml"} uses every case and handles the
+then analysed. The model fit indices are corrected two-stage statistics wherever the
+correction can be formed (see \emph{Fit indices}). \code{"fiml"} uses every case and handles the
 missingness itself, so \code{use} is ignored; it supplies a continuous (Pearson-type)
 correlation only and is therefore not compatible with \code{estimator = "DWLS"}. Standard
-errors are available analytically for \code{estimator = "ML"} or \code{"ULS"} and, for any estimator,
-by the non-parametric bootstrap (see \emph{Standard errors}). For multiply imputed data,
-\code{\link[=efa_mi]{efa_mi()}} is the alternative route to handling missingness. Both routes assume
-the values are missing at random (MAR), and which one to prefer is largely
+errors are available analytically for \code{estimator = "ML"} or \code{"ULS"} and, for any
+estimator, by the non-parametric bootstrap (see \emph{Standard errors}). For multiply
+imputed data, \code{\link[=efa_mi]{efa_mi()}} is the alternative route to handling missingness. Both routes
+assume the values are missing at random (MAR), and which one to prefer is largely
 practical: FIML is a single, efficient fit and is the simpler default when the
 analysis model is the whole story, whereas multiple imputation is more flexible when
 the imputation model should draw on auxiliary variables not in the factor model, or
@@ -419,6 +416,9 @@ pattern; all rotations are performed by rotation engines built into the package.
 Orthogonal rotations keep the factors uncorrelated, whereas oblique rotations let them
 correlate (returning a pattern matrix, a structure matrix, and the factor
 intercorrelations \code{Phi}) and are usually more realistic for psychological constructs.
+The default, oblimin, is therefore oblique: if \code{Phi} comes back near zero the oblique
+solution is essentially the orthogonal one anyway, whereas imposing orthogonality on
+genuinely correlated factors distorts the pattern.
 
 For an oblique solution the \strong{pattern} matrix (\code{rot_loadings}) holds each variable's
 unique contribution from each factor, with the other factors partialled out; it is what
@@ -448,14 +448,14 @@ is performed and the unrotated loadings are returned with a warning.
 
 Oblique rotations:
 \itemize{
+\item \strong{oblimin} (the default) is quartimin with a tunable argument, \code{gam} (default 0, i.e.
+quartimin itself); turning it up trades some row simplicity for more strongly
+correlated factors, and can drive the solution toward factor collapse, so inspect
+\code{Phi} before interpreting a fit with \code{gam > 0}.
 \item \strong{promax} is a fast two-step rotation: a varimax solution is raised to a power
 (controlled by \code{k} and \code{p_type}) to form a target that is then fitted obliquely.
 \item \strong{quartimin} simplifies the variables (rows), like quartimax, so each loads mainly
 on one factor, but factors are allowed to correlate.
-\item \strong{oblimin} is quartimin with a tunable argument, \code{gam} (default 0, i.e. quartimin
-itself); turning it up trades some of that row simplicity for more strongly
-correlated factors, and can drive the solution toward factor collapse, so inspect
-\code{Phi} before interpreting a fit with \code{gam > 0}.
 \item \strong{simplimax} drives the \code{k} smallest loadings toward zero. Its criterion is only
 piecewise smooth and strongly multimodal, which makes it by far the most
 start-dependent rotation offered here: different random seeds can reach noticeably
@@ -470,11 +470,6 @@ more thorough multi-start search internally).
 same two-group-factor requirement as \strong{bifactorT}.
 }
 
-Prefer an oblique rotation unless there is a substantive reason to force the factors to
-be uncorrelated: if \code{Phi} comes back near zero the oblique solution is essentially the
-orthogonal one anyway, whereas imposing orthogonality on genuinely correlated factors
-distorts the pattern.
-
 The criterion-based rotations (all except varimax and promax) are fitted by gradient
 projection with \code{random_starts} random starts to guard against local minima; the
 complexity criteria (simplimax and geominQ in particular) are the most multimodal. The
@@ -486,26 +481,23 @@ controlled: pass \code{seed}, or call \code{\link[base:set.seed]{base::set.seed(
 \subsection{Standard errors}{
 
 \code{se} selects whether and how standard errors (and matching confidence intervals) are
-computed. Which quantities they cover depends on the method. The analytic methods
-(\code{"information"} and \code{"sandwich"}) cover the unrotated loadings, the uniquenesses and
-the communalities and, when a rotation is applied, the rotated loadings and -- for
-oblique rotations -- the factor correlations and the structure coefficients. The
-bootstrap (\code{"np-boot"}) covers the unrotated loadings, the residuals, and the fit
-indices and, when a rotation is applied, the rotated loadings and -- for oblique
-rotations -- the factor correlations and the structure coefficients; it reports no
-uniqueness or communality standard errors.
+computed. The analytic methods (\code{"information"} and \code{"sandwich"}) cover the unrotated
+loadings, the uniquenesses and the communalities and, when a rotation is applied, the
+rotated loadings and -- for oblique rotations -- the factor correlations and the
+structure coefficients. The bootstrap (\code{"np-boot"}) covers the unrotated loadings, the
+residuals, where available RMSEA, CFI, and TLI, and, when a rotation is applied, the
+rotated loadings and -- for oblique rotations -- the factor correlations and the
+structure coefficients; it reports no uniqueness or communality standard errors.
 \itemize{
 \item \strong{"none"} (default) computes no standard errors.
 \item \strong{"information"} returns analytic standard errors from the expected (Fisher)
 information matrix of the maximum-likelihood solution, and therefore requires
 \code{estimator = "ML"} and \code{cor_method = "pearson"} (or \code{"fiml"}, see below). The rotated
 standard errors are obtained by propagating the unrotated-loading covariance through
-the rotation (Jennrich, 1973); because rotated quantities do not depend on how the
-unrotated solution happens to be oriented, they are directly comparable across
-programs. Unlike the bootstrap it also works from a correlation matrix as long as \code{N}
-is supplied. These standard errors assume multivariate normality and a correctly
-specified model; under heavy-tailed data or model misfit they can understate the
-sampling variability, where \code{"sandwich"} or \code{"np-boot"} are more robust.
+the rotation (Jennrich, 1973). Unlike the bootstrap it also works from a correlation
+matrix as long as \code{N} is supplied. These standard errors assume multivariate normality
+and a correctly specified model; under heavy-tailed data or model misfit they can
+understate the sampling variability, where \code{"sandwich"} or \code{"np-boot"} are more robust.
 
 The rotated loadings, \code{Phi}, the structure coefficients, the uniquenesses, and the
 communalities do not depend on how the unrotated solution happens to be oriented, and
@@ -515,18 +507,13 @@ standard errors for the same fit. That orientation can also fail to be well defi
 for example when two factors are of near-equal strength -- in which case the
 unrotated loadings have no well-defined sampling distribution and their standard
 errors diverge. \code{efa_fit()} detects this and returns \code{NA} for the unrotated loading
-standard errors with a warning, rather than reporting a number that looks like a
-standard error but is an artefact of the orientation; the rotated loadings, \code{Phi}, the
-structure coefficients, the uniquenesses, and the communalities are unaffected and
-still reported. Use those, or \code{se = "np-boot"}, when the unrotated loadings
-themselves are the quantity of interest. This detection applies to every analytic
-route (the Pearson and polychoric paths and the two-stage \code{cor_method = "fiml"}
-sandwich alike). A Heywood case (a uniqueness at its lower boundary) is
-separate and more severe: there
-the whole \code{SE}/\code{CI} block comes back \code{NA} with a warning, because the standard-error
-approximation fails for every parameter. The scaled chi-square (from \code{"sandwich"}, or
-from \code{cor_method = "fiml"}) does not rely on that approximation and is still
-reported, so the fit indices are unaffected.
+standard errors with a warning; the other quantities are unaffected. Use those, or
+\code{se = "np-boot"}, when the unrotated loadings themselves are the quantity of
+interest. This detection applies to every analytic route. A Heywood case (a
+uniqueness at its lower boundary) is more severe: there the whole \code{SE}/\code{CI} block
+comes back \code{NA} with a warning, because the standard-error approximation fails for
+every parameter. The scaled chi-square (from \code{"sandwich"}, or from
+\code{cor_method = "fiml"}) does not rely on that approximation and is still reported.
 \item \strong{"sandwich"} returns robust ("sandwich") standard errors estimated from raw data,
 combining the estimator weight with a distribution-free covariance of the
 correlations, so it stays valid under non-normality and weight misspecification
@@ -537,159 +524,129 @@ correlations, so it stays valid under non-normality and weight misspecification
 additionally fills the model fit's chi-square block with a scaled chi-square (see
 \emph{Fit indices}); the statistic reported as \code{chi} is always the scaled-and-shifted one
 (flagged by \code{chi_scaled_type}), and a mean-adjusted alternative is returned alongside
-it as \code{chi_mean_adjusted}.
-Because the covariance must describe the same cases as the correlation matrix, the
-sandwich (like \code{estimator = "DWLS"}) is computed on the listwise-complete cases; on
-data with missing values the reported \code{N}, the correlation matrix, and the point
-estimate therefore reflect the complete cases regardless of \code{use}.
+it as \code{chi_mean_adjusted}. Because the covariance must describe the same cases as the
+correlation matrix, the sandwich (like \code{estimator = "DWLS"}) is computed on the
+listwise-complete cases; on data with missing values the reported \code{N}, the
+correlation matrix, and the point estimate therefore reflect the complete cases
+regardless of \code{use}.
 \item \strong{"np-boot"} draws a non-parametric (case-resampling) bootstrap and needs raw data.
-A correlation matrix carries no cases to resample; alone among the unsupported
-combinations this one does not error but warns and downgrades \code{se} to \code{"none"}, so
-the fit is returned without an \code{SE} slot.
 It is the most general method -- available for any \code{estimator}, \code{rotation}, and
 \code{cor_method} -- and the most robust to non-normality and misfit, at the cost of speed;
-its intervals are bootstrap percentile intervals. The replicate fits run across
-replicates with the \code{future} framework; by default they run sequentially, but
-registering a plan with \code{\link[future:plan]{future::plan()}} runs them in parallel instead, as the
-examples show. With a fixed \code{seed} the bootstrap is reproducible and yields the same
-result regardless of the number of workers. Under \code{cor_method = "fiml"} each resample
-also re-runs the EM moment estimation and is therefore slow, so a smaller \code{b_boot}
-may be advisable.
+its intervals are bootstrap percentile intervals. The replicates run with the \code{future}
+framework; by default they run sequentially, but registering a plan with
+\code{\link[future:plan]{future::plan()}} runs them in parallel instead, as the examples show. With a fixed
+\code{seed} the bootstrap is reproducible and yields the same result regardless of the
+number of workers. Under \code{cor_method = "fiml"} each resample also re-runs the EM
+moment estimation and is therefore slow, so a smaller \code{b_boot} may be advisable.
 
-The percentile intervals are centred on the point estimate for the loadings, the
-factor correlations, the structure coefficients, and the residuals, but \strong{not} for
-the indices derived from the chi-square (\code{RMSEA}, \code{AIC}, \code{BIC}, and \code{ECVI}): a
-resample already carries the model's own misfit, so those intervals ride upward and
-can even place the point estimate below their own lower bound. Read them as a spread
-rather than a range for the point estimate; correcting that shift needs resampling
-from a population transformed to fit the model (Bollen & Stine, 1992), which is not
-what this bootstrap does. \code{CFI} and \code{TLI} are not affected, being ratios in which the
-baseline chi-square shifts along with the model one.
+The intervals of RMSEA, CFI, and TLI come from a second set of fits. A resample of
+the raw cases adds sampling misfit to the misfit of the sample, which moves these
+intervals toward worse fit. Thus, \code{efa_fit()} first transforms the cases so that their
+misfit is equal to the estimated population misfit. Then it resamples the same rows
+(Yuan, Hayashi, & Yanagihara, 2007). If the RMSEA is 0, the transformed cases fit the
+model exactly. In simulations with normal data, the intervals of RMSEA and CFI had good
+coverage. Use them with caution if the CFI is below approximately .76 or the RMSEA is
+above approximately .10 (Zhang & Savalei, 2016). TLI is CFI rescaled by a constant, so
+its interval behaves in the same way. The transformation needs complete cases and
+Pearson correlations. Thus, these intervals need \code{cor_method = "pearson"}, no missing
+values in the analysed cases (complete data, or listwise deletion), and a chi-square
+with df > 0. Otherwise, CFI and TLI are printed without an interval. The other fit
+indices get no bootstrap interval: SRMR had poor coverage with either bootstrap, and
+Zhang and Savalei (2016) did not study the others. The second set of fits is not
+rotated, so it usually takes less time than the first.
 }
 
 The analytic methods (\code{"information"} and \code{"sandwich"}) are not available with the
 \code{"promax"} or \code{"simplimax"} rotations, which have no supported analytic route for the
-rotated standard errors; use \code{"np-boot"} there. Under \code{cor_method = "fiml"},
-\code{"information"} and \code{"sandwich"} instead return, for \code{estimator = "ML"} or \code{"ULS"},
-corrected two-stage sandwich standard errors (Yuan & Bentler, 2000; Savalei & Bentler,
-2009). \code{estimator = "PAF"} carries no Stage-2 weight to build the sandwich from, so use
-\code{se = "np-boot"} there instead.
+rotated standard errors; use \code{"np-boot"} there. They are not available for PAF either;
+use ULS, which gives the same solution at convergence, or \code{"np-boot"}. Under
+\code{cor_method = "fiml"}, \code{"information"} and \code{"sandwich"} both return, for
+\code{estimator = "ML"} or \code{"ULS"}, corrected two-stage sandwich standard errors (Yuan &
+Bentler, 2000; Savalei & Bentler, 2009).
 }
 
 \subsection{Fit indices}{
 
-For ML and ULS, \code{\link[=efa_fit]{efa_fit()}} returns the model chi-square (with its p-value and degrees of
-freedom), the Comparative Fit Index (CFI; Bentler, 1990), the Tucker-Lewis Index (TLI,
-also called the non-normed fit index; Tucker & Lewis, 1973), the Root Mean Square Error
-of Approximation (RMSEA) with its 90\% confidence interval (Browne & Cudeck, 1992), the
-Akaike and Bayesian Information Criteria (AIC, BIC), the Expected Cross-Validation Index
-(ECVI; Browne & Cudeck, 1989), the Root Mean Squared Residual (RMSR), the Standardized
-Root Mean Squared Residual (SRMR; Bentler, 1995), and the common-part-accounted-for
-(CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). They come with the
-independence-baseline statistics \code{chi_null}, \code{df_null}, and \code{p_null}. On the unscaled ML
-and ULS paths \code{chi_null} is Bartlett's test of sphericity; a scaled chi-square, and the
-two-stage statistic of a \code{cor_method = "fiml"} fit, each carry their own baseline
-instead.
+For ML, ULS, and PAF, \code{\link[=efa_fit]{efa_fit()}} returns the model chi-square (with its p-value and
+degrees of freedom), the Comparative Fit Index (CFI; Bentler, 1990), the Tucker-Lewis
+Index (TLI, also called the non-normed fit index; Tucker & Lewis, 1973), the Root Mean
+Square Error of Approximation (RMSEA) with its 90\% confidence interval (Browne & Cudeck,
+1992), the Akaike and Bayesian Information Criteria (AIC, BIC), the Expected
+Cross-Validation Index (ECVI; Browne & Cudeck, 1989), the Root Mean Squared Residual
+(RMSR), the Standardized Root Mean Squared Residual (SRMR; Bentler, 1995), and the
+common-part-accounted-for (CAF) index (Lorenzo-Seva, Timmerman, & Kiers, 2011). They
+come with the independence-baseline statistics \code{chi_null}, \code{df_null}, and \code{p_null}. On
+the unscaled paths \code{chi_null} is Bartlett's test of sphericity; a scaled chi-square, and
+the two-stage statistic of a \code{cor_method = "fiml"} fit, each carry their own baseline
+instead. The baseline degrees of freedom \code{df_null} are \eqn{p(p - 1)/2} for \eqn{p}
+variables.
 
-The degrees of freedom depend on the number of variables and factors; the baseline
-degrees of freedom \code{df_null} are \eqn{p(p - 1)/2} for \eqn{p} variables.
-
-RMSR is the root mean square of the off-diagonal residuals; SRMR rescales it by a
-fixed factor that depends only on the number of variables. The print and summary
-methods show SRMR, not RMSR; RMSR remains in the returned object for backward
-compatibility. Both are computed over the same residuals, so an unavailable residual
-leaves both \code{NA}. (\pkg{psych}'s \code{rms} uses a different divisor and equals
-RMSR\eqn{/\sqrt{2}}; the two are not directly comparable.)
+The print method shows the chi-square, CFI, TLI, RMSEA, and SRMR; \code{summary()} adds AIC,
+BIC, and ECVI, which are only useful to compare models. With \code{se = "np-boot"}, CFI and TLI
+also show their bootstrap interval (see \emph{Standard errors}). RMSEA always shows its
+analytic 90\% interval; its bootstrap interval is in \code{CI$fit_indices}. RMSR is the root
+mean square of the off-diagonal residuals; SRMR rescales it by a fixed factor that
+depends only on the number of variables, and both are \code{NA} if a residual is unavailable. (\pkg{psych}'s
+\code{rms} uses a different divisor and equals RMSR\eqn{/\sqrt{2}}.) CAF is returned for
+\code{\link[=efa_hull]{efa_hull()}} but not printed: although Lorenzo-Seva et al. describe it as ranging from 0
+to 1, a correctly specified model gives a CAF near 0.5, because the KMO of residuals
+that hold only sampling noise is near 0.5. Read it as a relative measure. It is \code{NA}
+where that KMO is undefined.
 
 The model chi-square is the Bartlett-corrected discrepancy (matching
-\code{\link[stats:factanal]{stats::factanal()}} for ML). For ULS it is the same maximum-likelihood discrepancy,
-evaluated at the ULS-fitted solution, as in \code{\link[psych:fa]{psych::fa()}} -- not the least-squares
-criterion \pkg{lavaan} reports as its standard ULS test statistic, so the two are not
-comparable. AIC and BIC are built on this chi-square and can therefore be negative;
-ECVI (built on the same chi-square plus a non-negative penalty) cannot. Because of the
-Bartlett correction, ECVI differs slightly from the uncorrected Browne-Cudeck form
-reported by \pkg{lavaan} and Mplus (their AIC/BIC use an unrelated log-likelihood-based
-formula, so they are not comparable). On the unscaled ML/ULS path, CFI and
-TLI are computed on a slightly different discrepancy scale than the reported
-chi-square, so you cannot recompute one from the other by hand there; on the scaled
-(sandwich) and FIML paths, the reported chi and chi_null are exactly the pair the
-indices use.
+\code{\link[stats:factanal]{stats::factanal()}} for ML). For ULS and PAF it is the same maximum-likelihood
+discrepancy, evaluated at the fitted solution, as in \code{\link[psych:fa]{psych::fa()}}; its chi-square
+distribution is then an approximation. It is not the least-squares criterion
+\pkg{lavaan} reports as its standard ULS test statistic, so the two are not comparable.
+AIC and BIC are built on this chi-square and can therefore be negative; ECVI (built on
+the same chi-square plus a non-negative penalty) cannot. Because of the Bartlett
+correction, ECVI differs slightly from the uncorrected Browne-Cudeck form reported by
+\pkg{lavaan} and Mplus (their AIC/BIC use an unrelated log-likelihood-based formula, so
+they are not comparable). On the unscaled paths, CFI, TLI, and RMSEA are computed on the
+uncorrected \eqn{(N - 1)} scale rather than on the Bartlett-corrected chi-square, so you
+cannot recompute one from the other by hand there; on the scaled (sandwich) and FIML
+paths, the reported chi and chi_null are exactly the pair the indices use.
 
-Which indices are reported depends on the estimator:
+Two cases differ from the full set:
 \itemize{
-\item \strong{ML and ULS} compute the full set above.
-\item \strong{PAF} returns only the descriptive residual indices (RMSR, SRMR, CAF) and df; the
-printed model-fit block shows CAF and SRMR. The chi-square-based indices are \code{NA},
-because PAF minimises no discrepancy.
 \item \strong{DWLS} by default returns only RMSR, SRMR, CAF, and df, because the ordinary
 maximum-likelihood discrepancy is not its fit function. When \code{se = "sandwich"}, a
-scaled chi-square and the CFI, TLI, and RMSEA derived from it are reported (AIC and
-BIC remain \code{NA}); that statistic is a two-stage correction applied to the polychoric
-correlation residuals (Browne, 1984), not identical to the full WLSMV test of
-\pkg{lavaan} or Mplus, which also corrects for the response thresholds.
-\item \strong{\code{cor_method = "fiml"}} (with ML or ULS) reports two-stage-corrected statistics
-(Yuan, Marshall, & Bentler, 2002); AIC, BIC, and ECVI are left \code{NA}, as for any
-scaled chi-square. The correction itself can be degenerate -- typically with a small
+scaled chi-square and the CFI, TLI, and RMSEA derived from it are reported; that
+statistic is a two-stage correction applied to the polychoric correlation residuals
+(Browne, 1984), not identical to the full WLSMV test of \pkg{lavaan} or Mplus, which
+also corrects for the response thresholds.
+\item \strong{\code{cor_method = "fiml"}} reports two-stage-corrected statistics (Yuan, Marshall, &
+Bentler, 2002). The correction itself can be degenerate -- typically with a small
 sample, a high proportion of missing values, or near-collinear variables -- in which
 case an uncorrected likelihood-ratio statistic is reported in its place with a
 warning, and the print methods label that line \code{uncorrected} rather than \code{scaled};
 read its p-value and the CFI, TLI, and RMSEA derived from it as indicative only.
 }
 
-Beyond the estimator, the chi-square and everything derived from it are \code{NA} whenever
-the statistic itself is undefined: when \code{N} is not supplied, when the model is
-underidentified (a negative df), and when a positive \code{N} is too small relative to the
-number of variables and factors for the small-sample correction to remain valid. Each
-case raises its own warning. The residual summaries (RMSR, SRMR, CAF) and the degrees
-of freedom are still returned there, but residual size does not establish that a model
-is identified: below zero degrees of freedom a near-zero residual is an artefact of
-over-parameterisation, not close fit.
-
 Whenever the chi-square is a scaled one (\code{se = "sandwich"}, or a \code{cor_method = "fiml"}
-fit whose correction could be formed), AIC, BIC, and ECVI are \code{NA}; see the
-\code{fit_indices} entry in Value for the additional components then returned. AIC, BIC,
-and ECVI are \code{NA} on every \code{cor_method = "fiml"} fit, including the uncorrected
-fallback above. Lorenzo-Seva, Timmerman, and Kiers (2011) describe CAF as ranging from
-0 to 1, with values near 1 indicating close fit; that does not hold here, where a
-well-fitting model produces a CAF near 0.5, not near 1. Read it as a relative rather
-than an absolute measure.
-}
-
-\subsection{Available combinations}{
-
-Not every estimator, rotation, standard-error, and correlation method can be combined:
-\itemize{
-\item \strong{Estimator and correlation method.} \code{estimator = "DWLS"} requires ordinal data with
-\code{cor_method = "poly"} or \code{"tetra"}. \code{cor_method = "fiml"} works with PAF, ML, and ULS
-(not DWLS) and needs raw data with missing values.
-\item \strong{Standard errors.} \code{se = "information"} requires \code{estimator = "ML"} and
-\code{cor_method = "pearson"} or \code{"fiml"}, and can be computed from a correlation matrix
-when \code{N} is supplied. \code{se = "sandwich"} requires raw data,
-with either a polychoric/tetrachoric \code{cor_method} (ML, ULS, or DWLS) or a Pearson
-\code{cor_method} (ML or ULS); it is not available for PAF. Under \code{cor_method = "fiml"},
-\code{"information"} and \code{"sandwich"} are available for ML and ULS only and both return the
-corrected two-stage sandwich. \code{se = "np-boot"} requires raw data and works with any
-estimator, rotation, and correlation method. Neither \code{"information"} nor \code{"sandwich"}
-is available with the \code{"promax"} or \code{"simplimax"} rotations.
-\item \strong{Fit indices.} The chi-square-based indices are available for ML and ULS (and, as
-scaled statistics, for \code{cor_method = "fiml"} and for DWLS with \code{se = "sandwich"}); PAF
-and DWLS otherwise report only the descriptive residual indices.
-}
+fit), AIC, BIC, and ECVI are \code{NA}; see the \code{fit_indices} entry in Value for the
+additional components then returned. Beyond that, the chi-square and everything derived
+from it are \code{NA} whenever the statistic itself is undefined: when \code{N} is not supplied,
+when the model is underidentified (a negative df), and when a positive \code{N} is too small
+relative to the number of variables and factors for the small-sample correction to
+remain valid. Each case raises its own warning. The residual summaries (RMSR, SRMR,
+CAF) and the degrees of freedom are still returned there, but residual size does not
+establish that a model is identified: below zero degrees of freedom a near-zero
+residual is an artefact of over-parameterisation, not close fit. A just-identified model
+(df = 0) has no test of fit, so the print method shows only SRMR and df.
 }
 }
 \examples{
 
-# Principal axis factoring with oblimin rotation
-mod_oblimin <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                       rotation = "oblimin")
-mod_oblimin
-summary(mod_oblimin)
+# Principal axis factoring with oblimin rotation (the defaults)
+mod_paf <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500)
+mod_paf
+summary(mod_paf)
 
-# ML estimation with oblimin rotation
-mod_oblimin <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                       estimator = "ML", rotation = "oblimin")
-mod_oblimin
-summary(mod_oblimin)
+# ML estimation with promax rotation
+mod_ml <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+                  estimator = "ML", rotation = "promax")
+mod_ml
 
 # Tuning knobs are supplied through the control objects. Here the SPSS preset is
 # used for the estimation and rotation, with the maximum PAF iterations raised.
@@ -699,9 +656,9 @@ mod_spss <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
                     rotate_control = rotate_control(type = "SPSS"))
 mod_spss
 
-# Analytic (expected-information) standard errors for the above
+# Analytic (expected-information) standard errors of an ML fit
 ML_info <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                   estimator = "ML", rotation = "oblimin", se = "information")
+                   estimator = "ML", se = "information")
 ML_info
 summary(ML_info)
 
@@ -709,14 +666,14 @@ summary(ML_info)
 # Robust (sandwich) standard errors and a scaled chi-square for ordinal raw data.
 # These need a polychoric/tetrachoric correlation method and estimator ML, ULS, or DWLS.
 DWLS_rob <- efa_fit(DOSPERT_raw, n_factors = 6, cor_method = "poly",
-                    estimator = "DWLS", rotation = "oblimin", se = "sandwich")
+                    estimator = "DWLS", se = "sandwich")
 DWLS_rob
 summary(DWLS_rob)
 
 # The same robust SEs and scaled chi-square for continuous data: a Pearson
 # correlation with estimator ML or ULS (the fourth-moment ADF covariance).
 ML_rob <- efa_fit(GRiPS_raw, n_factors = 1, cor_method = "pearson",
-                  estimator = "ML", rotation = "none", se = "sandwich")
+                  estimator = "ML", se = "sandwich")
 ML_rob
 summary(ML_rob)
 }
@@ -738,7 +695,7 @@ efa_fiml
 efa_boot <- local({
   old_plan <- future::plan(future::multisession, workers = 2)
   on.exit(future::plan(old_plan), add = TRUE)
-  efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
+  efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF",
           se = "np-boot", b_boot = 1000, seed = 42)
 })
 }

@@ -2,11 +2,14 @@
 #'
 #' `print()` shows a concise overview of an [efa_fit()] or [efa_mi()] solution:
 #' a model header, the loading matrix (with the factor intercorrelations for
-#' oblique solutions), the variances accounted for, and the model fit.
+#' oblique solutions), the variances accounted for, and the main fit indices
+#' (chi-square, CFI, TLI, RMSEA, and SRMR).
 #' `summary()` returns a `summary.efa` object whose print method adds the full
 #' diagnostics: model and simple-structure diagnostics, confidence-interval
-#' tables, the structure matrix, multiple-imputation uncertainty (for pooled
-#' objects), and residual diagnostics. `format()` assembles the same report and
+#' tables, the structure matrix, the information criteria (AIC, BIC, and ECVI),
+#' multiple-imputation uncertainty (for pooled objects), and residual diagnostics.
+#' With `se = "np-boot"`, CFI and TLI also show their bootstrap interval where it is
+#' available (see *Standard errors* in [efa_fit()]). `format()` assembles the same report and
 #' returns it as a character vector; `print()` is `cat(format(x), sep = "\n")`.
 #' The lines follow the active console theme, so they are plain when colours are
 #' disabled (for example when captured into a file or stripped with
@@ -45,9 +48,8 @@
 #'   output it is omitted and this argument has no effect.
 #' @param max_factors_per_block numeric or `NULL`. Maximum number of factor
 #'   columns per loading-table block. If `NULL`, chosen from the console width.
-#' @param ci character. Which confidence intervals `summary()` shows, if
-#'   available. `"auto"` and `"separate"` print CI sections when CIs were
-#'   computed; `"none"` suppresses them. Default is `"auto"`.
+#' @param ci character. Whether `summary()` shows the confidence-interval tables:
+#'   `"auto"` (default) shows them when CIs were computed; `"none"` suppresses them.
 #' @param ci_filter character. Which loading CIs `summary()` prints: `"salient"`
 #'   (default), `"all"`, or `"nonzero"`; see Details.
 #' @param diagnostics_top_n numeric. Maximum number of item-level entries
@@ -133,7 +135,7 @@ format.efa_mi <- function(x, ...) {
 #' @export
 #' @method summary efa
 summary.efa <- function(object, cutoff = .3, digits = 3, max_name_length = 10,
-                        ci = c("auto", "none", "separate"),
+                        ci = c("auto", "none"),
                         ci_filter = c("salient", "all", "nonzero"),
                         diagnostics_top_n = 10,
                         residual_cutoff = .1,
@@ -201,7 +203,7 @@ format.summary.efa <- function(x, ...) {
 # CI tables, the structure matrix, MI uncertainty, and residual diagnostics.
 .render_efa <- function(x, view = c("brief", "full"),
                         cutoff = .3, digits = 3, max_name_length = 10,
-                        ci = c("auto", "none", "separate"),
+                        ci = c("auto", "none"),
                         ci_filter = c("salient", "all", "nonzero"),
                         diagnostics_top_n = 10,
                         residual_cutoff = .1,
@@ -249,13 +251,7 @@ format.summary.efa <- function(x, ...) {
     .print_efa_header(spec)
 
     if (full) {
-      .print_efa_diagnostics_section(x, spec,
-        cutoff = cutoff,
-        digits = digits,
-        cross_loading_cutoff = cross_loading_cutoff,
-        min_primary_gap = min_primary_gap,
-        min_salient_per_factor = min_salient_per_factor
-      )
+      .print_efa_diagnostics_section(x, spec)
     }
 
     .print_efa_loadings_section(x, spec,
@@ -286,10 +282,10 @@ format.summary.efa <- function(x, ...) {
 
     .print_efa_variances_section(x, spec, digits = digits)
 
-    # A negative df (underidentified) stops the report after the warning; df == 0 (just
-    # identified) emits its caveat but the fit/bootstrap/residual sections still follow.
+    # A negative df (underidentified) stops the report after the warning.
     if (.print_efa_identification_warning(spec)) {
-      .print_efa_model_fit_section(x, spec)
+      .print_efa_model_fit_section(x, spec, full = full,
+                                   show_ci = !(full && identical(ci, "none")))
       .print_efa_bootstrap_note(x, spec, ci = if (full) ci else "none")
 
       if (full && isTRUE(show_mi)) {
@@ -331,12 +327,16 @@ format.summary.efa <- function(x, ...) {
     rotation = settings$rotation,
     rotation_diagnostics = settings$rotation_diagnostics,
     cor_method = settings$cor_method,
+    cor_method_used = settings$cor_method_used,
     # `[[` rather than `$`: the slot is absent on every non-FIML fit, and `$` partial-matches, so
     # any future slot whose name merely starts with "fiml" would be picked up here instead.
     fiml = x[["fiml"]],
     se = se,
     N = settings$N,
     fit = x$fit_indices,
+    # Bootstrap intervals of RMSEA, CFI, and TLI (se = "np-boot"); NULL otherwise. `[[` because
+    # `$` would partially match the `fit_indices_descriptive` of a pooled fit.
+    fit_ci = x[["CI"]][["fit_indices"]],
     h2 = x$h2,
     heywood = heywood,
     np_boot = identical(.efa_setting_text(se), "np-boot"),
@@ -365,24 +365,15 @@ format.summary.efa <- function(x, ...) {
     cli::cli_verbatim(.efa_wrap_chunks(c("EFA", .efa_model_header_chunks(spec))))
   }
 
-  # Flag two-stage FIML correlations (saturated mean/covariance EM-estimated from raw data
-  # with missing values; Yuan, Marshall, & Bentler, 2002) so the analysed matrix is not read
-  # as an ordinary complete-case correlation. Emitted verbatim (plain, no ANSI).
-  if (identical(.efa_setting_text(spec$cor_method), "fiml")) {
-    cli::cli_verbatim("Correlations: FIML (two-stage, missing data)")
-
-    # A Stage-1 EM that stopped at its cap leaves the analysed matrix at the last iterate
-    # rather than the FIML estimate, which can differ materially at a high fraction of
-    # missing information. The warning fires only while the fit runs -- and is suppressed
-    # wherever fits are run in bulk -- so a saved object would otherwise carry no visible
-    # trace of it. Shown next to the line that names the correlation method.
-    if (isFALSE(spec$fiml$converged)) {
-      cli::cli_alert_warning(
-        "The FIML EM stopped after {spec$fiml$iter} iteration{?s} without converging; the
-         analysed correlation matrix is its last iterate. Raise {.arg fiml_max_iter}, or
-         relax {.arg fiml_tol}, in {.fn estimate_control}."
-      )
-    }
+  # A Stage-1 EM that stopped at its cap leaves the analysed matrix at the last iterate rather
+  # than the FIML estimate. The warning fires only while the fit runs, so a saved object would
+  # otherwise carry no visible trace of it.
+  if (isFALSE(spec$fiml$converged)) {
+    cli::cli_alert_warning(
+      "The FIML EM stopped after {spec$fiml$iter} iteration{?s} without converging; the
+       analysed correlation matrix is its last iterate. Raise {.arg fiml_max_iter}, or
+       relax {.arg fiml_tol}, in {.fn estimate_control}."
+    )
   }
 
   if (.efa_iteration_nonconvergence(spec)) {
@@ -398,11 +389,23 @@ format.summary.efa <- function(x, ...) {
 # Emitted verbatim rather than via cli_text() so a "setting = 'value'" token is never split
 # across a line break -- which is also why the values are style_bold() rather than {.strong}
 # -- while the packer still breaks the line around those tokens.
+# The tail adds the correlation type when it is not Pearson, and N when it is known.
 .efa_model_header_chunks <- function(spec) {
+  cor_type <- switch(.efa_setting_text(spec$cor_method_used),
+                     spearman = "Spearman", kendall = "Kendall", poly = "polychoric",
+                     tetra = "tetrachoric", fiml = "two-stage FIML", "")
+  # A pooled N is the mean over the imputations and need not be whole.
+  N <- round(.efa_as_scalar_number(spec$N), 1)
+  data <- c(if (nzchar(cor_type)) paste(cor_type, "correlations"),
+            if (is.finite(N)) paste0("N = ", format(N, scientific = FALSE, trim = TRUE)))
+  data <- if (length(data) > 0L) {
+    .efa_setting_chunks(paste0(c("(", rep("", length(data) - 1L)), data), end = ").")
+  }
   c("performed", "with",
     paste0("estimator = '", cli::style_bold(spec$estimator), "'"),
     "and",
-    paste0("rotation = '", cli::style_bold(spec$rotation), "'."))
+    paste0("rotation = '", cli::style_bold(spec$rotation), "'", if (is.null(data)) "."),
+    data)
 }
 
 .print_efa_pooled_header <- function(spec) {
@@ -643,43 +646,33 @@ format.summary.efa <- function(x, ...) {
   invisible(NULL)
 }
 
+# Note an underidentified model and stop the report there (FALSE). The residual summaries are
+# in the object even then, so the note names what is missing; the wording is shared with the
+# warning efa_fit() gives for the same model.
 .print_efa_identification_warning <- function(spec) {
   df <- .efa_fit_scalar(spec$fit, "df")
-
-  if (!is.finite(df)) {
+  if (!is.finite(df) || df >= 0) {
     return(TRUE)
   }
 
-  if (df == 0) {
-    cli::cli_text("")
-    cli::cli_alert_warning(
-      "The model is just identified (df = 0). Goodness of fit indices may not be interpretable.",
-      wrap = TRUE
-    )
-    return(TRUE)
-  }
-
-  if (df < 0) {
-    # The residual summaries are populated in the object even here, so the note names what is
-    # missing rather than claiming that nothing was computed; the wording is shared with the
-    # warning efa_fit() raises for the same model.
-    chisq_block <- .fit_unavailable_text("chisq_block")
-    residuals_kept <- .fit_unavailable_text("residuals_kept")
-    not_identification <- .fit_unavailable_text("residuals_not_identification")
-    cli::cli_text("")
-    cli::cli_alert_warning(
-      "The model is underidentified (df < 0); {chisq_block}. {residuals_kept} {not_identification}",
-      wrap = TRUE
-    )
-    return(FALSE)
-  }
-
-  TRUE
+  chisq_block <- .fit_unavailable_text("chisq_block")
+  residuals_kept <- .fit_unavailable_text("residuals_kept")
+  not_identification <- .fit_unavailable_text("residuals_not_identification")
+  cli::cli_text("")
+  cli::cli_alert_warning(
+    "The model is underidentified (df < 0); {chisq_block}. {residuals_kept} {not_identification}",
+    wrap = TRUE
+  )
+  FALSE
 }
 
-.print_efa_model_fit_section <- function(x, spec) {
+# The model-fit block: the chi-square test, CFI, TLI, RMSEA, and SRMR, and in the full view
+# the information criteria AIC, BIC, and ECVI, which only compare models. A fit without a
+# finite chi-square (no N, DWLS without the sandwich, an undefined discrepancy) or with
+# df = 0 shows SRMR and df only. `show_ci = FALSE` (summary(ci = "none")) omits the bootstrap
+# intervals of CFI and TLI.
+.print_efa_model_fit_section <- function(x, spec, full = FALSE, show_ci = TRUE) {
   fit <- spec$fit
-  fit_ci <- .efa_fit_ci_labels(x, spec)
 
   .print_efa_rule("Model Fit")
 
@@ -688,38 +681,18 @@ format.summary.efa <- function(x, ...) {
     return(invisible(NULL))
   }
 
-  # One "name[ CI-tag]: value[ CI]" data line. The CI tag is emitted only for
-  # indices whose own CI suffix is available, so partially populated fit-index
-  # CI lists do not label plain point estimates as interval estimates.
-  fit_line <- function(name, key, ci = fit_ci[[key]], tag = TRUE, ...) {
-    if (is.null(ci)) ci <- ""
-    label <- if (isTRUE(tag) && nzchar(ci)) fit_ci$label else ""
-    paste0(name, label, ": ", .efa_format_fit_value(fit, key, pad = FALSE, ...), ci)
-  }
+  fit_value <- function(key, ...) .efa_format_fit_value(fit, key, pad = FALSE, ...)
   is_finite_fit <- function(key) is.finite(.efa_fit_scalar(fit, key))
-
-  estimator <- .efa_setting_text(spec$estimator)
+  srmr_line <- if (is_finite_fit("SRMR")) paste0("SRMR: ", fit_value("SRMR"))
   df <- .efa_fit_scalar(fit, "df")
-  chi <- .efa_fit_scalar(fit, "chi")
-  p_chi <- .efa_fit_scalar(fit, "p_chi")
+  df_text <- fit_value("df", digits = 0, print_zero = TRUE)
 
-  if (identical(estimator, "PAF") || .efa_is_missing_number(spec$N) ||
-      !is.finite(chi) || !is.finite(df)) {
-    lines <- fit_line("CAF", "CAF")
-    if (is_finite_fit("SRMR")) {
-      lines <- c(lines, fit_line("SRMR", "SRMR"))
-    }
-    lines <- c(lines, paste0("df: ",
-      .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE)))
-    .efa_emit_lines(lines)
-    # DWLS has no unscaled chi-square: the statistic exists only in the scaled-and-shifted
-    # form the robust covariance supplies, so without se = "sandwich" the three lines above
-    # are the whole of the fit output and nothing else says why. Name what is missing with
-    # the wording shared with the other routes that lose the same block. The note is held to
-    # a model that a scaled statistic would apply to: with df = 0 the caveat above already
-    # covers it, and a non-finite df is not a DWLS matter. PAF gets no such line -- it has no
-    # discrepancy function to test, so no setting restores the block for it.
-    if (identical(estimator, "DWLS") && !identical(spec$se, "sandwich") &&
+  if (!is_finite_fit("chi") || !is.finite(df) || df == 0 || .efa_is_missing_number(spec$N)) {
+    df_note <- if (isTRUE(df == 0)) " (just identified; no test of fit is possible)" else ""
+    .efa_emit_lines(c(srmr_line, paste0("df: ", df_text, df_note)))
+    # DWLS has no unscaled chi-square: the statistic exists only in the scaled form the robust
+    # covariance supplies, so say what is missing and how to get it.
+    if (identical(spec$estimator, "DWLS") && !identical(spec$se, "sandwich") &&
         is.finite(df) && df > 0) {
       chisq_block <- .fit_unavailable_text("chisq_block")
       cli::cli_text("")
@@ -729,6 +702,7 @@ format.summary.efa <- function(x, ...) {
     return(invisible(NULL))
   }
 
+  p_chi <- .efa_fit_scalar(fit, "p_chi")
   p_text <- if (!is.finite(p_chi)) {
     " = NA"
   } else if (p_chi < .001) {
@@ -737,25 +711,10 @@ format.summary.efa <- function(x, ...) {
     paste0(" = ", .efa_format_number(p_chi, digits = 3, pad = FALSE))
   }
 
-  df_text <- .efa_format_fit_value(fit, "df", digits = 0, print_zero = TRUE, pad = FALSE)
-  chi_text <- .efa_format_fit_value(fit, "chi", digits = 2, print_zero = TRUE, pad = FALSE)
-
-  rmsea_label <- paste0("RMSEA [", .efa_ci_level_text(spec$rmsea_ci_level), " CI]")
-  rmsea_value <- paste0(
-    .efa_format_fit_value(fit, "RMSEA", pad = FALSE), " [",
-    .efa_format_fit_value(fit, "RMSEA_LB", pad = FALSE), "; ",
-    .efa_format_fit_value(fit, "RMSEA_UB", pad = FALSE), "]"
-  )
-
-  # When the sandwich path supplies a scaled (Satorra-Bentler) chi-square, mark the line so
-  # it is not read as an ordinary chi-square (the CFI/TLI/RMSEA below are derived from it).
-  # A two-stage FIML fit whose correction could not be formed reports the plain
-  # likelihood-ratio statistic under the "uncorrected.lrt" tag; it must NOT be labelled
-  # scaled, because it carries no correction at all -- it is only approximately
-  # chi-square(df) under the two-stage estimator, which is what the label says.
-  # A D2-pooled fit is flagged the same way: its chi-square is the Li et al. (1991)
-  # asymptotic statistic df * F_D2, whose p-value comes from the D2 reference F(df1, df2)
-  # rather than the chi-square(df) tail (the note below spells this out when they diverge).
+  # A scaled (sandwich or two-stage FIML) chi-square is marked so that it is not read as an
+  # ordinary one; a FIML fit whose correction could not be formed is marked "uncorrected". A
+  # D2-pooled chi-square is the Li et al. (1991) statistic df * F_D2, whose p-value comes from
+  # the D2 reference F(df1, df2) (see the note below).
   is_d2 <- isTRUE(spec$is_pooled) && identical(fit[["pool_method"]], "D2")
   scaled_type <- fit[["chi_scaled_type"]]
   chi_prefix <- if (!is.null(scaled_type) && !is.na(scaled_type)) {
@@ -766,46 +725,49 @@ format.summary.efa <- function(x, ...) {
     ""
   }
 
-  # The chi-square line carries an italic "p"; emit verbatim (with style_italic) so the
-  # styling survives and the line is not reflowed.
-  lines <- paste0(chi_prefix, "\u03c7\u00b2(", df_text, ") = ", chi_text, ", ",
-                  cli::style_italic("p"), p_text)
-  # A D2-pooled fit reports CFI and TLI as the average of the per-imputation indices
-  # rather than from the pooled statistic on the line above, so label them: they are the
-  # quantities that will not reconcile against a reference which pools the model and
-  # baseline noncentralities separately (see the note below). Only an index that is
-  # actually reported is labelled, so an undefined one is not described as an average.
+  # Emitted verbatim (with style_italic) so the italic "p" survives and the line is not
+  # reflowed.
+  lines <- paste0(chi_prefix, "\u03c7\u00b2(", df_text, ") = ",
+                  fit_value("chi", print_zero = TRUE), ", ", cli::style_italic("p"), p_text)
+  # A D2-pooled fit reports CFI and TLI as the average of the per-imputation indices, not
+  # from the pooled statistic, so label the reported ones.
   inc_averaged <- if (is_d2) {
     c("CFI", "TLI")[c(is_finite_fit("CFI"), is_finite_fit("TLI"))]
   } else {
     character(0)
   }
-  inc_tag <- function(key) {
-    if (key %in% inc_averaged) " (avg. over imputations)" else ""
+  # The bootstrap intervals of CFI and TLI come from transformed cases (see efa_fit()); RMSEA
+  # keeps its analytic interval below.
+  inc_line <- function(key) {
+    lower <- .efa_fit_scalar(as.list(spec$fit_ci$lower), key)
+    upper <- .efa_fit_scalar(as.list(spec$fit_ci$upper), key)
+    if (show_ci && is.finite(lower) && is.finite(upper)) {
+      return(paste0(key, " [", .efa_ci_level_text(spec$ci), " bootstrap CI]: ", fit_value(key),
+                    " [", .efa_format_number(lower, pad = FALSE), "; ",
+                    .efa_format_number(upper, pad = FALSE), "]"))
+    }
+    paste0(key, if (key %in% inc_averaged) " (avg. over imputations)", ": ", fit_value(key))
   }
-  lines <- c(lines, fit_line(paste0("CFI", inc_tag("CFI")), "CFI"))
+  lines <- c(lines, inc_line("CFI"))
   if (is_finite_fit("TLI")) {
-    lines <- c(lines, fit_line(paste0("TLI", inc_tag("TLI")), "TLI"))
+    lines <- c(lines, inc_line("TLI"))
   }
-  lines <- c(lines, paste0(rmsea_label, fit_ci$label, ": ", rmsea_value, fit_ci$RMSEA))
   lines <- c(lines,
-             fit_line("AIC", "AIC", fit_ci$AIC, print_zero = TRUE),
-             fit_line("BIC", "BIC", fit_ci$BIC, print_zero = TRUE))
-  if (is_finite_fit("ECVI")) {
-    lines <- c(lines, fit_line("ECVI", "ECVI", print_zero = TRUE))
-  }
-  lines <- c(lines, fit_line("CAF", "CAF"))
-  if (is_finite_fit("SRMR")) {
-    lines <- c(lines, fit_line("SRMR", "SRMR"))
+             paste0("RMSEA [", .efa_ci_level_text(spec$rmsea_ci_level), " CI]: ",
+                    fit_value("RMSEA"), " [", fit_value("RMSEA_LB"), "; ",
+                    fit_value("RMSEA_UB"), "]"),
+             srmr_line)
+  if (full) {
+    for (key in c("AIC", "BIC", "ECVI")) {
+      if (is_finite_fit(key)) lines <- c(lines, paste0(key, ": ", fit_value(key, print_zero = TRUE)))
+    }
   }
 
   .efa_emit_lines(lines)
 
-  # The D2-pooled chi-square (Li, Meng, Raghunathan & Rubin, 1991) is the asymptotic
-  # statistic df * F_D2 and its p-value comes from the reference F(df1, df2); state that
-  # so the reported p is not mistaken for the chi-square(df) tail probability. The two
-  # references coincide only as df2 -> Inf (no between-imputation variance), so the note is
-  # shown when df2 is finite.
+  # The D2 p-value comes from F(df1, df2), which equals the chi-square(df) tail only as
+  # df2 -> Inf, so state it when df2 is finite. The averaged CFI/TLI do not reconcile with
+  # lavaan.mi / semTools, which pool the model and baseline statistics separately.
   if (is_d2) {
     d2_df2 <- if (is.null(x$mi_diagnostics)) NA_real_ else x$mi_diagnostics$D2_df2
     if (is.finite(d2_df2)) {
@@ -814,10 +776,6 @@ format.summary.efa <- function(x, ...) {
         "{.emph Note:} the pooled \u03c7\u00b2 is the D2 statistic; its {.emph p} uses the D2 reference F({df_text}, {d2_df2_text}), not the \u03c7\u00b2({df_text}) tail."
       )
     }
-    # The incremental indices are averaged over the imputations rather than formed from
-    # separately pooled model and baseline statistics, which is what lavaan.mi / semTools
-    # do; say so, because these are the indices a reader is most likely to cross-check.
-    # Names only the indices that were reported above.
     if (length(inc_averaged) > 0L) {
       cli::cli_text(
         "{.emph Note:} {inc_averaged} {?is/are} averaged over the imputations, not formed from the separately pooled model and baseline statistics in {.code mi_diagnostics}."
@@ -828,87 +786,28 @@ format.summary.efa <- function(x, ...) {
   invisible(NULL)
 }
 
-.efa_fit_ci_labels <- function(x, spec) {
-  out <- list(
-    label = "",
-    CAF = "",
-    RMSR = "",
-    SRMR = "",
-    CFI = "",
-    TLI = "",
-    RMSEA = "",
-    AIC = "",
-    BIC = "",
-    ECVI = ""
-  )
-
-  if (!isTRUE(spec$has_ci)) {
-    return(out)
-  }
-
-  fitind_ci <- .efa_get_fit_ci(x, spec)
-  if (is.null(fitind_ci)) {
-    return(out)
-  }
-
-  out$label <- paste0(" [", .efa_ci_header_label(spec), "-CI]")
-  out$CAF <- .efa_paste_gof_ci(fitind_ci, "CAF")
-  out$RMSR <- .efa_paste_gof_ci(fitind_ci, "RMSR")
-  out$SRMR <- .efa_paste_gof_ci(fitind_ci, "SRMR")
-  out$CFI <- .efa_paste_gof_ci(fitind_ci, "CFI")
-  out$TLI <- .efa_paste_gof_ci(fitind_ci, "TLI")
-  out$RMSEA <- .efa_paste_gof_ci(fitind_ci, "RMSEA")
-  out$AIC <- .efa_paste_gof_ci(fitind_ci, "AIC")
-  out$BIC <- .efa_paste_gof_ci(fitind_ci, "BIC")
-  out$ECVI <- .efa_paste_gof_ci(fitind_ci, "ECVI")
-
-  out
-}
-
-.print_efa_bootstrap_note <- function(x, spec, ci = NULL) {
-  if (!isTRUE(spec$has_ci)) {
+# The note on how the CIs shown in the summary were formed. Bootstrap intervals name the number
+# of samples (and of usable ones); pooled analytic intervals name the pooling route. The CI
+# tables of a single analytic fit already name their method in the title.
+.print_efa_bootstrap_note <- function(x, spec, ci) {
+  if (!isTRUE(spec$has_ci) || identical(ci, "none")) {
     return(invisible(NULL))
   }
 
-  # Analytic SEs produce Wald intervals, not resampled ones; describe their source rather
-  # than a bootstrap-sample count. For a NON-pooled analytic fit the Wald CIs are attached
-  # only to the unrotated loadings (displayed only for an unrotated solution with CIs
-  # enabled), so suppress the note when no such table is shown. Pooled objects, however,
-  # attach and display rotated-loading CIs on both the information and MI2S routes, so the
-  # note must still appear for a rotated pooled solution. The wording follows the SE method:
-  # se = "information" draws Wald CIs from the expected information matrix (Rubin-pooled with
-  # plain Rubin (1987) df when pooled), while se = "sandwich" draws them from the robust (Godambe)
-  # sandwich covariance (built on the multiple-imputation-pooled asymptotic covariance when
-  # pooled), so the pooled MI2S note must not claim information-matrix Rubin pooling.
   if (!isTRUE(spec$np_boot)) {
-    if (identical(ci, "none") ||
-        (!identical(spec$rotation, "none") && !isTRUE(spec$is_pooled))) {
+    if (!isTRUE(spec$is_pooled)) {
       return(invisible(NULL))
     }
     cli::cli_text("")
-    if (isTRUE(spec$is_pooled) && identical(spec$component_se, "sandwich")) {
+    if (identical(spec$component_se, "sandwich")) {
       cli::cli_text("{.emph Note:} Wald CIs from the robust sandwich covariance built on the multiple-imputation-pooled asymptotic covariance.")
-    } else if (isTRUE(spec$is_pooled)) {
-      cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix, Rubin-pooled across imputations (Rubin's 1987 degrees of freedom).")
-    } else if (identical(.efa_setting_text(spec$cor_method), "fiml")) {
-      # Under cor_method = "fiml" both analytic settings yield the corrected two-stage sandwich, so
-      # the note describes that covariance rather than the expected information matrix.
-      cli::cli_text("{.emph Note:} Wald CIs from the corrected two-stage (FIML) sandwich covariance.")
-    } else if (identical(spec$se, "sandwich")) {
-      cli::cli_text("{.emph Note:} Wald CIs from the robust (Godambe) sandwich covariance.")
     } else {
-      cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix.")
+      cli::cli_text("{.emph Note:} Wald CIs from the expected information matrix, Rubin-pooled across imputations (Rubin's 1987 degrees of freedom).")
     }
     return(invisible(NULL))
   }
 
-  note_label <- if (isTRUE(spec$is_pooled)) {
-    "Bootstrap/MI CIs"
-  } else {
-    "Bootstrap CIs"
-  }
-
-  note <- note_label
+  note <- if (isTRUE(spec$is_pooled)) "Bootstrap/MI CIs" else "Bootstrap CIs"
 
   b_text <- .efa_bootstrap_sample_text(x, spec)
   if (nzchar(b_text)) {
@@ -920,10 +819,8 @@ format.summary.efa <- function(x, ...) {
     note <- paste0(note, "; ", target_rotation_note)
   }
 
-  note <- paste0(note, ".")
-
   cli::cli_text("")
-  cli::cli_text("{.emph Note:} {note}")
+  cli::cli_text("{.emph Note:} {note}.")
 
   invisible(NULL)
 }
@@ -1038,7 +935,7 @@ format.summary.efa <- function(x, ...) {
   upper <- upper[row_order, , drop = FALSE]
 
   keep <- .efa_select_loading_cis(loadings, lower, upper, cutoff, ci_filter)
-  title <- .efa_loading_ci_title(spec, loading_label, ci_filter)
+  title <- .efa_ci_title(spec, paste(ci_filter, loading_label, "loadings"))
   .print_efa_rule(title)
 
   if (!any(keep, na.rm = TRUE)) {
@@ -1091,7 +988,7 @@ format.summary.efa <- function(x, ...) {
   idx <- which(keep, arr.ind = TRUE)
   factor_names <- .efa_factor_names(phi)
 
-  .print_efa_rule(.efa_phi_ci_title(spec))
+  .print_efa_rule(.efa_ci_title(spec, "factor intercorrelations"))
   .print_efa_ci_table(
     key = paste0(factor_names[idx[, 2]], " ~~ ", factor_names[idx[, 1]]),
     second_key = NULL,
@@ -1142,12 +1039,19 @@ format.summary.efa <- function(x, ...) {
          " across ", length(adm$heywood_imputations), " of ", adm$m, " imputations)")
 }
 
+# Alert to Heywood cases under the loading table, naming the variables where the detector
+# recorded them (a pooled solution has only the h2 count).
 .print_efa_heywood_warning <- function(heywood, h2 = NULL) {
   n_heywood <- .efa_heywood_count(heywood, h2)
 
   if (n_heywood >= 1) {
+    vars <- names(heywood)
     cli::cli_text("")
-    cli::cli_alert_danger("{n_heywood} Heywood case{?s} {?was/were} detected!")
+    if (length(vars) == n_heywood) {
+      cli::cli_alert_danger("Heywood case{?s} for {.val {vars}}.")
+    } else {
+      cli::cli_alert_danger("{n_heywood} Heywood case{?s} {?was/were} detected.")
+    }
   }
 
   invisible(NULL)
@@ -1173,27 +1077,6 @@ format.summary.efa <- function(x, ...) {
   ci <- x$CI[[component]]
   if (.efa_is_ci_pair(ci)) {
     return(ci)
-  }
-
-  NULL
-}
-
-.efa_get_fit_ci <- function(x, spec = .efa_print_spec(x)) {
-  if (is.null(x$CI)) {
-    return(NULL)
-  }
-
-  components <- if (isTRUE(spec$is_pooled)) {
-    c("fit_indices_descriptive", "fit_indices")
-  } else {
-    c("fit_indices", "fit_indices_descriptive")
-  }
-
-  for (component in components) {
-    ci <- x$CI[[component]]
-    if (.efa_is_ci_pair(ci)) {
-      return(ci)
-    }
   }
 
   NULL
@@ -1398,33 +1281,22 @@ format.summary.efa <- function(x, ...) {
   paste0("between ", min(counts), " and ", max(counts))
 }
 
-.efa_ci_header_label <- function(spec) {
+# Title of a CI table, e.g. "95% Wald CIs (robust sandwich) for salient rotated loadings". The
+# Wald intervals of a single fit name the covariance they come from; the pooled routes name
+# theirs in the source label and in the note below the model fit.
+.efa_ci_title <- function(spec, what) {
   level <- .efa_ci_level_text(spec$ci)
-  source <- .efa_ci_source_text(spec)
-
-  if (nzchar(level)) {
-    paste(level, source)
-  } else {
-    source
+  method <- if (!isTRUE(spec$is_pooled) && !isTRUE(spec$np_boot)) {
+    if (identical(.efa_setting_text(spec$cor_method), "fiml")) {
+      " (two-stage FIML sandwich)"
+    } else if (identical(spec$se, "sandwich")) {
+      " (robust sandwich)"
+    } else {
+      " (expected information)"
+    }
   }
-}
-
-.efa_loading_ci_title <- function(spec, loading_label, ci_filter) {
-  filter_text <- switch(ci_filter,
-    salient = "salient",
-    all = "all",
-    nonzero = "nonzero",
-    ci_filter
-  )
-
-  paste0(
-    .efa_ci_header_label(spec),
-    " CIs for ", filter_text, " ", loading_label, " loadings"
-  )
-}
-
-.efa_phi_ci_title <- function(spec) {
-  paste0(.efa_ci_header_label(spec), " CIs for factor intercorrelations")
+  paste0(if (nzchar(level)) paste0(level, " "), .efa_ci_source_text(spec), " CIs", method,
+         " for ", what)
 }
 
 # Variable labels for the report's name columns (CI tables, simple-structure bullets).
@@ -1718,7 +1590,7 @@ format.summary.efa <- function(x, ...) {
 }
 
 # " (n usable)" whenever fewer replicates survived than were requested, else "". The count is the
-# one the unrotated-loading, residual and fit-index statistics are actually based on, so without it
+# one the unrotated-loading and residual statistics are actually based on, so without it
 # the printed sample count claims a precision the intervals do not have. The rotated block carries
 # its own count (`valid_target_rotations`) and is reported separately. The requested total is
 # resolved here rather than by the caller, so both call sites mean the same number by it.
@@ -1824,26 +1696,11 @@ format.summary.efa <- function(x, ...) {
   cn
 }
 
-.print_efa_diagnostics_section <- function(x, spec, cutoff, digits,
-                                           cross_loading_cutoff,
-                                           min_primary_gap,
-                                           min_salient_per_factor) {
-  loadings <- .efa_main_loadings(x, spec)
-
-  title <- if (isTRUE(spec$is_pooled)) {
-    "Pooled Model Diagnostics"
-  } else {
-    "Model Diagnostics"
-  }
-  .print_efa_rule(title)
-
-  if (is.null(loadings)) {
-    cli::cli_text("No loading matrix available for diagnostics.")
-    return(invisible(NULL))
-  }
-
-  .efa_print_key_value("Factors", ncol(loadings))
-  .efa_print_key_value("Variables", nrow(loadings))
+# The summary's model diagnostics: N, the pooling and bootstrap settings, the rotation's local
+# optima, the Heywood cases, and very high factor intercorrelations. The item-level checks are
+# listed in the simple-structure section, and the residuals in their own section.
+.print_efa_diagnostics_section <- function(x, spec) {
+  .print_efa_rule(if (isTRUE(spec$is_pooled)) "Pooled Model Diagnostics" else "Model Diagnostics")
 
   n_text <- .efa_setting_text(spec$N)
   if (nzchar(n_text) && !identical(n_text, "NA")) {
@@ -1857,9 +1714,8 @@ format.summary.efa <- function(x, ...) {
     }
     pooling <- .efa_pooled_settings_text(spec)
     if (length(pooling) > 0L) {
-      # The only diagnostics entry whose value is a list of settings rather than a single
-      # number, so it is the only one long enough to need the console-width packing the
-      # pooled header uses; the rest stay one-line key/value pairs.
+      # The only entry whose value is a list of settings, so the only one that needs the
+      # console-width packing the pooled header uses.
       cli::cli_verbatim(.efa_wrap_chunks(c("Pooling:", .efa_setting_chunks(pooling))))
     }
 
@@ -1894,14 +1750,10 @@ format.summary.efa <- function(x, ...) {
     }
   }
 
-  # Distinct local optima the rotation found across its random starts, counted over the
-  # starts that converged (only present for the gradient-projection rotations that use
-  # random starts; omitted when none converged). Both counts are reported because the
-  # screen-and-triage strategy optimizes only a few of the available starts, and only an
-  # optimized start can yield a local optimum.
-  # The n_starts_total check keeps an object serialized before the two-count diagnostics
-  # existed (it carried a single `n_starts`) from rendering a garbled line: paste0() would
-  # silently drop the missing counts. Such an object omits the line instead.
+  # Distinct local optima the rotation found across the random starts that converged (only
+  # for the gradient-projection rotations). Both counts are reported because the solver
+  # optimizes only the most promising of the available starts. An object without
+  # `n_starts_total` omits the line rather than render a garbled one.
   rot_diag <- spec$rotation_diagnostics
   if (!is.null(rot_diag) && isTRUE(rot_diag$n_converged >= 1L) &&
       !is.null(rot_diag$n_starts_total)) {
@@ -1912,67 +1764,14 @@ format.summary.efa <- function(x, ...) {
     )
   }
 
-  # Count Heywood cases the same way as the printed Heywood note (see
-  # `.efa_heywood_count()`), qualified by the component fits on a pooled solution.
+  # Counted as in the Heywood alert, qualified by the component fits on a pooled solution.
   heywood <- .efa_heywood_count(spec$heywood, spec$h2)
   .efa_print_key_value("Heywood cases", .efa_heywood_value_text(x, heywood))
 
-  cross_salient <- abs(loadings) >= cross_loading_cutoff
-  cross_salient[is.na(cross_salient)] <- FALSE
-  cross_loading_items <- sum(rowSums(cross_salient) > 1L)
-
-  salient <- abs(loadings) >= cutoff
-  salient[is.na(salient)] <- FALSE
-  no_salient_items <- sum(rowSums(salient) < 1L)
-  .efa_print_key_value(
-    paste0("Cross-loading items (|loading| >= ",
-           .efa_format_plain_number(cross_loading_cutoff, digits), ")"),
-    cross_loading_items
-  )
-  .efa_print_key_value(
-    paste0("Items without salient loading (|loading| >= ",
-           .efa_format_plain_number(cutoff, digits), ")"),
-    no_salient_items
-  )
-
-  weak_factors <- .efa_factors_below_indicator_count(
-    loadings,
-    cutoff = cutoff,
-    min_salient_per_factor = min_salient_per_factor
-  )
-  .efa_print_key_value(
-    paste0("Factors with fewer than ", min_salient_per_factor,
-           " salient indicators"),
-    length(weak_factors)
-  )
-
-  gap_count <- .efa_small_primary_gap_count(loadings,
-    cutoff = cutoff,
-    min_primary_gap = min_primary_gap
-  )
-  .efa_print_key_value(
-    paste0("Items with primary-loading gap < ",
-           .efa_format_plain_number(min_primary_gap, digits)),
-    gap_count
-  )
-
-  if (!is.null(x$residuals)) {
-    largest_resid <- .efa_largest_abs_residual(x$residuals)
-    if (is.finite(largest_resid)) {
-      .efa_print_key_value("Largest |residual|",
-        .efa_format_plain_number(largest_resid, digits)
-      )
-    }
-  }
-
   if (!is.null(x$Phi)) {
     high_phi <- .efa_high_factor_correlation_count(x$Phi, cutoff = .85)
-    value <- if (high_phi > 0L) {
-      as.character(high_phi)
-    } else {
-      "none"
-    }
-    .efa_print_key_value("Factor intercorrelations > .85", value)
+    .efa_print_key_value("Factor intercorrelations > .85",
+                         if (high_phi > 0L) as.character(high_phi) else "none")
   }
 
   invisible(NULL)
@@ -2005,29 +1804,6 @@ format.summary.efa <- function(x, ...) {
   count_text
 }
 
-.efa_factors_below_indicator_count <- function(loadings, cutoff,
-                                               min_salient_per_factor) {
-  salient <- abs(loadings) >= cutoff
-  salient[is.na(salient)] <- FALSE
-  counts <- colSums(salient)
-  which(counts < min_salient_per_factor)
-}
-
-.efa_small_primary_gap_count <- function(loadings, cutoff, min_primary_gap) {
-  length(.efa_small_primary_gap_rows(loadings, cutoff = cutoff,
-                                     min_primary_gap = min_primary_gap))
-}
-
-.efa_largest_abs_residual <- function(residuals) {
-  residuals <- as.matrix(residuals)
-  values <- residuals[upper.tri(residuals)]
-  values <- values[is.finite(values)]
-  if (length(values) < 1L) {
-    return(NA_real_)
-  }
-  max(abs(values), na.rm = TRUE)
-}
-
 .efa_high_factor_correlation_count <- function(phi, cutoff = .85) {
   phi <- as.matrix(phi)
   values <- phi[lower.tri(phi)]
@@ -2056,11 +1832,19 @@ format.summary.efa <- function(x, ...) {
     max_name_length = max_name_length
   )
 
+  .print_efa_rule("Simple Structure Diagnostics")
+
   if (!summary$has_output) {
+    salient <- .efa_format_plain_number(cutoff, digits)
+    cross <- .efa_format_plain_number(cross_loading_cutoff, digits)
+    gap <- .efa_format_plain_number(min_primary_gap, digits)
+    cli::cli_text(
+      "All items have a salient loading (|loading| >= {salient}) and no cross-loading
+       (|loading| >= {cross}), all primary-loading gaps are at least {gap}, and all factors
+       have at least {min_salient_per_factor} salient indicators."
+    )
     return(invisible(NULL))
   }
-
-  .print_efa_rule("Simple Structure Diagnostics")
 
   # The diagnostics print as bulleted lists in this fixed order, each under its own
   # heading and each omitted when it has no entries. Only the weak-factor list is never
@@ -2322,20 +2106,4 @@ format.summary.efa <- function(x, ...) {
   }
 
   .efa_num(round(x, digits = digits), digits = digits, pad = pad)
-}
-
-
-.efa_paste_gof_ci <- function(fitind_ci, name) {
-  if (!.efa_is_ci_pair(fitind_ci)) {
-    return("")
-  }
-
-  lower_names <- names(fitind_ci$lower)
-  upper_names <- names(fitind_ci$upper)
-  if (is.null(lower_names) || is.null(upper_names) ||
-      !(name %in% lower_names) || !(name %in% upper_names)) {
-    return("")
-  }
-
-  tryCatch(.paste_gof_ci(fitind_ci, name), error = function(e) "")
 }

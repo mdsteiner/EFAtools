@@ -295,7 +295,8 @@ Two adjustments avoid it, each with a cost:
   pairwise-complete and every case contributes to the pairs it answered. In exchange you
   give up the DWLS weighting and the robust standard errors, and the reported `N` is the
   nominal row count while each correlation rests on its own smaller subset — so fit
-  statistics and analytic standard errors treat the data as more complete than they are.
+  statistics and analytic standard errors treat the data as more complete than they are,
+  and `efa_fit()` warns about this.
 - Switch to FIML — but only as a continuous analysis. `cor_method = "fiml"` estimates a
   saturated *normal* covariance and analyses the resulting Pearson-type correlation; there
   is no polychoric asymptotic covariance in it, so it cannot supply DWLS with weights.

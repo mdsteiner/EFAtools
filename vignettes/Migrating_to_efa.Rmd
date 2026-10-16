@@ -130,24 +130,26 @@ A few points make the translation mechanical:
   controls are independent, you *can* now give them different presets, but you do not have
   to.
 * **Three arguments were renamed.** The estimator is selected with `estimator` instead of
-  `method` — passing `method` to `efa_fit()` is an error that points to the new name, while
-  `EFA()` keeps its `method` argument. `P_type` is now `p_type`, and `randomStarts` is now
+  `method` — `efa_fit()` has no `method` argument, while `EFA()` keeps it. `P_type` is now `p_type`, and `randomStarts` is now
   `random_starts`; `EFA()` still accepts those old spellings silently.
 * **Rotation-engine extras** — the criterion-specific arguments a rotation may take, such
   as `maxit`, `gam` (oblimin), or `delta` (geomin) — are passed through `rotate_control()`'s
-  `...` (or, equivalently, `efa_fit()`'s own `...`). Both validate the names: an extra the
-  selected rotation's engine cannot consume (for example `gamma`, a misspelling of oblimin's
-  `gam`) is rejected with an error, where `EFA()` silently ignores it.
+  `...`. It validates the names: an extra that no rotation engine can consume (for example
+  `gamma`, a misspelling of oblimin's `gam`) is rejected with an error, where `EFA()`
+  silently ignores it.
+* **The default rotation differs.** `efa_fit()`, `efa_group()`, and `efa_mi()` use an
+  oblimin rotation unless you set `rotation`, while `EFA()` and `EFA_POOLED()` keep no
+  rotation as their default.
 
 The side-by-side below reproduces an SPSS-style analysis. The old flat call and the new
 control-based call give identical results:
 
 ```{r}
 # Old flat interface
-efa_old <- EFA(cor_mat, n_factors = 3, N = 500, type = "SPSS")
+efa_old <- EFA(cor_mat, n_factors = 3, N = 500, rotation = "promax", type = "SPSS")
 
 # New interface: the SPSS preset travels through the two control objects
-efa_new <- efa_fit(cor_mat, n_factors = 3, N = 500,
+efa_new <- efa_fit(cor_mat, n_factors = 3, N = 500, rotation = "promax",
                    estimate_control = estimate_control(type = "SPSS"),
                    rotate_control = rotate_control(type = "SPSS"))
 
@@ -164,16 +166,13 @@ efa_fit(cor_mat, n_factors = 3, N = 500, rotation = "promax",
         rotate_control   = rotate_control(type = "SPSS", k = 3))
 ```
 
-One behavioural difference is worth knowing about. `efa_fit()` **rejects** a tuning knob
-passed directly, rather than silently ignoring it. This turns a common and previously
-invisible mistake into an immediate, informative error that names the constructor the knob
-belongs to:
+`efa_fit()` has no argument for a tuning knob, so a knob passed directly is an error, not
+silently ignored:
 
 ```{r, eval = FALSE}
 efa_fit(cor_mat, n_factors = 3, N = 500, max_iter = 500)
-#> Error: `max_iter` cannot be passed to `efa_fit()` directly.
-#> i The estimation and rotation tuning knobs live in `estimate_control()` and `rotate_control()`.
-#> i For example: `efa_fit(x, ..., estimate_control = estimate_control(max_iter = 500))`.
+#> Error in efa_fit(cor_mat, n_factors = 3, N = 500, max_iter = 500) :
+#>   unused argument (max_iter = 500)
 ```
 
 The same move — collecting flat estimation knobs into `estimate_control()` — applies to the

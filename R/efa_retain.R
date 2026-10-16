@@ -52,7 +52,7 @@
 #'   maximum likelihood.
 #' @param gof character. Passed to [efa_hull()]. The goodness of fit index to use:
 #'   `"CAF"` (default), `"CFI"`, or `"RMSEA"`, or any combination of them. With the
-#'   `"PAF"` estimator, only the CAF is available. In Lorenzo-Seva, Timmerman, and Kiers
+#'   `"PAF"` estimator, the Hull method uses only the CAF. In Lorenzo-Seva, Timmerman, and Kiers
 #'   (2011), with factor correlations up to .40, the CFI was the most accurate index. With
 #'   strongly correlated factors (e.g., .70), CFI and RMSEA can make the Hull method
 #'   retain too few factors. For details on the CAF, see Lorenzo-Seva et al. (2011).

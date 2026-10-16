@@ -101,12 +101,12 @@ efa_retain(DOSPERT$cormat, N = DOSPERT$N)
 
 With raw data, you can use every feature: sandwich and bootstrap standard errors, DWLS estimation with polychoric correlations, and two-stage FIML estimation of correlations.
 
-In the first example below, which uses bootstrap SEs (`se = "np-boot"`), the confidence intervals are percentile intervals over refitted resamples. For the loadings and factor correlations, the intervals are centred on the point estimate. For the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI), the intervals are located above the point estimate, because each resample carries the sample's own misfit plus fresh sampling noise. So a point estimate can fall below its own lower bound in some cases. CFI and TLI are unaffected because they are ratios: their baseline chi-square shifts together with the model chi-square.
+In the first example below, which uses bootstrap SEs (`se = "np-boot"`), the confidence intervals are percentile intervals over refitted resamples. `summary()` shows them for the loadings and factor correlations. For CFI and TLI, `print()` shows bootstrap intervals from cases transformed so that their misfit equals the estimated misfit (Yuan, Hayashi, & Yanagihara, 2007; see `?efa_fit`). Without this transformation, each resample adds sampling misfit to the misfit the sample already has, and the intervals move toward worse fit.
 
 ```{r fig.height=3}
 
-# ULS / MINRES estimation with oblimin rotation and bootstrap SEs
-mod <- efa_fit(DOSPERT_raw, n_factors = 5, estimator = "uls", rotation = "oblimin",
+# ULS / MINRES estimation with (the default) oblimin rotation and bootstrap SEs
+mod <- efa_fit(DOSPERT_raw, n_factors = 5, estimator = "uls",
                se = "np-boot", seed = 1)
 mod
 # detailed output with summary()

@@ -92,7 +92,7 @@ passed to \code{\link[=efa_retain]{efa_retain()}} as its \code{estimator} argume
 
 \item{gof}{character. Passed to \code{\link[=efa_hull]{efa_hull()}}. The goodness of fit index to use:
 \code{"CAF"}, \code{"CFI"}, or \code{"RMSEA"}, or any combination of them. Default is all three.
-With the \code{"PAF"} method, only the CAF is available.}
+With the \code{"PAF"} method, the Hull method uses only the CAF.}
 
 \item{eigen_type_HULL}{character. Passed to \code{\link[=efa_parallel]{efa_parallel()}} in \code{\link[=efa_hull]{efa_hull()}}. One of
 \code{"SMC"} (default), \code{"PCA"}, or \code{"EFA"}.}

@@ -205,24 +205,24 @@ oblique one (`geominQ`, `bentlerQ`, `bifactorQ`). The suffix is part of the name
 its own matches both forms and is rejected. All are computed by rotation engines built into
 the package.
 
-An EFA with PAF and no rotation is as simple as:
+An EFA with PAF and an oblimin rotation (the defaults) is as simple as:
 
 ```{r}
 efa_fit(DOSPERT_sub, n_factors = 6)
 ```
 
-To rotate the loadings, set the `rotation` argument. Here we use a promax rotation. We assign the
-result, as later sections reuse this solution:
+For a different rotation, set the `rotation` argument. Here we use a promax rotation. We assign
+the result, as later sections reuse this solution:
 
 ```{r}
 efa_dospert <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "promax")
 efa_dospert
 ```
 
-We can also use a different estimator and rotation, here for example ULS and an oblimin rotation:
+We can also use a different estimator, here for example ULS:
 
 ```{r}
-efa_uls <- efa_fit(DOSPERT_sub, n_factors = 6, rotation = "oblimin", estimator = "uls")
+efa_uls <- efa_fit(DOSPERT_sub, n_factors = 6, estimator = "uls")
 efa_uls
 ```
 

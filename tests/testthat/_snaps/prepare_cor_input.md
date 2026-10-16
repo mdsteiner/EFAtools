@@ -75,7 +75,7 @@
     Code
       .prepare_cor_input(dat_lw, acov = "full", inform_from_data = FALSE)
     Message
-      i An asymptotic covariance requires complete cases; incomplete rows were dropped (listwise), overriding `use = "pairwise.complete.obs"`.
+      i An asymptotic covariance requires complete cases, so 56 of 60 rows with missing values were dropped (listwise; N = 4). This overrides `use = "pairwise.complete.obs"`.
     Condition
       Error:
       ! The correlation matrix could not be computed from the raw data.

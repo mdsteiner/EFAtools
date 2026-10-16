@@ -751,11 +751,10 @@
     is.numeric(x) && length(x) == 1L
   }, logical(1))]
 
-  # The bootstrap does not aggregate every fit index -- the RMSEA confidence bounds have no
-  # per-replicate value, because the replicate fits run with ci = FALSE -- so the replicate
-  # matrix is narrower than the point-estimate fit-index list. Take the pooled quantities from
-  # the columns each fit's replicate matrix actually carries, rather than assuming the two line
-  # up.
+  # The bootstrap gives replicates of RMSEA, CFI, and TLI only (and none outside its scope; see
+  # efa_fit()), so the replicate matrix is narrower than the point-estimate fit-index list. Take
+  # the pooled quantities from the columns each fit's replicate matrix actually carries, rather
+  # than assuming the two line up.
   boot_fit_arrs <- lapply(fits, function(x) {
     fit_arr <- x$replicates$fit_indices
     if (is.null(fit_arr)) return(NULL)

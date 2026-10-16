@@ -79,7 +79,7 @@ variances are estimated from and is recorded in \code{settings$b_boot}. The
 \code{\link[=estimate_control]{estimate_control()}} and
 \code{\link[=rotate_control]{rotate_control()}} objects are accepted through \code{...} as well, although they are not
 declared formals: pass them as \verb{estimate_control =} / \verb{rotate_control =} exactly as you
-would to \code{\link[=efa_fit]{efa_fit()}}.}
+would to \code{\link[=efa_fit]{efa_fit()}}. A name that is not an \code{\link[=efa_fit]{efa_fit()}} argument is rejected.}
 }
 \value{
 A list of class \code{c("efa_mi", "EFA_POOLED", "efa", "EFA")} containing
@@ -126,10 +126,9 @@ rotated families on the analytic path additionally carry a \code{method} string
 recording the gauge alignment used (\code{"gauge_invariant"} for communalities and
 \code{"signed_permutation_approx"} for rotated loadings and, for oblique rotations,
 factor correlations and structure coefficients). \code{fit_indices_descriptive}, on
-the bootstrap path, pools every fit index the bootstrap replicates carry, so the
-structural constants among them (\code{df}, \code{df_null}) appear with a standard error
-of 0. The RMSEA confidence bounds are not among them: the replicate fits run
-without confidence intervals, so no per-replicate value exists to pool.}
+the bootstrap path, pools the bootstrap replicates of RMSEA, CFI, and TLI. It is
+present only when every component fit has them (see \emph{Standard errors} in
+\code{\link[=efa_fit]{efa_fit()}}).}
 \item{mi_fit}{On the \code{se = "sandwich"} (MI2S) path only: the single \code{\link[=efa_fit]{efa_fit()}}
 fit on the pooled correlation matrix \eqn{\bar r} and pooled asymptotic
 covariance \eqn{\tilde\Gamma}. Its \code{orig_R} is \eqn{\bar r} and its \code{Gamma}
@@ -401,9 +400,9 @@ continuous-Pearson case uses the same recipe but is less benchmarked.
 \section{Conditions}{
 
 Errors and warnings raised by \code{efa_mi()} are classed, with an \code{efa_pooled_}
-prefix (\code{efa_consensus_} for the consensus target) -- except the dots validation
-shared with \code{\link[=efa_fit]{efa_fit()}}, which signals \code{efa_flat_knob_in_dots} or \code{efa_renamed_arg}
--- so they can be caught programmatically. The message shown explains what went
+prefix (\code{efa_consensus_} for the consensus target) -- except the validation of \code{...},
+which signals \code{efa_flat_knob_in_dots}, \code{efa_renamed_arg}, or \code{efa_unused_dots} -- so
+they can be caught programmatically. The message shown explains what went
 wrong and, where relevant, how to fix it.
 }
 

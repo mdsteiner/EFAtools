@@ -224,13 +224,13 @@
   geominQ = list(screen_keep = 10, triage_maxit = 50)
 )
 
-# Names a rotation's engine can consume from efa_fit()'s `...`, kept in lockstep with the
-# engine tables above: `maxit` is the one `.gpf_native()` control `.rotate_model()` does not
-# already pass explicitly, and the criterion extras are read by exact name via `.gpf_crit()`
-# (`gam` for oblimin, `delta` for the geomin pair). varimax and promax run outside the native
-# engines and take no extras, as does rotation = "none", where no engine runs at all.
-# efa_fit() rejects any other dot argument up front; `.rotation_extra_union` is the
-# across-rotation union rotate_control() validates its stored extras against.
+# Names a rotation's engine can consume as extras, kept in lockstep with the engine tables
+# above: `maxit` is the one `.gpf_native()` control `.rotate_model()` does not already pass
+# explicitly, and the criterion extras are read by exact name via `.gpf_crit()` (`gam` for
+# oblimin, `delta` for the geomin pair). varimax and promax run outside the native engines and
+# take no extras, as does rotation = "none", where no engine runs at all.
+# `.rotation_extra_union` is the across-rotation union rotate_control() validates its stored
+# extras against.
 .rotation_dot_extras <- function(rotation) {
   switch(rotation,
          none = ,

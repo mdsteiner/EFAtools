@@ -33,41 +33,27 @@ test_that("specified arguments are kept and untouched ones take the preset defau
   expect_equal(res$max_iter, 300)
 })
 
-test_that("one consolidated warning is emitted regardless of how many arguments are pinned", {
-  expect_warning(
-    .resolve_settings(
-      type = "EFAtools",
-      user = list(init_comm = "smc", criterion = NA, criterion_type = NA,
-                  max_iter = NA, abs_eigen = NA),
-      preset = .efa_presets$PAF
-    ),
-    class = "efa_type_override"
-  )
-
-  warns <- capture_warnings(.resolve_settings(
+test_that("arguments supplied with a preset are used without a warning", {
+  expect_no_warning(res <- .resolve_settings(
     type = "EFAtools",
     user = list(init_comm = "smc", criterion = 0.01, criterion_type = "sum",
                 max_iter = 100, abs_eigen = FALSE),
     preset = .efa_presets$PAF
   ))
-  expect_length(warns, 1)
+  expect_equal(res$criterion, 0.01)
+  expect_equal(res$max_iter, 100)
+  expect_false(res$abs_eigen)
 })
 
-test_that("normalize is treated as pinned only when FALSE", {
-  expect_warning(
-    .resolve_settings(
+test_that("normalize keeps the supplied value and never takes the preset", {
+  for (norm in c(TRUE, FALSE)) {
+    expect_no_warning(res <- .resolve_settings(
       type = "EFAtools",
-      user = list(normalize = FALSE, order_type = NA, varimax_type = NA),
+      user = list(normalize = norm, order_type = NA, varimax_type = NA),
       preset = .efa_presets$VARIMAX
-    ),
-    class = "efa_type_override"
-  )
-
-  expect_no_warning(.resolve_settings(
-    type = "EFAtools",
-    user = list(normalize = TRUE, order_type = NA, varimax_type = NA),
-    preset = .efa_presets$VARIMAX
-  ))
+    ))
+    expect_identical(res$normalize, norm)
+  }
 })
 
 test_that("type = 'none' passes the user values through without a condition", {

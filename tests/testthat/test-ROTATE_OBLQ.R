@@ -98,13 +98,13 @@ test_that("maxit bounds every optimization the multistart solver runs", {
   # two calls below disagreed about whether the same maxit had converged.
   expect_warning(
     efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
-            rotation = "geominQ", maxit = 1),
+            rotation = "geominQ", rotate_control = rotate_control(maxit = 1)),
     class = "efa_rotation_no_convergence"
   )
   expect_warning(
     efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
-            rotation = "geominQ", maxit = 1,
-            rotate_control = rotate_control(random_starts = 0)),
+            rotation = "geominQ",
+            rotate_control = rotate_control(maxit = 1, random_starts = 0)),
     class = "efa_rotation_no_convergence"
   )
 })
@@ -117,7 +117,7 @@ test_that("the non-convergence warning names the knobs that move the outcome", {
   # had exhausted, leaving the reader to find either of them.
   w <- tryCatch(
     efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, estimator = "PAF",
-            rotation = "geominQ", maxit = 1),
+            rotation = "geominQ", rotate_control = rotate_control(maxit = 1)),
     efa_rotation_no_convergence = function(w) w)
   expect_s3_class(w, "efa_rotation_no_convergence")
   expect_snapshot(cat(conditionMessage(w)))
@@ -174,20 +174,20 @@ test_that("settings are returned correctly", {
 test_that("errors etc. are thrown correctly", {
   expect_error(.rotate_model(unrot, rotation = "oblimin", type = "none"), class = "efa_type_none")
 
-  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools",
-                              normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools",
-                              order_type = "ss_factors"), class = "efa_type_override")
+  expect_no_warning(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools",
+                              normalize = FALSE))
+  expect_no_warning(.rotate_model(unrot, rotation = "oblimin", type = "EFAtools",
+                              order_type = "ss_factors"))
 
-  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "psych",
-                              normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "psych",
-                              order_type = "ss_factors"), class = "efa_type_override")
+  expect_no_warning(.rotate_model(unrot, rotation = "oblimin", type = "psych",
+                              normalize = FALSE))
+  expect_no_warning(.rotate_model(unrot, rotation = "oblimin", type = "psych",
+                              order_type = "ss_factors"))
 
-  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "SPSS",
-                              normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "oblimin", type = "SPSS",
-                              order_type = "ss_factors"), class = "efa_type_override")
+  expect_no_warning(.rotate_model(unrot, rotation = "oblimin", type = "SPSS",
+                              normalize = FALSE))
+  expect_no_warning(.rotate_model(unrot, rotation = "oblimin", type = "SPSS",
+                              order_type = "ss_factors"))
 
   expect_warning(.rotate_model(unrot_1, rotation = "oblimin", type = "EFAtools"), class = "efa_single_factor")
 
@@ -223,7 +223,10 @@ test_that("the oblique engines validate their criterion arguments before the com
   # carries the reasoning: the compiled entries raise unclassed exceptions, so the contract
   # is enforced in R where the class and the argument name are both available.
   cm <- test_models$baseline$cormat
-  fit <- function(...) efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", ...)
+  fit <- function(rotation, ...) {
+    efa_fit(cm, n_factors = 3, N = 500, estimator = "PAF", rotation = rotation,
+            rotate_control = rotate_control(...))
+  }
 
   expect_error(fit(rotation = "oblimin", gam = NA), class = "efa_rotation_arg")
   expect_error(fit(rotation = "oblimin", gam = "a"), class = "efa_rotation_arg")

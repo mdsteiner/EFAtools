@@ -175,7 +175,7 @@ efa_nest <- function(x, N = NA,
       # estimator (e.g. estimator = "ML") cannot turn per-model Heywood or non-convergence
       # warnings into one warning per loop iteration. A Heywood case is handled
       # explicitly below.
-      mm <- suppressWarnings(efa_fit(R, N = N, n_factors = nf - 1,
+      mm <- suppressWarnings(efa_fit(R, N = N, n_factors = nf - 1, rotation = "none",
                                      estimate_control = estimate_control, ...))
       Lambda <- mm$unrot_loadings
 

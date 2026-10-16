@@ -48,15 +48,17 @@ smaller than the number of variables (the common factor model is not identified
 otherwise). Use \code{\link[=efa_retain]{efa_retain()}} to decide on a value.}
 
 \item{N}{numeric. The number of observations. Needs only be specified if a
-correlation matrix is used; with raw data, \code{N} is found from the data instead.
+correlation matrix is used. Without \code{N}, the chi-square-based fit indices are not
+available, with a warning; the same applies to a positive \code{N} that is very small
+relative to the number of variables. With raw data, \code{N} is found from the data:
 \itemize{
-\item With \code{N = NA}, not all fit indices can be computed; a positive \code{N} that is very
-small relative to the number of variables leaves the chi-square-derived indices
-unavailable as well, with a warning.
-\item With raw data, \code{N} is the number of cases the correlation matrix was actually
-computed from -- see \code{use} for the general rule and how missing values change it.
-Under \code{cor_method = "fiml"}, \code{use} is ignored and \code{N} is instead the number of
-cases carrying at least one observed value.
+\item the number of rows under the default pairwise deletion (\code{use}), with a warning
+if values are missing, because each correlation then rests on fewer cases, so the
+chi-square is too large and the standard errors are too small (Marsh, 1998);
+\item the number of complete cases under listwise deletion, and whenever an asymptotic
+covariance is needed (\code{estimator = "DWLS"} or \code{se = "sandwich"}, except under
+\code{cor_method = "fiml"});
+\item the number of rows with at least one observed value under \code{cor_method = "fiml"}.
 }}
 
 \item{method}{character. The estimator used to fit the EFA; passed to \code{\link[=efa_fit]{efa_fit()}}
@@ -64,21 +66,19 @@ as its \code{estimator} argument. One of "PAF", "ML", "ULS", "MINRES" (an accept
 alias of "ULS"), or "DWLS"; see the \code{\link[=efa_fit]{efa_fit()}} documentation for their
 properties and data requirements.}
 
-\item{rotation}{character. Either perform no rotation ("none"; default),
-an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
-"bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
-"quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ"). See the
-\emph{Rotations} section in Details for their properties and known issues.}
+\item{rotation}{character. Either perform no rotation ("none"; default), an orthogonal
+rotation ("varimax", "equamax", "quartimax", "geominT", "bentlerT", or "bifactorT"), or
+an oblique rotation ("promax", "oblimin", "quartimin", "simplimax", "bentlerQ",
+"geominQ", or "bifactorQ"). See the \code{\link[=efa_fit]{efa_fit()}} documentation for their properties.}
 
 \item{se}{character. Whether and how to compute standard errors (and matching
-confidence intervals): "none" (default), "information" (analytic
-standard errors from the expected Fisher information of the ML solution), "sandwich"
-(robust "sandwich" standard errors from raw data, which stay reliable under
-non-normality or a misspecified estimator weight), or "np-boot" (non-parametric
-bootstrap). The
-methods differ in their assumptions, their data requirements, and which estimator,
-rotation, and \code{cor_method} combinations they support; see the \emph{Standard errors}
-section in Details.}
+confidence intervals): "none" (default), "information" (analytic standard errors
+from the expected Fisher information of the ML solution), "sandwich" (robust
+standard errors from raw data, which stay reliable under non-normality or a
+misspecified estimator weight), or "np-boot" (non-parametric bootstrap). The methods
+differ in their assumptions, their data requirements, and which estimator, rotation,
+and \code{cor_method} combinations they support; see the \emph{Standard errors} section in
+Details.}
 
 \item{type}{character. If one of "EFAtools" (default), "psych", or "SPSS" is
 used, and the following arguments with default NA are left with

@@ -295,21 +295,20 @@ test_that("FIML fit indices match lavaan two-stage (Satorra-Bentler)", {
   expect_lt(abs(fi$RMSEA - unname(fm[["rmsea.scaled"]])), 0.02)
 })
 
-test_that("FIML leaves the chi-square NA for PAF but keeps the residual indices", {
+test_that("FIML gives PAF the two-stage statistics of the ULS solution", {
   skip_on_cran()
 
   X <- fiml_mar_data()
-  efa <- EFA(X, n_factors = 2, method = "PAF", cor_method = "fiml")
-  fi  <- efa$fit_indices
-
-  # PAF has no discrepancy-based chi-square (the package convention), so the chi-square-derived
-  # indices are NA under FIML as on every other cor_method; the residual indices are still
-  # computed against the EM correlation.
-  expect_true(is.na(fi$chi))
-  expect_true(is.na(fi$CFI))
-  expect_true(is.na(fi$RMSEA))
-  expect_true(is.finite(fi$CAF))
-  expect_true(is.finite(fi$SRMR))
+  # A tightly converged PAF solution is the ULS solution, so the corrected two-stage
+  # statistics agree; the residual indices are computed against the EM correlation.
+  paf <- EFA(X, n_factors = 2, method = "PAF", cor_method = "fiml", criterion = 1e-10,
+             max_iter = 10000)
+  uls <- EFA(X, n_factors = 2, method = "ULS", cor_method = "fiml")
+  for (nm in c("chi", "CFI", "RMSEA")) {
+    expect_equal(paf$fit_indices[[nm]], uls$fit_indices[[nm]], tolerance = 1e-4, info = nm)
+  }
+  expect_identical(paf$fit_indices$chi_scaled_type, uls$fit_indices$chi_scaled_type)
+  expect_true(is.finite(paf$fit_indices$SRMR))
 })
 
 test_that("FIML leaves AIC/BIC/ECVI NA for a just-identified (df = 0) fit", {
@@ -376,7 +375,7 @@ test_that("FIML fit indices ignore a fully-missing row (point-estimate filter)",
   expect_equal(fid$chi_null, fi$chi_null, tolerance = 1e-8)
 })
 
-test_that("FIML np-boot fit-index SEs come from the corrected two-stage chi-square", {
+test_that("FIML np-boot gives loading SEs but no fit-index intervals", {
   skip_on_cran()
 
   X <- fiml_mar_data()
@@ -385,13 +384,12 @@ test_that("FIML np-boot fit-index SEs come from the corrected two-stage chi-squa
         se = "np-boot", b_boot = 20, seed = 42)
   ))
 
-  # Each resample re-estimates the EM moments and forms the same corrected (Satorra-Bentler)
-  # two-stage statistic as the point estimate, so the chi-square-derived fit-index SEs are
-  # populated and finite (not the NA they would be if the bootstrap path silently dropped the FIML
-  # moments). AIC/BIC/ECVI are NA for the scaled statistic, so their bootstrap SE is NA too.
-  fi_se <- efa$SE$fit_indices
-  expect_true(all(is.finite(fi_se[c("chi", "CFI", "TLI", "RMSEA")])))
-  expect_gt(fi_se[["chi"]], 0)
+  # Each resample re-estimates the EM moments, so the loading SEs are finite. The fit-index
+  # bootstrap transforms complete cases, which data with missing values do not have.
+  expect_true(all(is.finite(efa$SE$unrot_loadings)))
+  expect_null(efa$SE$fit_indices)
+  expect_null(efa$CI$fit_indices)
+  expect_null(efa$replicates$fit_indices)
 })
 
 test_that("a converged FIML fit reports its Stage-1 EM diagnostics", {
@@ -412,7 +410,7 @@ test_that("a converged FIML fit reports its Stage-1 EM diagnostics", {
   expect_equal(fit$fiml$n, fit$settings$N)
 
   # The slot belongs to the FIML route alone; no other correlation method estimates them.
-  pear <- efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "pearson")
+  pear <- suppressWarnings(efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "pearson"))
   expect_null(pear$fiml)
 })
 
@@ -827,18 +825,17 @@ test_that("the FIML fit indices honour ci = FALSE", {
   expect_equal(no_ci$CFI, with_ci$CFI)
 })
 
-test_that("the FIML CI-provenance note names the corrected two-stage sandwich", {
+test_that("the FIML CI tables name the corrected two-stage sandwich", {
   skip_on_cran()
   local_reproducible_output()
 
   efa <- EFA(fiml_mar_data_1f(), n_factors = 1, method = "ML",
              cor_method = "fiml", se = "sandwich")
   body <- cli::ansi_strip(format(summary(efa)))
-  note <- body[grepl("Note:", body)]
   # For a non-pooled analytic fit both "information" and "sandwich" yield the corrected two-stage
-  # sandwich, so the note must describe that covariance, not the expected information matrix.
-  expect_true(any(grepl("two-stage (FIML) sandwich", note, fixed = TRUE)))
-  expect_false(any(grepl("expected information matrix", note)))
+  # sandwich, so the CI title must name that covariance, not the expected information matrix.
+  expect_true(any(grepl("Wald CIs (two-stage FIML sandwich)", body, fixed = TRUE)))
+  expect_false(any(grepl("expected information", body)))
 })
 
 test_that("print/summary.efa label FIML correlations in the header", {
@@ -850,13 +847,11 @@ test_that("print/summary.efa label FIML correlations in the header", {
   # The header flags the two-stage FIML correlation so the analysed matrix is not read as an
   # ordinary complete-case one. Assert the labels without pinning platform-dependent spacing.
   printed <- cli::ansi_strip(capture.output(print(efa)))
-  expect_true(any(grepl(
-    "Correlations: FIML (two-stage, missing data)", printed, fixed = TRUE
-  )))
+  expect_true(any(grepl("two-stage FIML correlations", printed, fixed = TRUE)))
   expect_true(any(grepl("Unrotated Loadings", printed, fixed = TRUE)))
 
   # summary() renders the same header, so the label is surfaced there as well.
-  expect_match(format(summary(efa)), "FIML (two-stage, missing data)",
+  expect_match(cli::ansi_strip(format(summary(efa))), "two-stage FIML correlations",
                fixed = TRUE, all = FALSE)
 })
 
@@ -889,16 +884,16 @@ test_that("FIML np-boot returns the full SE/CI schema with finite SEs (oblique)"
 
   expect_s3_class(efa, "EFA")
 
-  # The bootstrap SE/CI schema is the same one the pearson/poly paths produce: an oblique
-  # rotation adds the factor-correlation (Phi) and structure-coefficient blocks. The
-  # replicate cube's last dimension indexes the bootstrap samples.
+  # The bootstrap SE/CI schema is the same one the poly path produces: an oblique rotation
+  # adds the factor-correlation (Phi) and structure-coefficient blocks, and there is no
+  # fit-index block, which needs complete Pearson data. The replicate cube's last dimension
+  # indexes the bootstrap samples.
   expect_named(efa$SE, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
-                         "fit_indices", "residuals", "valid_replicates",
-                         "valid_target_rotations"))
+                         "residuals", "valid_replicates", "valid_target_rotations"))
   expect_named(efa$CI, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
-                         "fit_indices", "residuals"))
+                         "residuals"))
   expect_named(efa$replicates, c("unrot_loadings", "rot_loadings", "Phi", "Structure",
-                                 "fit_indices", "residuals"))
+                                 "residuals"))
   expect_identical(dim(efa$replicates$unrot_loadings)[3], b)
 
   # SEs are finite and non-negative throughout, the loadings strictly positive (Phi's fixed
@@ -917,75 +912,61 @@ test_that("the FIML bootstrap carries resample indices, not a matrix per replica
   X <- fiml_mar_data()
   b <- 8L
 
-  # Intercept what efa_fit() hands the replicate fits, then run them for real: the per-replicate
-  # list is a closure global of the parallel map, so whatever it carries is held once per worker
-  # on top of the parent.
+  # Intercept what efa_fit() hands the replicate fits: the per-replicate input function is a
+  # closure global of the parallel map (sent once to every worker), and the resample indices
+  # are the elements of the map (each worker gets its own share).
   real_boot <- .boot_fun
   captured <- NULL
   testthat::local_mocked_bindings(
-    .boot_fun = function(..., fiml_list = NULL, fiml_data = NULL) {
-      captured <<- list(fiml_list = fiml_list, fiml_data = fiml_data)
-      real_boot(..., fiml_list = fiml_list, fiml_data = fiml_data)
+    .boot_fun = function(boot_rep, units, ...) {
+      captured <<- list(x = environment(boot_rep)$x, idx = units)
+      real_boot(boot_rep, units, ...)
     }
   )
 
-  fit <- suppressWarnings(suppressMessages(
+  fit <- suppressWarnings(
     efa_fit(X, n_factors = 2, estimator = "ML", cor_method = "fiml",
             se = "np-boot", b_boot = b, seed = 42)
-  ))
+  )
   expect_s3_class(fit, "efa")
 
-  reps <- Filter(Negate(is.null), captured$fiml_list)
-  expect_length(reps, b)
-  for (r in reps) {
-    expect_named(r, c("rows", "mu", "sigma", "logl"))
-    expect_null(r$data)
-    expect_length(r$rows, fit$settings$N)
-  }
-  # The raw data travels once, alongside the indices that point into it.
-  expect_equal(captured$fiml_data, X)
+  # The closure holds the raw data, and the map one index vector per replicate.
+  expect_equal(captured$x, X)
+  expect_length(captured$idx, b)
+  for (ind in captured$idx) expect_length(ind, fit$settings$N)
 
-  # The indices identify exactly the resample the stored moments were estimated from, so the
-  # replicate fit sees the same data the old per-replicate matrix carried.
-  em_1 <- suppressWarnings(.fiml_em_moments(captured$fiml_data[reps[[1]]$rows, , drop = FALSE]))
-  expect_equal(em_1$sigma, reps[[1]]$sigma)
-  expect_equal(em_1$mu, reps[[1]]$mu)
-  expect_equal(em_1$logl, reps[[1]]$logl)
-
-  # ... and it is materially smaller than storing the slices themselves.
-  with_data <- lapply(reps, function(r) {
-    list(data = X[r$rows, , drop = FALSE], mu = r$mu, sigma = r$sigma, logl = r$logl)
-  })
-  expect_lt(as.numeric(utils::object.size(captured$fiml_list)),
-            as.numeric(utils::object.size(with_data)) / 3)
+  # The indices are materially smaller than the resampled slices themselves.
+  slices <- lapply(captured$idx, function(ind) X[ind, , drop = FALSE])
+  expect_lt(as.numeric(utils::object.size(captured$idx)),
+            as.numeric(utils::object.size(slices)) / 3)
 })
 
-test_that("the FIML bootstrap replicate fit is unchanged by the index representation", {
+test_that("the FIML bootstrap replicate fit equals the fit to the resample", {
   skip_on_cran()
 
   X <- fiml_mar_data()
+  ec <- estimate_control()
   rows <- which(rowSums(!is.na(X)) > 0L)
   set.seed(99)
   ind <- sample(rows, size = length(rows), replace = TRUE)
-  em_i <- suppressWarnings(.fiml_em_moments(X[ind, , drop = FALSE]))
+  em_i <- suppressWarnings(.fiml_em_moments(X[ind, , drop = FALSE],
+                                            max_iter = ec$fiml_max_iter, tol = ec$fiml_tol))
   R_i <- stats::cov2cor(em_i$sigma)
+  dimnames(R_i) <- list(colnames(X), colnames(X))
 
-  # Drive one replicate through .boot_fun() with the index representation ...
-  boot <- .boot_fun(array(R_i, c(ncol(X), ncol(X), 1L)), 1L, .estimate_model,
+  # One replicate driven through the bootstrap machinery ...
+  boot_rep <- .boot_rep_maker(X, cor_method = "fiml", use = "pairwise.complete.obs",
+                              dwls = FALSE, fiml_max_iter = ec$fiml_max_iter,
+                              fiml_tol = ec$fiml_tol)
+  boot <- .boot_fun(boot_rep, list(ind), .estimate_model,
                     method = "ML", n_factors = 2, N = length(rows), type = "EFAtools",
-                    start_method = "psych", lean = TRUE,
-                    fiml_list = list(list(rows = ind, mu = em_i$mu, sigma = em_i$sigma,
-                                          logl = em_i$logl)),
-                    fiml_data = X)
+                    start_method = "psych", lean = TRUE)
 
-  # ... and independently with the resampled matrix supplied directly, as the caller used to
-  # store it. The fit -- loadings and the FIML likelihood-ratio fit indices alike -- must be
-  # identical: the representation is a storage change, not a numerical one.
+  # ... and the same resample fitted directly: the replicate fit indices are not used, so the
+  # replicate gets no EM moments for the two-stage statistic, and both fits must agree.
   direct <- suppressWarnings(.estimate_model(
     R_i, method = "ML", n_factors = 2, N = length(rows), type = "EFAtools",
-    start_method = "psych", lean = TRUE,
-    fiml = list(data = X[ind, , drop = FALSE], mu = em_i$mu, sigma = em_i$sigma,
-                logl = em_i$logl)))
+    start_method = "psych", lean = TRUE))
 
   expect_equal(boot[[1]]$unrot_loadings, direct$unrot_loadings)
   expect_equal(boot[[1]]$fit_indices, direct$fit_indices)

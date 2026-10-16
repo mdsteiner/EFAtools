@@ -684,16 +684,15 @@ test_that("the Model Fit block reports the effective n per index class", {
   local_reproducible_output()
   set.seed(42)
 
-  # PAF leaves the chi-square-based indices NA but still contributes CAF, RMSR, and SRMR,
-  # so the two index classes are averaged over different numbers of solutions.
+  # The two index classes are counted on their own columns, so they can be averaged over
+  # different numbers of solutions.
   mixed <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                        estimator = c("PAF", "ML"), type = "EFAtools",
                        rotation = "promax", start_method = "psych",
                        show_progress = FALSE)
   grid <- mixed$implementations_grid
   n_chisq <- sum(!is.na(grid$chisq))
-  n_resid <- sum(!is.na(grid$caf))
-  expect_gt(n_resid, n_chisq)
+  n_resid <- sum(!is.na(grid$srmr))
 
   out <- paste(cli::ansi_strip(format(mixed)), collapse = " ")
   expect_match(out, paste0("Chi-square-based indices averaged over ", n_chisq,
@@ -701,15 +700,15 @@ test_that("the Model Fit block reports the effective n per index class", {
   expect_match(out, paste0("CAF, RMSR, and SRMR averaged over ", n_resid,
                            " of ", nrow(grid), " solution"), fixed = TRUE)
 
-  # With PAF alone no chi-square-based index is reported at all, so that line is absent.
+  # Without N no chi-square-based index is reported at all, so that line is absent.
   paf <- suppressWarnings(
-    efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
+    efa_average(test_models$baseline$cormat, n_factors = 3,
                 estimator = "PAF", type = c("EFAtools", "psych"),
                 rotation = "promax", show_progress = FALSE))
   out_paf <- paste(cli::ansi_strip(format(paf)), collapse = " ")
   expect_no_match(out_paf, "Chi-square-based indices", fixed = TRUE)
   expect_match(out_paf, paste0("CAF, RMSR, and SRMR averaged over ",
-                               sum(!is.na(paf$implementations_grid$caf)), " of "),
+                               sum(!is.na(paf$implementations_grid$srmr)), " of "),
                fixed = TRUE)
 })
 

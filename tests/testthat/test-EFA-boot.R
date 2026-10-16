@@ -252,15 +252,11 @@ test_that("seed leaves the caller's RNG stream unchanged without a bootstrap", {
                    state_before)
 })
 
-test_that("np-boot on a correlation matrix warns and disables the bootstrap", {
-  expect_warning(
-    res <- EFA(test_models$baseline$cormat, n_factors = 3, N = 500,
-               method = "PAF", rotation = "promax", se = "np-boot"),
+test_that("np-boot on a correlation matrix is an error", {
+  expect_error(
+    efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500, se = "np-boot"),
     class = "efa_boot_cormat"
   )
-  expect_s3_class(res, "EFA")
-  expect_identical(res$settings$se, "none")
-  expect_null(res$SE)
 })
 
 # A healthy PAF point-estimate fit on GRiPS_raw together with the matching list of `b`
@@ -284,8 +280,8 @@ make_boot_pair <- function(b, n_factors) {
     fit_target = suppressWarnings(
       .estimate_model(R, method = "PAF", n_factors = n_factors, N = N, type = "EFAtools")),
     boot_fit = suppressWarnings(
-      .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = n_factors,
-                N = N, type = "EFAtools"))
+      .boot_fun(function(i) list(R = R_boot[, , i]), seq_len(b), .estimate_model,
+                method = "PAF", n_factors = n_factors, N = N, type = "EFAtools"))
   )
 }
 
@@ -335,8 +331,8 @@ test_that(".boot_fun records a real failed replicate as NULL without dropping it
     R_boot[, , fail_at] <- bad
 
     boot_fit <- suppressWarnings(
-      .boot_fun(R_boot, b, .estimate_model, method = "PAF", n_factors = 2,
-                N = N, type = "EFAtools"))
+      .boot_fun(function(i) list(R = R_boot[, , i]), seq_len(b), .estimate_model,
+                method = "PAF", n_factors = 2, N = N, type = "EFAtools"))
 
     # length preserved and exactly the degenerate replicate is NULL
     expect_length(boot_fit, b)
@@ -509,20 +505,6 @@ count_warning_class <- function(expr, cls) {
   n
 }
 
-test_that("a pinned argument re-warns once, not once per bootstrap replicate", {
-  skip_on_cran()
-  # `efa_type_override` reflects the (type, pinned-argument) combination, which is
-  # identical for every replicate and already surfaced once by the point-estimate
-  # fit. The bootstrap loop must not repeat it b_boot times.
-  set.seed(42)
-  n_override <- count_warning_class(
-    EFA(GRiPS_raw, n_factors = 2, method = "PAF", type = "EFAtools",
-        max_iter = 500, se = "np-boot", b_boot = 6),
-    "efa_type_override"
-  )
-  expect_equal(n_override, 1L)
-})
-
 test_that("bootstrap non-convergence is summarized in a single classed warning", {
   skip_on_cran()
   # A tiny iteration cap forces every replicate to hit the maximum-iteration limit;
@@ -658,10 +640,11 @@ test_that(".array_se_ci matches a per-probability sweep at every shape it is cal
 })
 
 test_that(".estimate_model(lean = TRUE) returns only the bootstrap-aggregated quantities", {
-  # The bootstrap replicate fitter computes just the loadings, fit indices, and
-  # residuals that .boot_se_ci() aggregates. Those must match the full fit
-  # exactly, except for the analytic RMSEA bounds, which the lean fit does not
-  # solve (they are not meaningfully bootstrapped).
+  # The bootstrap replicate fitter computes just the loadings and residuals that
+  # .boot_se_ci() aggregates and the fit indices that .yhy_fit_boot() aggregates.
+  # Those must match the full fit exactly, except for the analytic RMSEA bounds,
+  # which the lean fit does not solve (they are not meaningfully bootstrapped).
+  # `gof = FALSE` drops the fit indices only.
   R <- test_models$baseline$cormat
   N <- 500
   bounds <- c("RMSEA_LB", "RMSEA_UB")
@@ -688,50 +671,194 @@ test_that(".estimate_model(lean = TRUE) returns only the bootstrap-aggregated qu
     keep <- setdiff(names(full$fit_indices), bounds)
     expect_equal(lean$fit_indices[keep], full$fit_indices[keep], info = method)
     expect_true(all(is.na(unlist(lean$fit_indices[bounds]))), info = method)
+
+    no_gof <- suppressWarnings(do.call(.estimate_model,
+                                       c(common, list(lean = TRUE, gof = FALSE))))
+    expect_null(no_gof$fit_indices)
+    expect_identical(no_gof[c("unrot_loadings", "residuals", "convergence")],
+                     lean[c("unrot_loadings", "residuals", "convergence")])
   }
 })
 
-test_that("ML np-boot drops only the analytic RMSEA bounds from the fit-index SEs", {
+test_that("np-boot gives bootstrap SEs and intervals of RMSEA, CFI, and TLI only", {
   skip_on_cran()
-  set.seed(202)
-  res <- suppressWarnings(suppressMessages(
-    EFA(GRiPS_raw, n_factors = 2, method = "ML", rotation = "none",
-        se = "np-boot", b_boot = 10)
-  ))
+  res <- suppressWarnings(
+    efa_fit(GRiPS_raw, n_factors = 2, estimator = "ML", rotation = "none",
+            se = "np-boot", b_boot = 10, seed = 202)
+  )
 
+  keep <- c("RMSEA", "CFI", "TLI")
   se_fit <- res$SE$fit_indices
   ci_fit <- res$CI$fit_indices
-  # The replicates are fitted with ci = FALSE, so the analytic RMSEA bounds carry no
-  # per-replicate value: they are dropped rather than shipped as guaranteed-NA entries.
-  expect_false(any(c("RMSEA_LB", "RMSEA_UB") %in% names(se_fit)))
-  expect_false(any(c("RMSEA_LB", "RMSEA_UB") %in% names(ci_fit$lower)))
-  expect_false(anyNA(se_fit))
+  expect_named(se_fit, keep)
+  expect_named(ci_fit$lower, keep)
+  expect_named(ci_fit$upper, keep)
+  expect_true(all(is.finite(se_fit)))
+  expect_true(all(ci_fit$lower <= ci_fit$upper))
   # the replicate matrix labels its columns, and the replicate is its FIRST dimension
-  expect_identical(colnames(res$replicates$fit_indices), names(se_fit))
+  expect_identical(colnames(res$replicates$fit_indices), keep)
   expect_identical(nrow(res$replicates$fit_indices), 10L)
-  # the bootstrapped fit indices that are aggregated stay finite
-  expect_true(all(is.finite(se_fit[c("CAF", "RMSR", "SRMR", "TLI", "ECVI")])))
-  expect_true(all(is.finite(ci_fit$lower[c("SRMR", "TLI", "ECVI")])))
-  expect_true(all(is.finite(ci_fit$upper[c("SRMR", "TLI", "ECVI")])))
   # the point estimate keeps its full analytic RMSEA confidence interval
   expect_true(is.finite(res$fit_indices$RMSEA_LB))
   expect_true(is.finite(res$fit_indices$RMSEA_UB))
-
-  out <- cli::ansi_strip(format(res))
-  expect_true("RMSR" %in% names(res$fit_indices))
-  expect_false(any(grepl("^RMSR\\b", out)))
-  expect_true(any(grepl("^SRMR \\[95% bootstrap-CI\\]:", out)))
-  expect_true(any(grepl("^TLI \\[95% bootstrap-CI\\]:", out)))
-  expect_true(any(grepl("^ECVI \\[95% bootstrap-CI\\]:", out)))
 })
 
-test_that("PAF np-boot fit output prints SRMR CIs but not RMSR", {
-  out <- cli::ansi_strip(format(boot_promax))
+test_that("print() and summary() show the bootstrap intervals of CFI and TLI", {
+  ci_fit <- boot_promax$CI$fit_indices
+  expect_true(all(is.finite(c(ci_fit$lower, ci_fit$upper))))
+  for (out in list(format(boot_promax), format(summary(boot_promax)))) {
+    out <- cli::ansi_strip(out)
+    expect_true(any(startsWith(out, "CFI [95% bootstrap CI]: ")))
+    expect_true(any(startsWith(out, "TLI [95% bootstrap CI]: ")))
+    # RMSEA keeps its analytic interval
+    expect_true(any(startsWith(out, "RMSEA [90% CI]: ")))
+    expect_true(any(grepl("^SRMR: ", out)))
+    expect_false(any(grepl("^(RMSR|CAF)\\b", out)))
+  }
+  # summary(ci = "none") shows no interval at all
+  out <- cli::ansi_strip(format(summary(boot_promax, ci = "none")))
+  expect_false(any(grepl("bootstrap CI", out, fixed = TRUE)))
+  expect_true(any(startsWith(out, "CFI: ")))
+})
 
-  expect_true("RMSR" %in% names(boot_promax$fit_indices))
-  expect_true(all(is.finite(boot_promax$CI$fit_indices$lower[c("CAF", "RMSR", "SRMR")])))
-  expect_false(any(grepl("^RMSR\\b", out)))
-  expect_true(any(grepl("^SRMR \\[95% bootstrap-CI\\]:", out)))
+# A 2-factor model fitted to a 3-factor population with a weak third factor: RMSEA .057 and
+# CFI .955 in the population. Shared by the fit-index bootstrap tests below.
+yhy_pop <- local({
+  L <- matrix(0, 12, 3)
+  L[1:5, 1] <- c(.7, .65, .6, .7, .55)
+  L[6:10, 2] <- c(.6, .7, .65, .55, .6)
+  L[c(3, 5, 8, 11, 12), 3] <- c(.3, .3, .3, .5, .5)
+  Phi <- matrix(.3, 3, 3)
+  diag(Phi) <- 1
+  R <- L %*% Phi %*% t(L)
+  diag(R) <- 1
+  dimnames(R) <- list(paste0("V", 1:12), paste0("V", 1:12))
+  R
+})
+yhy_sample <- function(N, seed) {
+  set.seed(seed)
+  x <- matrix(stats::rnorm(N * ncol(yhy_pop)), N) %*% chol(yhy_pop)
+  colnames(x) <- colnames(yhy_pop)
+  x
+}
+
+test_that(".yhy_transform hits the target misfit and keeps the fitted solution", {
+  x <- yhy_sample(300, 1)
+  R <- stats::cor(x)
+  N <- nrow(x)
+  for (method in c("ML", "ULS", "PAF")) {
+    fit_args <- list(method = method, n_factors = 2, N = N, type = "EFAtools",
+                     max_iter = 1000, init_comm = "smc", criterion = 1e-8,
+                     criterion_type = "sum", abs_eigen = TRUE, start_method = "psych")
+    fit <- do.call(.estimate_model, c(list(R), fit_args))
+    R_hat <- fit$model_implied_R
+    df <- fit$fit_indices$df
+    tau <- .ml_discrepancy(R_hat, R) - df / (N - 1)
+    expect_gt(tau, 0)
+
+    yhy <- .yhy_transform(scale(x), R_hat, N, df)
+    R_a <- yhy$a * R + (1 - yhy$a) * R_hat
+    expect_true(yhy$a > 0 && yhy$a < 1, info = method)
+    # The transformed cases have the correlation matrix R_a, whose ML discrepancy from the
+    # model-implied matrix is the estimated misfit.
+    expect_equal(stats::cor(yhy$data), R_a, tolerance = 1e-10, ignore_attr = TRUE,
+                 info = method)
+    expect_equal(.ml_discrepancy(R_hat, R_a), tau, tolerance = 1e-8, info = method)
+    # The fitted loadings also fit R_a best (Yuan, Hayashi, & Yanagihara, 2007, Theorem 1).
+    fit_a <- do.call(.estimate_model, c(list(R_a), fit_args))
+    expect_equal(unclass(fit_a$unrot_loadings), unclass(fit$unrot_loadings),
+                 tolerance = 1e-4, ignore_attr = TRUE, info = method)
+  }
+
+  # No estimated misfit (tau = 0): a = 0, the transformed cases fit the model exactly.
+  fit <- .estimate_model(R, method = "ML", n_factors = 2, N = N, start_method = "psych")
+  R_hat <- fit$model_implied_R
+  yhy <- .yhy_transform(scale(x), R_hat, N = 3, df = fit$fit_indices$df)
+  expect_identical(yhy$a, 0)
+  expect_equal(stats::cor(yhy$data), R_hat, tolerance = 1e-10, ignore_attr = TRUE)
+
+  # A model-implied matrix that is not positive definite has no transformation.
+  R_bad <- R_hat
+  R_bad[1, 2] <- R_bad[2, 1] <- 1.5
+  expect_null(.yhy_transform(scale(x), R_bad, N, 1))
+  # Nor do cases with a singular correlation matrix (a duplicated variable).
+  expect_null(.yhy_transform(scale(cbind(x, x[, 1])), diag(13), N, 1))
+})
+
+test_that("the fit-index bootstrap changes no other result and no random-number stream", {
+  skip_on_cran()
+  # Its fits draw no random numbers, so without `seed` the caller's stream after the fit, and
+  # all other results, are the same as without it.
+  x <- yhy_sample(200, 2)
+  run <- function() {
+    set.seed(3)
+    fit <- efa_fit(x, n_factors = 2, se = "np-boot", b_boot = 20)
+    list(fit = fit, next_draw = stats::runif(1))
+  }
+  with_yhy <- run()
+  .efa_state$no_fit_boot <- TRUE
+  on.exit(.efa_state$no_fit_boot <- FALSE, add = TRUE)
+  without <- run()
+
+  expect_identical(with_yhy$next_draw, without$next_draw)
+  expect_null(without$fit$SE$fit_indices)
+  expect_named(with_yhy$fit$SE$fit_indices, c("RMSEA", "CFI", "TLI"))
+  with_yhy$fit$SE$fit_indices <- NULL
+  with_yhy$fit$CI$fit_indices <- NULL
+  with_yhy$fit$replicates$fit_indices <- NULL
+  expect_equal(with_yhy$fit, without$fit, tolerance = fp_tol)
+})
+
+test_that("np-boot gives no fit-index intervals outside the supported data", {
+  skip_on_cran()
+  no_fit_boot <- function(fit) {
+    expect_null(fit$SE$fit_indices)
+    expect_null(fit$CI$fit_indices)
+    expect_null(fit$replicates$fit_indices)
+  }
+  x_na <- GRiPS_raw
+  x_na[1:5, 1] <- NA
+  # pairwise deletion of missing values
+  no_fit_boot(suppressWarnings(
+    efa_fit(x_na, n_factors = 1, se = "np-boot", b_boot = 4, seed = 1)))
+  # a rank correlation
+  no_fit_boot(efa_fit(GRiPS_raw, n_factors = 1, cor_method = "spearman", se = "np-boot",
+                      b_boot = 4, seed = 1))
+  # polychoric correlations
+  no_fit_boot(suppressWarnings(
+    efa_fit(DOSPERT_raw[, 1:5], n_factors = 1, cor_method = "poly", se = "np-boot",
+            b_boot = 4, seed = 1)))
+  # a singular correlation matrix (a duplicated variable, which the psych preset accepts)
+  no_fit_boot(suppressMessages(suppressWarnings(
+    efa_fit(cbind(GRiPS_raw, copy = GRiPS_raw[, 1]), n_factors = 1, estimator = "PAF",
+            estimate_control = estimate_control(type = "psych"), se = "np-boot",
+            b_boot = 4, seed = 1))))
+  # a just-identified model (df = 0) has no misfit to transform to
+  no_fit_boot(suppressWarnings(
+    efa_fit(GRiPS_raw[, 1:3], n_factors = 1, se = "np-boot", b_boot = 4, seed = 1)))
+  # listwise deletion of the same missing values is supported
+  listwise <- efa_fit(x_na, n_factors = 1, use = "complete.obs", se = "np-boot",
+                      b_boot = 4, seed = 1)
+  expect_named(listwise$CI$fit_indices$lower, c("RMSEA", "CFI", "TLI"))
+})
+
+test_that("the fit-index bootstrap intervals have approximately correct coverage", {
+  skip_on_cran()
+  skip_if_not_slow()
+  # The population values of the 2-factor model, from its fit to the population matrix.
+  L_pop <- .estimate_model(yhy_pop, method = "ML", n_factors = 2,
+                           start_method = "psych")$unrot_loadings
+  pop <- .efa_population_fit(unclass(L_pop), yhy_pop)
+  covered <- vapply(1:60, function(i) {
+    fit <- efa_fit(yhy_sample(300, 100 + i), n_factors = 2, estimator = "ML",
+                   rotation = "none", se = "np-boot", b_boot = 100, seed = i)
+    ci_fit <- fit$CI$fit_indices
+    c(RMSEA = ci_fit$lower[["RMSEA"]] <= pop$rmsea && pop$rmsea <= ci_fit$upper[["RMSEA"]],
+      CFI = ci_fit$lower[["CFI"]] <= pop$cfi && pop$cfi <= ci_fit$upper[["CFI"]])
+  }, logical(2))
+  # Nominal 95%; about 94% in a 400-sample simulation of this design. Below 85% of 60
+  # samples has a probability of about .2% if the true coverage is 94%.
+  expect_true(all(rowMeans(covered) >= .85))
 })
 
 test_that(".oblique_procrustes_batch isolates an unalignable replicate", {

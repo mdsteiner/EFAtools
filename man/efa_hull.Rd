@@ -51,8 +51,8 @@ is used as the upper bound \emph{J} of factors to extract in the Hull method.}
 squares, respectively.}
 
 \item{gof}{character. The goodness of fit index to use: \code{"CAF"} (default), \code{"CFI"},
-or \code{"RMSEA"}, or any combination of them. With the \code{"PAF"} estimator, only the CAF
-is available. In Lorenzo-Seva, Timmerman, and Kiers (2011), with factor correlations
+or \code{"RMSEA"}, or any combination of them. With the \code{"PAF"} estimator, the Hull method
+uses only the CAF. In Lorenzo-Seva, Timmerman, and Kiers (2011), with factor correlations
 up to .40, the CFI was the most accurate index. With strongly correlated factors
 (e.g., .70), CFI and RMSEA can make the Hull method retain too few factors. For
 details on the CAF, see Lorenzo-Seva et al. (2011).}
@@ -194,7 +194,7 @@ efa_hull(test_models$baseline$cormat, N = 500, n_datasets = 100)
 efa_hull(test_models$baseline$cormat, N = 500, gof = c("CAF", "CFI", "RMSEA"),
          n_datasets = 100)
 
-# using PAF, for which only the CAF is available
+# using PAF, with which the Hull method uses only the CAF
 efa_hull(test_models$baseline$cormat, N = 500, estimator = "PAF", n_datasets = 100)
 
 # using ULS with only RMSEA

@@ -1,5 +1,23 @@
 # EFAtools 1.1.0.9000
 
+* `efa_fit()` changes:
+  * The default rotation is now oblimin (`rotation = "oblimin"`). With one factor, no rotation is done. `efa_group()` and `efa_mi()` use the same default; for this oblique default, `efa_group()` aligns the groups to the first group unless `reference_group` is given. `EFA()` and `EFA_POOLED()` keep no rotation as their default.
+  * PAF now gives the same chi-square-based fit indices as ULS (chi-square, CFI, TLI, RMSEA, AIC, BIC, ECVI), because a converged PAF solution is the ULS solution (Jöreskog & van Thillo, 1971). Thus, PAF without `N` now also gives a warning that these indices are not available. `efa_average()` and `efa_mi()` report them for PAF too.
+  * `print()` shows the chi-square, CFI, TLI, RMSEA, and SRMR. `summary()` adds AIC, BIC, and ECVI. CAF is not printed, because a correctly specified model gives a CAF near 0.5, not near 1. A CAF that cannot be computed is now `NA`, not 0, and gives no warning.
+  * With `se = "np-boot"`, the bootstrap intervals of RMSEA, CFI, and TLI now come from cases transformed so that their misfit equals the estimated misfit (Yuan, Hayashi, & Yanagihara, 2007). The earlier intervals moved toward worse fit, because each resample added sampling misfit. Their coverage was often much too low (Zhang & Savalei, 2016). `print()` and `summary()` show the intervals of CFI and TLI. The other fit indices no longer get bootstrap standard errors or intervals. The new intervals need `cor_method = "pearson"`, no missing values in the analysed cases, and a chi-square with df > 0; otherwise, `SE`, `CI`, and `replicates` have no `fit_indices`. The additional fits make the bootstrap slower. In `efa_mi()`, `fit_indices_descriptive` now pools these replicates of RMSEA, CFI, and TLI.
+  * With pairwise deletion of missing values, a new warning (`efa_pairwise_n`) shows that `N`, the number of rows, overstates the cases behind each correlation, so the chi-square is too large and the standard errors are too small. `cor_method = "fiml"` (or `efa_mi()` for ordinal data) avoids this.
+  * `se = "np-boot"` with a correlation matrix now gives an error (`efa_boot_cormat`), as the other unavailable standard-error methods do.
+  * `efa_fit()` no longer has `...`. Give the rotation-engine arguments `gam`, `delta`, and `maxit` to `rotate_control()`.
+  * Raw data no longer give the message that correlations are computed from the raw data.
+  * The parallel workers of the bootstrap now also compute the correlations of the resamples, which take most of the time for polychoric and FIML correlations. A parallel plan is thus much faster there. This change alone leaves the results for a given seed unchanged.
+  * A fit with `se = "sandwich"` no longer returns `Gamma`, which needs about 11 MB at 50 variables.
+  * The printed header shows `N` and a correlation type other than Pearson, and the Heywood alert names the variables. A just-identified model (df = 0) shows only SRMR and df.
+  * The tables of analytic confidence intervals name their covariance (expected information, robust sandwich, or two-stage FIML sandwich).
+  * `summary()` no longer repeats the simple-structure counts and the largest residual in the model diagnostics; it states when no simple-structure problem occurs. `summary(ci = "separate")` was removed, because it did the same as `"auto"`.
+  * The message about the rows dropped for an asymptotic covariance now gives their number.
+
+* A tuning knob set in `estimate_control()` or `rotate_control()` together with a `type` preset no longer gives a warning (`efa_type_override`). The value you set is used.
+
 * Removed unnecessary warning from `efa_map()` that warned when the residual variance reached 0 and thus the search ended early.
 
 * `efa_kgc()` now counts the eigenvalues greater than 0, not greater than 1, for `eigen_type = "SMC"` and `"EFA"`. These eigenvalues come from the reduced correlation matrix, and the cutoff 1 has no basis for it. With SMCs, the number of positive eigenvalues is a lower bound to the number of factors (Guttman, 1954). These types now suggest more factors, often too many in samples. `"PCA"` keeps the cutoff 1. The report and the plot show the cutoff of each type. `KGC()` and `N_FACTORS(criteria = "KGC")` change too, and so does `efa_retain()` with `eigen_type_other = "SMC"` or `"EFA"`.

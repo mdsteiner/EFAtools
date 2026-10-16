@@ -16,8 +16,8 @@
 #'   `"ULS"`, for maximum likelihood, principal axis factoring, and unweighted least
 #'   squares, respectively.
 #' @param gof character. The goodness of fit index to use: `"CAF"` (default), `"CFI"`,
-#'   or `"RMSEA"`, or any combination of them. With the `"PAF"` estimator, only the CAF
-#'   is available. In Lorenzo-Seva, Timmerman, and Kiers (2011), with factor correlations
+#'   or `"RMSEA"`, or any combination of them. With the `"PAF"` estimator, the Hull method
+#'   uses only the CAF. In Lorenzo-Seva, Timmerman, and Kiers (2011), with factor correlations
 #'   up to .40, the CFI was the most accurate index. With strongly correlated factors
 #'   (e.g., .70), CFI and RMSEA can make the Hull method retain too few factors. For
 #'   details on the CAF, see Lorenzo-Seva et al. (2011).
@@ -161,7 +161,7 @@
 #' efa_hull(test_models$baseline$cormat, N = 500, gof = c("CAF", "CFI", "RMSEA"),
 #'          n_datasets = 100)
 #'
-#' # using PAF, for which only the CAF is available
+#' # using PAF, with which the Hull method uses only the CAF
 #' efa_hull(test_models$baseline$cormat, N = 500, estimator = "PAF", n_datasets = 100)
 #'
 #' # using ULS with only RMSEA
@@ -246,7 +246,7 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
 
   if (estimator == "PAF" && !all(gof == "CAF")) {
     cli::cli_inform(
-      c("i" = 'Only CAF can be used as gof if estimator "PAF" is used. Setting gof to "CAF"'),
+      c("i" = 'With estimator "PAF", the Hull method uses only the CAF; gof is set to "CAF".'),
       class = "efa_hull_gof_caf"
     )
     gof <- "CAF"
@@ -347,6 +347,7 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   loadings <- suppressWarnings(future.apply::future_lapply(seq_len(J), efa_fit,
                                                            x = R,
                                                            estimator = estimator,
+                                                           rotation = "none",
                                                            N = N,
                                                            estimate_control = estimate_control,
                                                            ...,
@@ -358,8 +359,10 @@ efa_hull <- function(x, N = NA, n_fac_theor = NA,
   # free parameters).
   for (i in seq_len(J)) {
     if ("CAF" %in% gof) {
-      # compute goodness of fit "f" as CAF (common part accounted for; Eq 3)
-      s_CAF[i + 1, 2] <- loadings[[i]]$fit_indices$CAF
+      # compute goodness of fit "f" as CAF (common part accounted for; Eq 3); a CAF that
+      # cannot be computed counts as the worst fit, 0
+      caf_i <- loadings[[i]]$fit_indices$CAF
+      s_CAF[i + 1, 2] <- if (is.na(caf_i)) 0 else caf_i
       s_CAF[i + 1, 3] <- loadings[[i]]$fit_indices$df
     }
 

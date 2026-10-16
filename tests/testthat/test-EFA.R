@@ -77,49 +77,49 @@ test_that("output class and dimensions are correct", {
   expect_named(efa_cor, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
                           "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                           "vars_accounted", "fit_indices", "model_implied_R",
-                          "residuals", "settings", "vcov_unrot_loadings", "Gamma"))
+                          "residuals", "settings", "vcov_unrot_loadings"))
   expect_named(efa_raw, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
                           "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                           "vars_accounted", "fit_indices", "model_implied_R",
-                          "residuals", "settings", "vcov_unrot_loadings", "Gamma"))
+                          "residuals", "settings", "vcov_unrot_loadings"))
   expect_named(efa_psych, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
                             "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                             "vars_accounted", "fit_indices", "model_implied_R",
                             "residuals", "rot_loadings",
                             "Phi", "Structure", "rotmat", "vars_accounted_rot",
-                            "settings", "vcov_unrot_loadings", "Gamma"))
+                            "settings", "vcov_unrot_loadings"))
   expect_named(efa_spss, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
                            "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                            "vars_accounted", "fit_indices", "model_implied_R",
                            "residuals", "rot_loadings",
                            "Phi", "Structure", "rotmat", "vars_accounted_rot",
-                           "settings", "vcov_unrot_loadings", "Gamma"))
+                           "settings", "vcov_unrot_loadings"))
   expect_named(efa_ml, c("orig_R", "h2", "orig_eigen", "final_eigen", "iter",
                          "convergence", "heywood", "unrot_loadings", "vars_accounted",
                          "fit_indices", "model_implied_R",
-                         "residuals", "settings", "vcov_unrot_loadings", "Gamma"))
+                         "residuals", "settings", "vcov_unrot_loadings"))
   expect_named(efa_uls, c("orig_R", "h2", "orig_eigen", "final_eigen", "iter",
                          "convergence", "heywood", "unrot_loadings", "vars_accounted",
                          "fit_indices", "model_implied_R",
-                         "residuals", "settings", "vcov_unrot_loadings", "Gamma"))
+                         "residuals", "settings", "vcov_unrot_loadings"))
   expect_named(efa_equa, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
                            "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                            "vars_accounted", "fit_indices", "model_implied_R",
                            "residuals", "rot_loadings",
                            "rotmat", "vars_accounted_rot",
-                           "settings", "vcov_unrot_loadings", "Gamma"))
+                           "settings", "vcov_unrot_loadings"))
   expect_named(efa_quart, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
                             "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                             "vars_accounted", "fit_indices", "model_implied_R",
                             "residuals", "rot_loadings",
                             "Phi", "Structure", "rotmat", "vars_accounted_rot",
-                            "settings", "vcov_unrot_loadings", "Gamma"))
+                            "settings", "vcov_unrot_loadings"))
   expect_named(efa_none, c("orig_R", "h2_init", "h2", "orig_eigen", "init_eigen",
                            "final_eigen", "iter", "convergence", "heywood", "unrot_loadings",
                            "vars_accounted", "fit_indices", "model_implied_R",
                            "residuals", "rot_loadings",
                            "Phi", "Structure", "rotmat", "vars_accounted_rot",
-                           "settings", "vcov_unrot_loadings", "Gamma"))
+                           "settings", "vcov_unrot_loadings"))
 })
 
 test_that("settings are returned correctly", {
@@ -362,7 +362,6 @@ test_that("factor analyses are performed correctly", {
 test_that("errors are thrown correctly", {
   expect_error(EFA(1:5), class = "efa_input_not_matrix")
   expect_error(EFA(cor_nposdef, n_factors = 1, N = 10, type = "SPSS"), class = "efa_cor_not_posdef")
-  expect_message(EFA(GRiPS_raw, n_factors = 1), class = "efa_cor_from_data")
   expect_warning(EFA(GRiPS_raw, N = 20, n_factors = 1), class = "efa_n_from_data")
   expect_error(EFA(sing_raw, n_factors = 1), class = "efa_cor_singular")
   expect_error(EFA(sing_cor, N = sing_N, n_factors = 1), class = "efa_cor_singular")
@@ -423,15 +422,16 @@ test_that("an unusable N is rejected or reported, and never left silent", {
   expect_true(is.finite(fit_small$fit_indices$SRMR))
   expect_equal(fit_small$fit_indices$df, .efa_df(ncol(R), 3))
 
-  # PAF reports no chi-square at any N, so the small-sample warning would be noise there.
-  expect_no_warning(efa_fit(R, n_factors = 3, N = 8, estimator = "PAF"),
-                    class = "efa_fit_indices_undefined")
+  # PAF reports the chi-square block of the ULS solution, so it loses the block in the same way.
+  expect_warning(efa_fit(R, n_factors = 3, N = 8, estimator = "PAF", rotation = "none"),
+                 class = "efa_fit_indices_undefined")
 
   # An underidentified model leaves the same block undefined, and its warning must not claim
   # that no fit indices at all were computed: the residual summaries are returned, and are
   # exactly the numbers a reader would otherwise misread as a flawless solution.
   expect_warning(
-    fit_ui <- suppressWarnings(efa_fit(R, n_factors = 17, N = 500, estimator = "ML"),
+    fit_ui <- suppressWarnings(efa_fit(R, n_factors = 17, N = 500, estimator = "ML",
+                                       rotation = "none"),
                                classes = c("efa_heywood", "efa_nonconvergence")),
     class = "efa_underidentified"
   )
@@ -564,7 +564,7 @@ test_that("the model header follows the console width", {
     expect_true(all(cli::ansi_nchar(lines, type = "width") <= w))
     # wrapping moves the line break only: the same sentence, with both tokens intact
     expect_identical(paste(trimws(lines), collapse = " "),
-                     "EFA performed with estimator = 'PAF' and rotation = 'promax'.")
+                     "EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).")
     expect_false(any(grepl("= '[^']*$", lines)))
   }
 
@@ -971,3 +971,46 @@ test_that("print.efa argument validators raise classed conditions", {
 })
 
 
+
+test_that("efa_fit() rotates with oblimin by default, but not a single factor", {
+  R <- test_models$baseline$cormat
+  fit <- efa_fit(R, n_factors = 3, N = 500, seed = 1)
+  expect_identical(fit$settings$rotation, "oblimin")
+  expect_false(is.null(fit$Phi))
+
+  expect_no_warning(fit_1 <- efa_fit(R, n_factors = 1, N = 500))
+  expect_identical(fit_1$settings$rotation, "none")
+  expect_warning(efa_fit(R, n_factors = 1, N = 500, rotation = "oblimin"),
+                 class = "efa_single_factor")
+})
+
+test_that("PAF reports the fit indices of the ULS solution it converges to", {
+  R <- test_models$baseline$cormat
+  paf <- efa_fit(R, n_factors = 3, N = 500, rotation = "none",
+                 estimate_control = estimate_control(criterion = 1e-10, max_iter = 10000))
+  uls <- efa_fit(R, n_factors = 3, N = 500, estimator = "ULS", rotation = "none")
+  for (nm in c("chi", "CFI", "TLI", "RMSEA", "AIC", "BIC", "ECVI")) {
+    expect_equal(paf$fit_indices[[nm]], uls$fit_indices[[nm]], tolerance = 1e-4)
+  }
+})
+
+test_that("pairwise deletion of missing values warns that N overstates the cases", {
+  x <- GRiPS_raw[1:300, ]
+  x[cbind(1:60, rep(1:6, 10))] <- NA
+  expect_warning(fit <- efa_fit(x, n_factors = 1), class = "efa_pairwise_n")
+  expect_equal(fit$settings$N, 300)
+  expect_no_warning(efa_fit(x, n_factors = 1, use = "complete.obs"), class = "efa_pairwise_n")
+  expect_no_warning(efa_fit(GRiPS_raw, n_factors = 1), class = "efa_pairwise_n")
+})
+
+test_that("efa_fit() drops the covariance of the correlations from a sandwich fit", {
+  fit <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "ML", se = "sandwich")
+  expect_false("Gamma" %in% names(fit))
+  expect_false(is.null(fit$SE))
+})
+
+test_that("the header shows a large N in fixed notation", {
+  fit <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 100000, rotation = "none")
+  header <- paste(cli::ansi_strip(format(fit))[1:3], collapse = " ")
+  expect_match(header, "N = 100000", fixed = TRUE)
+})

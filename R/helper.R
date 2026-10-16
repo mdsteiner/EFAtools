@@ -229,7 +229,8 @@
 
   if ("EFA" %in% eigen_type) {
     R_EFA <- R
-    EFA_h2 <- suppressMessages(suppressWarnings(efa_fit(R, n_factors = n_factors, ...)$h2))
+    EFA_h2 <- suppressMessages(suppressWarnings(
+      efa_fit(R, n_factors = n_factors, rotation = "none", ...)$h2))
     diag(R_EFA) <- EFA_h2
     eigen_R_EFA <- eigen(R_EFA, symmetric = TRUE, only.values = TRUE)$values
   }

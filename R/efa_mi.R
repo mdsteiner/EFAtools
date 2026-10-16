@@ -206,9 +206,9 @@
 #'
 #' @section Conditions:
 #' Errors and warnings raised by `efa_mi()` are classed, with an `efa_pooled_`
-#' prefix (`efa_consensus_` for the consensus target) -- except the dots validation
-#' shared with [efa_fit()], which signals `efa_flat_knob_in_dots` or `efa_renamed_arg`
-#' -- so they can be caught programmatically. The message shown explains what went
+#' prefix (`efa_consensus_` for the consensus target) -- except the validation of `...`,
+#' which signals `efa_flat_knob_in_dots`, `efa_renamed_arg`, or `efa_unused_dots` -- so
+#' they can be caught programmatically. The message shown explains what went
 #' wrong and, where relevant, how to fix it.
 #'
 #' @param data_list A list of length \eqn{m}, where \eqn{m} is the number of
@@ -263,7 +263,7 @@
 #' [estimate_control()] and
 #' [rotate_control()] objects are accepted through `...` as well, although they are not
 #' declared formals: pass them as `estimate_control =` / `rotate_control =` exactly as you
-#' would to [efa_fit()].
+#' would to [efa_fit()]. A name that is not an [efa_fit()] argument is rejected.
 #'
 #' @return A list of class `c("efa_mi", "EFA_POOLED", "efa", "EFA")` containing
 #' pooled estimates, residuals, fit indices, the individual fits, and MI
@@ -309,10 +309,9 @@
 #' recording the gauge alignment used (`"gauge_invariant"` for communalities and
 #' `"signed_permutation_approx"` for rotated loadings and, for oblique rotations,
 #' factor correlations and structure coefficients). `fit_indices_descriptive`, on
-#' the bootstrap path, pools every fit index the bootstrap replicates carry, so the
-#' structural constants among them (`df`, `df_null`) appear with a standard error
-#' of 0. The RMSEA confidence bounds are not among them: the replicate fits run
-#' without confidence intervals, so no per-replicate value exists to pool.}
+#' the bootstrap path, pools the bootstrap replicates of RMSEA, CFI, and TLI. It is
+#' present only when every component fit has them (see *Standard errors* in
+#' [efa_fit()]).}
 #' \item{mi_fit}{On the `se = "sandwich"` (MI2S) path only: the single [efa_fit()]
 #' fit on the pooled correlation matrix \eqn{\bar r} and pooled asymptotic
 #' covariance \eqn{\tilde\Gamma}. Its `orig_R` is \eqn{\bar r} and its `Gamma`
@@ -475,14 +474,17 @@ efa_mi <- function(data_list,
   # which accepts unique abbreviations of efa_fit()'s formals (e.g. `rotate_c =` for
   # `rotate_control`), but the pooling routes below read `efa_args` by exact name.
   # Canonicalize abbreviated names up front with the same exact-first, unique-prefix
-  # matching do.call() applies; ambiguous or unknown names are left untouched for
-  # efa_fit() to reject.
+  # matching do.call() applies; ambiguous or unknown names are left untouched and
+  # rejected below.
   arg_names <- names(efa_args)
   if (length(arg_names)) {
-    efa_fit_formals <- setdiff(names(formals(efa_fit)), "...")
+    efa_fit_formals <- names(formals(efa_fit))
     canonical <- pmatch(arg_names, efa_fit_formals)
     names(efa_args)[!is.na(canonical)] <- efa_fit_formals[canonical[!is.na(canonical)]]
   }
+  # A name that is not an efa_fit() argument would only fail inside the first per-imputation
+  # fit; reject it here so the message names efa_mi().
+  .reject_unknown_fit_dots(names(efa_args), fn = "efa_mi")
 
   # A mids object is itself a list, so it passes the checks below and only fails deep in
   # the per-dataset assertion with a message naming the lapply variable. It is the most
@@ -557,23 +559,23 @@ efa_mi <- function(data_list,
   # leaves a long `data_list` to be bisected by hand. The original condition is kept as
   # the parent so its own diagnosis stays visible.
   fits <- vector("list", m_imp)
-  # The imputations are versions of one data set, so the per-fit "computing correlations
-  # from the raw data" note states one fact about the input; report it once instead of once
-  # per imputation.
-  .cor_note_once(
-    for (d in seq_len(m_imp)) {
-      fits[[d]] <- tryCatch(
-        do.call(efa_fit, c(list(x = data_list[[d]]), efa_args)),
-        error = function(e) {
-          cli::cli_abort(
-            c("Imputation {d} could not be fitted.",
-              "i" = "Inspect {.code data_list[[{d}]]}, then re-fit or replace it."),
-            class = "efa_pooled_fit_failed", parent = e
-          )
-        }
-      )
-    }
-  )
+  # The sandwich route pools the per-imputation covariance of the correlations, which
+  # efa_fit() otherwise drops.
+  old_keep_gamma <- .efa_state$keep_gamma
+  .efa_state$keep_gamma <- TRUE
+  on.exit(.efa_state$keep_gamma <- old_keep_gamma, add = TRUE)
+  for (d in seq_len(m_imp)) {
+    fits[[d]] <- tryCatch(
+      do.call(efa_fit, c(list(x = data_list[[d]]), efa_args)),
+      error = function(e) {
+        cli::cli_abort(
+          c("Imputation {d} could not be fitted.",
+            "i" = "Inspect {.code data_list[[{d}]]}, then re-fit or replace it."),
+          class = "efa_pooled_fit_failed", parent = e
+        )
+      }
+    )
+  }
   # `fits` is returned to the user, so it keeps whatever names `data_list` carried.
   names(fits) <- names(data_list)
 
@@ -584,7 +586,7 @@ efa_mi <- function(data_list,
   # than silently producing an uninterpretable mixture.
   route <- .efa_pooled_route(fits)
   if (identical(route, "mixed")) {
-    .efa_pooled_mixed_se_abort(fits, data_list)
+    .efa_pooled_mixed_se_abort(fits)
   }
 
   settings <- fits[[1]]$settings
@@ -824,13 +826,11 @@ efa_mi <- function(data_list,
   Ns_ok <- Ns[is.finite(Ns)]
   if (length(Ns_ok) == 0L) {
     N_pool <- NA_real_
-    if (!identical(estimator, "PAF")) {
-      cli::cli_warn(
-        c("N could not be recovered for any imputation.",
-          "i" = "Chi-square-based fit indices cannot be computed."),
-        class = "efa_pooled_no_n"
-      )
-    }
+    cli::cli_warn(
+      c("N could not be recovered for any imputation.",
+        "i" = "Chi-square-based fit indices cannot be computed."),
+      class = "efa_pooled_no_n"
+    )
   } else {
     if (length(Ns_ok) < length(Ns)) {
       cli::cli_warn(
@@ -1117,13 +1117,9 @@ efa_mi <- function(data_list,
   invisible(TRUE)
 }
 
-.efa_pooled_mixed_se_abort <- function(fits, data_list) {
+.efa_pooled_mixed_se_abort <- function(fits) {
   # Abort a pool whose component fits recorded different `se` methods, naming the
-  # imputations that broke the shared method. A caller passes one `se` to efa_mi(), so a
-  # mixture is never something they set directly: efa_fit() records `se = "none"` for a
-  # fit whose requested standard errors it could not compute -- a correlation matrix
-  # under `se = "np-boot"` being the reachable case -- and "re-fit with the same se" is
-  # then advice the caller already followed. Point at the imputations instead.
+  # imputations that broke the shared method.
   ses <- vapply(fits, .efa_pooled_setting_chr, character(1), name = "se")
   known <- ses[!is.na(ses)]
   majority <- if (length(known) > 0L) {
@@ -1143,14 +1139,8 @@ efa_mi <- function(data_list,
     )
   }
 
-  cormat_odd <- odd[vapply(data_list[odd], .is_cormat, logical(1))]
-  bullets <- if (length(cormat_odd) > 0L) {
-    c(bullets,
-      "i" = "{cli::qty(length(cormat_odd))}Imputation{?s} {.val {cormat_odd}} {cli::qty(length(cormat_odd))}{?is a correlation matrix/are correlation matrices}, which cannot be bootstrapped, so {.fn efa_fit} fitted {cli::qty(length(cormat_odd))}{?it/them} with {.code se = \"none\"}.")
-  } else {
-    c(bullets,
-      "i" = "Re-fit every imputation with the same {.arg se} (all {.val none}, {.val information}, {.val sandwich}, or {.val np-boot}).")
-  }
+  bullets <- c(bullets,
+    "i" = "Re-fit every imputation with the same {.arg se} (all {.val none}, {.val information}, {.val sandwich}, or {.val np-boot}).")
 
   cli::cli_abort(bullets, class = "efa_pooled_mixed_se")
 }
@@ -1371,20 +1361,12 @@ efa_mi <- function(data_list,
   # Reuse the same estimate -> rotate -> SE pipeline efa_fit() runs, with the same
   # estimation/rotation tuning the component fits used: unbundle the two control
   # objects from the component call (defaulting to the constructors' presets,
-  # exactly as efa_fit() does) and pass the knobs to .efa_core() under its
-  # historical formal names. The arguments resolved explicitly here are dropped
-  # from the dots to avoid passing them twice through do.call(); the remaining
-  # dots are merged over the rotation-engine extras stored in rotate_control(),
-  # with the dots winning on a name clash (mirroring efa_fit()).
+  # exactly as efa_fit() does) and pass the knobs and the rotation-engine extras to
+  # .efa_core() under its historical formal names.
   ec <- efa_args$estimate_control
   if (is.null(ec)) ec <- estimate_control()
   rc <- efa_args$rotate_control
   if (is.null(rc)) rc <- rotate_control()
-  drop_args <- c("n_factors", "N", "estimator", "rotation", "se", "use",
-                 "cor_method", "ci", "seed",
-                 "estimate_control", "rotate_control")
-  extra_args <- modifyList(rc$extra_args,
-                           efa_args[setdiff(names(efa_args), drop_args)])
   core_args <- list(R = r_bar, N = N_pool, weights = weights, Gamma = Gamma_tilde,
                     np_boot = FALSE, estimator = estimator, rotation = rotation,
                     type = ec$type, rot_type = rc$type, n_factors = n_factors,
@@ -1396,11 +1378,7 @@ efa_mi <- function(data_list,
                     precision = rc$precision, order_type = rc$order_type,
                     varimax_type = rc$varimax_type, P_type = rc$p_type, k = rc$k,
                     randomStarts = rc$random_starts)
-  # Mirror efa_fit()'s extras splice: an extra whose name is already an explicit
-  # core argument would abort do.call() with "matched by multiple actual
-  # arguments", so drop it (the resolved value wins).
-  extra_args <- extra_args[setdiff(names(extra_args), names(core_args))]
-  mi_fit <- do.call(.efa_core, c(core_args, extra_args))
+  mi_fit <- do.call(.efa_core, c(core_args, rc$extra_args))
 
   # .efa_core()/EFA() compute RMSEA confidence bounds at a fixed 90% level; honor
   # the requested rmsea_ci_level on the pooled object by recomputing the bounds

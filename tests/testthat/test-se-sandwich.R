@@ -47,18 +47,16 @@ test_that("sandwich SEs fill the unrotated SE/CI schema and a scaled chi-square"
 })
 
 
-test_that("the unrotated sandwich CI-provenance note names the robust sandwich, not the information matrix", {
+test_that("the unrotated sandwich CI tables name the robust sandwich, not the information matrix", {
   skip_on_cran()
 
   fit <- .dwls_sandwich_fit()
 
-  # The full summary carries the CI-provenance note; for a robust (Godambe sandwich) fit it must
-  # describe the sandwich covariance, not the expected information matrix (which is correct only
-  # for se = "information").
+  # The CI table titles of a robust (Godambe sandwich) fit must name the sandwich covariance,
+  # not the expected information matrix (which is correct only for se = "information").
   body <- cli::ansi_strip(format(summary(fit)))
-  note <- body[grepl("Note:", body)]
-  expect_true(any(grepl("sandwich", note)))
-  expect_false(any(grepl("expected information matrix", note)))
+  expect_true(any(grepl("Wald CIs (robust sandwich)", body, fixed = TRUE)))
+  expect_false(any(grepl("expected information", body)))
 })
 
 
@@ -527,6 +525,10 @@ test_that("continuous sandwich SEs are in the same ballpark as the bootstrap (ML
 
 
 test_that("the unrotated sandwich loading SEs match the estimator's reporting gauge", {
+  # The reference SEs need the covariance of the correlations, which efa_fit() keeps only
+  # on request.
+  .efa_state$keep_gamma <- TRUE
+  withr::defer(.efa_state$keep_gamma <- FALSE)
   # A two-factor structure with cross-loadings, so the Lambda'Lambda and Lambda'Psi^-1 Lambda
   # orientations differ noticeably (and a wrong gauge would be caught).
   set.seed(2024)

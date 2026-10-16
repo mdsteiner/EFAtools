@@ -122,7 +122,7 @@ maximum likelihood.}
 
 \item{gof}{character. Passed to \code{\link[=efa_hull]{efa_hull()}}. The goodness of fit index to use:
 \code{"CAF"} (default), \code{"CFI"}, or \code{"RMSEA"}, or any combination of them. With the
-\code{"PAF"} estimator, only the CAF is available. In Lorenzo-Seva, Timmerman, and Kiers
+\code{"PAF"} estimator, the Hull method uses only the CAF. In Lorenzo-Seva, Timmerman, and Kiers
 (2011), with factor correlations up to .40, the CFI was the most accurate index. With
 strongly correlated factors (e.g., .70), CFI and RMSEA can make the Hull method
 retain too few factors. For details on the CAF, see Lorenzo-Seva et al. (2011).}

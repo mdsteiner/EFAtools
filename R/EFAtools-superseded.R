@@ -246,7 +246,7 @@ KGC <- function(x, eigen_type = c("PCA", "SMC", "EFA"),
 #'   `estimator` argument. One of `"PAF"` (default), `"ULS"`, or `"ML"`.
 #' @param gof character. Passed to [efa_hull()]. The goodness of fit index to use:
 #'   `"CAF"`, `"CFI"`, or `"RMSEA"`, or any combination of them. Default is all three.
-#'   With the `"PAF"` method, only the CAF is available.
+#'   With the `"PAF"` method, the Hull method uses only the CAF.
 #' @param eigen_type character. Passed to [efa_parallel()] in [efa_hull()]. One of
 #'   `"SMC"` (default), `"PCA"`, or `"EFA"`.
 #' @param decision_rule character. Passed to [efa_parallel()] in [efa_hull()]. Which rule
@@ -451,7 +451,7 @@ CD <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha = .3
 #'   `"ULS"`.
 #' @param gof character. Passed to [efa_hull()]. The goodness of fit index to use:
 #'   `"CAF"`, `"CFI"`, or `"RMSEA"`, or any combination of them. Default is all three.
-#'   With the `"PAF"` method, only the CAF is available.
+#'   With the `"PAF"` method, the Hull method uses only the CAF.
 #' @param eigen_type_HULL character. Passed to [efa_parallel()] in [efa_hull()]. One of
 #'   `"SMC"` (default), `"PCA"`, or `"EFA"`.
 #' @param eigen_type_other character. Passed to [efa_kgc()], [efa_scree()], and
@@ -732,6 +732,10 @@ EFA_AVERAGE <- function(x, n_factors, N = NA, method = "PAF", rotation = "promax
 #'  as its `estimator` argument. One of "PAF", "ML", "ULS", "MINRES" (an accepted
 #'  alias of "ULS"), or "DWLS"; see the [efa_fit()] documentation for their
 #'  properties and data requirements.
+#' @param rotation character. Either perform no rotation ("none"; default), an orthogonal
+#'  rotation ("varimax", "equamax", "quartimax", "geominT", "bentlerT", or "bifactorT"), or
+#'  an oblique rotation ("promax", "oblimin", "quartimin", "simplimax", "bentlerQ",
+#'  "geominQ", or "bifactorQ"). See the [efa_fit()] documentation for their properties.
 #' @param type character. If one of "EFAtools" (default), "psych", or "SPSS" is
 #'  used, and the following arguments with default NA are left with
 #'  NA, these implementations are executed according to the respective program
@@ -835,11 +839,11 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   # arguments and runs every input guard, so nothing else is resolved here.
   type <- match.arg(type)
 
-  # The flat interface always ignored a `...` argument its rotation engine could not consume;
-  # efa_fit() rejects such an argument. Keep the frozen contract by dropping the unconsumable
-  # dots -- by the exact names the engines read -- before efa_fit() sees them. With
-  # rotation = "none" no engine runs and the accepted set is empty, so the dots are dropped
-  # in full and the call stays silent, as it always has been.
+  # The flat interface always ignored a `...` argument its rotation engine could not consume.
+  # Keep the frozen contract by dropping the unconsumable dots -- by the exact names the
+  # engines read -- and carry the rest to the engine in the rotation control, the only route
+  # efa_fit() offers. With rotation = "none" no engine runs and the accepted set is empty, so
+  # the dots are dropped in full and the call stays silent, as it always has been.
   #
   # `rotation` is resolved here so the lookup gets a canonical name, and the frozen
   # match.arg() is deliberate: efa_fit() matches its choices case-insensitively
@@ -866,19 +870,20 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
   }
   dots <- dots[names(dots) %in% .rotation_dot_extras(rotation)]
 
-  args <- c(list(x = x, N = N, estimator = method, rotation = rotation,
-                 se = se, cor_method = cor_method, use = use, b_boot = b_boot, ci = ci,
-                 seed = seed,
-                 estimate_control = estimate_control(type = type, init_comm = init_comm,
-                                                     criterion = criterion,
-                                                     criterion_type = criterion_type,
-                                                     max_iter = max_iter, abs_eigen = abs_eigen,
-                                                     start_method = start_method),
-                 rotate_control = rotate_control(type = type, normalize = normalize,
-                                                 precision = precision, order_type = order_type,
-                                                 varimax_type = varimax_type, p_type = p_type,
-                                                 k = k, random_starts = random_starts)),
-            dots)
+  args <- list(x = x, N = N, estimator = method, rotation = rotation,
+               se = se, cor_method = cor_method, use = use, b_boot = b_boot, ci = ci,
+               seed = seed,
+               estimate_control = estimate_control(type = type, init_comm = init_comm,
+                                                   criterion = criterion,
+                                                   criterion_type = criterion_type,
+                                                   max_iter = max_iter, abs_eigen = abs_eigen,
+                                                   start_method = start_method),
+               rotate_control = do.call(rotate_control,
+                                        c(list(type = type, normalize = normalize,
+                                               precision = precision, order_type = order_type,
+                                               varimax_type = varimax_type, p_type = p_type,
+                                               k = k, random_starts = random_starts),
+                                          dots)))
   # `n_factors` has no default; do.call() would force it here and turn a call that omitted it
   # (e.g. `EFA(1:5)`) into an eager missing-argument error before efa_fit()'s input checks
   # run, so it is added only when supplied.
@@ -896,6 +901,10 @@ EFA <- function(x, n_factors, N = NA, method = c("PAF", "ML", "ULS", "MINRES", "
 #' keeps working.
 #'
 #' @inheritParams efa_mi
+#' @param ... Additional arguments passed to [efa_mi()] and from there to [efa_fit()], in
+#'  the flat form of the former interface (e.g. `method`, `rotation`, `type`, `max_iter`,
+#'  or the extras of the selected rotation such as `gam`). Names that the former
+#'  interface could not use are ignored.
 #'
 #' @returns The value of [efa_mi()], normally a list of class
 #'   `c("efa_mi", "EFA_POOLED", "efa", "EFA")`; see there for the components.
@@ -924,6 +933,10 @@ EFA_POOLED <- function(data_list,
   } else {
     "none"
   }
+  # The frozen interface fitted unrotated solutions unless a rotation was given; efa_mi()
+  # defaults to oblimin, so pass "none" on explicitly (an abbreviated name counts as given).
+  nms <- as.character(names(dots))
+  if (!any(nzchar(nms) & startsWith("rotation", nms))) dots$rotation <- "none"
   # `rmsr_upper` stays a formal (the frozen signature) but is not forwarded: it is deprecated
   # on efa_mi(), and passing the frozen default on would fire that deprecation for every
   # legacy call. It never selected anything -- see the argument's documentation -- so dropping

@@ -612,13 +612,17 @@ test_that("a failing group names the group and hands the cause on unaltered", {
   expect_snapshot(cat(conditionMessage(e)))
 })
 
-test_that("efa_group forwards genuine efa_fit arguments and rotation extras", {
+test_that("efa_group forwards genuine efa_fit arguments and the controls", {
   # the guard above must not refuse what the per-group fits legitimately consume
   expect_s3_class(
     efa_group(list(a = cmat, b = cmat), n_factors = 3, N = 500,
-              estimator = "ML", rotation = "oblimin", maxit = 750),
+              estimator = "ML", rotation = "oblimin",
+              rotate_control = rotate_control(maxit = 750)),
     "efa_group"
   )
+  # a rotation extra belongs in rotate_control()
+  expect_error(efa_group(list(a = cmat, b = cmat), n_factors = 3, N = 500, maxit = 750),
+               class = "efa_unused_dots")
 })
 
 
@@ -642,6 +646,14 @@ test_that("rows with a missing group value are dropped with a classed warning", 
 
 test_that("a bootstrap adds percentile CIs to the matched congruences", {
   g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
+  # The per-group fits need only the replicate loadings, so they skip the fit-index bootstrap.
+  fit_boot_calls <- 0L
+  testthat::local_mocked_bindings(
+    .yhy_fit_boot = function(out, ...) {
+      fit_boot_calls <<- fit_boot_calls + 1L
+      out
+    }
+  )
   mg <- suppressMessages(suppressWarnings(
     efa_group(GRiPS_raw, groups = g, n_factors = 2, rotation = "varimax",
               estimator = "PAF", b_boot = 60, seed = 2024)))
@@ -664,6 +676,10 @@ test_that("a bootstrap adds percentile CIs to the matched congruences", {
   expect_true(all(cong$matched_ci$lower <= cong$matched_ci$upper))
   expect_equal(diag(cong$matched_ci$lower[, , 1]), c(1, 1), ignore_attr = TRUE)
   expect_equal(diag(cong$matched_ci$upper[, , 1]), c(1, 1), ignore_attr = TRUE)
+
+  # The fit-index bootstrap is skipped only while efa_group() runs.
+  expect_identical(fit_boot_calls, 0L)
+  expect_false(.efa_state$no_fit_boot)
 })
 
 
@@ -887,20 +903,11 @@ test_that("a delta given with a geomin rotation reports which reading was applie
 })
 
 
-test_that("the raw-data correlation note is given once, not once per group", {
-  # Every group is cut from one `x`, so the note the per-group efa_fit() calls raise states
-  # one fact about one input. It stays a catchable classed condition.
-  g <- rep(c("g1", "g2", "g3"), length.out = nrow(GRiPS_raw))
-  n_notes <- 0L
-  withCallingHandlers(
-    efa_group(GRiPS_raw, groups = g, n_factors = 1),
-    efa_cor_from_data = function(cnd) {
-      n_notes <<- n_notes + 1L
-      invokeRestart("muffleMessage")
-    },
-    message = function(cnd) invokeRestart("muffleMessage")
-  )
-  expect_identical(n_notes, 1L)
+test_that("efa_group uses efa_fit()'s oblimin default and aligns to the first group", {
+  g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
+  expect_message(mg <- efa_group(GRiPS_raw[, 1:6], groups = g, n_factors = 2, seed = 1),
+                 class = "efa_group_oblique_reference")
+  expect_identical(mg$efa[[1]]$settings$rotation, "oblimin")
 })
 
 

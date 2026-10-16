@@ -33,7 +33,7 @@
   cutoff = 0.3,
   digits = 3,
   max_name_length = 10,
-  ci = c("auto", "none", "separate"),
+  ci = c("auto", "none"),
   ci_filter = c("salient", "all", "nonzero"),
   diagnostics_top_n = 10,
   residual_cutoff = 0.1,
@@ -86,9 +86,8 @@ output it is omitted and this argument has no effect.}
 \item{max_factors_per_block}{numeric or \code{NULL}. Maximum number of factor
 columns per loading-table block. If \code{NULL}, chosen from the console width.}
 
-\item{ci}{character. Which confidence intervals \code{summary()} shows, if
-available. \code{"auto"} and \code{"separate"} print CI sections when CIs were
-computed; \code{"none"} suppresses them. Default is \code{"auto"}.}
+\item{ci}{character. Whether \code{summary()} shows the confidence-interval tables:
+\code{"auto"} (default) shows them when CIs were computed; \code{"none"} suppresses them.}
 
 \item{ci_filter}{character. Which loading CIs \code{summary()} prints: \code{"salient"}
 (default), \code{"all"}, or \code{"nonzero"}; see Details.}
@@ -127,11 +126,14 @@ lines. \code{summary()} returns an object of class \code{summary.efa}.
 \description{
 \code{print()} shows a concise overview of an \code{\link[=efa_fit]{efa_fit()}} or \code{\link[=efa_mi]{efa_mi()}} solution:
 a model header, the loading matrix (with the factor intercorrelations for
-oblique solutions), the variances accounted for, and the model fit.
+oblique solutions), the variances accounted for, and the main fit indices
+(chi-square, CFI, TLI, RMSEA, and SRMR).
 \code{summary()} returns a \code{summary.efa} object whose print method adds the full
 diagnostics: model and simple-structure diagnostics, confidence-interval
-tables, the structure matrix, multiple-imputation uncertainty (for pooled
-objects), and residual diagnostics. \code{format()} assembles the same report and
+tables, the structure matrix, the information criteria (AIC, BIC, and ECVI),
+multiple-imputation uncertainty (for pooled objects), and residual diagnostics.
+With \code{se = "np-boot"}, CFI and TLI also show their bootstrap interval where it is
+available (see \emph{Standard errors} in \code{\link[=efa_fit]{efa_fit()}}). \code{format()} assembles the same report and
 returns it as a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}.
 The lines follow the active console theme, so they are plain when colours are
 disabled (for example when captured into a file or stripped with

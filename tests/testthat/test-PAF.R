@@ -119,21 +119,16 @@ test_that("fit indices are returned correctly", {
   expect_output(str(paf_F1_t$fit_indices), "List of 18")
   expect_output(str(paf_F1_f$fit_indices), "List of 18")
 
-  # PAF has no discrepancy function, so the likelihood-based indices are undefined for
-  # every one of these fits: they all reach the same branch of the fit-index assembly,
-  # which sets the whole block to NA_real_. Neither the type preset, the initial
-  # communalities, nor the number of factors enters any of these keys, so the eight
-  # configurations are checked against one shared expectation, labelled so a failure still
-  # names the configuration that produced it.
+  # PAF converges to the ULS solution, so it gets the same ML-discrepancy chi-square block
+  # (with N known); only its own objective value Fm is undefined.
   paf_fits <- list(EFAtools = paf_efatools, psych = paf_psych, SPSS = paf_spss,
                    none = paf_none, mac_t = paf_mac_t, mac_f = paf_mac_f,
                    F1_t = paf_F1_t, F1_f = paf_F1_f)
-  na_indices <- list(chi = NA_real_, p_chi = NA_real_, CFI = NA_real_,
-                     RMSEA = NA_real_, RMSEA_LB = NA_real_, RMSEA_UB = NA_real_,
-                     AIC = NA_real_, BIC = NA_real_, Fm = NA_real_,
-                     chi_null = NA_real_, df_null = NA_real_, p_null = NA_real_)
   for (nm in names(paf_fits)) {
-    expect_equal(paf_fits[[nm]]$fit_indices[names(na_indices)], na_indices, info = nm)
+    fi <- paf_fits[[nm]]$fit_indices
+    expect_true(all(is.finite(unlist(fi[c("chi", "CFI", "TLI", "RMSEA", "AIC", "BIC",
+                                          "chi_null", "df_null")]))), info = nm)
+    expect_identical(fi$Fm, NA_real_, info = nm)
   }
 
   expect_type(paf_efatools$fit_indices$df, "double")
@@ -225,39 +220,14 @@ test_that("warnings and errors are thrown correctly", {
   expect_error(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
                     max_iter = 500, type = "none", init_comm = "unity",
                     criterion = 1e-4, criterion_type = "sum"), class = "efa_type_none")
-
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                    type = "EFAtools", init_comm = "smc"), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                    type = "EFAtools", criterion = 0.001), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "EFAtools", criterion_type = "sum"), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "EFAtools", max_iter = 400), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "EFAtools", abs_eigen = TRUE), class = "efa_type_override")
-
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", init_comm = "smc"), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", criterion = 0.001), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", criterion_type = "sum"), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", max_iter = 400), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "psych", abs_eigen = TRUE), class = "efa_type_override")
-
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", init_comm = "smc"), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", criterion = 0.001), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", criterion_type = "sum"), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", max_iter = 400), class = "efa_type_override")
-  expect_warning(.estimate_model(method = "PAF",test_models$baseline$cormat, n_factors = 3, N = 500,
-                      type = "SPSS", abs_eigen = TRUE), class = "efa_type_override")
+  # A knob supplied with a preset is used as given, without a warning.
+  for (type in c("EFAtools", "psych", "SPSS")) {
+    expect_no_warning(fit <- .estimate_model(method = "PAF", test_models$baseline$cormat,
+                                             n_factors = 3, N = 500, type = type,
+                                             init_comm = "mac", max_iter = 400))
+    expect_identical(fit$settings$init_comm, "mac")
+    expect_identical(fit$settings$max_iter, 400)
+  }
   expect_error(.estimate_model(method = "PAF",IDS2_R, n_factors = 7, N = 1991, max_iter = 500, type = "none",
                     init_comm = "smc", criterion = 1e-4, criterion_type = "sum",
                     abs_eigen = FALSE), class = "efa_paf_negative_eigen")

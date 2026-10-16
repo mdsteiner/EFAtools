@@ -82,23 +82,12 @@
   sqrt(sum(E[upper.tri(E)]^2) / (nrow(E) * (nrow(E) + 1) / 2))
 }
 
+# CAF (common part accounted for; Lorenzo-Seva, Timmerman, & Kiers, 2011): 1 minus the KMO of
+# the residual matrix. NA where that KMO is undefined (e.g. an over-factored solution on
+# near-null data); efa_hull() counts such a solution as the worst fit.
 .compute_caf <- function(delta_hat) {
-
-  delta_hat_KMO <- try(.compute_kmo(delta_hat)$KMO, silent = TRUE)
-
-  if (inherits(delta_hat_KMO, "try-error") || is.na(delta_hat_KMO)) {
-    CAF <- 0
-    cli::cli_warn(
-      c("CAF could not be computed; it was set to {.val 0} (the worst value).",
-        "i" = "Inspect the results carefully."),
-      class = "efa_caf_failed"
-    )
-  } else {
-    CAF <- 1 - delta_hat_KMO
-  }
-
-  CAF
-
+  kmo <- tryCatch(.compute_kmo(delta_hat)$KMO, error = function(e) NA_real_)
+  if (is.na(kmo)) NA_real_ else 1 - kmo
 }
 
 # Bartlett's (1951) small-sample multiplier for the ML/ULS discrepancy chi-square,
@@ -442,9 +431,9 @@
 # the Satorra-Bentler-corrected two-stage statistic (.fiml_scaled_test()) in its place, and the
 # plain LRT here stands only as the fallback when that correction cannot be formed -- referenced to
 # chi^2(df) it is only approximate under the two-stage estimator (Yuan, Marshall, & Bentler, 2002,
-# Psychometrika 67:95-121). Returns NA throughout for PAF (no discrepancy), missing N,
-# underidentified df, or a non-positive-definite Sigma_model (e.g. a Heywood case), matching how
-# the ML/ULS discrepancy block leaves those undefined.
+# Psychometrika 67:95-121). Returns NA throughout for an estimator other than ML or ULS (.gof()
+# passes PAF as ULS), missing N, underidentified df, or a non-positive-definite Sigma_model (e.g.
+# a Heywood case), matching how the discrepancy block leaves those undefined.
 .gof_fiml_chisq <- function(LLt, N, method, df, m, fiml) {
 
   if (!(method %in% c("ML", "ULS")) || is.na(N) || df < 0) {
@@ -533,20 +522,21 @@
     # F = tr(Sigma^-1 R) - log|Sigma^-1 R| - p, evaluated at the model-implied correlation
     # matrix Sigma = LL' (unit diagonal), times (N - 1 - (2p + 5)/6 - (2q)/3). For ML this
     # equals the ML objective times the Bartlett multiplier (matching stats::factanal); for
-    # ULS the same ML/Wishart discrepancy is evaluated at the ULS-fitted Sigma (matching
-    # psych::fa(fm = "uls")), rather than treating the raw least-squares residual sum of
-    # squares as the statistic. Its chi-square reference distribution is asymptotically exact
-    # under ML and is used here as the conventional approximation for ULS. NA
-    # for PAF, missing N, underidentified df, or a non-PD model-implied matrix (e.g. Heywood
-    # cases), where the discrepancy is undefined. DWLS is also excluded: the ML discrepancy is
-    # not its fit function -- the appropriate categorical statistic is the mean-and-variance-
-    # adjusted chi-square from the full asymptotic covariance -- so the chi-square-derived block
-    # is left undefined here rather than reported on an inapplicable scale.
+    # ULS and PAF the same ML/Wishart discrepancy is evaluated at the fitted Sigma (matching
+    # psych::fa(fm = "uls"/"pa")). A converged PAF solution is a stationary point of the ULS
+    # criterion (Joreskog & van Thillo, 1971), so the two get the same statistic. Its
+    # chi-square reference distribution is asymptotically exact under ML and is the
+    # conventional approximation for ULS and PAF. NA for missing N, underidentified df, or a
+    # non-PD model-implied matrix (e.g. Heywood cases), where the discrepancy is undefined.
+    # DWLS is excluded: the ML discrepancy is not its fit function -- the appropriate
+    # categorical statistic is the scaled chi-square from the full asymptotic covariance -- so
+    # the chi-square-derived block is left undefined here rather than reported on an
+    # inapplicable scale.
     # The Bartlett multiplier goes non-positive for small N relative to the number of
     # variables, which would turn the discrepancy into a negative (meaningless) chi-square;
     # guard it here so the statistic falls through to the chi NA branch below.
     mult <- .bartlett_mult(N, m, q)
-    if (!(method %in% c("PAF", "DWLS")) && !is.na(N) && df >= 0 && mult > 0) {
+    if (method != "DWLS" && !is.na(N) && df >= 0 && mult > 0) {
       Sigma <- LLt
       diag(Sigma) <- 1
       # log|R|, reused for the discrepancy below and the CFI/TLI/baseline scale further down.
@@ -584,6 +574,9 @@
 
   } else {
 
+    # A converged PAF solution is the ULS solution, so the two-stage statistics use the ULS
+    # weight for it.
+    if (method == "PAF") method <- "ULS"
     fc <- .gof_fiml_chisq(LLt, N, method, df, m, fiml)
     chi <- fc$chi
     chi_null <- fc$chi_null
@@ -624,10 +617,9 @@
   # with the asymptotically-correct Satorra-Bentler-corrected two-stage statistic (Yuan, Marshall,
   # & Bentler, 2002), built on the saturated FIML asymptotic covariance. The plain LRT is referenced
   # to chi^2(df), which is not the two-stage estimator's reference distribution, so the p-value and
-  # the noncentrality-based CFI/TLI/RMSEA are biased. Applied to every FIML fit (point estimate and
-  # bootstrap replicates), independent of `se`; .fiml_scaled_test() returns NULL (PAF, a just/under-
-  # identified model, or a degenerate/non-PD saturated covariance), where the NA / likelihood-ratio
-  # block above stands.
+  # the noncentrality-based CFI/TLI/RMSEA are biased. Applied to every FIML fit, independent of
+  # `se`; .fiml_scaled_test() returns NULL (a just/under-identified model, or a degenerate/non-PD
+  # saturated covariance), where the NA / likelihood-ratio block above stands.
   if (!is.null(fiml)) {
     # AIC/BIC/ECVI are likelihood-ratio information criteria with no standard interpretation under
     # the corrected two-stage statistic; leave them NA for every FIML fit. .apply_scaled_test() also
@@ -640,8 +632,7 @@
     st <- .fiml_scaled_test(L, R, N, method, df, m, fiml)
     if (!is.null(st)) {
       # Thread `ci` on: the scaled block replaces the whole chi-square-derived block, so it must
-      # honour the caller's request not to solve the RMSEA bounds -- which is exactly the
-      # per-replicate bootstrap path, where the bounds are computed and then discarded.
+      # honour the caller's request not to solve the RMSEA bounds.
       out <- .apply_scaled_test(out, st, N, ci = ci)
     } else if (method %in% c("ML", "ULS") && !is.na(df) && df > 0 && !is.na(out$chi)) {
       # The correction could not be formed although the model has a testable chi-square: the

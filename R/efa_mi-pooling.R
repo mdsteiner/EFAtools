@@ -484,7 +484,7 @@
   # "scaled.shifted"` path, the `"uncorrected.lrt"` two-stage FIML fallback, and the
   # just-identified FIML fit, which carries no tag at all -- because all three withhold
   # the three criteria whether or not a correction was applied. A fit with no chi-square
-  # at all (PAF, DWLS) is not a withholding: its pooled chi is NA, which zeroes these anyway.
+  # at all (DWLS) is not a withholding: its pooled chi is NA, which zeroes these anyway.
   withheld_components <- any(vapply(fit_list, function(x) {
     !is.null(x$chi) && is.finite(x$chi) && (is.null(x$AIC) || !is.finite(x$AIC))
   }, logical(1)))

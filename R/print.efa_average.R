@@ -74,7 +74,6 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
 
   # extract settings
   settings <- x$settings
-  estimator <- settings$estimator
   N <- settings$N
   grid <- x$implementations_grid
   averaging <- settings$averaging
@@ -165,13 +164,13 @@ format.efa_average <- function(x, stat = c("average", "range"), ...) {
       cli::cli_text("The fit indices are the {averaging} of the per-solution fit indices, not the fit of the averaged loadings printed above, which are a cell-wise summary rather than a fitted solution.")
 
       # Effective n per index class. .extract_data() records a solution's fit indices only
-      # once it converged without a Heywood case, and leaves the chi-square-based ones NA
-      # for PAF throughout, so the two classes can be averaged over different numbers of
-      # solutions. Each class is counted on the column that defines it (`chisq` for the
-      # chi-square-based indices, `caf` for the residual-based ones), which is exactly the
-      # non-missing count the averaging itself used.
-      n_resid <- sum(!is.na(grid$caf))
-      chisq_based <- !(all(estimator == "PAF") || is.na(N))
+      # once it converged without a Heywood case, and a solution can carry the residual-based
+      # indices without the chi-square-based ones, so the two classes can be averaged over
+      # different numbers of solutions. Each class is counted on the column that defines it
+      # (`chisq` for the chi-square-based indices, `srmr` for the residual-based ones; CAF can
+      # be NA alone), which is the non-missing count the averaging itself used.
+      n_resid <- sum(!is.na(grid$srmr))
+      chisq_based <- !is.na(N)
       cli::cli_text("")
       if (chisq_based) {
         n_chisq <- sum(!is.na(grid$chisq))

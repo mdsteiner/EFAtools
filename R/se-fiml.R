@@ -116,9 +116,10 @@
 # the corrected statistic is the residual-based two-stage statistic on the off-diagonal correlation
 # structure: the normal-theory ML quadratic form rescaled by the saturated FIML covariance
 # Omega_delta (the meat) -- exactly the .scaled_chisq() machinery the robust (sandwich) path uses,
-# with the FIML covariance in place of the polychoric/ADF Gamma. Returns NULL for PAF (no
-# discrepancy), a just/under-identified model, a missing N, or a degenerate/non-PD saturated
-# covariance, where the plain likelihood-ratio / NA fallback is reported instead.
+# with the FIML covariance in place of the polychoric/ADF Gamma. Returns NULL for an estimator
+# other than ML or ULS (.gof() passes PAF as ULS), a just/under-identified model, a missing N, or
+# a degenerate/non-PD saturated covariance, where the plain likelihood-ratio / NA fallback is
+# reported instead.
 .fiml_scaled_test <- function(L, R, N, method, df, m, fiml) {
 
   if (!(method %in% c("ML", "ULS")) || is.na(N) ||
@@ -130,13 +131,13 @@
   p <- nrow(L)
 
   # The rescaled statistic is gauge-invariant, so the gauge diagnostic is not read here; skip it.
-  # This runs once per bootstrap replicate, where the discarded decomposition would be pure cost.
+  # The discarded decomposition would be pure cost.
   pieces <- .offdiag_sandwich_pieces(L, method, gauge = FALSE)
   if (is.null(pieces)) return(NULL)
 
   # Reuse the cached saturated correlation covariance when EFA() pre-built it for the SE sandwich
-  # (the point-estimate analytic-SE path); else build it here (every bootstrap replicate, and the
-  # se = "none"/"np-boot" point estimate, omit the cache and land in this branch).
+  # (the point-estimate analytic-SE path); else build it here (the se = "none"/"np-boot" point
+  # estimate omits the cache and lands in this branch).
   Omega <- fiml$acov_cor
   if (is.null(Omega)) {
     Omega <- tryCatch(.fiml_saturated_acov(fiml$data, fiml$mu, fiml$sigma)$cor,

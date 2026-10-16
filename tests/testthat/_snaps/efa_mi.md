@@ -2,8 +2,6 @@
 
     Code
       efa_mi(raw, n_factors = 1, estimator = "PAF", rotation = "none")
-    Message
-      i `x` is not a correlation matrix; computing correlations from the raw data.
     Condition
       Error in `efa_mi()`:
       ! Imputation 2 could not be fitted.
@@ -20,25 +18,18 @@
     Output
       
       Pooled EFA across 2 imputations performed with estimator = 'ML' and
-        rotation = 'none'.
+        rotation = 'none' (N = 250).
       Pooling settings: align_unrotated = 'signed_tucker_congruence',
         fit_pool_method = 'D2'.
       
       -- Pooled Model Diagnostics ----------------------------------------------------
       
-      Factors: 1
-      Variables: 8
       N: 250
       Imputations: 2
       Pooling: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
       Bootstrap samples per imputation: 6
       Valid target-rotated samples: 6 out of 6 per imputation
       Heywood cases: 0
-      Cross-loading items (|loading| >= <num>): 0
-      Items without salient loading (|loading| >= <num>): 0
-      Factors with fewer than 3 salient indicators: 0
-      Items with primary-loading gap < <num>: 0
-      Largest |residual|: <num>
       
       -- Unrotated Loadings ----------------------------------------------------------
       
@@ -64,6 +55,12 @@
       chances    F1 <num> <num> <num>
       attracted  F1 <num> <num> <num>
       
+      -- Simple Structure Diagnostics ------------------------------------------------
+      
+      All items have a salient loading (|loading| >= <num>) and no cross-loading
+      (|loading| >= <num>), all primary-loading gaps are at least <num>, and all
+      factors have at least 3 salient indicators.
+      
       -- Variances Accounted for -----------------------------------------------------
       
                       F1
@@ -73,14 +70,13 @@
       -- Model Fit -------------------------------------------------------------------
       
       D2-pooled χ²(20) = <num>, p = <num>
-      CFI (avg. over imputations) [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      TLI (avg. over imputations) [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      RMSEA [90% CI] [95% bootstrap/MI-CI]: <num> [ <num>; <num>] [ <num>, <num>]
-      AIC [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      BIC [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      ECVI [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      CAF [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
-      SRMR [95% bootstrap/MI-CI]: <num> [ <num>, <num>]
+      CFI (avg. over imputations): <num>
+      TLI (avg. over imputations): <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
+      SRMR: <num>
+      AIC: <num>
+      BIC: <num>
+      ECVI: <num>
       Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
       not the χ²(20) tail.
       Note: CFI and TLI are averaged over the imputations, not formed from the
@@ -112,7 +108,7 @@
     Output
       
       Pooled EFA across 3 imputations performed with estimator = 'PAF' and
-        rotation = 'promax'.
+        rotation = 'promax' (N = 500).
       Pooling settings: target_method = 'first_target',
         align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
       
@@ -156,9 +152,13 @@
       
       -- Model Fit -------------------------------------------------------------------
       
-      CAF: <num>
+      D2-pooled χ²(102) = <num>, p = <num>
+      CFI (avg. over imputations): <num>
+      TLI (avg. over imputations): <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
       SRMR: <num>
-      df: 102
+      Note: CFI and TLI are averaged over the imputations, not formed from the
+      separately pooled model and baseline statistics in `mi_diagnostics`.
 
 # print.efa_mi output is stable (ML, unrotated)
 
@@ -167,7 +167,7 @@
     Output
       
       Pooled EFA across 3 imputations performed with estimator = 'ML' and
-        rotation = 'none'.
+        rotation = 'none' (N = 810).
       Pooling settings: align_unrotated = 'signed_tucker_congruence',
         fit_pool_method = 'D2'.
       
@@ -195,10 +195,6 @@
       CFI (avg. over imputations): <num>
       TLI (avg. over imputations): <num>
       RMSEA [90% CI]: <num> [ <num>; <num>]
-      AIC: <num>
-      BIC: <num>
-      ECVI: <num>
-      CAF: <num>
       SRMR: <num>
       Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
       not the χ²(20) tail.
@@ -212,25 +208,18 @@
     Output
       
       Pooled EFA across 3 imputations performed with estimator = 'PAF' and
-        rotation = 'promax'.
+        rotation = 'promax' (N = 500).
       Pooling settings: target_method = 'first_target',
         align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
       
       -- Pooled Model Diagnostics ----------------------------------------------------
       
-      Factors: 3
-      Variables: 18
       N: 500
       Imputations: 3
       Pooling: target_method = 'first_target',
         align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
       Alignment: method = 'first_target', converged
       Heywood cases: 0
-      Cross-loading items (|loading| >= <num>): 0
-      Items without salient loading (|loading| >= <num>): 0
-      Factors with fewer than 3 salient indicators: 0
-      Items with primary-loading gap < <num>: 1
-      Largest |residual|: <num>
       Factor intercorrelations > <num>: none
       
       -- Rotated Loadings ------------------------------------------------------------
@@ -301,9 +290,16 @@
       
       -- Model Fit -------------------------------------------------------------------
       
-      CAF: <num>
+      D2-pooled χ²(102) = <num>, p = <num>
+      CFI (avg. over imputations): <num>
+      TLI (avg. over imputations): <num>
+      RMSEA [90% CI]: <num> [ <num>; <num>]
       SRMR: <num>
-      df: 102
+      AIC: <num>
+      BIC: <num>
+      ECVI: <num>
+      Note: CFI and TLI are averaged over the imputations, not formed from the
+      separately pooled model and baseline statistics in `mi_diagnostics`.
       
       -- Residual Diagnostics --------------------------------------------------------
       
@@ -322,23 +318,16 @@
     Output
       
       Pooled EFA across 3 imputations performed with estimator = 'ML' and
-        rotation = 'none'.
+        rotation = 'none' (N = 810).
       Pooling settings: align_unrotated = 'signed_tucker_congruence',
         fit_pool_method = 'D2'.
       
       -- Pooled Model Diagnostics ----------------------------------------------------
       
-      Factors: 1
-      Variables: 8
       N: 810
       Imputations: 3
       Pooling: align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'
       Heywood cases: 0
-      Cross-loading items (|loading| >= <num>): 0
-      Items without salient loading (|loading| >= <num>): 0
-      Factors with fewer than 3 salient indicators: 0
-      Items with primary-loading gap < <num>: 0
-      Largest |residual|: <num>
       
       -- Unrotated Loadings ----------------------------------------------------------
       
@@ -352,6 +341,12 @@
       chances <num> <num> <num>
       attracted <num> <num> <num>
       
+      -- Simple Structure Diagnostics ------------------------------------------------
+      
+      All items have a salient loading (|loading| >= <num>) and no cross-loading
+      (|loading| >= <num>), all primary-loading gaps are at least <num>, and all
+      factors have at least 3 salient indicators.
+      
       -- Variances Accounted for -----------------------------------------------------
       
                       F1
@@ -364,11 +359,10 @@
       CFI (avg. over imputations): <num>
       TLI (avg. over imputations): <num>
       RMSEA [90% CI]: <num> [ <num>; <num>]
+      SRMR: <num>
       AIC: <num>
       BIC: <num>
       ECVI: <num>
-      CAF: <num>
-      SRMR: <num>
       Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, <num>),
       not the χ²(20) tail.
       Note: CFI and TLI are averaged over the imputations, not formed from the

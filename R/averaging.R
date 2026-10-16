@@ -159,8 +159,8 @@
 
 # Range endpoints of a summary that may have no value at all. `min()`/`max()` with
 # `na.rm = TRUE` warn and return -Inf/Inf for an entirely missing input, which happens
-# routinely: a PAF-only grid carries no chi-square-based fit index, so those columns are
-# missing for every solution. A summary with nothing to summarise is NA, not an infinite
+# routinely: a grid fitted without N carries no chi-square-based fit index, so those columns
+# are missing for every solution. A summary with nothing to summarise is NA, not an infinite
 # bound, so the endpoints are produced that way here rather than repaired afterwards.
 .range_min <- function(x) if (all(is.na(x))) NA_real_ else min(x, na.rm = TRUE)
 .range_max <- function(x) if (all(is.na(x))) NA_real_ else max(x, na.rm = TRUE)

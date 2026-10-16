@@ -242,17 +242,15 @@ the last is omitted for a single-factor solution, where it is identically 1, so
 those matrices have two rows there and three otherwise.}
 \item{fit_indices}{A matrix containing the average, standard deviation,
 minimum, maximum, and range for all applicable fit indices across the respective
-factor solutions, and the degrees of freedom (df). If the estimator argument
-contains ML or ULS: Fit indices derived
+factor solutions, and the degrees of freedom (df). Fit indices derived
 from the unrotated factor loadings: Chi Square (chisq), including significance
 level, Comparative Fit Index (CFI), Tucker-Lewis Index (TLI), Root Mean Square
 Error of Approximation (RMSEA), Akaike Information Criterion (AIC), Bayesian
 Information Criterion (BIC), Expected Cross-Validation Index (ECVI), and the
 common part accounted for (CAF) index as proposed by Lorenzo-Seva, Timmerman,
 & Kiers (2011). The residual-based Standardized Root Mean Square Residual
-(SRMR) and Root Mean Square Residual (RMSR) and the CAF are also computed for
-PAF; for PAF the remaining (chi-square-based) indices are not available (see
-details).}
+(SRMR) and Root Mean Square Residual (RMSR). Without \code{N}, only the CAF, SRMR,
+and RMSR are available.}
 \item{implementations_grid}{A matrix containing, for each performed EFA,
 the setting combination, if an error occurred (logical), the error message
 (character), an integer convergence code (0 = converged; for ML and ULS the
@@ -393,20 +391,13 @@ describe one and the same model.
 
 The output also includes information on the average, minimum, maximum, and
 variability of the fit indices across the non-problematic factor solutions.
-It is important to note that not all fit indices are computed for all fit
-methods: For ML and ULS, all fit indices can be computed, while for PAF the
-chi-square-based indices (the chi-square statistic and its significance, CFI,
-TLI, RMSEA, AIC, BIC, and ECVI) are NA. The common part accounted for (CAF)
-index (Lorenzo-Seva, Timmerman, & Kiers, 2011) and the residual-based SRMR and
-RMSR are still computed for PAF. As a consequence, if only "PAF" is included in
-the \code{estimator} argument, averaging is performed for the CAF, SRMR, and RMSR, while
-the chi-square-based indices are NA. If a combination of "PAF" and "ML" and/or
-"ULS" are included in the \code{estimator} argument, the CAF, SRMR, and RMSR are
-averaged across all non-problematic factor solutions, while the chi-square-based
-indices are only averaged across the ML and ULS solutions. The user should
-therefore keep in mind that the number of EFAs across which the fit indices are
-averaged can diverge for the CAF, SRMR, and RMSR compared to the chi-square-based
-indices.
+Without \code{N}, only the common part accounted for (CAF) index (Lorenzo-Seva,
+Timmerman, & Kiers, 2011) and the residual-based SRMR and RMSR are computed; the
+chi-square-based indices (the chi-square statistic and its significance, CFI, TLI,
+RMSEA, AIC, BIC, and ECVI) are NA. A solution can also carry the residual-based
+indices without a chi-square (for example when its model-implied correlation matrix
+is not positive definite), so the number of EFAs across which the fit indices are
+averaged can differ between the two kinds of indices.
 
 Each reported fit index is summarised across the (non-problematic) solutions in
 the same descriptive way: the average, standard deviation, minimum, and maximum

@@ -69,7 +69,7 @@
 # consistent sign, names them (with a V-fallback when the input is unnamed),
 # computes the explained variances, fit indices, communalities, model-implied
 # correlation matrix, residuals, and the original/final eigenvalues.
-.finalize_fit <- function(fit, N, method, lean = FALSE, fiml = NULL) {
+.finalize_fit <- function(fit, N, method, lean = FALSE, fiml = NULL, gof = TRUE) {
 
   L <- fit$L
   orig_R <- fit$orig_R
@@ -80,8 +80,10 @@
   signs <- .reflect_signs(L)
   L <- L %*% diag(signs, nrow = length(signs))
 
-  # Bootstrap replicate path: .boot_se_ci() aggregates only each replicate's
-  # unrotated loadings, fit indices, and residuals, so only those are computed.
+  # Bootstrap replicate path: the bootstrap aggregates only each replicate's
+  # unrotated loadings and residuals (.boot_se_ci()) or its fit indices
+  # (.yhy_fit_boot()), so only those are computed; `gof = FALSE` also skips the
+  # fit indices, which the case bootstrap does not read.
   # The two eigendecompositions, variable naming, explained variances, and
   # Heywood detection are skipped (none are aggregated per replicate), and the
   # analytic RMSEA confidence bounds are not solved (.gof(ci = FALSE)). The sign
@@ -91,7 +93,7 @@
     model_implied_R <- L %*% t(L) + diag(1 - h2)
     return(list(
       unrot_loadings = L,
-      fit_indices = .gof(L, orig_R, N, method, fit$Fm, ci = FALSE, fiml = fiml),
+      fit_indices = if (gof) .gof(L, orig_R, N, method, fit$Fm, ci = FALSE, fiml = fiml),
       residuals = orig_R - model_implied_R,
       convergence = fit$convergence
     ))
@@ -160,11 +162,12 @@
 
 # Dispatch to the requested fitter, run the shared post-processor, and assemble
 # the method-specific output object (field set and order differ per method).
+# `gof = FALSE` skips the fit indices of a lean fit (see .finalize_fit()).
 .estimate_model <- function(R, method, n_factors, N = NA,
                             type = "none", max_iter = NA, init_comm = NA,
                             criterion = NA, criterion_type = NA, abs_eigen = NA,
                             start_method = NA, weights = NULL, lean = FALSE,
-                            fiml = NULL) {
+                            fiml = NULL, gof = TRUE) {
 
   fit <- switch(
     method,
@@ -176,7 +179,7 @@
     DWLS = .DWLS(R, n_factors = n_factors, weights = weights)
   )
 
-  common <- .finalize_fit(fit, N = N, method = method, lean = lean, fiml = fiml)
+  common <- .finalize_fit(fit, N = N, method = method, lean = lean, fiml = fiml, gof = gof)
 
   # The bootstrap replicate path needs only the post-processed common fields;
   # skip the method-specific output assembly, which the aggregation never reads.

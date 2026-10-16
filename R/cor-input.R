@@ -463,8 +463,11 @@
     # asks for pairwise-complete estimation. Surface that override rather than letting it change
     # the estimates silently.
     if (acov_listwise && use == "pairwise.complete.obs" && anyNA(x)) {
+      n_complete <- sum(stats::complete.cases(x))
       cli::cli_inform(
-        c("i" = "An asymptotic covariance requires complete cases; incomplete rows were dropped (listwise), overriding {.code use = \"pairwise.complete.obs\"}."),
+        c("i" = "An asymptotic covariance requires complete cases, so {nrow(x) - n_complete}
+                 of {nrow(x)} rows with missing values were dropped (listwise; N =
+                 {n_complete}). This overrides {.code use = \"pairwise.complete.obs\"}."),
         class = "efa_acov_listwise"
       )
     }
@@ -838,23 +841,6 @@
 
   list(R = R, N = N, is_cormat = is_cormat, weights = weights, Gamma = Gamma,
        fiml = fiml)
-}
-
-# Evaluate `expr` with the "computing correlations from the raw data" note limited to its
-# first occurrence. An entry point that calls efa_fit() once per group or per imputation
-# gets one note from every inner fit, so one fact about one input is stated as many times
-# as there are fits. The note keeps the classed condition of the first fit, so a caller can
-# still catch it. The pre-fit diagnostics do not report the computation at all and suppress
-# it with `inform_from_data = FALSE` instead.
-.cor_note_once <- function(expr) {
-  seen <- FALSE
-  withCallingHandlers(
-    expr,
-    efa_cor_from_data = function(cnd) {
-      if (seen) invokeRestart("muffleMessage")
-      seen <<- TRUE
-    }
-  )
 }
 
 # Polychoric/tetrachoric correlations describe the observed data only. Criteria that cannot

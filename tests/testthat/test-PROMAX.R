@@ -75,21 +75,13 @@ test_that("errors etc. are thrown correctly", {
 
   expect_error(.rotate_model(unrot, rotation = "promax", type = "none"), class = "efa_type_none")
 
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "EFAtools", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "EFAtools", P_type = "norm"), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "EFAtools", order_type = "ss_factors"), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "EFAtools", k = 2), class = "efa_type_override")
-
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "psych", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "psych", P_type = "norm"), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "psych", order_type = "ss_factors"), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "psych", k = 2), class = "efa_type_override")
-
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", normalize = FALSE), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", P_type = "unnorm"), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", order_type = "eigen"), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", k = 2), class = "efa_type_override")
-  expect_warning(.rotate_model(unrot, rotation = "promax", type = "SPSS", varimax_type = "svd"), class = "efa_type_override")
+  # A knob supplied with a preset is used as given, without a warning.
+  for (type in c("EFAtools", "psych", "SPSS")) {
+    expect_no_warning(rot <- .rotate_model(unrot, rotation = "promax", type = type, k = 2,
+                                           order_type = "eigen"))
+    expect_identical(rot$settings$k, 2)
+    expect_identical(rot$settings$order_type, "eigen")
+  }
   expect_warning(.rotate_model(unrot_1, rotation = "promax", type = "EFAtools"), class = "efa_single_factor")
 })
 

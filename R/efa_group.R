@@ -118,12 +118,7 @@
 #'   example `estimator`, `rotation`, or `cor_method`). The [estimate_control()] and
 #'   [rotate_control()] objects are accepted through `...` as well, although they are not
 #'   declared formals: pass them as `estimate_control =` / `rotate_control =` exactly
-#'   as you would to [efa_fit()]. A name that is neither an [efa_fit()] argument nor a
-#'   rotation-engine extra is rejected.
-#'
-#'   A rotation-engine extra that shares a name with an `efa_group()` argument cannot reach
-#'   the rotation through `...`, because the argument takes the name first (for example
-#'   geomin's `delta`; see `delta` above).
+#'   as you would to [efa_fit()]. A name that is not an [efa_fit()] argument is rejected.
 #'
 #' @returns An object of class `efa_group`, a list containing:
 #' \item{loadings}{A named list of the aligned per-group loading matrices. Their
@@ -238,8 +233,7 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
   .reject_flat_knobs(...names(), fn = "efa_group")
   # Same reason for an unknown name: the per-group fits run inside a tryCatch that
   # re-labels their errors, so a misspelled argument would be reported as a statistical
-  # failure of whichever group was fitted first. The fits are rotated, so a rotation
-  # engine extra is a legitimate name here.
+  # failure of whichever group was fitted first.
   .reject_unknown_fit_dots(...names(), fn = "efa_group")
   efa_args <- list(...)
   checkmate::assert_count(n_factors, positive = TRUE)
@@ -363,40 +357,40 @@ efa_group <- function(x, groups = NULL, n_factors, N = NA,
     )
   }
   boot_cubes <- if (do_boot) stats::setNames(vector("list", m), group_names)
+  # Only the replicate loadings are used, so efa_fit() skips its bootstrap of the fit indices.
+  old_no_fit_boot <- .efa_state$no_fit_boot
+  .efa_state$no_fit_boot <- TRUE
+  on.exit(.efa_state$no_fit_boot <- old_no_fit_boot, add = TRUE)
 
   fits <- vector("list", m)
   names(fits) <- group_names
-  # All groups come from one `x`, so the per-fit "computing correlations from the raw data"
-  # note states one fact about one input; report it once instead of once per group.
-  .cor_note_once(
-    for (g in seq_len(m)) {
-      fit_args <- c(list(x = group_data[[g]], n_factors = n_factors, N = Ns_in[[g]]),
-                    efa_args)
-      if (do_boot) {
-        fit_args <- c(fit_args,
-                      list(se = "np-boot", b_boot = b_boot, ci = ci, seed = NULL))
-      }
-      fit_g <- tryCatch(
-        do.call(efa_fit, fit_args),
-        error = function(e) {
-          # The cause is carried by `parent`, which rlang prints in full under "Caused by
-          # error:" with its own bullets intact. Repeating conditionMessage() here as a
-          # single bullet would both duplicate it and flatten it: a parent that raises more
-          # than one bullet -- most of efa_fit()'s input guards do -- has its own markers
-          # rendered inside this one, mid-sentence.
-          cli::cli_abort(
-            "The {.fn efa_fit} fit failed for group {.val {group_names[[g]]}}.",
-            class = "efa_group_fit_failed", parent = e
-          )
-        }
-      )
-      if (do_boot) {
-        boot_cubes[[g]] <- fit_g$replicates$unrot_loadings
-        fit_g <- .efa_strip_boot(fit_g)
-      }
-      fits[[g]] <- fit_g
+  for (g in seq_len(m)) {
+    fit_args <- c(list(x = group_data[[g]], n_factors = n_factors, N = Ns_in[[g]]),
+                  efa_args)
+    if (do_boot) {
+      fit_args <- c(fit_args,
+                    list(se = "np-boot", b_boot = b_boot, ci = ci, seed = NULL))
     }
-  )
+    fit_g <- tryCatch(
+      do.call(efa_fit, fit_args),
+      error = function(e) {
+        # The cause is carried by `parent`, which rlang prints in full under "Caused by
+        # error:" with its own bullets intact. Repeating conditionMessage() here as a
+        # single bullet would both duplicate it and flatten it: a parent that raises more
+        # than one bullet -- most of efa_fit()'s input guards do -- has its own markers
+        # rendered inside this one, mid-sentence.
+        cli::cli_abort(
+          "The {.fn efa_fit} fit failed for group {.val {group_names[[g]]}}.",
+          class = "efa_group_fit_failed", parent = e
+        )
+      }
+    )
+    if (do_boot) {
+      boot_cubes[[g]] <- fit_g$replicates$unrot_loadings
+      fit_g <- .efa_strip_boot(fit_g)
+    }
+    fits[[g]] <- fit_g
+  }
 
   # The estimator and rotation are common (one `...` applied to every group), so
   # read them from the first fit. `settings$rotation` is always populated.

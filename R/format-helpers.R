@@ -348,9 +348,3 @@
   }
 
 }
-
-.paste_gof_ci <- function(indices, index) {
-  paste0(" [", .efa_num(indices$lower[index], digits = 2, pad = FALSE), ", ",
-         .efa_num(indices$upper[index], digits = 2, pad = FALSE),
-         "]")
-}

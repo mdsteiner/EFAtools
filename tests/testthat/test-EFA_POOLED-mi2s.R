@@ -364,16 +364,11 @@ test_that("estimate_control and rotate_control reach the pooled MI2S fit", {
   expect_equal(pooled_ctl$SE$rot_loadings, single_ctl$SE$rot_loadings,
                tolerance = 1e-10)
 
-  # A bare engine extra in the dots beats the one stored in rotate_control
-  # (gam = 0.7 over rc's 0.5); if the control won, the two runs would be equal.
-  set.seed(1)
-  pooled_dots <- quiet(
+  # A bare engine extra in the dots is refused: it belongs in rotate_control().
+  expect_error(
     efa_mi(imps, n_factors = 2L, estimator = "ULS", rotation = "oblimin",
-           se = "sandwich", cor_method = "poly", rotate_control = rc, gam = 0.7)
-  )
-  expect_false(isTRUE(all.equal(unclass(pooled_dots$rot_loadings),
-                                unclass(pooled_ctl$rot_loadings),
-                                tolerance = 1e-8)))
+           se = "sandwich", cor_method = "poly", rotate_control = rc, gam = 0.7),
+    class = "efa_unused_dots")
 
   # estimate_control side: the ML start method must reach the pooled fit (it is
   # recorded in the single fit's settings; .efa_core()'s own default is "psych").

@@ -161,10 +161,10 @@ Each argument that governs a \code{type} preset defaults to \code{NA}, meaning "
 knob to the preset". Setting \code{type} to one of \code{"EFAtools"}, \code{"psych"}, or
 \code{"SPSS"} fills those knobs from the corresponding preset when the fit is run;
 setting \code{type = "none"} requires the relevant knobs to be supplied explicitly.
-The control object only records the chosen \code{type} and the knobs you set: the
-preset is resolved (and any "argument set alongside \code{type}" warning issued) when
-the object is used to fit a model, exactly as it is today, because which preset
-applies depends on the estimator and rotation.
+A knob you set is used as given and takes precedence over the preset. The control
+object only records the chosen \code{type} and the knobs you set: the preset is resolved
+when the object is used to fit a model, because which preset applies depends on the
+estimator and rotation.
 }
 \examples{
 # Estimation knobs taken entirely from a preset:
