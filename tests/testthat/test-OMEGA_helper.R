@@ -141,7 +141,8 @@ test_that("errors are thrown correctly", {
   # shared reliability adapter, so the aborts carry the adapter's
   # efa_reliability_* classes; the informational notices remain OMEGA's own
   # efa_omega_* conditions.
-  expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), class = "efa_reliability_na_loadings")
+  # The NA loadings of this fit come from a negative factor variance, which is named as such.
+  expect_error(.OMEGA_LAVAAN(lav_fit_NA, g_name = "g"), class = "efa_reliability_factor_heywood")
   expect_error(.OMEGA_LAVAAN(lav_fit_1, g_name = "fu"), class = "efa_reliability_g_name")
   expect_message(.OMEGA_LAVAAN(lav_fit_2, add_ind = FALSE), class = "efa_omega_single_factor")
   expect_message(.OMEGA_LAVAAN(lav_fit_2), class = "efa_omega_single_factor")
@@ -511,12 +512,10 @@ test_that("the out-of-range guard runs in both variance conventions", {
   expect_no_warning(.reliability_core(spec, "sums_load"),
                     class = "efa_omega_out_of_range")
 
-  # The second route needs no improper solution at all, which is what makes the guard worth
-  # running in this convention: omega subscale divides a factor's own squared loading sum by
-  # its composite's whole variance, and once the group factors are correlated that sum is not
-  # a part of it -- the composite's cross-loadings on the other factor contribute negative
-  # common variance and take its total below what its own factor puts in. Every uniqueness
-  # here is positive and Phi is positive definite, so nothing else in the function signals it.
+  # Once the group factors are correlated, omega subscale is not a share of the composite
+  # variance and can exceed 1 in a proper solution: the cross-loadings on the other factor
+  # contribute negative common variance. It is not reported for a correlated-factors
+  # solution, so only omega total is checked there.
   S <- matrix(0, 8, 2)
   S[1:4, 1] <- .85; S[1:4, 2] <- -.30
   S[5:8, 2] <- .85; S[5:8, 1] <- -.30
@@ -528,13 +527,14 @@ test_that("the out-of-range guard runs in both variance conventions", {
   expect_true(all(u2 > 0))
   expect_gt(min(eigen(Phi, symmetric = TRUE, only.values = TRUE)$values), 0)
 
-  expect_warning(om <- .reliability_core(proper, "sums_load"),
-                 class = "efa_omega_out_of_range")
+  expect_no_warning(om <- .reliability_core(proper, "sums_load"))
   expect_gt(unname(om["F1", "sub"]), 1)
-  # and the improper-solution report stays silent, so this is the only signal there is
-  expect_no_warning(muffle(.reliability_core(proper, "sums_load"),
-                           "efa_omega_out_of_range"),
-                    class = "efa_reliability_heywood")
+
+  # An omega total above 1 of such a solution is still reported.
+  improper <- proper
+  improper$u2 <- rep(-0.2, 8)
+  expect_warning(muffle(.reliability_core(improper, "sums_load"), "efa_reliability_heywood"),
+                 class = "efa_omega_out_of_range")
 })
 
 test_that("a single group-factor column is handled without error", {

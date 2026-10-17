@@ -25,8 +25,8 @@ test_that("CD returns the correct values", {
 
 test_that("the comparison-data RMSE curve is unchanged (regression)", {
   # Regression pin on the comparison-data draw: CD generates its populations
-  # through the shared Ruscio-Kaczetow kernel, so pin the mean RMSE-eigenvalue
-  # curve of the seeded run to catch any drift.
+  # through the Ruscio-Kaczetow kernel, so pin the mean RMSE-eigenvalue curve of
+  # the seeded run to catch any drift.
   #
   # The kernel is a stochastic search whose accept-or-shrink step compares two
   # floating-point RMSEs. Once the search plateaus that comparison is decided by
@@ -40,7 +40,7 @@ test_that("the comparison-data RMSE curve is unchanged (regression)", {
   # zero because the search stops after the first factor.
   expect_equal(
     colMeans(rec$rmse_eigenvalues),
-    c(0.033821350175717364, 0.038807011125946637, 0, 0),
+    c(0.030817030473080452, 0.037663179982433140, 0, 0),
     tolerance = 1e-6
   )
 })
@@ -73,10 +73,16 @@ test_that("errors etc. are thrown correctly", {
                class = "efa_cd_constant_variable")
 
   # A comparison-data population too small to carry a correlation is reported under
-  # efa_cd's own class, naming N_pop, rather than as a condition from the shared kernel.
+  # efa_cd's own class, naming N_pop.
   expect_error(efa_cd(GRiPS_raw[1:60, ], N_pop = 1, N_samples = 2),
                class = "efa_cd_degenerate_population")
   expect_error(efa_cd(GRiPS_raw[1:60, ], N_pop = 0, N_samples = 2),
+               class = "efa_cd_degenerate_population")
+  # A response so rare that the population resample misses it leaves a constant column.
+  grips_rare <- GRiPS_raw
+  grips_rare[, 2] <- c(1, rep(3, nrow(GRiPS_raw) - 1L))
+  set.seed(1)
+  expect_error(efa_cd(grips_rare, N_pop = 10, N_samples = 2),
                class = "efa_cd_degenerate_population")
 
   # Zero-length loops used to fall through to invalid indexing/replacement errors.

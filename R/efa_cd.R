@@ -193,19 +193,8 @@ efa_cd <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha 
 
   while (n_factors <= n_factors_max && isTRUE(sig)) {
 
-    # The comparison-data generator is the shared Ruscio-Kaczetow kernel, which reports a
-    # degenerate resample under its own name; re-raise it as an efa_cd condition, naming
-    # the argument that controls the population size here.
-    pop <- tryCatch(
-      .simulate_cfm_empirical(R = R, x = x, n_factors = n_factors, N = N_pop,
-                              cor_method = cor_method, max_iter = max_iter),
-      efa_simulate_degenerate_marginal = function(e) {
-        cli::cli_abort(
-          c("The comparison-data population could not be generated from these data.",
-            "i" = "Increase {.arg N_pop} (currently {N_pop}), or collapse response categories too rare to be drawn."),
-          class = "efa_cd_degenerate_population", parent = e
-        )
-      })
+    pop <- .simulate_cfm_empirical(R = R, x = x, n_factors = n_factors, N = N_pop,
+                                   cor_method = cor_method, max_iter = max_iter)
 
     for (j in seq_len(N_samples)) {
 
@@ -266,4 +255,73 @@ efa_cd <- function(x, n_factors_max = NA, N_pop = 10000, N_samples = 500, alpha 
 
   return(out)
 
+}
+
+
+# Ruscio-Kaczetow iterative rank matching: a comparison-data population of `N` cases with the
+# empirical column marginals of `x` (each column resampled with replacement) and an
+# `n_factors`-factor correlation structure that approximates `R`. Each trial generates
+# common-factor scores from the principal-axis loadings of the intermediate correlation and
+# assigns the sorted resamples to their ranks; the intermediate correlation moves by the residual
+# of an improving trial, and the step is halved after a trial without improvement, until
+# `max_trials` trials in a row fail. The scores are drawn once, so the iteration itself draws no
+# random numbers.
+# Ruscio, J., & Kaczetow, W. (2008). Simulating multivariate nonnormal data using an iterative
+# algorithm. Multivariate Behavioral Research, 43(3), 355-381. doi: 10.1080/00273170802285693
+.simulate_cfm_empirical <- function(R, x, n_factors, N, cor_method = "pearson",
+                                    max_trials = 5, initial_multiplier = 1,
+                                    max_iter = 100) {
+
+  k <- ncol(x)
+  dists <- vapply(seq_len(k), function(i) sort(sample(x[, i], size = N, replace = TRUE)),
+                  numeric(N))
+  # A category rare enough that N draws miss all but one value leaves a constant resample,
+  # which has no correlation; the sorted columns make the check their two extremes.
+  constant <- dists[1L, ] == dists[N, ]
+  if (any(constant)) {
+    bad <- as.character(which(constant))
+    cli::cli_abort(
+      c("The comparison-data population could not be generated from these data.",
+        "x" = "{cli::qty(bad)}Resampling the marginals gave {?a constant column/constant columns} ({bad}).",
+        "i" = "Increase {.arg N_pop} (currently {N}), or collapse response categories too rare to be drawn."),
+      class = "efa_cd_degenerate_population", call = rlang::caller_env()
+    )
+  }
+
+  shared_comp <- matrix(stats::rnorm(N * n_factors), nrow = N, ncol = n_factors)
+  unique_comp <- matrix(stats::rnorm(N * k), nrow = N, ncol = k)
+
+  # Factor scores for the intermediate correlation `Ri` (Heywood loadings clipped to +-1),
+  # rank-matched to the sorted marginals.
+  gen <- function(Ri) {
+    L <- suppressWarnings(.paf_iter(rep(1, k), criterion = .001, R = Ri, n_fac = n_factors,
+                                    abs_eig = TRUE, crit_type = 1, max_iter = max_iter)$L)
+    L <- matrix(pmin(pmax(L, -1), 1), k, n_factors)
+    if (L[1L, 1L] < 0) L <- -L
+    z <- tcrossprod(shared_comp, L) +
+      sweep(unique_comp, 2L, sqrt(pmax(1 - rowSums(L^2), 0)), "*")
+    for (i in seq_len(k)) z[, i] <- dists[rank(z[, i], ties.method = "first"), i]
+    z
+  }
+
+  best_RMSE <- 1
+  R_inter <- R_best <- R
+  res_best <- matrix(0, k, k)
+  t_no_impr <- 0
+  while (t_no_impr < max_trials) {
+    R_res <- R - stats::cor(gen(R_inter), method = cor_method)
+    RMSE <- sqrt(mean(R_res[lower.tri(R_res)]^2))
+    if (RMSE < best_RMSE) {
+      best_RMSE <- RMSE
+      R_best <- R_inter
+      res_best <- R_res
+      R_inter <- R_inter + initial_multiplier * R_res
+      t_no_impr <- 0
+    } else {
+      t_no_impr <- t_no_impr + 1
+      R_inter <- R_best + initial_multiplier * .5^t_no_impr * res_best
+    }
+  }
+
+  gen(R_best)
 }

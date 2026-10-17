@@ -518,8 +518,7 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
 #' `r lifecycle::badge("superseded")`
 #'
 #' `SL()` has been superseded by [efa_schmid_leiman()], which is the recommended
-#' interface going forward. It remains available and unchanged so existing code
-#' keeps working.
+#' interface going forward. It remains available so existing code keeps working.
 #'
 #' @inheritParams efa_schmid_leiman
 #' @param type character. One of "EFAtools" (default), "psych", "SPSS", or "none". This is
@@ -528,11 +527,13 @@ N_FACTORS <- function(x, criteria = c("CD", "EKC", "HULL", "MAP", "NEST", "PARAL
 #' @param method character. The estimator for the second-order factor analysis; passed to
 #'  [efa_schmid_leiman()] as its `estimator` argument. One of `"PAF"`, `"ML"`, `"ULS"`, or
 #'  `"MINRES"`.
-#' @param ... Further arguments passed on to the second-order [efa_fit()], including the
-#'  estimation tuning knobs (`init_comm`, `criterion`, `criterion_type`, `max_iter`,
-#'  `abs_eigen`, `start_method`), which are repacked, together with `type`, into an
-#'  [estimate_control()] object so that they tune that fit exactly as they always did.
-#'  The estimator is selected with `method`.
+#' @param g_name character. The name of the general factor of a `lavaan` second-order
+#'  solution. Default is `"g"`.
+#' @param ... The estimation tuning knobs of the second-order [efa_fit()] (`init_comm`,
+#'  `criterion`, `criterion_type`, `max_iter`, `abs_eigen`, `start_method`). They are
+#'  repacked, together with `type`, into an [estimate_control()] object, so that they tune
+#'  that fit exactly as they always did. Other [efa_fit()] arguments have no effect, and
+#'  `se`, `b_boot`, `ci`, and `seed` give an error. The estimator is selected with `method`.
 #'
 #' @returns A list of class `c("efa_schmid_leiman", "SL")`, identical to the value
 #'   of [efa_schmid_leiman()]; see there for the components.
@@ -559,12 +560,16 @@ SL <- function(x, Phi = NULL, type = c("EFAtools", "psych", "SPSS", "none"),
     )
   }
   # Resolve `type` once so the frozen preset argument, and any flat knob the dots carry, reach
-  # the second-order fit through the control objects it now takes. The second-order fit is
+  # the second-order fit through the estimation control it now takes. The second-order fit is
   # always unrotated, so the frozen filter's retention defaults apply.
   type <- match.arg(type)
-  do.call(efa_schmid_leiman,
-          c(list(x, Phi = Phi, estimator = method, g_name = g_name),
-            .repack_flat_dots(.drop_unknown_frozen_dots(list(...)), type = type)))
+  args <- .repack_flat_dots(.drop_unknown_frozen_dots(list(...)), type = type)
+  # efa_schmid_leiman() takes no other efa_fit() argument: an inference argument, or an
+  # abbreviation that R would have partial-matched to an efa_fit() argument, is refused, and
+  # any other efa_fit() argument had no effect on the internal fit.
+  .reject_unknown_fit_dots(names(args), fn = "SL", unrotated = TRUE)
+  efa_schmid_leiman(x, Phi = Phi, estimator = method, g_name = g_name,
+                    estimate_control = args[["estimate_control"]])
 }
 
 #' Compare two vectors or matrices (communalities or loadings)

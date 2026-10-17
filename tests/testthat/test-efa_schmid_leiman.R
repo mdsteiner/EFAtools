@@ -76,7 +76,7 @@ test_that("original correlation is correct", {
   expect_equal(SL_SPSS$orig_R, test_models$baseline$cormat)
   expect_equal(SL_psych$orig_R, test_models$baseline$cormat)
   expect_equal(SL_flex$orig_R, NA)
-  expect_equal(SL_lav$orig_R, NA)
+  expect_equal(SL_lav$orig_R, test_models$baseline$cormat)
 })
 
 test_that("sl solution is correct", {
@@ -100,37 +100,37 @@ test_that("sl solution is correct", {
 
   expect_equal(unname(SL_EFAtools$sl[13:18, "F1"]) >= .20, rep(TRUE, 6))
   expect_equal(unname(SL_SPSS$sl[13:18, "F1"]) >= .20, rep(TRUE, 6))
-  expect_equal(unname(SL_psych$sl[13:18, "F1"]) >= .20, rep(TRUE, 6))
+  expect_equal(unname(SL_psych$sl[13:18, "PA1"]) >= .20, rep(TRUE, 6))
   expect_equal(unname(SL_flex$sl[13:18, "F1"]) >= .20, rep(TRUE, 6))
   expect_equal(unname(SL_lav$sl[1:6, "F1"]) >= .20, rep(TRUE, 6))
 
   expect_equal(unname(SL_EFAtools$sl[1:12, "F1"]) < .20, rep(TRUE, 12))
   expect_equal(unname(SL_SPSS$sl[1:12, "F1"]) < .20, rep(TRUE, 12))
-  expect_equal(unname(SL_psych$sl[1:12, "F1"]) < .20, rep(TRUE, 12))
+  expect_equal(unname(SL_psych$sl[1:12, "PA1"]) < .20, rep(TRUE, 12))
   expect_equal(unname(SL_flex$sl[1:12, "F1"]) < .20, rep(TRUE, 12))
   expect_equal(unname(SL_lav$sl[7:18, "F1"]) < .20, rep(TRUE, 12))
 
   expect_equal(unname(SL_EFAtools$sl[7:12, "F2"]) >= .20, rep(TRUE, 6))
   expect_equal(unname(SL_SPSS$sl[7:12, "F2"]) >= .20, rep(TRUE, 6))
-  expect_equal(unname(SL_psych$sl[7:12, "F2"]) >= .20, rep(TRUE, 6))
+  expect_equal(unname(SL_psych$sl[7:12, "PA2"]) >= .20, rep(TRUE, 6))
   expect_equal(unname(SL_flex$sl[7:12, "F2"]) >= .20, rep(TRUE, 6))
   expect_equal(unname(SL_lav$sl[7:12, "F2"]) >= .20, rep(TRUE, 6))
 
   expect_equal(unname(SL_EFAtools$sl[c(1:6, 13:18), "F2"]) < .20, rep(TRUE, 12))
   expect_equal(unname(SL_SPSS$sl[c(1:6, 13:18), "F2"]) < .20, rep(TRUE, 12))
-  expect_equal(unname(SL_psych$sl[c(1:6, 13:18), "F2"]) < .20, rep(TRUE, 12))
+  expect_equal(unname(SL_psych$sl[c(1:6, 13:18), "PA2"]) < .20, rep(TRUE, 12))
   expect_equal(unname(SL_flex$sl[c(1:6, 13:18), "F2"]) < .20, rep(TRUE, 12))
   expect_equal(unname(SL_lav$sl[c(1:6, 13:18), "F2"]) < .20, rep(TRUE, 12))
 
   expect_equal(unname(SL_EFAtools$sl[1:6, "F3"]) >= .20, rep(TRUE, 6))
   expect_equal(unname(SL_SPSS$sl[1:6, "F3"]) >= .20, rep(TRUE, 6))
-  expect_equal(unname(SL_psych$sl[1:6, "F3"]) >= .20, rep(TRUE, 6))
+  expect_equal(unname(SL_psych$sl[1:6, "PA3"]) >= .20, rep(TRUE, 6))
   expect_equal(unname(SL_flex$sl[1:6, "F3"]) >= .20, rep(TRUE, 6))
   expect_equal(unname(SL_lav$sl[13:18, "F3"]) >= .20, rep(TRUE, 6))
 
   expect_equal(unname(SL_EFAtools$sl[7:18, "F3"]) < .20, rep(TRUE, 12))
   expect_equal(unname(SL_SPSS$sl[7:18, "F3"]) < .20, rep(TRUE, 12))
-  expect_equal(unname(SL_psych$sl[7:18, "F3"]) < .20, rep(TRUE, 12))
+  expect_equal(unname(SL_psych$sl[7:18, "PA3"]) < .20, rep(TRUE, 12))
   expect_equal(unname(SL_flex$sl[7:18, "F3"]) < .20, rep(TRUE, 12))
   expect_equal(unname(SL_lav$sl[1:12, "F3"]) < .20, rep(TRUE, 12))
 })
@@ -145,29 +145,39 @@ test_that("sl loadings reproduce psych::schmid", {
     psych::schmid(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
                   fm = "pa", rotate = "Promax")))
 
-  expect_equal(unname(SL_psych$sl[, c("g", "F1", "F2", "F3")]),
+  expect_equal(unname(SL_psych$sl[, c("g", "PA1", "PA2", "PA3")]),
                unname(sch$sl[, c("g", "F1*", "F2*", "F3*")]),
                tolerance = 1e-4)
 })
 
+test_that("the group factors keep the order and the names of a psych::fa() solution", {
+  skip_on_cran()
+  skip_if_not_installed("psych")
+
+  # psych::fa() orders its columns by explained variance but keeps each factor's number in
+  # its label, so the labels arrive out of order. The columns must stay where they are, so
+  # that they match the fa() solution and psych::schmid() column for column.
+  fa_def <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
+                      fm = "pa", rotate = "Promax")
+  sch <- suppressMessages(suppressWarnings(
+    psych::schmid(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
+                  fm = "pa", rotate = "Promax")))
+  sl <- efa_schmid_leiman(fa_def, estimate_control = estimate_control(type = "psych"))
+
+  expect_identical(colnames(sl$sl), c("g", colnames(fa_def$loadings), "h2", "u2"))
+  expect_identical(rownames(sl$L2), colnames(fa_def$loadings))
+  expect_equal(unname(unclass(sl$sl)[, 1:4]), unname(sch$sl[, 1:4]), tolerance = 1e-4)
+})
+
 test_that("settings are returned correctly", {
   skip_if_not_installed("lavaan")
-  expect_named(SL_EFAtools$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "input_type",
-                                   "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
-                                   "init_comm", "criterion", "criterion_type",
-                                   "abs_eigen"))
-  expect_named(SL_SPSS$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                   "N", "use", "cor_method", "input_type",
-                                   "cor_method_used", "se", "b_boot", "ci", "seed"))
-  expect_named(SL_psych$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                       "N", "use", "cor_method", "input_type",
-                                       "cor_method_used", "se", "b_boot", "ci", "seed", "max_iter",
-                                       "init_comm", "criterion", "criterion_type",
-                                       "abs_eigen"))
-  expect_named(SL_flex$settings, c("estimator", "method", "rotation", "type", "n_factors",
-                                  "N", "use", "cor_method", "input_type",
-                                  "cor_method_used", "se", "b_boot", "ci", "seed", "start_method"))
+  # only the estimator and the estimation settings: the sample size and the inference
+  # settings of the second-order EFA are placeholders
+  paf_knobs <- c("max_iter", "init_comm", "criterion", "criterion_type", "abs_eigen")
+  expect_named(SL_EFAtools$settings, c("estimator", "type", paf_knobs))
+  expect_named(SL_SPSS$settings, c("estimator", "type"))
+  expect_named(SL_psych$settings, c("estimator", "type", paf_knobs))
+  expect_named(SL_flex$settings, c("estimator", "type", "start_method"))
   expect_equal(SL_lav$settings, NA)
 
   expect_equal(SL_EFAtools$settings$estimator, "PAF")
@@ -175,35 +185,10 @@ test_that("settings are returned correctly", {
   expect_equal(SL_psych$settings$estimator, "PAF")
   expect_equal(SL_flex$settings$estimator, "ML")
 
-  expect_equal(SL_EFAtools$settings$rotation, "none")
-  expect_equal(SL_SPSS$settings$rotation, "none")
-  expect_equal(SL_psych$settings$rotation, "none")
-  expect_equal(SL_flex$settings$rotation, "none")
-
   expect_equal(SL_EFAtools$settings$type, "EFAtools")
   expect_equal(SL_SPSS$settings$type, "SPSS")
   expect_equal(SL_psych$settings$type, "psych")
   expect_equal(SL_flex$settings$type, "EFAtools")
-
-  expect_equal(SL_EFAtools$settings$n_factors, 1)
-  expect_equal(SL_SPSS$settings$n_factors, 1)
-  expect_equal(SL_psych$settings$n_factors, 1)
-  expect_equal(SL_flex$settings$n_factors, 1)
-
-  expect_equal(SL_EFAtools$settings$N, 100)
-  expect_equal(SL_SPSS$settings$N, 100)
-  expect_equal(SL_psych$settings$N, 100)
-  expect_equal(SL_flex$settings$N, 100)
-
-  expect_equal(SL_EFAtools$settings$use, "pairwise.complete.obs")
-  expect_equal(SL_SPSS$settings$use, "pairwise.complete.obs")
-  expect_equal(SL_psych$settings$use, "pairwise.complete.obs")
-  expect_equal(SL_flex$settings$use, "pairwise.complete.obs")
-
-  expect_equal(SL_EFAtools$settings$cor_method, "pearson")
-  expect_equal(SL_SPSS$settings$cor_method, "pearson")
-  expect_equal(SL_psych$settings$cor_method, "pearson")
-  expect_equal(SL_flex$settings$cor_method, "pearson")
 
   expect_equal(SL_EFAtools$settings$max_iter, 300)
   expect_equal(SL_psych$settings$max_iter, 50)
@@ -276,19 +261,154 @@ lav_fit_bifactor <- suppressWarnings(lavaan::cfa(lav_mod_bifactor,
 test_that("errors are thrown correctly", {
   skip_if_not_installed("lavaan")
   expect_error(efa_schmid_leiman(1:5), class = "efa_sl_bad_input")
-  expect_warning(efa_schmid_leiman(EFA_mod, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF", Phi = EFA_mod$Phi),
-                 class = "efa_sl_phi_specified")
+  expect_error(efa_schmid_leiman(EFA_mod, Phi = as.data.frame(EFA_mod$Phi)),
+               class = "efa_invalid_argument")
   expect_error(efa_schmid_leiman(EFA_mod_unrot, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"), class = "efa_sl_not_oblique")
   expect_error(efa_schmid_leiman(EFA_mod_orth, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"), class = "efa_sl_not_oblique")
-  expect_warning(efa_schmid_leiman(fa_mod, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF", Phi = fa_mod$Phi), class = "efa_sl_phi_specified")
   expect_error(efa_schmid_leiman(fa_mod_unrot, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"), class = "efa_sl_not_oblique")
   expect_error(efa_schmid_leiman(fa_mod_orth, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF"), class = "efa_sl_not_oblique")
   expect_error(efa_schmid_leiman(lav_fit_NA, g_name = "g"), class = "efa_sl_na_loadings")
   expect_error(efa_schmid_leiman(lav_fit_var_hey, g_name = "g"), class = "efa_sl_heywood")
   expect_error(efa_schmid_leiman(lav_fit_ho, g_name = "fu"), class = "efa_sl_g_name")
-  expect_warning(efa_schmid_leiman(lav_fit_ho_inv, g_name = "g"), class = "efa_sl_second_order_loadings")
   expect_error(efa_schmid_leiman(EFA_mod$rot_loadings, estimate_control = estimate_control(type = "EFAtools"), estimator = "ML"), class = "efa_sl_phi_missing")
   expect_error(efa_schmid_leiman(lav_fit_bifactor, g_name = "g"), class = "efa_sl_not_second_order")
+  expect_error(efa_schmid_leiman(lav_fit_bifactor), class = "efa_sl_not_second_order")
+
+  # an oblique bifactor solution carries Phi, but it already has a general factor
+  bq <- suppressWarnings(suppressMessages(
+    efa_fit(test_models$baseline$cormat, N = 500, n_factors = 4, rotation = "bifactorQ",
+            seed = 1)))
+  expect_error(efa_schmid_leiman(bq), class = "efa_sl_bifactor")
+})
+
+test_that("a Phi given with a fitted solution replaces the fitted one, without a warning", {
+  Phi_alt <- EFA_mod$Phi * .8
+  diag(Phi_alt) <- 1
+
+  expect_no_warning(sl_alt <- efa_schmid_leiman(EFA_mod, Phi = Phi_alt))
+  sl_flex_alt <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = Phi_alt)
+  expect_equal(sl_alt$sl, sl_flex_alt$sl)
+  expect_equal(sl_alt$L2, sl_flex_alt$L2)
+  expect_false(isTRUE(all.equal(sl_alt$sl, efa_schmid_leiman(EFA_mod)$sl)))
+})
+
+test_that("a lavaan general factor with direct item loadings keeps them", {
+  skip_if_not_installed("lavaan")
+
+  # g loads on F1, F2, and directly on V13 to V18. Its loadings are the direct path plus the
+  # paths through the first-order factors, so every communality is the lavaan R-squared.
+  expect_no_warning(sl <- efa_schmid_leiman(lav_fit_ho_inv))
+  r2 <- lavaan::lavInspect(lav_fit_ho_inv, "r2")
+  expect_equal(unname(sl$sl[, "h2"]), unname(r2[rownames(sl$sl)]), tolerance = 1e-8)
+  std <- lavaan::lavInspect(lav_fit_ho_inv, "std")
+  expect_equal(unname(sl$sl[13:18, "g"]), unname(std$lambda[13:18, "g"]), tolerance = 1e-8)
+
+  # the reliability coefficients of the transformed solution then agree with those of the
+  # lavaan fit, which efa_reliability() transforms itself
+  res_sl <- efa_reliability(sl, variance = "sums_load")
+  res_lav <- efa_reliability(lav_fit_ho_inv)
+  omegas <- res_sl$coefficient %in% c("omega_total", "omega_hierarchical", "omega_subscale")
+  expect_equal(res_sl$value[omegas], res_lav$value[omegas], tolerance = 1e-8)
+
+  # and so do those of OMEGA(): the items that load only on g belong to no group factor
+  expect_warning(om_sl <- OMEGA(sl, type = "psych", variance = "sums_load"),
+                 class = "efa_omega_variance_override")
+  om_lav <- suppressMessages(OMEGA(lav_fit_ho_inv, g_name = "g"))
+  expect_equal(unclass(om_sl)[, c("tot", "hier", "sub")],
+               unclass(om_lav)[, c("tot", "hier", "sub")], tolerance = 1e-8)
+})
+
+test_that("a lavaan solution gives its correlation matrix and finds its general factor", {
+  skip_if_not_installed("lavaan")
+
+  # the correlation matrix the model was fitted to is kept, so efa_reliability() works with
+  # its default variance = "correlation"
+  expect_no_error(efa_reliability(SL_lav))
+
+  # the general factor is found without g_name, whatever its name
+  mod_G <- sub("g =~", "G =~", lav_mod_ho)
+  fit_G <- lavaan::cfa(mod_G, sample.cov = test_models$baseline$cormat, sample.nobs = 500)
+  sl_G <- efa_schmid_leiman(fit_G)
+  expect_equal(unclass(sl_G$sl), unclass(SL_lav$sl), tolerance = 1e-6)
+  expect_identical(rownames(sl_G$L2), c("F1", "F2", "F3"))
+
+  # the first-order factors keep their lavaan names
+  mod_named <- gsub("F1", "Verbal", lav_mod_ho)
+  fit_named <- lavaan::cfa(mod_named, sample.cov = test_models$baseline$cormat,
+                           sample.nobs = 500)
+  expect_identical(colnames(efa_schmid_leiman(fit_named)$sl),
+                   c("g", "Verbal", "F2", "F3", "h2", "u2"))
+
+  # The transformation ignores any other structure, so a model with other latent paths or
+  # correlated disturbances is refused: here two second-order factors, a path between two
+  # first-order factors, and a disturbance covariance.
+  mod_two <- 'F1 =~ V1 + V2 + V3
+              F2 =~ V4 + V5 + V6
+              F3 =~ V7 + V8 + V9
+              F4 =~ V10 + V11 + V12
+              F5 =~ V13 + V14 + V15
+              F6 =~ V16 + V17 + V18
+              H1 =~ F1 + F2 + F3
+              H2 =~ F4 + F5 + F6'
+  fit_two <- suppressWarnings(
+    lavaan::cfa(mod_two, sample.cov = test_models$baseline$cormat, sample.nobs = 500))
+  expect_error(efa_schmid_leiman(fit_two), class = "efa_sl_higher_order")
+  expect_error(efa_schmid_leiman(fit_two, g_name = "H1"), class = "efa_sl_higher_order")
+  mod_six <- sub("H1 =~ F1 + F2 + F3\n              H2 =~ F4 + F5 + F6",
+                 "g =~ F1 + F2 + F3 + F4 + F5 + F6", mod_two, fixed = TRUE)
+  fit_with <- function(extra) {
+    suppressWarnings(lavaan::cfa(paste(mod_six, extra, sep = "\n"),
+                                 sample.cov = test_models$baseline$cormat,
+                                 sample.nobs = 500))
+  }
+  expect_s3_class(efa_schmid_leiman(fit_with("")), "efa_schmid_leiman")
+  expect_error(efa_schmid_leiman(fit_with("F1 ~ F3")), class = "efa_sl_higher_order")
+  expect_error(efa_schmid_leiman(fit_with("F1 ~~ F3")), class = "efa_sl_correlated_factors")
+  # a negative path counts as well, also for efa_reliability()
+  fit_neg <- fit_with("F1 ~ -0.2*F3")
+  expect_error(efa_schmid_leiman(fit_neg), class = "efa_sl_higher_order")
+  expect_error(efa_reliability(fit_neg), class = "efa_reliability_higher_order")
+
+  # a cross-loading item is assigned to every factor it loads on, as on the lavaan route
+  fit_cross <- suppressWarnings(lavaan::cfa(sub("V6\n", "V6 + V7\n", lav_mod_ho, fixed = TRUE),
+                                            sample.cov = test_models$baseline$cormat,
+                                            sample.nobs = 500))
+  map_sl <- attr(efa_reliability(efa_schmid_leiman(fit_cross)), "factor_map")
+  map_lav <- attr(efa_reliability(fit_cross), "factor_map")
+  expect_true(all(map_sl["V7", c("F1", "F2")]))
+  expect_identical(unname(map_sl), unname(map_lav))
+
+  # a multiple-group fit has one solution per group
+  cm <- test_models$baseline$cormat
+  fit_mg <- suppressWarnings(lavaan::cfa(lav_mod_ho, sample.cov = list(cm, cm),
+                                         sample.nobs = c(250, 250)))
+  expect_error(efa_schmid_leiman(fit_mg), class = "efa_sl_multigroup")
+})
+
+test_that("a standardized lavaan loading above 1 is not taken as a Heywood case", {
+  skip_if_not_installed("lavaan")
+
+  # With correlated factors, a standardized pattern coefficient is a regression weight and
+  # can exceed 1 in a proper solution (Joreskog, 1999). Here x11 loads 1.2 on F1 and -0.5
+  # on F2, and its residual variance is positive.
+  Lam <- matrix(0, 11, 3)
+  Lam[1:4, 1] <- Lam[5:8, 2] <- Lam[9:10, 3] <- .7
+  Lam[11, 1:2] <- c(1.2, -.5)
+  Phi_p <- tcrossprod(c(.9, .9, .6))
+  diag(Phi_p) <- 1
+  C <- Lam %*% Phi_p %*% t(Lam)
+  diag(C) <- 1
+  dimnames(C) <- list(paste0("x", 1:11), paste0("x", 1:11))
+  mod <- 'F1 =~ x1 + x2 + x3 + x4 + x11
+          F2 =~ x5 + x6 + x7 + x8 + x11
+          F3 =~ x9 + x10
+          g =~ F1 + F2 + F3'
+  fit <- suppressWarnings(lavaan::cfa(mod, sample.cov = C, sample.nobs = 1000))
+  expect_gt(lavaan::lavInspect(fit, "std")$lambda["x11", "F1"], 1)
+
+  sl <- efa_schmid_leiman(fit)
+  expect_equal(unname(sl$sl["x11", "h2"]),
+               unname(lavaan::lavInspect(fit, "r2")["x11"]), tolerance = 1e-6)
 })
 
 test_that("the second-order fit's substantive warnings reach the user", {
@@ -327,50 +447,43 @@ test_that("too few first-order factors are reported on the user's solution", {
                       estimator = "PAF"),
     class = "efa_sl_too_few_factors")
 
-  # Two first-order factors do not identify the second-order fit either, which is a
-  # warning and is raised before that fit runs.
+  # Two first-order factors do not identify the second-order loadings. As in psych::schmid(),
+  # they get the same absolute value, with the factor intercorrelation as their product, and
+  # no second-order EFA is run.
   L2 <- matrix(0, 4, 2)
   L2[1:2, 1] <- 0.7
   L2[3:4, 2] <- 0.7
   colnames(L2) <- c("F1", "F2")
   expect_warning(
-    efa_schmid_leiman(L2, Phi = matrix(c(1, .5, .5, 1), 2), estimator = "PAF"),
+    sl2 <- efa_schmid_leiman(L2, Phi = matrix(c(1, .5, .5, 1), 2), estimator = "ML"),
     class = "efa_sl_underidentified")
+  expect_equal(unname(sl2$L2[, 1]), rep(sqrt(.5), 2))
+  expect_true(is.na(sl2$settings) && is.na(sl2$iter) && is.na(sl2$convergence))
+
+  expect_warning(
+    sl2_neg <- efa_schmid_leiman(L2, Phi = matrix(c(1, -.5, -.5, 1), 2)),
+    class = "efa_sl_underidentified")
+  expect_equal(unname(sl2_neg$L2[, 1]), c(sqrt(.5), -sqrt(.5)))
 })
 
-test_that("efa_fit()'s inference arguments are refused", {
-  # They are efa_fit() formals, so they used to ride through the dots into the second-order
-  # fit -- which runs against a placeholder N and reports none of them, so a standard error
-  # was computed from a sample size that is not the data's and then thrown away, and `seed`
-  # governed a fit that draws no random numbers. Only `settings` ever recorded them.
-  args <- list(EFA_mod, estimate_control = estimate_control(type = "EFAtools"),
-               estimator = "ML")
-  expect_error(do.call(efa_schmid_leiman, c(args, list(se = "information"))),
-               class = "efa_unused_dots")
-  expect_error(do.call(efa_schmid_leiman, c(args, list(seed = 42))),
-               class = "efa_unused_dots")
-  expect_error(do.call(efa_schmid_leiman, c(args, list(b_boot = 10, ci = .90))),
-               class = "efa_unused_dots")
+test_that("efa_fit()'s inference arguments are refused by SL()", {
+  # The second-order EFA is internal: it runs against a placeholder N and keeps only its
+  # loadings, so efa_schmid_leiman() takes no efa_fit() argument other than the estimator
+  # and the estimation control.
+  expect_false("..." %in% names(formals(efa_schmid_leiman)))
 
-  # the frozen wrapper forwards its dots into the same fit, so the refusal reaches it too
+  # The frozen wrapper keeps its dots, and refuses the inference arguments there, also as an
+  # abbreviation that R would partial-match to them.
   expect_error(SL(EFA_mod, type = "EFAtools", method = "ML", se = "information"),
                class = "efa_unused_dots")
-
-  # An abbreviation must be refused as well: the dots are spliced into the second-order fit
-  # with do.call(), where R partial-matches them against efa_fit()'s formals, so `b_b` would
-  # arrive there as `b_boot` without ever matching the refused name exactly. Only the
-  # whitelist, which spells every accepted name in full, closes that route.
-  expect_error(do.call(efa_schmid_leiman, c(args, list(b_b = 10))),
-               class = "efa_unused_dots")
-  expect_error(do.call(efa_schmid_leiman, c(args, list(see = 42))),
+  expect_error(SL(EFA_mod, type = "EFAtools", method = "ML", seed = 42),
                class = "efa_unused_dots")
   expect_error(SL(EFA_mod, type = "EFAtools", method = "ML", b_b = 10),
                class = "efa_unused_dots")
 
-  # a genuine efa_fit() argument still travels through the dots untouched -- `use` is an
-  # efa_fit() formal and not one of efa_schmid_leiman()'s, so it really does go through `...`
-  expect_no_error(suppressWarnings(suppressMessages(
-    do.call(efa_schmid_leiman, c(args, list(use = "complete.obs"))))))
+  # any other efa_fit() argument had no effect on the internal EFA and is not used
+  expect_equal(SL(EFA_mod, type = "EFAtools", method = "ML", use = "complete.obs"),
+               SL(EFA_mod, type = "EFAtools", method = "ML"))
 })
 
 test_that("a second-order Heywood case raises a classed error", {
@@ -440,22 +553,28 @@ test_that("oblique solutions with unlabelled factor columns keep all factors", {
 
 })
 
-test_that("labelled factor columns are still ordered by factor number", {
+test_that("labelled factor columns keep their order and names", {
 
-  # The fallback for unlabelled columns must not disable the reordering when the
-  # labels are present but out of order.
-  L1 <- EFA_mod$rot_loadings[, c(2, 3, 1)]
-  Phi_1 <- EFA_mod$Phi[c(2, 3, 1), c(2, 3, 1)]
-  colnames(L1) <- c("F2", "F3", "F1")
+  # Columns whose labels are out of order are not sorted, so an indicator-to-factor map
+  # built in the column order of the input still lines up with the result.
+  perm <- c(2, 3, 1)
+  L1 <- EFA_mod$rot_loadings[, perm]
+  Phi_1 <- EFA_mod$Phi[perm, perm]
 
-  sl_scrambled <- efa_schmid_leiman(L1, Phi = Phi_1, estimator = "PAF",
-                                    estimate_control = estimate_control(type = "EFAtools"))
+  sl_perm <- efa_schmid_leiman(L1, Phi = Phi_1, estimator = "PAF",
+                               estimate_control = estimate_control(type = "EFAtools"))
 
-  expect_equal(sl_scrambled$sl, SL_EFAtools$sl)
+  expect_identical(colnames(sl_perm$sl), c("g", "F2", "F3", "F1", "h2", "u2"))
+  expect_equal(unclass(sl_perm$sl), unclass(SL_EFAtools$sl)[, c(1, perm + 1, 5, 6)])
 
+  # the messages of the second-order EFA name the first-order factors, also when the
+  # pattern matrix and Phi have no names
+  sl_bare <- efa_schmid_leiman(unname(unclass(EFA_mod$rot_loadings)),
+                               Phi = unname(EFA_mod$Phi))
+  expect_identical(rownames(sl_bare$L2), c("F1", "F2", "F3"))
 })
 
-test_that("a named Phi is aligned to the loading factors before reordering", {
+test_that("a named Phi is aligned to the loading factors", {
   L1 <- unclass(EFA_mod$rot_loadings)
   Phi <- EFA_mod$Phi
   base <- efa_schmid_leiman(
@@ -471,24 +590,6 @@ test_that("a named Phi is aligned to the loading factors before reordering", {
 
   expect_equal(aligned$sl, base$sl)
   expect_equal(aligned$L2, base$L2)
-})
-
-test_that("efa_schmid_leiman runs on an oblique fit whose column labels are permuted", {
-  skip_if_not_installed("GPArotation")
-
-  # The first-order columns are reordered by the number in their labels, which the
-  # oblimin rotation returns permuted (F2, F1, F3). An unguarded reorder empties Phi,
-  # and the second-order fit then aborts on a model with no variables.
-  EFA_obl <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
-                     estimator = "PAF", rotation = "oblimin")
-  SL_obl <- efa_schmid_leiman(EFA_obl, estimator = "PAF",
-                              estimate_control = estimate_control(type = "EFAtools"))
-
-  expect_s3_class(SL_obl, "efa_schmid_leiman")
-  expect_identical(class(SL_obl$sl), c("efa_sl_loadings", "SLLOADINGS"))
-  expect_identical(dim(unclass(SL_obl$sl)), dim(unclass(SL_EFAtools$sl)))
-  expect_true(all(is.finite(SL_obl$L2)))
-  expect_length(SL_obl$L2, 3)
 })
 
 test_that("print output is stable", {

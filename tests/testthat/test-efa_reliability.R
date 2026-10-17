@@ -6,6 +6,12 @@ efa_mod <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
 sl_mod <- efa_schmid_leiman(efa_mod, estimate_control = estimate_control(type = "EFAtools"), estimator = "PAF")
 fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
 
+# The component arguments are deprecated. The tests of that route call it through this
+# wrapper, which silences the deprecation warning; a dedicated test checks the warning.
+rel_components <- function(...) {
+  withr::with_options(list(lifecycle_verbosity = "quiet"), efa_reliability(...))
+}
+
 # The map efa_reliability derives when factor_map is omitted: each item on its highest
 # |group loading|.
 auto <- local({
@@ -70,7 +76,24 @@ test_that("efa_reliability wires the SL adapter, core, and result builder togeth
 
   res <- efa_reliability(sl_mod, factor_map = fc)
   expect_s3_class(res, "efa_reliability")
-  expect_equal(res, expected)
+  expect_equal(res, expected, ignore_attr = "factor_map")
+  # The map that was used is returned, labelled by variable and group factor.
+  expect_identical(attr(res, "factor_map"), fc)
+})
+
+test_that("the component arguments are deprecated, and the matrix route replaces them", {
+  sl <- unclass(sl_mod$sl)
+  cm <- test_models$baseline$cormat
+  withr::local_options(lifecycle_verbosity = "warning")
+  expect_warning(
+    res <- efa_reliability(var_names = rownames(sl), g_load = sl[, "g"],
+                           s_load = sl[, c("F1", "F2", "F3")], u2 = sl[, "u2"],
+                           cormat = cm, fac_names = c("F1", "F2", "F3")),
+    class = "lifecycle_warning_deprecated")
+  expect_equal(res, efa_reliability(sl[, c("g", "F1", "F2", "F3")], u2 = sl[, "u2"],
+                                    cormat = cm))
+  # Without a solution and without components, the call names `model`.
+  expect_error(efa_reliability(), class = "efa_reliability_missing_args")
 })
 
 test_that("efa_reliability surfaces the full coefficient menu; CR/AVE never appear", {
@@ -120,15 +143,15 @@ test_that("an unknown coefficient is a classed error", {
 test_that("invalid model and missing/malformed manual components are classed errors", {
   expect_error(efa_reliability(model = 1:5), class = "efa_reliability_invalid_model")
   expect_error(
-    efa_reliability(model = NULL, var_names = rownames(sl_mod$sl),
-                    s_load = sl_mod$sl[, c("F1", "F2", "F3")], u2 = sl_mod$sl[, "u2"],
-                    factor_map = fc),
+    rel_components(model = NULL, var_names = rownames(sl_mod$sl),
+                   s_load = sl_mod$sl[, c("F1", "F2", "F3")], u2 = sl_mod$sl[, "u2"],
+                   factor_map = fc),
     class = "efa_reliability_missing_args")
   # A vector s_load must abort, not be silently coerced to a one-column matrix.
   expect_error(
-    efa_reliability(model = NULL, var_names = rownames(sl_mod$sl),
-                    g_load = sl_mod$sl[, "g"], s_load = as.numeric(sl_mod$sl[, "F1"]),
-                    u2 = sl_mod$sl[, "u2"]),
+    rel_components(model = NULL, var_names = rownames(sl_mod$sl),
+                   g_load = sl_mod$sl[, "g"], s_load = as.numeric(sl_mod$sl[, "F1"]),
+                   u2 = sl_mod$sl[, "u2"]),
     class = "efa_reliability_bad_s_load")
   # A non-numeric matrix model is rejected rather than failing deep in the algebra.
   expect_error(efa_reliability(matrix("a", 4, 2)), class = "efa_reliability_bad_matrix")
@@ -141,21 +164,21 @@ test_that("correlation mode without an available correlation matrix aborts (not 
   # Manual components with no cormat (and no pattern/Phi): correlation mode has no
   # denominator, so it aborts with an actionable message instead of returning NA omegas.
   expect_error(
-    efa_reliability(model = NULL, var_names = paste0("V", 1:6), g_load = g,
-                    s_load = s, u2 = u2),
+    rel_components(model = NULL, var_names = paste0("V", 1:6), g_load = g,
+                   s_load = s, u2 = u2),
     class = "efa_reliability_need_cormat")
   # The same input is fine under variance = "sums_load" (no correlation matrix needed).
   expect_s3_class(
-    efa_reliability(model = NULL, var_names = paste0("V", 1:6), g_load = g,
-                    s_load = s, u2 = u2, variance = "sums_load"),
+    rel_components(model = NULL, var_names = paste0("V", 1:6), g_load = g,
+                   s_load = s, u2 = u2, variance = "sums_load"),
     "efa_reliability")
 })
 
 test_that("manual components of mismatched length abort with a classed error", {
   s <- matrix(0, 5, 2); s[1:3, 1] <- 0.4; s[4:5, 2] <- 0.4
   expect_error(
-    efa_reliability(model = NULL, var_names = paste0("V", 1:6), g_load = rep(0.5, 6),
-                    s_load = s, u2 = rep(0.5, 6)),
+    rel_components(model = NULL, var_names = paste0("V", 1:6), g_load = rep(0.5, 6),
+                   s_load = s, u2 = rep(0.5, 6)),
     class = "efa_reliability_length_mismatch")
 })
 
@@ -168,7 +191,7 @@ test_that("only correlation mode needs a correlation matrix, general factor or n
   # The uniquenesses follow each general column so the components stay standardized.
   for (g in list(rep(0, 6), rep(0.3, 6))) {
     expect_error(
-      do.call(efa_reliability,
+      do.call(rel_components,
               c(args[setdiff(names(args), "u2")],
                 list(g_load = g, u2 = 1 - g^2 - rowSums(s^2)))),
       class = "efa_reliability_need_cormat")
@@ -177,8 +200,8 @@ test_that("only correlation mode needs a correlation matrix, general factor or n
   # The model-implied convention needs none: its denominator is the composite's common
   # variance plus the uniquenesses. An all-zero general column says the solution has no
   # general factor, not that a correlation matrix is required.
-  res <- efa_reliability(model = NULL, var_names = paste0("V", 1:6), g_load = rep(0, 6),
-                         s_load = s, u2 = u2, variance = "sums_load")
+  res <- rel_components(model = NULL, var_names = paste0("V", 1:6), g_load = rep(0, 6),
+                        s_load = s, u2 = u2, variance = "sums_load")
   tot <- res$value[res$coefficient == "omega_total" & res$factor == "total"]
   expect_equal(tot, sum(tcrossprod(s)) / (sum(tcrossprod(s)) + sum(u2)))
   expect_identical(attr(res, "settings"),
@@ -198,8 +221,8 @@ test_that("Phi without pattern makes manual components a correlated-factors solu
   u2 <- 1 - diag(common)
   R <- common + diag(u2)
   dimnames(R) <- list(rownames(L), rownames(L))
-  manual <- function(...) efa_reliability(NULL, var_names = rownames(L),
-                                          g_load = rep(0, 6), s_load = L, u2 = u2, ...)
+  manual <- function(...) rel_components(NULL, var_names = rownames(L),
+                                         g_load = rep(0, 6), s_load = L, u2 = u2, ...)
   get <- function(x) x$value[x$coefficient == "omega_total" & x$factor == "total"]
 
   expect_equal(get(manual(cormat = R, Phi = Phi)), sum(common) / sum(R))
@@ -228,13 +251,13 @@ test_that("missing and infinite components are rejected, not scored", {
   L <- matrix(c(.7, .7, .7, 0, 0, 0, 0, 0, 0, .6, .6, .6), 6, 2)
   u2 <- 1 - rowSums(L^2)
   manual <- function(g = rep(0, 6), uniq = u2) {
-    efa_reliability(NULL, var_names = paste0("V", 1:6), g_load = g, s_load = L,
-                    u2 = uniq, variance = "sums_load")
+    rel_components(NULL, var_names = paste0("V", 1:6), g_load = g, s_load = L,
+                   u2 = uniq, variance = "sums_load")
   }
 
   s_bad <- function(bad) {
-    efa_reliability(NULL, var_names = paste0("V", 1:6), g_load = rep(0, 6),
-                    s_load = replace(L, 2, bad), u2 = u2, variance = "sums_load")
+    rel_components(NULL, var_names = paste0("V", 1:6), g_load = rep(0, 6),
+                   s_load = replace(L, 2, bad), u2 = u2, variance = "sums_load")
   }
   for (bad in list(NA_real_, Inf, -Inf)) {
     expect_error(manual(uniq = replace(u2, 2, bad)))
@@ -246,9 +269,9 @@ test_that("missing and infinite components are rejected, not scored", {
 
   # Checking the group loadings numerically also rejects a matrix that is not numeric,
   # which the class test alone admits.
-  expect_error(efa_reliability(NULL, var_names = paste0("V", 1:6), g_load = rep(0, 6),
-                               s_load = matrix(as.character(L), 6, 2), u2 = u2,
-                               variance = "sums_load"))
+  expect_error(rel_components(NULL, var_names = paste0("V", 1:6), g_load = rep(0, 6),
+                              s_load = matrix(as.character(L), 6, 2), u2 = u2,
+                              variance = "sums_load"))
 
   # The same components, complete and finite, are scored.
   expect_s3_class(manual(), "efa_reliability")
@@ -279,8 +302,8 @@ test_that("supplied uniquenesses are checked against the loadings they accompany
   s <- sl[, c("F1", "F2", "F3")]
   h2 <- sl[, "h2"]
   manual <- function(u2, ...) {
-    efa_reliability(NULL, var_names = rownames(sl), g_load = g, s_load = s, u2 = u2,
-                    variance = "sums_load", ...)
+    rel_components(NULL, var_names = rownames(sl), g_load = g, s_load = s, u2 = u2,
+                   variance = "sums_load", ...)
   }
 
   expect_warning(manual(u2 = h2), class = "efa_reliability_u2_not_standardized")
@@ -312,9 +335,9 @@ test_that("supplied uniquenesses are checked against the loadings they accompany
   blind <- 1 - rowSums(Lo^2)
   expect_gt(max(abs(aware - blind)), .05)
 
-  obl <- function(u2) efa_reliability(NULL, var_names = paste0("V", 1:8),
-                                      g_load = rep(0, 8), s_load = Lo, u2 = u2,
-                                      Phi = Phi, variance = "sums_load")
+  obl <- function(u2) rel_components(NULL, var_names = paste0("V", 1:8),
+                                     g_load = rep(0, 8), s_load = Lo, u2 = u2,
+                                     Phi = Phi, variance = "sums_load")
   expect_no_warning(obl(aware), class = "efa_reliability_u2_not_standardized")
   expect_warning(obl(blind), class = "efa_reliability_u2_not_standardized")
 })
@@ -329,8 +352,8 @@ test_that("a correlation matrix and a pattern to rebuild one are an either/or", 
   u2 <- 1 - diag(L %*% Phi %*% t(L))
   R <- L %*% Phi %*% t(L) + diag(u2)
   dimnames(R) <- list(rownames(L), rownames(L))
-  manual <- function(...) efa_reliability(NULL, var_names = rownames(L),
-                                          g_load = rep(0, 6), s_load = L, u2 = u2, ...)
+  manual <- function(...) rel_components(NULL, var_names = rownames(L),
+                                         g_load = rep(0, 6), s_load = L, u2 = u2, ...)
 
   expect_error(manual(cormat = R, pattern = L, Phi = Phi),
                class = "efa_reliability_cormat_and_pattern")
@@ -346,8 +369,8 @@ test_that("a correlation matrix and a pattern to rebuild one are an either/or", 
 test_that("Phi is rejected or reported where it cannot describe the group factors", {
   L <- matrix(c(.7, .7, .7, 0, 0, 0, 0, 0, 0, .6, .6, .6), 6, 2)
   u2 <- 1 - rowSums(L^2)
-  manual <- function(...) efa_reliability(NULL, var_names = paste0("V", 1:6),
-                                          s_load = L, u2 = u2, variance = "sums_load", ...)
+  manual <- function(...) rel_components(NULL, var_names = paste0("V", 1:6),
+                                         s_load = L, u2 = u2, variance = "sums_load", ...)
   ok <- matrix(c(1, .5, .5, 1), 2, 2)
 
   # Correlated group factors and a general factor are not the decomposition these
@@ -370,12 +393,10 @@ test_that("Phi is rejected or reported where it cannot describe the group factor
   expect_warning(manual(g_load = rep(0, 6), pattern = L, Phi = ok),
                  class = "efa_reliability_phi_pattern")
 
-  # A single group factor takes a 1 x 1 Phi, which must stay reachable. It is one factor,
-  # so the single-factor note is expected here and is muffled rather than left to print.
-  expect_no_error(suppressMessages(
-    efa_reliability(NULL, var_names = paste0("V", 1:6), g_load = rep(0, 6),
-                    s_load = matrix(.6, 6, 1), u2 = rep(.64, 6),
-                    Phi = matrix(1, 1, 1), variance = "sums_load")))
+  # A single group factor takes a 1 x 1 Phi, which must stay reachable.
+  expect_no_error(rel_components(NULL, var_names = paste0("V", 1:6), g_load = rep(0, 6),
+                                 s_load = matrix(.6, 6, 1), u2 = rep(.64, 6),
+                                 Phi = matrix(1, 1, 1), variance = "sums_load"))
 
   # A fitted solution carries its own components, so every argument that describes manually
   # supplied ones is reported rather than dropped -- not just the two that changed meaning.
@@ -421,11 +442,11 @@ test_that("Phi is rejected or reported where it cannot describe the group factor
 })
 
 test_that("a labelling argument is reported for an input that does not read it", {
-  # `fac_names` and `group_names` label the result rather than describe components, so each
-  # is reported where it does not apply rather than dropped: `fac_names` for a lavaan fit,
-  # whose factor labels come from the model syntax, and `group_names` for anything but a
-  # lavaan fit, every other input being a single ungrouped solution.
+  # Each is reported where it does not apply rather than dropped: `fac_names` for a lavaan
+  # fit, whose factor labels come from the model syntax, and `group_names` for anything but a
+  # lavaan multiple-group fit.
   cls <- "efa_reliability_arg_not_applicable"
+  cls_ignored <- "efa_reliability_args_ignored"
 
   expect_warning(efa_reliability(sl_mod, factor_map = fc, group_names = c("a", "b")),
                  class = cls)
@@ -436,9 +457,9 @@ test_that("a labelling argument is reported for an input that does not read it",
                  class = cls)
   # Manually supplied components read no `group_names` either, and are not covered by the
   # report for a fitted `model`, there being none.
-  expect_warning(efa_reliability(NULL, var_names = rownames(Lb), g_load = Lb[, 1],
-                                 s_load = Lb[, -1], u2 = 1 - rowSums(Lb^2),
-                                 group_names = c("a", "b"), variance = "sums_load"),
+  expect_warning(rel_components(NULL, var_names = rownames(Lb), g_load = Lb[, 1],
+                                s_load = Lb[, -1], u2 = 1 - rowSums(Lb^2),
+                                group_names = c("a", "b"), variance = "sums_load"),
                  class = cls)
   # and it never moved a coefficient
   expect_equal(suppressWarnings(
@@ -458,10 +479,11 @@ test_that("a labelling argument is reported for an input that does not read it",
     sample.cov = test_models$baseline$cormat, sample.nobs = 500, estimator = "ml",
     orthogonal = TRUE))
   expect_warning(efa_reliability(fit, g_name = "g", fac_names = c("A", "B", "C")),
-                 class = cls)
+                 class = cls_ignored)
   # Including one of the wrong length, which the length check -- belonging to the routes
   # that read it -- does not refuse here.
-  expect_warning(efa_reliability(fit, g_name = "g", fac_names = c("A", "B")), class = cls)
+  expect_warning(efa_reliability(fit, g_name = "g", fac_names = c("A", "B")),
+                 class = cls_ignored)
   expect_equal(suppressWarnings(
     efa_reliability(fit, g_name = "g", fac_names = c("A", "B", "C"))),
     efa_reliability(fit, g_name = "g"))
@@ -547,13 +569,10 @@ test_that("an oblique EFA is scored as a correlated-factors model (no general fa
   expect_true(any(res$factor == "total" & res$level == "total"))
   expect_false(any(res$factor == "g"))
   expect_false(any(res$level == "general"))
-  # The synthetic all-zero general-factor column also leaves the whole-scale (total) row's
-  # omega subscale and H index undefined; they are dropped (H of an all-zero loading
-  # vector would otherwise print a misleading 0). Group factors keep their own omega
-  # subscale and H.
-  expect_false(any(res$coefficient == "omega_subscale" & res$factor == "total"))
+  # Omega subscale is defined for uncorrelated factors only, so no row carries it. The
+  # whole-scale row has no factor and so no H index; each factor keeps its own.
+  expect_false(any(res$coefficient == "omega_subscale"))
   expect_false(any(res$coefficient == "H" & res$factor == "total"))
-  expect_true(any(res$coefficient == "omega_subscale" & res$factor != "total"))
   expect_true(any(res$coefficient == "H" & res$factor != "total"))
   # The whole-scale omega total and alpha, and each group factor's omega/H, remain.
   expect_true(any(res$coefficient == "omega_total" & res$factor == "total"))
@@ -658,15 +677,15 @@ test_that("a correlation matrix is rejected, a square bifactor matrix is scored"
   cm <- test_models$baseline$cormat
   p <- ncol(cm)
   expect_error(
-    efa_reliability(var_names = colnames(cm), g_load = rep(0.5, p), s_load = cm,
-                    u2 = rep(0.5, p), variance = "sums_load"),
+    rel_components(var_names = colnames(cm), g_load = rep(0.5, p), s_load = cm,
+                   u2 = rep(0.5, p), variance = "sums_load"),
     class = "efa_reliability_cormat_as_s_load")
 
   # The group loadings of a genuine bifactor solution are still accepted there.
   s <- L[, 2:3]
   expect_s3_class(
-    efa_reliability(var_names = paste0("V", 1:4), g_load = L[, 1], s_load = s,
-                    u2 = 1 - L[, 1]^2 - rowSums(s^2), variance = "sums_load"),
+    rel_components(var_names = paste0("V", 1:4), g_load = L[, 1], s_load = s,
+                   u2 = 1 - L[, 1]^2 - rowSums(s^2), variance = "sums_load"),
     "efa_reliability")
 
   # A missing value is reported as such: the correlation-matrix test aborts on one in
@@ -674,8 +693,8 @@ test_that("a correlation matrix is rejected, a square bifactor matrix is scored"
   s_na <- test_models$baseline$cormat
   s_na[2, 3] <- s_na[3, 2] <- NA
   expect_error(
-    efa_reliability(var_names = colnames(s_na), g_load = rep(0.5, ncol(s_na)),
-                    s_load = s_na, u2 = rep(0.5, ncol(s_na)), variance = "sums_load"),
+    rel_components(var_names = colnames(s_na), g_load = rep(0.5, ncol(s_na)),
+                   s_load = s_na, u2 = rep(0.5, ncol(s_na)), variance = "sums_load"),
     class = "efa_invalid_argument")
   # Likewise on the matrix route, where the guard sees an incomplete matrix at all.
   expect_error(efa_reliability(s_na), class = "efa_invalid_argument")
@@ -685,24 +704,24 @@ test_that("the whole Schmid-Leiman table is refused as s_load, its group columns
   # Passed whole, its h2 and u2 columns would be scored as two more group factors and its
   # general column as a third, on top of the g_load named separately.
   expect_error(
-    efa_reliability(var_names = rownames(sl_mod$sl), g_load = sl_mod$sl[, "g"],
-                    s_load = sl_mod$sl, u2 = sl_mod$sl[, "u2"], variance = "sums_load"),
+    rel_components(var_names = rownames(sl_mod$sl), g_load = sl_mod$sl[, "g"],
+                   s_load = sl_mod$sl, u2 = sl_mod$sl[, "u2"], variance = "sums_load"),
     class = "efa_reliability_s_load_display_cols")
 
   # Either column alone is caught too, which also renders the singular message.
   for (nm in c("h2", "u2")) {
     s1 <- sl_mod$sl[, c(nm, "F2")]
     expect_error(
-      efa_reliability(var_names = rownames(sl_mod$sl), g_load = sl_mod$sl[, "g"],
-                      s_load = s1, u2 = sl_mod$sl[, "u2"], variance = "sums_load"),
+      rel_components(var_names = rownames(sl_mod$sl), g_load = sl_mod$sl[, "g"],
+                     s_load = s1, u2 = sl_mod$sl[, "u2"], variance = "sums_load"),
       class = "efa_reliability_s_load_display_cols")
   }
 
   # The group-factor columns of that same table are the documented input and still score.
   expect_s3_class(
-    efa_reliability(var_names = rownames(sl_mod$sl), g_load = sl_mod$sl[, "g"],
-                    s_load = sl_mod$sl[, c("F1", "F2", "F3")], u2 = sl_mod$sl[, "u2"],
-                    variance = "sums_load"),
+    rel_components(var_names = rownames(sl_mod$sl), g_load = sl_mod$sl[, "g"],
+                   s_load = sl_mod$sl[, c("F1", "F2", "F3")], u2 = sl_mod$sl[, "u2"],
+                   variance = "sums_load"),
     "efa_reliability")
 })
 
@@ -771,11 +790,20 @@ test_that("an ordinary loading matrix is rejected, a Schmid-Leiman table is scor
   expect_equal(res, efa_reliability(sl_mod, factor_map = fc))
 
   # With no factor_map the table gets the same auto-derived correspondences as the
-  # object. The nonzero-pattern default of a raw bifactor matrix would instead assign
-  # every variable to every group factor -- the table is estimated and has no structural
-  # zeros -- which collapses PUC to zero and repeats the whole-scale alpha on every row.
+  # object, and so does its bifactor matrix without the class: an estimated matrix has no
+  # exact zeros, so each variable goes to its largest group loading.
   expect_equal(efa_reliability(sl_mod$sl, cormat = test_models$baseline$cormat),
                efa_reliability(sl_mod))
+  sl <- unclass(sl_mod$sl)
+  expect_equal(efa_reliability(sl[, c("g", "F1", "F2", "F3")], u2 = sl[, "u2"],
+                               cormat = test_models$baseline$cormat),
+               efa_reliability(sl_mod))
+  # A table rounded for print has a few incidental zeros and is still estimated, so each
+  # variable keeps one group factor.
+  tab <- round(sl[, c("g", "F1", "F2", "F3")], 2)
+  expect_gt(sum(tab[, -1] == 0), 0)
+  map <- attr(efa_reliability(tab, cormat = test_models$baseline$cormat), "factor_map")
+  expect_true(all(rowSums(map) == 1))
 
   # The h2/u2 columns are always the last two, so an unlabelled table is read off that
   # layout instead of scoring them as two more group factors (which puts omega total
@@ -802,13 +830,13 @@ test_that("an ordinary loading matrix with its Phi is scored as a correlated-fac
   res <- efa_reliability(L, Phi = Phi, cormat = cm)
   expect_s3_class(res, "efa_reliability")
   expect_equal(res, efa_reliability(efa_mod, cormat = cm))
-  expect_equal(res, efa_reliability(NULL, var_names = rownames(L), g_load = rep(0, nrow(L)),
-                                    s_load = unclass(L), u2 = u2, Phi = Phi, cormat = cm,
-                                    fac_names = colnames(L)))
+  expect_equal(res, rel_components(NULL, var_names = rownames(L), g_load = rep(0, nrow(L)),
+                                   s_load = unclass(L), u2 = u2, Phi = Phi, cormat = cm,
+                                   fac_names = colnames(L)))
 
   # It is the correlated-factors menu, not the bifactor one: the coefficients a solution
   # without a general factor does not define are omitted rather than returned as zeros.
-  expect_setequal(res$coefficient, c("omega_total", "omega_subscale", "alpha", "H"))
+  expect_setequal(res$coefficient, c("omega_total", "alpha", "H"))
   expect_identical(attr(res, "settings"), list(variance = "correlation",
                                                no_general = TRUE))
   # Labels come from the matrix itself.
@@ -842,6 +870,13 @@ test_that("an ordinary loading matrix with its Phi is scored as a correlated-fac
   # A Phi that cannot be the correlation matrix of these columns is named as such.
   expect_error(efa_reliability(L, Phi = diag(2), cormat = cm),
                class = "efa_reliability_bad_phi")
+
+  # A target pattern with exact zeros keeps its pattern, cross-loading included.
+  P <- matrix(0, 6, 2, dimnames = list(paste0("x", 1:6), c("F1", "F2")))
+  P[1:3, 1] <- .7; P[4:6, 2] <- .7; P[3, 2] <- .3
+  map <- attr(suppressWarnings(efa_reliability(P, Phi = diag(2), variance = "sums_load")),
+              "factor_map")
+  expect_identical(unname(map[3, ]), c(TRUE, TRUE))
 })
 
 test_that("Phi settles the reading of a matrix that states none, and is refused where it is stated", {
@@ -859,7 +894,7 @@ test_that("Phi settles the reading of a matrix that states none, and is refused 
   # coefficients the correlated-factors one does not.
   expect_warning(res <- efa_reliability(L, Phi = Phi, cormat = cm),
                  class = "efa_reliability_phi_as_pattern")
-  expect_setequal(res$coefficient, c("omega_total", "omega_subscale", "alpha", "H"))
+  expect_setequal(res$coefficient, c("omega_total", "alpha", "H"))
 
   # A Phi that cannot be the correlation matrix of those columns is named on its own, not
   # under a warning about a reading that is then abandoned.
@@ -871,9 +906,9 @@ test_that("Phi settles the reading of a matrix that states none, and is refused 
   # The components route names its general factor, so there a general factor together with
   # correlated group factors is a contradiction the arguments state outright, and it stays
   # refused rather than reinterpreted.
-  expect_error(efa_reliability(NULL, var_names = rownames(L), g_load = L[, 1],
-                               s_load = L[, -1, drop = FALSE], u2 = 1 - rowSums(L^2),
-                               Phi = Phi2, variance = "sums_load"),
+  expect_error(rel_components(NULL, var_names = rownames(L), g_load = L[, 1],
+                              s_load = L[, -1, drop = FALSE], u2 = 1 - rowSums(L^2),
+                              Phi = Phi2, variance = "sums_load"),
                class = cls)
 
   # The loading table of a Schmid-Leiman solution states that it is a hierarchy, so the
@@ -891,11 +926,9 @@ test_that("Phi settles the reading of a matrix that states none, and is refused 
   # have is the 1 by 1 identity, which says nothing about the solution, so it is checked and
   # the same coefficients come back with it or without it, classed or not.
   one <- efa_fit(cm, N = 500, n_factors = 1, estimator = "PAF")$unrot_loadings
-  res <- suppressMessages(efa_reliability(one, Phi = matrix(1, 1, 1), cormat = cm))
-  expect_identical(res, suppressMessages(efa_reliability(unclass(one),
-                                                         Phi = matrix(1, 1, 1),
-                                                         cormat = cm)))
-  expect_identical(res, suppressMessages(efa_reliability(unclass(one), cormat = cm)))
+  res <- efa_reliability(one, Phi = matrix(1, 1, 1), cormat = cm)
+  expect_identical(res, efa_reliability(unclass(one), Phi = matrix(1, 1, 1), cormat = cm))
+  expect_identical(res, efa_reliability(unclass(one), cormat = cm))
   # A Phi that cannot be that identity is still named on the unclassed route.
   expect_error(efa_reliability(unclass(one), Phi = matrix(2, 1, 1), cormat = cm),
                class = "efa_reliability_bad_phi")
@@ -1021,7 +1054,7 @@ test_that("a lavaan fit with correlated residuals counts them in the composite v
   fit_ho <- suppressWarnings(lavaan::cfa(paste(rc$second_order, "V1 ~~ V2", sep = "\n"),
                                          sample.cov = rc$Sigma, sample.nobs = 1000,
                                          estimator = "ml", sample.cov.rescale = FALSE))
-  res_ho <- suppressMessages(efa_reliability(fit_ho, g_name = "g"))
+  res_ho <- efa_reliability(fit_ho, g_name = "g")
   sh <- suppressWarnings(lavaan::lavInspect(fit_ho, "std"))
   fo <- c("F1", "F2", "F3")
   L1 <- sh$lambda[, fo]
@@ -1083,7 +1116,7 @@ test_that("the residual-covariance correction reaches every lavaan spec shape", 
   s_cf <- suppressWarnings(lavaan::lavInspect(cf, "std"))
   common_cf <- s_cf$lambda %*% s_cf$psi %*% t(s_cf$lambda)
   Th_cf <- rc_theta(s_cf$theta)
-  res_cf <- suppressMessages(efa_reliability(cf))
+  res_cf <- efa_reliability(cf)
   expect_equal(get(res_cf, "omega_total", "F1"),
                sum(common_cf[i1, i1]) / (sum(common_cf[i1, i1]) + sum(Th_cf[i1, i1])))
   expect_gt(abs(get(res_cf, "omega_total", "F1") - sum(common_cf[i1, i1]) /
@@ -1097,7 +1130,7 @@ test_that("the residual-covariance correction reaches every lavaan spec shape", 
   s_sf <- suppressWarnings(lavaan::lavInspect(sf, "std"))
   common_sf <- tcrossprod(s_sf$lambda[, 1])
   Th_sf <- rc_theta(s_sf$theta)
-  res_sf <- suppressMessages(efa_reliability(sf))
+  res_sf <- efa_reliability(sf)
   tot_sf <- res_sf$value[res_sf$coefficient == "omega_total"]
   expect_equal(tot_sf, sum(common_sf) / (sum(common_sf) + sum(Th_sf)))
   expect_gt(abs(tot_sf - sum(common_sf) / (sum(common_sf) + sum(diag(Th_sf)))), 0.005)
@@ -1131,14 +1164,11 @@ test_that("a lavaan correlated-factors fit is scored as the oblique solution it 
   fit <- suppressWarnings(lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
                                       sample.nobs = 500, estimator = "ml"))
 
-  # How the fit was read is stated rather than left to be inferred from a missing column.
-  expect_message(efa_reliability(fit), class = "efa_reliability_no_general_factor")
-  res <- suppressMessages(efa_reliability(fit))
+  expect_no_message(res <- efa_reliability(fit))
 
   # The correlated-factors menu: the coefficients a solution with no general factor does
   # not define are omitted, not returned as the zeros the arithmetic would give.
-  expect_setequal(res$coefficient, c("omega_total", "omega_subscale", "alpha", "H"))
-  expect_false(any(res$coefficient == "omega_subscale" & res$factor == "total"))
+  expect_setequal(res$coefficient, c("omega_total", "alpha", "H"))
   expect_false(any(res$coefficient == "H" & res$factor == "total"))
   expect_true(all(is.na(res$group)))
   expect_identical(attr(res, "settings"), list(variance = "sums_load",
@@ -1157,26 +1187,15 @@ test_that("a lavaan correlated-factors fit is scored as the oblique solution it 
 
   # `g_name` names a general factor, which this fit has none of: it is read from the
   # structure, so naming one of the ordinary factors changes nothing.
-  expect_equal(suppressMessages(efa_reliability(fit, g_name = "F1")), res)
+  expect_equal(efa_reliability(fit, g_name = "F1"), res)
 
   # A multiple-group fit is scored per group, as the supported shapes are.
   fit_gr <- suppressWarnings(lavaan::cfa(mod, sample.cov =
     list(test_models$baseline$cormat, test_models$baseline$cormat),
     sample.nobs = c(500, 500), estimator = "ml"))
-  res_gr <- suppressMessages(efa_reliability(fit_gr, group_names = c("Young", "Old")))
+  res_gr <- efa_reliability(fit_gr, group_names = c("Young", "Old"))
   expect_identical(unique(res_gr$group), c("Young", "Old"))
-  expect_setequal(res_gr$coefficient, c("omega_total", "omega_subscale", "alpha", "H"))
-
-  # The printed explanation of the two omega columns has to describe the table it stands
-  # above for a grouped result as well. Every factor label repeats once per group here, so
-  # a comparison keyed on the label alone matches only each factor's first group and can
-  # never find the columns equal -- and under exact simple structure they are equal.
-  tot <- res_gr$value[res_gr$coefficient == "omega_total" & res_gr$level == "group"]
-  sub_om <- res_gr$value[res_gr$coefficient == "omega_subscale" & res_gr$level == "group"]
-  expect_equal(tot, sub_om)
-  testthat::local_reproducible_output()
-  txt <- paste(cli::ansi_strip(format(res_gr)), collapse = " ")
-  expect_match(txt, "subscale omega equals its total omega")
+  expect_setequal(res_gr$coefficient, c("omega_total", "alpha", "H"))
 
   # OMEGA() keeps its own surface: its wide per-factor output reports the general
   # factor's omega hierarchical, ECV, and PUC, which this fit does not define.
@@ -1184,34 +1203,119 @@ test_that("a lavaan correlated-factors fit is scored as the oblique solution it 
   expect_error(OMEGA(fit, g_name = "F1"), class = "efa_reliability_invalid_lavaan")
 })
 
-test_that("a fit that is not a correlated-factors one still needs its general factor named", {
+test_that("a correlated-factors fit with cross-loadings is scored, and matches semTools", {
   skip_if_not_installed("lavaan")
-  # A variable on two or more factors is the bifactor structure, and a fit with one is
-  # read as a bifactor solution -- so its general factor still has to be named, and a
-  # correlated-factors model with a cross-loading is not routed round that.
+  # Without a factor named `g_name`, a variable on two factors is a cross-loading, not a
+  # sign of a bifactor model. Each composite holds the variables that load on its factor.
   mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6 + V7
           F2 =~ V7 + V8 + V9 + V10 + V11 + V12
           F3 =~ V13 + V14 + V15 + V16 + V17 + V18'
   fit <- suppressWarnings(lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
                                       sample.nobs = 500, estimator = "ml"))
-  expect_error(efa_reliability(fit), class = "efa_reliability_g_name")
+  res <- efa_reliability(fit)
+  expect_setequal(res$coefficient, c("omega_total", "alpha", "H"))
+  expect_identical(sum(attr(res, "factor_map")[, "F1"]), 7L)
 
-  # And a genuine bifactor whose factors were left correlated stays refused: the general
-  # and group parts of such a model do not partition a composite's variance, which is a
-  # different problem from having no general factor and is named as one.
-  mod_bi <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+  skip_on_cran()
+  skip_if_not_installed("semTools")
+  # semTools counts all common factors as true score, as omega total does.
+  ref <- unlist(semTools::compRelSEM(fit, obs.var = FALSE))
+  for (f in c("F1", "F2", "F3")) {
+    expect_equal(res$value[res$coefficient == "omega_total" & res$factor == f],
+                 unname(ref[f]), tolerance = 1e-6)
+  }
+})
+
+test_that("a bifactor fit needs its general factor named and uncorrelated factors", {
+  skip_if_not_installed("lavaan")
+  bi <- function(g, orthogonal) {
+    suppressWarnings(lavaan::cfa(
+      paste('F1 =~ V1 + V2 + V3 + V4 + V5 + V6
              F2 =~ V7 + V8 + V9 + V10 + V11 + V12
-             F3 =~ V13 + V14 + V15 + V16 + V17 + V18
-             g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
-                  V13 + V14 + V15 + V16 + V17 + V18'
-  fit_bi <- suppressWarnings(lavaan::cfa(mod_bi, sample.cov = test_models$baseline$cormat,
-                                         sample.nobs = 500, estimator = "ml",
-                                         orthogonal = FALSE))
-  expect_error(efa_reliability(fit_bi, g_name = "g"),
+             F3 =~ V13 + V14 + V15 + V16 + V17 + V18\n', g, '=~',
+            paste(paste0("V", 1:18), collapse = " + ")),
+      sample.cov = test_models$baseline$cormat, sample.nobs = 500, estimator = "ml",
+      orthogonal = orthogonal))
+  }
+
+  # A factor that loads on every variable, next to factors that do not, is a general factor
+  # under another name, so the fit is refused rather than scored as correlated factors.
+  fit_G <- bi("G", TRUE)
+  expect_error(efa_reliability(fit_G), class = "efa_reliability_g_name")
+  expect_true(any(efa_reliability(fit_G, g_name = "G")$coefficient == "omega_hierarchical"))
+
+  # So is one that misses a variable but shares variables with every other factor, all of
+  # them uncorrelated.
+  fit_G17 <- suppressWarnings(lavaan::cfa(
+    paste('F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+           F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+           F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+           G =~', paste(paste0("V", 1:17), collapse = " + ")),
+    sample.cov = test_models$baseline$cormat, sample.nobs = 500, estimator = "ml",
+    orthogonal = TRUE))
+  expect_error(efa_reliability(fit_G17), class = "efa_reliability_g_name")
+
+  # An ordinary factor named "g" in a correlated-factors model is not a general factor when
+  # no variable loads on it and on another factor.
+  fit_cf <- suppressWarnings(lavaan::cfa(
+    'F1 =~ V1 + V2 + V3 + V4 + V5 + V6 + V13
+     g =~ V7 + V8 + V9 + V10 + V11 + V12
+     F3 =~ V13 + V14 + V15 + V16 + V17 + V18',
+    sample.cov = test_models$baseline$cormat, sample.nobs = 500, estimator = "ml"))
+  expect_setequal(efa_reliability(fit_cf)$coefficient, c("omega_total", "alpha", "H"))
+
+  # A bifactor whose factors were left correlated does not partition a composite's
+  # variance, and is refused.
+  expect_error(efa_reliability(bi("g", FALSE), g_name = "g"),
                class = "efa_reliability_correlated_factors")
 })
 
-test_that("a lavaan single-factor fit surfaces omega total, alpha, and H, and informs", {
+test_that("an ESEM fit is mapped by the largest loading of each variable", {
+  skip_if_not_installed("lavaan", "0.6-13")
+  # All loadings are free, so the non-zero pattern would put every variable in every
+  # composite.
+  fit <- suppressWarnings(lavaan::cfa(
+    paste('efa("e")*F1 + efa("e")*F2 + efa("e")*F3 =~',
+          paste(paste0("V", 1:18), collapse = " + ")),
+    sample.cov = test_models$baseline$cormat, sample.nobs = 500, rotation = "geomin"))
+  res <- efa_reliability(fit)
+  expect_true(all(rowSums(attr(res, "factor_map")) == 1))
+  expect_setequal(res$coefficient, c("omega_total", "alpha", "H"))
+
+  # Next to a confirmatory factor, the block keeps its own rule and the factor its pattern.
+  fit_mix <- suppressWarnings(lavaan::cfa(
+    paste('efa("e")*F1 + efa("e")*F2 =~', paste(paste0("V", 1:12), collapse = " + "),
+          '\nF3 =~', paste(paste0("V", 13:18), collapse = " + ")),
+    sample.cov = test_models$baseline$cormat, sample.nobs = 500, rotation = "geomin"))
+  map <- attr(efa_reliability(fit_mix), "factor_map")
+  expect_true(all(rowSums(map[1:12, c("F1", "F2")]) == 1))
+  expect_identical(unname(map[, "F3"]), rep(c(FALSE, TRUE), c(12, 6)))
+})
+
+test_that("a lavaan Heywood case warns, and a non-positive factor variance is refused", {
+  skip_if_not_installed("lavaan")
+  items <- paste(paste0("V", 1:18), collapse = " + ")
+  # A population whose first loading is above 1, so its residual variance is negative.
+  lam <- c(1.03, rep(.6, 17))
+  R <- tcrossprod(lam)
+  diag(R) <- 1
+  dimnames(R) <- list(paste0("V", 1:18), paste0("V", 1:18))
+  hw <- suppressWarnings(lavaan::cfa(paste("F =~", items), sample.cov = R,
+                                     sample.nobs = 500, estimator = "ml"))
+  expect_warning(efa_reliability(hw), class = "efa_reliability_heywood")
+
+  # Correlated group factors and cross-loadings next to a general factor drive a factor
+  # variance below 0 on this fixture.
+  neg <- suppressWarnings(lavaan::cfa(
+    paste('F1 =~ V1 + V2 + V3 + V4 + V5 + V6 + V17
+           F2 =~ V7 + V8 + V9 + V10 + V11 + V12 + V2
+           F3 =~ V13 + V14 + V15 + V16 + V17 + V18 + V10
+           g =~', items),
+    sample.cov = test_models$baseline$cormat, sample.nobs = 500, estimator = "ml"))
+  expect_error(efa_reliability(neg), class = "efa_reliability_factor_heywood")
+})
+
+test_that("a lavaan single-factor fit surfaces omega total, alpha, and H", {
   skip_if_not_installed("lavaan")
   fit <- suppressWarnings(lavaan::cfa(
     'g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
@@ -1219,9 +1323,8 @@ test_that("a lavaan single-factor fit surfaces omega total, alpha, and H, and in
     sample.cov = test_models$baseline$cormat, sample.nobs = 500,
     estimator = "ml", orthogonal = TRUE))
 
-  expect_message(efa_reliability(fit, g_name = "g"),
-                 class = "efa_reliability_single_factor")
-  res <- suppressMessages(efa_reliability(fit, g_name = "g"))
+  expect_no_message(res <- efa_reliability(fit, g_name = "g"))
+  expect_null(attr(res, "factor_map"))
   expect_setequal(res$coefficient, c("omega_total", "alpha", "H"))
   expect_true(all(res$factor == "g"))
 
@@ -1239,28 +1342,15 @@ test_that("a lavaan single-factor fit surfaces omega total, alpha, and H, and in
   expect_equal(get("alpha"), k / (k - 1) * (1 - sum(diag(R_imp)) / sum(R_imp)))
   expect_equal(get("H"), 1 / (1 + 1 / sum(lambda^2 / (1 - lambda^2))))
 
-  # Both expectations below are about the undefined-coefficient note alone, and every call
-  # they make also raises the single-factor one, which would otherwise print outside any
-  # expectation. Muffled by class rather than with suppressMessages(), which would hide the
-  # note the expectations are about.
-  quiet <- function(expr) {
-    withCallingHandlers(
-      expr,
-      efa_reliability_single_factor = function(m) invokeRestart("muffleMessage"))
-  }
-
   # Alpha assumes essential tau-equivalence, which is nested in a one-factor model, so it
   # is defined here and requesting it returns it instead of reporting it undefined.
-  expect_no_message(quiet(efa_reliability(fit, g_name = "g", coefficients = "alpha")),
-                    class = "efa_reliability_coef_undefined")
-  sel <- suppressMessages(efa_reliability(fit, g_name = "g", coefficients = "alpha"))
+  expect_no_message(sel <- efa_reliability(fit, g_name = "g", coefficients = "alpha"))
   expect_identical(nrow(sel), 1L)
   expect_equal(sel$value, get("alpha"))
 
   # The coefficients a single factor genuinely does not define still report as undefined.
-  expect_message(
-    quiet(efa_reliability(fit, g_name = "g", coefficients = "omega_subscale")),
-    class = "efa_reliability_coef_undefined")
+  expect_message(efa_reliability(fit, g_name = "g", coefficients = "omega_subscale"),
+                 class = "efa_reliability_coef_undefined")
 })
 
 test_that("every input route scores one and the same one-factor solution alike", {
@@ -1283,13 +1373,13 @@ test_that("every input route scores one and the same one-factor solution alike",
     paste("g =~", paste(vn, collapse = " + ")),
     sample.cov = R_imp, sample.nobs = 500, estimator = "ml"))
 
-  routes <- suppressMessages(list(
+  routes <- list(
     efa_fit = efa_reliability(fit_efa, cormat = R_imp),
     matrix  = efa_reliability(L_col, cormat = R_imp),
-    manual  = efa_reliability(NULL, var_names = vn, g_load = rep(0, length(L)),
-                              s_load = L_col, u2 = u2, Phi = matrix(1, 1, 1),
-                              cormat = R_imp),
-    lavaan  = efa_reliability(fit_lav, g_name = "g")))
+    manual  = rel_components(NULL, var_names = vn, g_load = rep(0, length(L)),
+                             s_load = L_col, u2 = u2, Phi = matrix(1, 1, 1),
+                             cormat = R_imp),
+    lavaan  = efa_reliability(fit_lav, g_name = "g"))
 
   # Every route reaches the same menu -- what one factor defines, and nothing else -- on the
   # one row a single-factor solution has, which is its general-factor row whatever the input
@@ -1340,32 +1430,30 @@ test_that("a one-column loading matrix is scored, not refused as a pattern matri
   L <- fit$unrot_loadings
   expect_s3_class(L, "efa_loadings")
 
-  expect_message(efa_reliability(L, cormat = cm),
-                 class = "efa_reliability_single_factor")
-  res <- suppressMessages(efa_reliability(L, cormat = cm))
+  expect_no_message(res <- efa_reliability(L, cormat = cm))
   expect_setequal(res$coefficient, c("omega_total", "alpha", "H"))
   expect_identical(unique(res$factor), "F1")
 
   # The class diverts nothing: the same matrix stripped of it takes the same route, and
   # the object the matrix came from reaches the same coefficients through its own adapter.
-  expect_identical(res, suppressMessages(efa_reliability(unclass(L), cormat = cm)))
-  expect_equal(res, suppressMessages(efa_reliability(fit)))
+  expect_identical(res, efa_reliability(unclass(L), cormat = cm))
+  expect_equal(res, efa_reliability(fit))
   # The superseded loading class is read the same way.
   L_old <- unclass(L)
   class(L_old) <- "LOADINGS"
-  expect_identical(suppressMessages(efa_reliability(L_old, cormat = cm)), res)
+  expect_identical(efa_reliability(L_old, cormat = cm), res)
 
   # Nor does it divert the model-implied correlation matrix the bare-matrix route falls
   # back to when `cormat` is absent, or either variance convention.
-  expect_identical(suppressMessages(efa_reliability(L)),
-                   suppressMessages(efa_reliability(unclass(L))))
-  expect_identical(suppressMessages(efa_reliability(L, variance = "sums_load")),
-                   suppressMessages(efa_reliability(unclass(L), variance = "sums_load")))
+  expect_identical(efa_reliability(L),
+                   efa_reliability(unclass(L)))
+  expect_identical(efa_reliability(L, variance = "sums_load"),
+                   efa_reliability(unclass(L), variance = "sums_load"))
 
   # A single factor's Phi can only be the 1 x 1 identity, which says nothing about the
   # solution, so the route that reads the matrix as a correlated-factors one lands on the
   # same single factor and the same coefficients.
-  expect_equal(suppressMessages(efa_reliability(L, Phi = matrix(1, 1, 1), cormat = cm)),
+  expect_equal(efa_reliability(L, Phi = matrix(1, 1, 1), cormat = cm),
                res)
 
   # The exemption stops at one column: with two or more, nothing still says whether they
@@ -1397,13 +1485,12 @@ test_that("a fac_names with the wrong number of names is refused", {
   # than dropped in favour of the default label.
   cm <- test_models$baseline$cormat
   fit1 <- efa_fit(cm, N = 500, n_factors = 1, estimator = "PAF")
-  expect_error(suppressMessages(efa_reliability(fit1, fac_names = c("A", "B"))),
+  expect_error(efa_reliability(fit1, fac_names = c("A", "B")),
                class = "efa_reliability_fac_names_length")
-  expect_error(suppressMessages(efa_reliability(fit1$unrot_loadings, cormat = cm,
-                                                fac_names = character(0))),
+  expect_error(efa_reliability(fit1$unrot_loadings, cormat = cm,
+                                                fac_names = character(0)),
                class = "efa_reliability_fac_names_length")
-  expect_identical(unique(suppressMessages(
-    efa_reliability(fit1, fac_names = "Impulsivity"))$factor), "Impulsivity")
+  expect_identical(unique(efa_reliability(fit1, fac_names = "Impulsivity")$factor), "Impulsivity")
 })
 
 test_that("fac_names labels the one factor of a single-factor solution", {
@@ -1412,9 +1499,9 @@ test_that("fac_names labels the one factor of a single-factor solution", {
   L <- as.numeric(unclass(efa_fit(cm, N = 500, n_factors = 1,
                                   estimator = "PAF")$unrot_loadings))
   L_col <- matrix(L, ncol = 1, dimnames = list(vn, NULL))
-  manual <- function(...) suppressMessages(efa_reliability(
+  manual <- function(...) rel_components(
     NULL, var_names = vn, g_load = rep(0, length(L)), s_load = L_col,
-    u2 = 1 - L^2, cormat = cm, ...))
+    u2 = 1 - L^2, cormat = cm, ...)
 
   named <- manual(fac_names = "Impulsivity")
   expect_identical(unique(named$factor), "Impulsivity")
@@ -1429,7 +1516,7 @@ test_that("fac_names labels the one factor of a single-factor solution", {
   # would claim a general factor over group factors a single-factor solution has none of.
   # The manual route's own default is the bare column position, which is not a name.
   expect_identical(unique(manual()$factor), "F1")
-  expect_identical(unique(suppressMessages(efa_reliability(L_col, cormat = cm))$factor), "F1")
+  expect_identical(unique(efa_reliability(L_col, cormat = cm)$factor), "F1")
   # A name that happens to be a digit is still a name.
   expect_identical(unique(manual(fac_names = "1")$factor), "1")
 
@@ -1438,7 +1525,7 @@ test_that("fac_names labels the one factor of a single-factor solution", {
   named_col <- L_col
   colnames(named_col) <- "Impulsivity"
   expect_identical(
-    unique(suppressMessages(efa_reliability(named_col, cormat = cm))$factor),
+    unique(efa_reliability(named_col, cormat = cm)$factor),
     unique(named$factor))
 })
 
@@ -1448,7 +1535,7 @@ test_that("a general factor with one group factor is two factors, not one", {
   # two, and keeps the coefficients that decompose a composite into them.
   L <- cbind(g = rep(0.5, 6), F1 = c(rep(0.4, 3), rep(0, 3)))
   rownames(L) <- paste0("V", 1:6)
-  expect_no_message(efa_reliability(L), class = "efa_reliability_single_factor")
+  expect_no_message(efa_reliability(L))
   res <- efa_reliability(L)
   expect_setequal(unique(res$factor), c("g", "F1"))
   expect_true(any(res$coefficient == "omega_hierarchical"))
@@ -1459,34 +1546,73 @@ test_that("a one-factor efa_fit() is scored, whether or not a rotation was asked
   cm <- test_models$baseline$cormat
   fit <- efa_fit(cm, N = 500, n_factors = 1, estimator = "PAF")
 
-  expect_message(efa_reliability(fit), class = "efa_reliability_single_factor")
-  res <- suppressMessages(efa_reliability(fit))
+  expect_no_message(res <- efa_reliability(fit))
   expect_setequal(res$coefficient, c("omega_total", "alpha", "H"))
 
   # A single factor cannot be rotated, so asking for a rotation changes neither the
   # solution nor its coefficients -- the unrotated loadings are read either way.
   rot <- suppressWarnings(suppressMessages(
     efa_fit(cm, N = 500, n_factors = 1, estimator = "PAF", rotation = "promax")))
-  expect_equal(suppressMessages(efa_reliability(rot)), res)
+  expect_equal(efa_reliability(rot), res)
 
   # Scored against the object's own correlation matrix, as an oblique solution is.
   L <- as.numeric(unclass(fit$unrot_loadings))
   expect_equal(res$value[res$coefficient == "omega_total"],
                sum(tcrossprod(L)) / sum(cm))
 
-  # A solution with more than one factor still needs an oblique rotation to be scored,
-  # which is advice a one-factor solution could not follow.
-  orth <- suppressWarnings(suppressMessages(
-    efa_fit(cm, N = 500, n_factors = 3, estimator = "PAF", rotation = "varimax")))
-  expect_error(efa_reliability(orth), class = "efa_reliability_not_oblique")
+})
+
+test_that("an efa_fit() solution is scored per its rotation", {
+  cm <- test_models$baseline$cormat
+  fit <- function(rotation, k = 3) {
+    efa_fit(cm, N = 500, n_factors = k, estimator = "PAF", rotation = rotation)
+  }
+  tot <- function(x) x$value[x$coefficient == "omega_total" & x$level != "group"]
+
+  # An orthogonal solution is a correlated-factors one with Phi = I. The whole-scale omega
+  # total does not depend on the rotation, so it equals the oblique one.
+  orth <- efa_reliability(fit("varimax"))
+  obl <- efa_reliability(fit("promax"))
+  expect_setequal(orth$coefficient, c("omega_total", "alpha", "H"))
+  expect_equal(tot(orth), tot(obl), tolerance = 1e-8)
+
+  # An orthogonal bifactor rotation is a bifactor solution: the bifactor menu, and the
+  # same coefficients as its loading matrix.
+  bif <- fit("bifactorT", 4)
+  res_bif <- efa_reliability(bif)
+  expect_true(all(c("omega_hierarchical", "ECV", "PUC") %in% res_bif$coefficient))
+  Lb <- unclass(bif$rot_loadings)
+  g_b <- which.max(apply(abs(Lb), 2, min))
+  expect_equal(res_bif, efa_reliability(Lb[, c(g_b, seq_len(ncol(Lb))[-g_b])], cormat = cm))
+
+  # The general factor is the one that loads on every variable, also when a strong group
+  # factor has the larger sum of squares and so comes first.
+  L <- matrix(0, 18, 4)
+  L[, 1] <- .40
+  L[1:6, 2] <- .75; L[7:12, 3] <- .30; L[13:18, 4] <- .30
+  R <- tcrossprod(L)
+  diag(R) <- 1
+  dimnames(R) <- list(paste0("V", 1:18), paste0("V", 1:18))
+  pop <- efa_fit(R, N = 1000, n_factors = 4, estimator = "ML", rotation = "bifactorT")
+  Lp <- unclass(pop$rot_loadings)
+  g_col <- which.max(apply(abs(Lp), 2, min))
+  expect_false(g_col == 1L)
+  h <- efa_reliability(pop)
+  expect_equal(h$value[h$coefficient == "omega_hierarchical" & h$factor == "g"],
+               sum(Lp[, g_col])^2 / sum(R))
+
+  # Correlated group factors and an unrotated multi-factor solution are refused.
+  expect_error(efa_reliability(fit("bifactorQ", 4)),
+               class = "efa_reliability_bifactor_oblique")
+  expect_error(efa_reliability(fit("none")), class = "efa_reliability_not_rotated")
 })
 
 test_that("the one-factor menu does not depend on the variance convention", {
   # The two conventions are two total-variance denominators, not two coefficient menus:
   # they move omega total and leave the set of coefficients a single factor defines alone.
   fit <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 1, estimator = "PAF")
-  corr <- suppressMessages(efa_reliability(fit, variance = "correlation"))
-  sums <- suppressMessages(efa_reliability(fit, variance = "sums_load"))
+  corr <- efa_reliability(fit, variance = "correlation")
+  sums <- efa_reliability(fit, variance = "sums_load")
 
   expect_setequal(corr$coefficient, sums$coefficient)
   expect_setequal(corr$coefficient, c("omega_total", "alpha", "H"))
@@ -1504,13 +1630,13 @@ test_that("the single-factor alpha is standardized alpha", {
   skip_if_not_installed("psych")
   cm <- test_models$baseline$cormat
   fit <- efa_fit(cm, N = 500, n_factors = 1, estimator = "PAF")
-  res <- suppressMessages(efa_reliability(fit))
+  res <- efa_reliability(fit)
   expect_equal(res$value[res$coefficient == "alpha"],
                suppressWarnings(psych::alpha(cm, n.obs = 500))$total$std.alpha,
                tolerance = 1e-8)
 })
 
-test_that("a lavaan second-order fit informs about the Schmid-Leiman transform", {
+test_that("a lavaan second-order fit is scored as its Schmid-Leiman solution", {
   skip_if_not_installed("lavaan")
   fit <- suppressWarnings(lavaan::cfa(
     'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
@@ -1518,8 +1644,13 @@ test_that("a lavaan second-order fit informs about the Schmid-Leiman transform",
      F3 =~ V13 + V14 + V15 + V16 + V17 + V18
      g =~ F1 + F2 + F3',
     sample.cov = test_models$baseline$cormat, sample.nobs = 500, estimator = "ml"))
-  expect_message(efa_reliability(fit, g_name = "g"),
-                 class = "efa_reliability_g_second_order")
+  expect_no_message(res <- efa_reliability(fit, g_name = "g"))
+  expect_true(all(c("omega_hierarchical", "ECV", "PUC") %in% res$coefficient))
+  om <- suppressMessages(OMEGA(fit, g_name = "g"))
+  expect_equal(res$value[res$coefficient == "omega_hierarchical" & res$factor == "g"],
+               unname(om["g", "hier"]))
+  # Its general factor is found by name only.
+  expect_error(efa_reliability(fit, g_name = "G"), class = "efa_reliability_g_name")
 })
 
 test_that("a lavaan multiple-group fit yields one labelled block per group", {
@@ -1550,7 +1681,7 @@ test_that("every block of a multiple-group correlated-factors fit labels its own
   fit <- suppressWarnings(lavaan::cfa(mod,
     sample.cov = list(test_models$baseline$cormat, test_models$baseline$cormat),
     sample.nobs = c(500, 500), estimator = "ml"))
-  res <- suppressMessages(efa_reliability(fit, group_names = c("Young", "Old")))
+  res <- efa_reliability(fit, group_names = c("Young", "Old"))
 
   for (grp in c("Young", "Old")) {
     block <- res[res$group == grp & res$coefficient == "omega_total", ]
@@ -1565,15 +1696,14 @@ test_that("every block of a multiple-group correlated-factors fit labels its own
 test_that("a multiple-group single-factor fit yields one single-factor block per group", {
   skip_if_not_installed("lavaan")
   # The only path that assembles several single-factor matrices into one result: each block
-  # has to be labelled, blanked, and scored on its own, and the note stated once for all.
+  # has to be labelled, blanked, and scored on its own.
   cm <- test_models$baseline$cormat
   fit <- suppressWarnings(lavaan::cfa(
     paste("ability =~", paste(rownames(cm), collapse = " + ")),
     sample.cov = list(cm, cm), sample.nobs = c(500, 500), estimator = "ml"))
 
-  expect_message(efa_reliability(fit, group_names = c("Young", "Old")),
-                 class = "efa_reliability_single_factor")
-  res <- suppressMessages(efa_reliability(fit, group_names = c("Young", "Old")))
+  res <- efa_reliability(fit, group_names = c("Young", "Old"))
+  expect_null(attr(res, "factor_map"))
 
   expect_identical(unique(res$group), c("Young", "Old"))
   for (grp in c("Young", "Old")) {
@@ -1587,9 +1717,10 @@ test_that("a multiple-group single-factor fit yields one single-factor block per
   expect_equal(res$value[res$group == "Young"], res$value[res$group == "Old"])
 })
 
-test_that("a bifactor with an under-loaded item informs about too few loadings", {
+test_that("a bifactor with variables outside the general factor is scored without a note", {
   skip_if_not_installed("lavaan")
-  # g loads on all items except V11/V12, so those load on a single factor.
+  # g loads on all items except V11/V12, so those load on a single factor. Such a model is
+  # legitimate, so it gives no message.
   mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
           F2 =~ V7 + V8 + V9 + V10 + V11 + V12
           F3 =~ V13 + V14 + V15 + V16 + V17 + V18
@@ -1598,8 +1729,8 @@ test_that("a bifactor with an under-loaded item informs about too few loadings",
   fit <- suppressWarnings(lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
                                       sample.nobs = 500, estimator = "ml",
                                       orthogonal = TRUE))
-  expect_message(efa_reliability(fit, g_name = "g"),
-                 class = "efa_reliability_few_loadings")
+  expect_no_message(res <- efa_reliability(fit, g_name = "g"))
+  expect_true(any(res$coefficient == "omega_hierarchical"))
 })
 
 test_that("efa_reliability is invariant across the oblique rotations", {
@@ -1614,14 +1745,17 @@ test_that("efa_reliability is invariant across the oblique rotations", {
   ref <- efa_reliability(efa_mod)
   g_tot <- function(x) x$value[x$coefficient == "omega_total" & x$factor == "total"]
 
-  res_list <- lapply(.oblq_rotations, function(rot) {
+  # bifactorQ is refused, because its group factors are correlated.
+  rotations <- setdiff(.oblq_rotations, "bifactorQ")
+  res_list <- lapply(rotations, function(rot) {
     fit <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
                    estimator = "PAF", rotation = rot)
-    # bifactorQ leaves a group factor without salient items on this fixture, which is
-    # reported by the classed efa_omega_empty_factor warning and is not under test here.
-    suppressWarnings(efa_reliability(fit))
+    # A rotation can leave a factor without assigned items on this fixture, which the
+    # classed efa_omega_empty_factor warning reports and which is not under test here.
+    withCallingHandlers(efa_reliability(fit),
+                        efa_omega_empty_factor = function(w) invokeRestart("muffleWarning"))
   })
-  names(res_list) <- .oblq_rotations
+  names(res_list) <- rotations
 
   expect_true(all(vapply(res_list, nrow, integer(1)) > 2))
   expect_equal(vapply(res_list, g_tot, numeric(1)),
@@ -1632,9 +1766,7 @@ test_that("efa_reliability is invariant across the oblique rotations", {
   # of the same extraction.
   res_obl <- res_list[["oblimin"]]
   expect_setequal(res_obl$factor, c("total", "F1", "F2", "F3"))
-  for (cf in c("omega_subscale", "H")) {
-    expect_setequal(res_obl$factor[res_obl$coefficient == cf], c("F1", "F2", "F3"))
-  }
+  expect_setequal(res_obl$factor[res_obl$coefficient == "H"], c("F1", "F2", "F3"))
   expect_setequal(res_obl$coefficient, unique(ref$coefficient))
 })
 
@@ -1680,8 +1812,8 @@ test_that("variables keyed against each other warn on every non-lavaan input rou
     class = cls)
   expect_warning(efa_reliability(cbind(g = g, s), u2 = u2, cormat = cormat_flipped),
                  class = cls)
-  expect_warning(efa_reliability(NULL, var_names = rownames(sl), g_load = g,
-                                 s_load = s, u2 = u2, cormat = cormat_flipped),
+  expect_warning(rel_components(NULL, var_names = rownames(sl), g_load = g,
+                                s_load = s, u2 = u2, cormat = cormat_flipped),
                  class = cls)
 
   skip_if_not_installed("psych")
@@ -1709,7 +1841,7 @@ test_that("a lavaan fit of mis-keyed variables warns, single-factor path include
   sf <- suppressWarnings(lavaan::cfa(paste("g =~", paste(items, collapse = " + ")),
                                      sample.cov = cormat_flipped, sample.nobs = 500,
                                      estimator = "ml"))
-  expect_warning(suppressMessages(efa_reliability(sf, g_name = "g")), class = cls)
+  expect_warning(efa_reliability(sf, g_name = "g"), class = cls)
 })
 
 test_that("a correctly keyed solution raises no keying warning", {
@@ -1723,7 +1855,7 @@ test_that("a correctly keyed solution raises no keying warning", {
   sf <- suppressWarnings(lavaan::cfa(paste("g =~", paste(items, collapse = " + ")),
                                      sample.cov = test_models$baseline$cormat,
                                      sample.nobs = 500, estimator = "ml"))
-  expect_no_warning(suppressMessages(efa_reliability(sf, g_name = "g")), class = cls)
+  expect_no_warning(efa_reliability(sf, g_name = "g"), class = cls)
 })
 
 test_that("the keying warning changes no coefficient", {
@@ -1744,7 +1876,42 @@ test_that("the keying warning changes no coefficient", {
     suppressWarnings(.reliability_core(spec, "correlation", add_ind = TRUE,
                                        add_rel = TRUE, arg = "factor_map")),
     settings = list(variance = "correlation", no_general = FALSE))
-  expect_equal(res, core)
+  expect_equal(res, core, ignore_attr = "factor_map")
+})
+
+test_that("the whole-scale omega subscale counts every loading in both conventions", {
+  # The whole-scale composite holds every variable, so cross-loadings belong to its group
+  # variance, and omega total is omega hierarchical plus omega subscale there.
+  get <- function(x, coef) x$value[x$coefficient == coef & x$factor == "g"]
+  S <- unclass(sl_mod$sl)[, c("F1", "F2", "F3")]
+  cm <- test_models$baseline$cormat
+  for (v in c("correlation", "sums_load")) {
+    res <- efa_reliability(sl_mod, variance = v)
+    expect_equal(get(res, "omega_total"),
+                 get(res, "omega_hierarchical") + get(res, "omega_subscale"))
+  }
+  res <- efa_reliability(sl_mod)
+  expect_equal(get(res, "omega_subscale"), sum(colSums(S)^2) / sum(cm))
+  # Not vacuous: the assigned loadings alone, as psych::omega uses, give less.
+  map <- attr(res, "factor_map")
+  expect_gt(get(res, "omega_subscale") - sum(colSums(S * map)^2) / sum(cm), 0.01)
+})
+
+test_that("an unreported omega subscale gives no out-of-range warning", {
+  # Once the factors correlate, omega subscale is not a share of the variance and can exceed
+  # 1 in a proper solution: here the negative cross-loadings take each composite's variance
+  # below what its own factor contributes. It is not reported, so it must not warn.
+  L <- matrix(0, 8, 2, dimnames = list(paste0("V", 1:8), c("F1", "F2")))
+  L[1:4, 1] <- .85; L[1:4, 2] <- -.30
+  L[5:8, 2] <- .85; L[5:8, 1] <- -.30
+  Phi <- matrix(c(1, .6, .6, 1), 2)
+  R <- L %*% Phi %*% t(L)
+  diag(R) <- 1
+  expect_gt(sum(L[1:4, 1])^2 / sum(R[1:4, 1:4]), 1)
+  expect_no_warning(
+    res <- withCallingHandlers(efa_reliability(L, Phi = Phi, cormat = R),
+                               efa_reliability_phi_as_pattern = function(w) invokeRestart("muffleWarning")))
+  expect_false(any(res$coefficient == "omega_subscale"))
 })
 
 test_that("print output is stable", {
@@ -1759,61 +1926,9 @@ test_that("print output is stable", {
                                         coefficients = c("omega_total", "alpha"))),
                   transform = scrub_num)
 
-  # oblique EFA (no general factor): the total row omits omega subscale and H, which print
-  # blank rather than as "NA", and the context line separates tot from sub.
+  # oblique EFA (no general factor): the total row has no H, which prints blank rather
+  # than as "NA".
   expect_snapshot(print(efa_reliability(efa_mod)), transform = scrub_num)
-})
-
-test_that("the correlated-factors context line follows the printed columns", {
-  # It relates the tot and sub columns, so it is shown only when both are printed --
-  # not for a selection that drops omega subscale, nor for a solution that has a
-  # general factor.
-  expect_match(format(efa_reliability(efa_mod)), "Correlated-factors", all = FALSE)
-  sub_dropped <- suppressMessages(
-    efa_reliability(efa_mod, coefficients = c("omega_total", "alpha")))
-  expect_false(any(grepl("Correlated-factors", format(sub_dropped))))
-  expect_false(any(grepl("Correlated-factors",
-                         format(efa_reliability(sl_mod, factor_map = fc)))))
-
-  # Which relation it states follows the printed values. An oblique fit has factor
-  # correlations, so its totals exceed its subscale omegas.
-  obl <- format(efa_reliability(efa_mod))
-  expect_match(obl, "receives from every factor", all = FALSE)
-  expect_false(any(grepl("equals its total omega", obl)))
-
-  # Components supplied with a zero general factor, no factor correlations and simple
-  # structure are a correlated-factors solution too, but nothing lets a composite draw
-  # on another factor, so the two columns coincide and the line must say so instead.
-  mk <- function(s) {
-    u <- 1 - rowSums(s^2)
-    efa_reliability(model = NULL, var_names = paste0("V", 1:6),
-                    g_load = rep(0, 6), s_load = s, u2 = u,
-                    cormat = s %*% t(s) + diag(u))
-  }
-  s <- matrix(0, 6, 2)
-  s[1:3, 1] <- c(0.7, 0.6, 0.5)
-  s[4:6, 2] <- c(0.7, 0.6, 0.5)
-  no_phi <- mk(s)
-  tot <- no_phi$value[no_phi$coefficient == "omega_total" & no_phi$level == "group"]
-  sub_om <- no_phi$value[no_phi$coefficient == "omega_subscale"]
-  expect_equal(tot, sub_om)
-  txt <- format(no_phi)
-  expect_match(txt, "equals its total omega", all = FALSE)
-  expect_false(any(grepl("receives from every factor", txt)))
-
-  # Cross-loadings alone are enough to separate the two columns, even with no factor
-  # correlations at all: a composite still receives true score variance from the other
-  # factor through them. The line must then take the general wording.
-  s_cross <- s
-  s_cross[3, 2] <- 0.3
-  s_cross[6, 1] <- 0.25
-  cross <- mk(s_cross)
-  tot_c <- cross$value[cross$coefficient == "omega_total" & cross$level == "group"]
-  sub_c <- cross$value[cross$coefficient == "omega_subscale"]
-  expect_true(all(tot_c > sub_c))
-  txt_c <- format(cross)
-  expect_match(txt_c, "receives from every factor", all = FALSE)
-  expect_false(any(grepl("equals its total omega", txt_c)))
 })
 
 test_that("the model error names the averaged matrix an efa_average object carries", {

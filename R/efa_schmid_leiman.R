@@ -1,105 +1,75 @@
 #' Schmid-Leiman transformation
 #'
-#' This function implements the Schmid-Leiman (SL) transformation
-#' (Schmid & Leiman, 1957). It takes the pattern coefficients and factor
-#' intercorrelations from an oblique factor solution as
-#' input and can reproduce the results from [psych::schmid()]
-#' and from the SPSS implementation from Wolff & Preising (2005). Other arguments
-#' from [efa_fit()] can be used to control the procedure to find the
-#' second-order loadings more flexibly. The function can also be used on a
-#' second-order confirmatory factor analysis (CFA) solution from lavaan.
-#' The group factors of the returned solution are sorted and relabelled, so their
-#' column order can differ from the input solution's (see Details).
+#' Transforms an oblique factor solution into a hierarchical solution with one general
+#' factor and group factors that are uncorrelated with it and with each other (Schmid &
+#' Leiman, 1957). With the same settings, the results agree with [psych::schmid()] and with
+#' the SPSS syntax of Wolff and Preising (2005).
 #'
-#' @param x object of class [efa_fit()], class [psych::fa()],
-#' class `lavaan::lavaan()`, a matrix, or an `efa_loadings`/`loadings` object. If class [efa_fit()] or
-#' class [psych::fa()], pattern coefficients and factor
-#' intercorrelations are taken from this object. If class `lavaan::lavaan()`,
-#' it must be a second-order CFA solution. In this case first-order and second-order
-#'  factor loadings are taken from this object and the `g_name` argument has
-#'  to be specified.
-#' x can also be a pattern matrix from an oblique factor solution (see `Phi`).
-#' @param Phi matrix. A matrix of factor intercorrelations from an oblique factor
-#' solution. Only needs to be specified if a pattern matrix is entered directly
-#' into `x`.
-#' @param estimator character. One of "PAF", "ML", or "ULS" to use
-#' principal axis factoring, maximum likelihood, or unweighted least squares,
-#' respectively, used in [efa_fit()] to find the second-order loadings. "MINRES" is
-#' accepted as a synonym for "ULS" (the same estimator).
-#' @param g_name character. The name of the general factor. This needs only be
-#' specified if `x` is a `lavaan` second-order solution. Default is "g".
-#' @param estimate_control an [estimate_control()] object with the estimation settings for the
-#'  second-order [efa_fit()] fit, including the `type` preset. `NULL` (default) uses the
-#'  [efa_fit()] defaults. The second-order fit is unrotated, so no rotation settings apply.
-#' @param ... Arguments to be passed to [efa_fit()]. The estimation tuning knobs are not passed
-#' here; they live in `estimate_control`, and the standard-error arguments (`se`, `b_boot`,
-#' `ci`, `seed`) are not accepted because the second-order fit is an internal step run against
-#' a placeholder sample size and only its loadings are kept.
+#' @param x An oblique [efa_fit()] or [psych::fa()] solution, a pattern matrix (give its
+#'   factor intercorrelations in `Phi`), or a second-order CFA solution from `lavaan`.
+#' @param Phi matrix. The factor intercorrelations of the pattern matrix in `x`. With an
+#'   [efa_fit()] or [psych::fa()] solution in `x`, `Phi` replaces the fitted factor
+#'   intercorrelations. Not used for a `lavaan` solution.
+#' @param estimator character. The estimator of the second-order [efa_fit()]: `"PAF"`
+#'   (default), `"ML"`, or `"ULS"`. `"MINRES"` is a synonym for `"ULS"`. Not used for a
+#'   `lavaan` solution and for two first-order factors, for which no second-order EFA is done.
+#' @param g_name character. The name of the general factor in a `lavaan` solution. If
+#'   `NULL` (default), the latent variable that loads on the other latent variables is used.
+#' @param estimate_control An [estimate_control()] object with the settings of the
+#'   second-order [efa_fit()]. `NULL` (default) uses the [efa_fit()] defaults. Not used for
+#'   a `lavaan` solution and for two first-order factors.
 #'
 #' @details
-#' The SL transformation (also called SL orthogonalization) is a procedure with
-#' which an oblique factor solution is transformed into a hierarchical,
-#' orthogonalized solution. As a first step, the factor intercorrelations are
-#' factor analyzed to extract a single second-order (general) factor, yielding a
-#' two-level hierarchical structure. The first-order factor and the second-order
-#' factor are then orthogonalized, resulting in an orthogonalized factor solution
-#' with proportionality constraints. The procedure thus makes a suggested
-#' hierarchical data structure based on factor intercorrelations explicit. One
-#' major advantage of SL transformation is that it enables variance
-#' partitioning between higher-order and first-order factors, including the
-#' calculation of McDonald's omegas (see [efa_reliability()]).
+#' The factor intercorrelations are factor analyzed to get one second-order (general)
+#' factor. The general-factor loadings of the items are their first-order loadings times
+#' the second-order loadings. The group-factor loadings are the first-order loadings times
+#' the residual standard deviations of the first-order factors. The general factor and the
+#' group factors thus divide the common variance, for example for McDonald's omegas (see
+#' [efa_reliability()]).
 #'
-#' Where the first-order factors come from a loading matrix -- an [efa_fit()] or a
-#' [psych::fa()] solution, or a pattern matrix supplied with `Phi` -- they are sorted
-#' by the number in their column labels, so that `"F10"` follows `"F2"` rather than
-#' `"F1"`. The sort needs a number in every column label; columns that carry no
-#' labels, or a label without a number, keep the order they arrive in. A second-order
-#' `lavaan` solution is not sorted at all: its first-order factors keep the order the
-#' model declares them in.
+#' The transformation has proportionality constraints: in each group factor, the ratio of
+#' the group-factor loading to the general-factor loading is the same for all items. Thus,
+#' it recovers a bifactor structure exactly only if each item loads on one group factor and
+#' these ratios are equal. If items have cross-loadings, it overestimates their
+#' general-factor loadings, and the result depends on the oblique rotation of the
+#' first-order solution (Mansolf & Reise, 2016). The orthogonal bifactor rotation of
+#' [efa_fit()] (`rotation = "bifactorT"`) does not have these constraints.
 #'
-#' The columns are then labelled `"F1"` to `"Fk"` by position, on every route, and the
-#' input solution's own factor names are not carried over. A factor a `lavaan` model
-#' calls `"F3"` can therefore come back as `"F1"`. Where the sort applies it is
-#' independent of how the input orders its factors, so the group
-#' factors of the returned `sl` matrix can also be in a different order from the columns
-#' they came from. A [psych::fa()] solution shows this most readily: it orders its
-#' columns by their sums of squared loadings, but keeps each factor's own number in its
-#' label, so those numbers arrive out of order. A
-#' solution whose columns are `"PA2"`, `"PA3"`, `"PA1"` comes back with those same
-#' three factors sorted as `PA1`, `PA2`, `PA3` and labelled `"F1"`, `"F2"`, `"F3"`.
-#' The first group factor of the result is then the third column of the input. The
-#' same holds against [psych::schmid()], whose columns keep the input order: the two
-#' solutions agree column for column only after one of them is permuted to the
-#' other's order. An [efa_fit()] solution already labels its factors `"F1"` to `"Fk"`
-#' in that order, so nothing moves for one; the reordering shows itself for a
-#' [psych::fa()] solution, and for a pattern matrix supplied with labels of its own.
+#' With two first-order factors, the second-order loadings are not identified. The two
+#' loadings then get the same absolute value, and their product is the factor
+#' intercorrelation, as in [psych::schmid()].
 #'
-#' Read the group factors from the returned matrix, therefore, rather than from the
-#' input. An indicator-to-factor map is matched to the group factors by position, so
-#' one built in the input solution's column order lines up only where the columns did
-#' not move; where they did, [efa_reliability()] or [OMEGA()] scores each composite
-#' against the wrong factor. Build such a map from the `"F1"` to `"Fk"` columns of the
-#' returned `sl` matrix instead, which is right on every route. The `fac_names` of
-#' [efa_reliability()] are matched by position in the same way, so names given in the
-#' input solution's order label the wrong subscales, and do so without any sign.
+#' A `lavaan` solution must have one second-order factor and no other paths or
+#' covariances between the latent variables. Its general-factor loadings also include the
+#' direct loadings of the general factor on the items, if the model has them.
 #'
-#' @return A list of class `c("efa_schmid_leiman", "SL")` containing the following
-#' \item{orig_R}{Original correlation matrix.}
-#' \item{sl}{A matrix with general factor loadings, group factor loadings, communalities,
-#' and uniquenesses.}
-#' \item{L2}{Second-order factor loadings.}
-#' \item{vars_accounted}{A matrix of explained variances and sums of squared loadings.}
-#' \item{iter}{The number of iterations needed for convergence in EFA.}
-#' \item{convergence}{Integer convergence code of the second-order EFA (0 =
-#' converged); `NA` for a lavaan input. See [efa_fit()].}
-#' \item{settings}{list. The settings (arguments) used in EFA to get the
-#' second-order loadings.}
+#' The group factors keep the column order and the names of the input solution. If the
+#' columns do not have unique names (or a name is `"g"`, `"h2"`, or `"u2"`), all group
+#' factors are labelled `"F1"` to `"Fk"`.
+#'
+#' @returns A list of class `c("efa_schmid_leiman", "SL")`:
+#' \item{orig_R}{The correlation matrix of the input solution. `NA` for a pattern matrix.}
+#' \item{sl}{The Schmid-Leiman loadings: the general factor (`g`), the group factors, the
+#'   communalities (`h2`), and the uniquenesses (`u2`).}
+#' \item{L2}{The second-order loadings, with one row for each first-order factor.}
+#' \item{vars_accounted}{The variances explained by the general factor and the group
+#'   factors.}
+#' \item{iter}{The number of iterations of the second-order EFA.}
+#' \item{convergence}{The convergence code of the second-order EFA (0 = converged; see
+#'   [efa_fit()]).}
+#' \item{settings}{The estimator and the estimation settings of the second-order EFA.}
+#'
+#' `iter`, `convergence`, and `settings` are `NA` if no second-order EFA was done, that is,
+#' for a `lavaan` solution and for two first-order factors.
 #'
 #' @source Schmid, J. & Leiman, J. M. (1957). The development of hierarchical
 #' factor solutions. Psychometrika, 22(1), 53–61. doi:10.1007/BF02289209
 #' @source Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order
 #' factor structure with the Schmid-Leiman solution: Syntax codes for SPSS and
 #' SAS. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
+#' @source Mansolf, M., & Reise, S. P. (2016). Exploratory bifactor analysis: The
+#' Schmid-Leiman orthogonalization and Jennrich-Bentler analytic rotations. Multivariate
+#' Behavioral Research, 51(5), 698–717. doi:10.1080/00273171.2016.1215898
 #'
 #' @family factor rotation
 #' @family reliability coefficients
@@ -107,193 +77,110 @@
 #' @export
 #'
 #' @examples
-#' ## Use with an output from the EFAtools::efa_fit function, both with type EFAtools
-#' EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+#' efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
 #'                    estimator = "PAF", rotation = "promax")
-#' SL_EFAtools <- efa_schmid_leiman(EFA_mod, estimator = "PAF",
-#'                                  estimate_control = estimate_control(type = "EFAtools"))
+#' efa_schmid_leiman(efa_mod)
+#'
+#' # A pattern matrix with its factor intercorrelations, for example from another
+#' # program, gives the same solution
+#' efa_schmid_leiman(efa_mod$rot_loadings, Phi = efa_mod$Phi)
 #'
 #' \donttest{
-#' ## Use with an output from the psych::fa function with type psych
+#' # A psych::fa() solution, with the psych settings for the second-order EFA
 #' fa_mod <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
 #'                     fm = "pa", rotate = "Promax")
-#' SL_psych <- efa_schmid_leiman(fa_mod, estimator = "PAF",
-#'                               estimate_control = estimate_control(type = "psych"))
-#' }
+#' efa_schmid_leiman(fa_mod, estimate_control = estimate_control(type = "psych"))
 #'
-#' ## Use more flexibly by entering a pattern matrix and phi directly (useful if
-#' ## a factor solution found with another program should be subjected to SL
-#' ## transformation)
-#'
-#' ## For demonstration, take pattern matrix and phi from an EFA output
-#' ## This gives the same solution as the first example
-#' SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, estimator = "PAF",
-#'                              estimate_control = estimate_control(type = "EFAtools"))
-#'
-#' \donttest{
-#' ## Use with a lavaan second-order CFA output
+#' # A lavaan second-order CFA solution
 #' if (requireNamespace("lavaan", quietly = TRUE)) {
-#'
-#' # Create and fit model in lavaan (assume all variables have SDs of 1)
-#' mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
-#'         F2 =~ V7 + V8 + V9 + V10 + V11 + V12
-#'         F3 =~ V13 + V14 + V15 + V16 + V17 + V18
-#'         g =~ F1 + F2 + F3'
-#' fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
-#'                    sample.nobs = 500, estimator = "ml")
-#'
-#' SL_lav <- efa_schmid_leiman(fit, g_name = "g")
-#'
+#'   mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+#'           F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+#'           F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+#'           g =~ F1 + F2 + F3'
+#'   fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+#'                      sample.nobs = 500)
+#'   efa_schmid_leiman(fit)
 #' }
 #' }
 efa_schmid_leiman <- function(x, Phi = NULL,
                               estimator = c("PAF", "ML", "ULS", "MINRES"),
-                              g_name = "g", estimate_control = NULL, ...) {
+                              g_name = NULL, estimate_control = NULL) {
 
-  # Perform argument checks
-  .reject_flat_knobs(...names(), fn = "efa_schmid_leiman")
-  # The second-order fit is an internal step: of its output only the loadings, the iteration
-  # count, the convergence flag and the recorded settings are kept, and it runs against a
-  # placeholder N, so a standard error asked for through these dots would be computed from a
-  # sample size that is not the data's and then discarded -- reaching nothing but that
-  # settings record. It is also unrotated with no bootstrap, so `seed` governs nothing there.
-  # The guard must be the same one the retention criteria use rather than a bare
-  # .reject_inference_dots(): the dots are spliced into the second-order fit with do.call(),
-  # where R partial-matches them against efa_fit()'s formals, so an abbreviation such as
-  # `b_b` would arrive as `b_boot` without ever matching the refused names exactly. It is the
-  # whitelist here -- every accepted name spelled in full -- that closes that route.
-  .reject_unknown_fit_dots(...names(), fn = "efa_schmid_leiman", unrotated = TRUE)
-  checkmate::assert_matrix(Phi, null.ok = TRUE)
+  .assert_args({
+    checkmate::assert_matrix(Phi, null.ok = TRUE)
+    checkmate::assert_string(g_name, null.ok = TRUE)
+  })
   .assert_estimate_control(estimate_control)
   estimator <- .match_arg_ci(estimator)
   # "MINRES" is a synonym for "ULS" (same estimator); resolve to the canonical name.
   if (estimator == "MINRES") estimator <- "ULS"
-  checkmate::assert_string(g_name)
 
-  if(!inherits(x, c("EFA", "fa", "lavaan", "matrix", "LOADINGS", "loadings"))){
-
+  if (!inherits(x, c("EFA", "fa", "lavaan", "matrix", "LOADINGS", "loadings"))) {
     cli::cli_abort(
-      c("{.arg x} must be an {.cls EFA}, {.cls fa}, or {.cls lavaan} object, a matrix, or a {.cls LOADINGS}/{.cls loadings} object.",
+      c("{.arg x} must be an oblique {.fn efa_fit} or {.fn psych::fa} solution, a second-order {.cls lavaan} solution, or a pattern matrix with {.arg Phi}.",
         "i" = "From an {.cls efa_average} object, use the averaged loading matrix in
                {.code $loadings$average}, with the averaged factor correlations in
                {.code $Phi$average}."),
       class = "efa_sl_bad_input")
-
   }
 
-  if(inherits(x, "EFA")) {
+  orig_R <- NA
+  iter <- NA
+  convergence <- NA
+  settings <- NA
 
-    if("Phi" %in% names(x)){
-
-      L1 <- x$rot_loadings
-      n_first_fac <- ncol(x$rot_loadings)
-      orig_R <- x$orig_R
-
-      if(!is.null(Phi)){
-        cli::cli_warn(
-          c("{.arg Phi} is specified; the supplied factor intercorrelations are used.",
-            "i" = "To use the intercorrelations from the EFA output, leave {.code Phi = NULL}."),
-          class = "efa_sl_phi_specified"
-        )
-
-      } else {
-
-        Phi <- x$Phi
-
-      }
-
-    } else {
-
-      cli::cli_abort("{.arg x} is a non-rotated or orthogonal factor solution, but SL needs an oblique solution.",
-                     class = "efa_sl_not_oblique")
-
-    }
-
-    Phi <- .align_correlation_axis(
-      Phi, n = n_first_fac, target_names = colnames(L1), arg = "Phi"
-    )
-    n_order <- .sl_factor_order(colnames(L1), n_first_fac)
-    L1 <- L1[, n_order, drop = FALSE]
-    Phi <- Phi[n_order, n_order, drop = FALSE]
-
-  } else if(inherits(x, "fa")) {
-
-    if("Phi" %in% names(x)){
-
-      L1 <- unclass(x$loadings)
-      n_first_fac <- ncol(x$loadings)
-      orig_R <- unclass(x$r)
-
-      if(!is.null(Phi)){
-        cli::cli_warn(
-          c("{.arg Phi} is specified; the supplied factor intercorrelations are used.",
-            "i" = "To use the intercorrelations from the {.fn psych::fa} output, leave {.code Phi = NULL}."),
-          class = "efa_sl_phi_specified"
-        )
-
-      } else {
-
-        Phi <- x$Phi
-
-      }
-
-    } else {
-
-      cli::cli_abort("{.arg x} is a non-rotated or orthogonal factor solution, but SL needs an oblique solution.",
-                     class = "efa_sl_not_oblique")
-
-    }
-
-    Phi <- .align_correlation_axis(
-      Phi, n = n_first_fac, target_names = colnames(L1), arg = "Phi"
-    )
-    n_order <- .sl_factor_order(colnames(L1), n_first_fac)
-    L1 <- L1[, n_order, drop = FALSE]
-    Phi <- Phi[n_order, n_order, drop = FALSE]
-
-  } else if(inherits(x, "lavaan")){
+  if (inherits(x, "lavaan")) {
 
     .require_lavaan()
 
-    if(lavaan::lavInspect(x, what = "converged") == FALSE){
+    if (isFALSE(lavaan::lavInspect(x, what = "converged"))) {
       cli::cli_abort("The model did not converge; the Schmid-Leiman transformation is not performed.",
                      class = "efa_sl_no_converge")
     }
 
     std_sol <- suppressWarnings(lavaan::lavInspect(x, what = "std"))
 
-    if(any(is.na(std_sol$lambda))){
+    # A multiple-group or multilevel fit gives one set of matrices for each group or level.
+    if (!is.matrix(std_sol$lambda)) {
+      cli::cli_abort(
+        c("{.arg x} has more than one group or level.",
+          "i" = "Fit the model to each group separately."),
+        class = "efa_sl_multigroup")
+    }
+
+    if (anyNA(std_sol$lambda)) {
       cli::cli_abort("Some loadings are {.val NA} or {.val NaN}; the Schmid-Leiman transformation is not performed.",
                      class = "efa_sl_na_loadings")
     }
 
-    if(any(std_sol$lambda >= 1)){
-      cli::cli_abort("A Heywood case was detected (a loading of 1 or larger); the Schmid-Leiman transformation is not performed.",
-                     class = "efa_sl_heywood")
-    }
-
-    if(any(diag(std_sol$theta) <= 0) || any(diag(std_sol$psi) <= 0)){
+    if (any(diag(std_sol$theta) <= 0) || any(diag(std_sol$psi) <= 0)) {
       cli::cli_abort("A Heywood case was detected (a variance of 0 or negative); the Schmid-Leiman transformation is not performed.",
                      class = "efa_sl_heywood")
     }
 
-    # Create list with factor and corresponding subtest names
-    col_names <- colnames(std_sol$lambda)
-
-    if(!any(col_names %in% g_name)){
+    lv_names <- colnames(std_sol$lambda)
+    if (!is.null(g_name) && !g_name %in% lv_names) {
       cli::cli_abort(
-        c("Could not find the specified general-factor name in the lavaan solution.",
-          "i" = "Please check the spelling."),
-        class = "efa_sl_g_name"
-      )
+        c("The {.cls lavaan} solution has no latent variable {.val {g_name}}.",
+          "i" = "Its latent variables are {.val {lv_names}}."),
+        class = "efa_sl_g_name")
     }
 
-    # SL needs a second-order CFA: the general factor must load on the first-order
-    # factors, which lavaan stores in the `beta` (latent regression) matrix. A
-    # bifactor solution has no such structure (`beta` is empty), so direct the
-    # user to efa_reliability() rather than failing later in the loadings algebra.
-    if(is.null(std_sol$beta) || !(g_name %in% colnames(std_sol$beta)) ||
-       all(std_sol$beta[, g_name] == 0)){
+    # The second-order factor is the latent variable that loads on other latent variables.
+    # The transformation needs exactly one, and first-order factors whose disturbances are
+    # uncorrelated, so that the group factors are uncorrelated.
+    tol <- .Machine$double.eps * 100
+    beta <- std_sol$beta
+    higher <- if (is.null(beta)) character() else colnames(beta)[colSums(abs(beta) > tol, na.rm = TRUE) > 0]
+    if (length(higher) > 1L) {
+      cli::cli_abort(
+        c("More than one latent variable loads on other latent variables: {.val {higher}}.",
+          "i" = "{.fn efa_schmid_leiman} needs a second-order model with one second-order factor."),
+        class = "efa_sl_higher_order")
+    }
+    if (is.null(g_name)) g_name <- higher
+
+    if (!isTRUE(g_name %in% higher)) {
       cli::cli_abort(
         c("{.arg x} does not appear to be a second-order CFA solution.",
           "i" = "{.fn efa_schmid_leiman} needs a second-order model; pass a bifactor solution directly to {.fn efa_reliability}."),
@@ -301,120 +188,119 @@ efa_schmid_leiman <- function(x, Phi = NULL,
       )
     }
 
-    if(!all(std_sol$lambda[, g_name] == 0)){
-
-      cli::cli_warn(
-        c("The specified second-order factor contains first-order loadings.",
-          "i" = "Did you enter a second-order CFA solution, or the wrong factor name in {.arg g_name}?"),
-        class = "efa_sl_second_order_loadings"
-      )
-
-    }
-
-    col_names <- col_names[!col_names %in% g_name]
-    fac_names <- c(g_name, col_names)
-
-    n_first_fac <- length(col_names)
-
-  } else {
-
-    if(is.null(Phi)){
-
+    psi <- std_sol$psi
+    if (any(abs(psi[upper.tri(psi)]) > tol, na.rm = TRUE)) {
       cli::cli_abort(
-        c("{.arg Phi} was not provided.",
-          "i" = "Enter an oblique solution from {.fn efa_fit} or {.fn psych::fa}, a second-order CFA from lavaan, or provide {.arg Phi}."),
-        class = "efa_sl_phi_missing"
-      )
-
+        c("The {.cls lavaan} solution has correlated latent variables or disturbances.",
+          "i" = "{.fn efa_schmid_leiman} needs a second-order model whose first-order factors are related only through the second-order factor."),
+        class = "efa_sl_correlated_factors")
     }
 
-    Phi <- .align_correlation_axis(
-      Phi, n = ncol(x), target_names = colnames(x), arg = "Phi"
-    )
-    n_order <- .sl_factor_order(colnames(x), ncol(x))
-    x <- x[, n_order, drop = FALSE]
-    # Phi is guaranteed non-NULL here (the abort above fires otherwise).
-    Phi <- Phi[n_order, n_order, drop = FALSE]
+    fac_names <- setdiff(lv_names, g_name)
+    labels <- .sl_group_names(fac_names, length(fac_names))
+    L1 <- std_sol$lambda[, fac_names, drop = FALSE]
+    L2 <- std_sol$beta[fac_names, g_name, drop = FALSE]
 
-    L1 <- x
-    n_first_fac <- ncol(x)
-    orig_R <- NA
+    # The general factor can also load on items directly, so its loadings are that direct
+    # path plus the paths through the first-order factors.
+    L_g <- std_sol$lambda[, g_name] + L1 %*% L2
+    L_s <- .sl_group_loadings(L1, std_sol$psi, fac_names)
 
-  }
-
-  if(inherits(x, "lavaan")){
-
-    # Calculate direct g loadings
-    L1 <- std_sol$lambda[, col_names]
-    L2 <- std_sol$beta[col_names, g_name]
-
-    L_sls_2 <- L1 %*% L2
-
-    # Calculate direct group factor loadings (see .sl_group_loadings).
-    L_sls_1 <- .sl_group_loadings(L1, std_sol$psi, col_names)
-
-    orig_R <- NA
-    iter <- NA
-    convergence <- NA
-    settings <- NA
+    S <- lavaan::lavInspect(x, what = "sampstat")$cov
+    if (!is.null(S)) orig_R <- stats::cov2cor(unclass(S))[rownames(L1), rownames(L1)]
 
   } else {
 
-    # The transformation regresses the first-order factors on a single second-order
-    # factor, so it needs at least two of them; with one there is nothing to
-    # orthogonalize. Both conditions are reported before the second-order fit runs, so
-    # the diagnostic describes the solution the user supplied rather than the internal
-    # one-factor fit on a 1 x 1 matrix of intercorrelations.
-    if (n_first_fac < 2) {
+    if (inherits(x, c("EFA", "fa"))) {
+
+      if (inherits(x, "EFA") && identical(x$settings$rotation, "bifactorQ")) {
+        cli::cli_abort(
+          c("{.arg x} is a bifactor solution ({.code rotation = \"bifactorQ\"}), which already has a general factor.",
+            "i" = "Transform an oblique solution without a general factor, or refit with {.code rotation = \"bifactorT\"} for an orthogonal bifactor solution."),
+          class = "efa_sl_bifactor")
+      }
+
+      if (is.null(x[["Phi"]])) {
+        cli::cli_abort("{.arg x} is a non-rotated or orthogonal factor solution, but SL needs an oblique solution.",
+                       class = "efa_sl_not_oblique")
+      }
+
+      if (inherits(x, "EFA")) {
+        L1 <- x$rot_loadings
+        orig_R <- x$orig_R
+      } else {
+        L1 <- x$loadings
+        orig_R <- unclass(x$r)
+      }
+      if (is.null(Phi)) Phi <- x[["Phi"]]
+
+    } else {
+
+      if (is.null(Phi)) {
+        cli::cli_abort(
+          c("{.arg Phi} was not provided.",
+            "i" = "Enter an oblique solution from {.fn efa_fit} or {.fn psych::fa}, a second-order CFA from lavaan, or provide {.arg Phi}."),
+          class = "efa_sl_phi_missing"
+        )
+      }
+      L1 <- x
+
+    }
+
+    L1 <- unclass(L1)
+    k <- ncol(L1)
+
+    # The transformation regresses the first-order factors on one second-order factor, so
+    # it needs at least two of them.
+    if (k < 2L) {
       cli::cli_abort(
         c("A Schmid-Leiman transformation needs at least two first-order factors.",
-          "x" = "{.arg x} has {n_first_fac} first-order factor{?s}."),
+          "x" = "{.arg x} has {k} first-order factor{?s}."),
         class = "efa_sl_too_few_factors"
       )
     }
 
-    if (n_first_fac == 2) {
-      cli::cli_warn("The second-order EFA is underidentified.",
-                    class = "efa_sl_underidentified")
+    labels <- .sl_group_names(colnames(L1), k)
+    Phi <- .align_correlation_axis(Phi, n = k, target_names = colnames(L1), arg = "Phi")
+    # so that the messages of the second-order EFA name the first-order factors
+    dimnames(Phi) <- list(labels, labels)
+
+    if (k == 2L) {
+
+      # One factor on two variables is not identified. As in psych::schmid(), the two
+      # loadings get the same absolute value, and their product is the intercorrelation.
+      cli::cli_warn(
+        c("With two first-order factors, the second-order loadings are not identified.",
+          "i" = "They get the same absolute value, and their product is the factor intercorrelation. Interpret the general factor with caution."),
+        class = "efa_sl_underidentified")
+      r12 <- Phi[1, 2]
+      L2 <- matrix(sqrt(abs(r12)) * c(1, sign(r12)), 2L, 1L)
+
+    } else {
+
+      # One factor on three intercorrelations is just identified for every input, so that
+      # warning says nothing about the data; the other warnings of this EFA (e.g., a Heywood
+      # case) reach the user. N only avoids the warning about a missing sample size.
+      fit <- withCallingHandlers(
+        efa_fit(Phi, n_factors = 1, N = 100, estimator = estimator, rotation = "none",
+                estimate_control = estimate_control),
+        efa_just_identified = function(w) invokeRestart("muffleWarning"))
+
+      iter <- fit$iter
+      convergence <- fit$convergence
+      # The sample size and the inference settings of this EFA are placeholders.
+      settings <- fit$settings[setdiff(
+        names(fit$settings),
+        c("method", "rotation", "n_factors", "N", "use", "cor_method", "input_type",
+          "cor_method_used", .fit_inference_args))]
+      L2 <- unclass(fit$unrot_loadings)
+
     }
 
-    # perform a factor analysis on the intercorrelation matrix of the first order
-    # factors (N is only specified to avoid a warning).
-    #
-    # What that fit reports about the user's solution stays visible: a Heywood case or
-    # a failure to converge there makes the residualized first-order loadings, and
-    # every coefficient computed from them, questionable. Only the two identification
-    # warnings are muffled, because they say nothing about the data: fitting one factor
-    # to the k by k matrix of factor intercorrelations is just identified at k = 3 and
-    # underidentified at k = 2 by construction, for every input, and the k = 2 case is
-    # already reported above in this function's own terms.
-    EFA_phi <- withCallingHandlers(
-      do.call(efa_fit, c(
-        list(Phi, n_factors = 1, N = 100, estimator = estimator, rotation = "none",
-             estimate_control = estimate_control),
-        list(...))),
-      warning = function(w) {
-        if (inherits(w, c("efa_just_identified", "efa_underidentified"))) {
-          invokeRestart("muffleWarning")
-        }
-      })
-
-    iter <- EFA_phi$iter
-    convergence <- EFA_phi$convergence
-    settings <- EFA_phi$settings
-
-    # extract second order loadings
-    L2 <- EFA_phi$unrot_loadings
-
-    # Schmid-Leiman solution, direct loadings of second order factor
-    L_sls_2 <- L1 %*% L2
-
-    # Communalities of the second-order factor. A value at or above 1 is a
-    # Heywood case: the residualized first-order loadings would be undefined
-    # (the square root below would be taken of a negative number).
-    comm_h <- rowSums(L2^2)
-
-    if(any(comm_h >= 1 + .Machine$double.eps)){
+    # A second-order communality at or above 1 is a Heywood case: the residual variance of
+    # that first-order factor, and thus its group-factor loadings, are undefined.
+    comm_h <- L2[, 1]^2
+    if (any(comm_h >= 1 + .Machine$double.eps)) {
       cli::cli_abort(
         c("A Heywood case was detected in the second-order factor analysis; no Schmid-Leiman solution is computed.",
           "i" = "A second-order communality is 1 or larger, so the residualized first-order loadings are undefined."),
@@ -422,41 +308,30 @@ efa_schmid_leiman <- function(x, Phi = NULL,
       )
     }
 
-    # compute uniqueness of higher order factor. A communality a hair above 1
-    # (within floating-point noise, below the Heywood abort threshold above) is
-    # clamped to 1 so the square root never sees a tiny negative value.
-    u2_h <- sqrt(pmax(0, 1 - comm_h))
-
-    # Schmid-Leiman solution, residualized first order factor loadings
-    L_sls_1 <- L1 %*% diag(u2_h)
+    L_g <- L1 %*% L2
+    # pmax() clamps a communality within rounding of 1, so sqrt() never sees a tiny
+    # negative value
+    L_s <- L1 %*% diag(sqrt(pmax(0, 1 - comm_h)), nrow = k)
 
   }
 
-  # Combine the Schmid-Leiman loadings in a data frame
-  sl_load <- cbind(L_sls_2, L_sls_1)
+  dimnames(L2) <- list(labels, "g")
+  sl_load <- cbind(L_g, L_s)
+  dimnames(sl_load) <- list(rownames(L1), c("g", labels))
+  h2 <- rowSums(sl_load^2)
 
-  # Compute communalities and uniquenesses of the Schmid-Leiman solution
-  h2_sl <- rowSums(sl_load^2)
-  u2_sl <- 1 - h2_sl
-
-  vars_accounted <- .compute_vars(L_unrot = sl_load, L_rot = sl_load)
-
-  colnames(vars_accounted) <-c("g", paste0("F", seq_len(n_first_fac)))
-
-  # Finalize output object
-  sl <- cbind(sl_load, h2_sl, u2_sl)
-  colnames(sl) <- c("g", paste0("F", seq_len(n_first_fac)), "h2", "u2")
+  sl <- cbind(sl_load, h2 = h2, u2 = 1 - h2)
   class(sl) <- c("efa_sl_loadings", "SLLOADINGS")
 
   output <- list(
     orig_R = orig_R,
     sl = sl,
     L2 = L2,
-    vars_accounted = vars_accounted,
+    vars_accounted = .compute_vars(L_unrot = sl_load, L_rot = sl_load),
     iter = iter,
     convergence = convergence,
     settings = settings
-    )
+  )
 
   class(output) <- c("efa_schmid_leiman", "SL")
 
@@ -464,22 +339,11 @@ efa_schmid_leiman <- function(x, Phi = NULL,
 
 }
 
-# Column order of the first-order factors. The loadings are sorted by the factor
-# number in the column labels, so that, e.g., "F10" follows "F2" and not "F1".
-# The sort needs one label for each factor, and a digit in each label. If one of
-# these two conditions is not true, the columns keep the order they have. The
-# loadings from `efa_fit()` and `psych::fa()` always have labels; a loading
-# matrix that comes directly from the user can have no labels.
-.sl_factor_order <- function(nms, n) {
-
-  # covers unlabelled columns too: length(NULL) is 0, so absent labels take the
-  # fallback rather than reaching the parse below
-  if (length(nms) != n) return(seq_len(n))
-
-  num <- suppressWarnings(as.numeric(gsub("[^0-9]", "", nms)))
-
-  if (anyNA(num)) return(seq_len(n))
-
-  order(num)
-
+# Labels of the group factors: the input's column names if each factor has a unique,
+# non-empty one that does not clash with the "g", "h2", and "u2" columns of the result;
+# otherwise "F1" to "Fk".
+.sl_group_names <- function(nms, k) {
+  usable <- length(nms) == k && !anyNA(nms) && all(nzchar(nms)) &&
+    anyDuplicated(nms) == 0L && !any(nms %in% c("g", "h2", "u2"))
+  if (usable) nms else paste0("F", seq_len(k))
 }

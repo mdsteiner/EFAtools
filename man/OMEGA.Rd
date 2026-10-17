@@ -267,11 +267,8 @@ Both settings score a composite by the true score variance the model attributes
 to it, counting every factor its variables load on; they differ only in the
 variance that is divided into. \code{variance = "correlation"} uses the composite's
 observed variance, giving the observed-score form of omega; \code{"sums_load"} uses its
-model-implied variance, which partitions exactly into omega hierarchical plus omega
-subscale on the whole-scale row. The two settings agree up to model misfit, and
-differ mainly in the whole-scale omega subscale, which counts all group-factor
-variance under \code{"sums_load"} but only the assigned subscale composites under
-\code{"correlation"}.
+model-implied variance. With both settings, omega total is omega hierarchical plus
+omega subscale on the whole-scale row. The two settings agree up to model misfit.
 }
 }
 \examples{

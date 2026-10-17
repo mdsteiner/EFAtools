@@ -26,12 +26,17 @@
 #' a Cholesky factor, or a symmetric eigen square root when it is singular (e.g. a
 #' communality of exactly 1).
 #'
-#' With `marginals = "empirical"`, the iterative rank-matching algorithm of Ruscio
-#' and Kaczetow (2008) reproduces the population correlation while each variable
-#' takes the empirical marginal distribution of the matching column of
-#' `marginal_data` (resampled with replacement). Only the marginals of
-#' `marginal_data` are used; its own correlations are ignored, and the drawn columns
-#' follow the population's variables, not those of `marginal_data`.
+#' With `marginals = "empirical"`, each variable takes the empirical marginal distribution
+#' of the matching column of `marginal_data`; the correlations of `marginal_data` are
+#' ignored. Each dataset is a new draw of independent cases: normal deviates at an
+#' intermediate correlation, each mapped through the empirical quantile function of its
+#' column (Cario & Nelson, 1997). The intermediate correlation of each pair is calculated
+#' once from the bivariate normal distribution (Mehler, 1866; Lancaster, 1957), so the
+#' data reproduce the population correlation, including any model error.
+#' Two marginals of very different shape cannot attain every correlation (for example,
+#' two binary variables with proportions .9 and .1); such a request is rejected. The
+#' pairwise solutions can also give an intermediate correlation matrix that is not
+#' positive definite, which is rejected unless `force_pd` allows it.
 #'
 #' With `marginals = "VM"` (Vale-Maurelli, 1983) or `"IG"` (the independent-generator
 #' method; Foldnes & Olsson, 2016), the cases reproduce the population correlation
@@ -152,12 +157,10 @@
 #' @param marginal_data matrix or data frame. Only used with
 #'   `marginals = "empirical"`, where it is required: a data set with one numeric
 #'   column per variable (`p` columns), each with at least two distinct values,
-#'   whose per-column distributions are resampled as the marginals of the drawn
-#'   data. Its correlations are ignored. Default is `NULL`.
-#' @param n_factors numeric. Only used with `marginals = "empirical"`: the number
-#'   of factors the rank-matching reproduction fits. Default is `NULL`, in which
-#'   case it is the number of columns of `Lambda` when the population is built
-#'   from a factor model; it must be given when the population is supplied via `R`.
+#'   whose per-column distributions become the marginals of the drawn data. Its
+#'   correlations are ignored. Default is `NULL`.
+#' @param n_factors `r lifecycle::badge("deprecated")` Ignored. Empirical marginals
+#'   do not use a factor model.
 #' @param skewness numeric. Only used with `marginals = "VM"` or `"IG"`: the
 #'   target marginal skewness, as a single value applied to every variable or a
 #'   length-`p` vector. Default is `NULL` (0, a symmetric marginal). At least one
@@ -165,14 +168,14 @@
 #' @param kurtosis numeric. Only used with `marginals = "VM"` or `"IG"`: the
 #'   target marginal excess kurtosis (0 for a normal marginal), as a single value
 #'   applied to every variable or a length-`p` vector. Default is `NULL` (0).
-#' @param force_pd logical. Used with `marginals = "VM"` and with Cudeck-Browne model error
-#'   (`model_error = "CB"`), where `FALSE` (the default) rejects a population or intermediate
-#'   matrix that is not positive definite. What `TRUE` accepts instead differs by path, in
-#'   both cases with a warning: for `marginals = "VM"` the intermediate correlation matrix is
-#'   projected to the nearest correlation matrix (via [psych::cor.smooth()]), and the returned
-#'   `population` becomes the one the projected draw attains; for `model_error = "CB"` there is
-#'   no such projection -- the closest positive-definite perturbation is kept instead, whose
-#'   achieved RMSEA is **below** the target. Has no effect for the `"TKL"` or `"WB"` methods.
+#' @param force_pd logical. Used with `marginals = "VM"` or `"empirical"` and with
+#'   Cudeck-Browne model error (`model_error = "CB"`), where `FALSE` (the default) rejects an
+#'   intermediate matrix or population that is not positive definite. With `TRUE`, a warning
+#'   is given instead: for `"VM"` and `"empirical"`, the intermediate correlation matrix is
+#'   smoothed to a positive-definite correlation matrix (as [psych::cor.smooth()] does), and
+#'   the returned `population` becomes the one the smoothed draw attains; for `"CB"`, the closest
+#'   positive-definite perturbation is kept, whose achieved RMSEA is **below** the target. Has
+#'   no effect for the `"TKL"` or `"WB"` methods.
 #' @param categories numeric or list. Requests ordinal output by discretizing each
 #'   variable into ordered categories. Either a count of equally probable categories
 #'   (a single value applied to every variable or a length-`p` vector), or a
@@ -227,19 +230,19 @@
 #'   global RNG state unchanged. Default is `NULL` (no seeding).
 #' @param return_pop logical. If `TRUE`, return only the population correlation
 #'   matrix and draw no data. Default is `FALSE`. Because no data are drawn, the
-#'   Vale-Maurelli intermediate correlation matrix is never formed, so its
-#'   positive-definiteness (and any `force_pd` projection of it) is neither checked nor
-#'   reflected in the returned population.
+#'   intermediate correlation matrix of `marginals = "VM"` or `"empirical"` is never
+#'   formed, so its positive-definiteness (and any `force_pd` smoothing of it) is neither
+#'   checked nor reflected in the returned population.
 #'
 #' @returns An object of class `efa_simulated`, a list containing:
 #' \item{data}{The simulated data: an `N` by `p` numeric matrix, an integer matrix of
 #'   category codes when `categories` is set, or a length-`n_datasets` list of these when
 #'   `n_datasets > 1`. `NULL` when `return_pop = TRUE`.}
 #' \item{population}{The `p` by `p` population correlation matrix drawn from,
-#'   model-error-perturbed when requested. When `force_pd = TRUE` causes `marginals =
-#'   "VM"`'s intermediate matrix to be projected, `population` is the population the
-#'   projected draw actually reaches, differing from the target by the drift the warning
-#'   reports.}
+#'   model-error-perturbed when requested. When `force_pd = TRUE` causes the intermediate
+#'   matrix of `marginals = "VM"` or `"empirical"` to be smoothed, `population` is the
+#'   population the smoothed draw actually reaches, differing from the target by the drift
+#'   the warning reports.}
 #' \item{model_error}{`NULL`, or, when model error was applied, a list of the method, the
 #'   target and achieved RMSEA/CFI, the model degrees of freedom `df`, and the method's
 #'   tuning parameter: `kappa` for `"CB"`, `v` and `eps` for `"TKL"`, `m` for `"WB"`.}
@@ -248,7 +251,12 @@
 #'
 #' Printing the object shows a compact summary.
 #'
-#' @references Cudeck, R., & Browne, M. W. (1992). Constructing a covariance matrix
+#' @references Cario, M. C., & Nelson, B. L. (1997). Modeling and generating random
+#'   vectors with arbitrary marginal distributions and correlation matrix. Technical
+#'   report, Department of Industrial Engineering and Management Sciences, Northwestern
+#'   University.
+#'
+#'   Cudeck, R., & Browne, M. W. (1992). Constructing a covariance matrix
 #'   that yields a specified minimizer and a specified minimum discrepancy function
 #'   value. Psychometrika, 57(3), 357-369. \doi{10.1007/BF02295424}
 #'
@@ -264,19 +272,23 @@
 #'   Multivariate Behavioral Research, 51(2-3), 207-219.
 #'   \doi{10.1080/00273171.2015.1133274}
 #'
+#'   Lancaster, H. O. (1957). Some properties of the bivariate normal distribution
+#'   considered in the form of a contingency table. Biometrika, 44(1/2), 289-292.
+#'   \doi{10.1093/biomet/44.1-2.289}
+#'
 #'   MacCallum, R. C. (2003). 2001 Presidential Address: Working with imperfect
 #'   models. Multivariate Behavioral Research, 38(1), 113-139.
 #'   \doi{10.1207/S15327906MBR3801_5}
+#'
+#'   Mehler, F. G. (1866). Ueber die Entwicklung einer Function von beliebig vielen
+#'   Variablen nach Laplaceschen Functionen höherer Ordnung. Journal für die reine und
+#'   angewandte Mathematik, 66, 161-176. \doi{10.1515/crll.1866.66.161}
 #'
 #'   Olsson, U. (1979). Maximum likelihood estimation of the polychoric correlation
 #'   coefficient. Psychometrika, 44(4), 443-460. \doi{10.1007/BF02296207}
 #'
 #'   Rubin, D. B. (1976). Inference and missing data. Biometrika, 63(3), 581-592.
 #'   \doi{10.1093/biomet/63.3.581}
-#'
-#'   Ruscio, J., & Kaczetow, W. (2008). Simulating multivariate nonnormal data
-#'   using an iterative algorithm. Multivariate Behavioral Research, 43(3),
-#'   355-381. \doi{10.1080/00273170802285693}
 #'
 #'   Tucker, L. R., Koopman, R. F., & Linn, R. L. (1969). Evaluation of factor
 #'   analytic research procedures by means of simulated correlation matrices.
@@ -348,7 +360,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
                          model_error = c("CB", "TKL", "WB", "none"),
                          target_rmsea = NULL, target_cfi = NULL,
                          marginals = c("normal", "empirical", "VM", "IG"),
-                         marginal_data = NULL, n_factors = NULL,
+                         marginal_data = NULL, n_factors = lifecycle::deprecated(),
                          skewness = NULL, kurtosis = NULL, force_pd = FALSE,
                          categories = NULL, match = NULL,
                          missing = c("none", "MCAR", "MAR", "MNAR"),
@@ -364,6 +376,13 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   checkmate::assert_flag(force_pd)
   checkmate::assert_count(n_datasets, positive = TRUE)
   checkmate::assert_int(seed, null.ok = TRUE)
+  if (lifecycle::is_present(n_factors)) {
+    lifecycle::deprecate_warn(
+      when = "1.2.0",
+      what = "efa_simulate(n_factors)",
+      details = c("i" = "Empirical marginals do not use a factor model, so the argument is ignored.")
+    )
+  }
 
   marginals <- .match_arg_ci(marginals)
 
@@ -419,15 +438,12 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     }
   }
 
-  # marginal_data and n_factors configure the empirical rank-matching path only;
-  # skewness and kurtosis configure the non-normal VM/IG paths, and force_pd the
-  # Vale-Maurelli path only.
-  if (marginals != "empirical" && (!is.null(marginal_data) || !is.null(n_factors))) {
-    supplied <- c("marginal_data", "n_factors")[c(!is.null(marginal_data),
-                                                  !is.null(n_factors))]
+  # marginal_data configures the empirical path only; skewness and kurtosis configure the
+  # non-normal VM/IG paths.
+  if (marginals != "empirical" && !is.null(marginal_data)) {
     cli::cli_abort(
-      c("{.arg marginal_data} and {.arg n_factors} only apply when {.code marginals = \"empirical\"}.",
-        "x" = "You set {.code marginals = \"{marginals}\"} but supplied {.arg {supplied}}."),
+      c("{.arg marginal_data} only applies when {.code marginals = \"empirical\"}.",
+        "x" = "You set {.code marginals = \"{marginals}\"} but supplied {.arg marginal_data}."),
       class = "efa_simulate_input"
     )
   }
@@ -440,12 +456,13 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
       class = "efa_simulate_input"
     )
   }
-  # force_pd rescues the Vale-Maurelli intermediate correlation matrix and, for Cudeck-Browne
-  # model error, a population that cannot reach the target RMSEA while staying positive definite;
-  # it has no role otherwise (the IG path needs a positive definite population outright).
-  if (marginals != "VM" && !do_model_error && isTRUE(force_pd)) {
+  # force_pd rescues the intermediate correlation matrix of the VM and empirical paths and, for
+  # Cudeck-Browne model error, a population that cannot reach the target RMSEA while staying
+  # positive definite; it has no role otherwise (the IG path needs a positive definite population
+  # outright).
+  if (!(marginals %in% c("VM", "empirical")) && !do_model_error && isTRUE(force_pd)) {
     cli::cli_abort(
-      c("{.arg force_pd} only applies when {.code marginals = \"VM\"} or model error is requested.",
+      c("{.arg force_pd} only applies when {.code marginals} is {.val VM} or {.val empirical}, or model error is requested.",
         "x" = "You set {.code force_pd = TRUE} but {.code marginals = \"{marginals}\"} with no model-error target."),
       class = "efa_simulate_input"
     )
@@ -753,19 +770,8 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
 
   checkmate::assert_count(N, positive = TRUE)
 
-  # The empirical path needs a marginal source and a factor count for the
-  # rank-matching reproduction; validate both against the population dimension.
+  # The empirical path needs a marginal source with one column per variable.
   if (marginals == "empirical") {
-    # The reproduction sorts and correlates the drawn cases, which needs at least
-    # two of them: a single case has no correlation and collapses the working
-    # matrix to a vector.
-    if (N < 2L) {
-      cli::cli_abort(
-        c("{.arg N} must be at least 2 when {.code marginals = \"empirical\"}.",
-          "x" = "You requested {N} case{?s}."),
-        class = "efa_simulate_input"
-      )
-    }
     if (is.null(marginal_data)) {
       cli::cli_abort(
         c("{.arg marginal_data} is required when {.code marginals = \"empirical\"}.",
@@ -788,10 +794,8 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
         class = "efa_simulate_input"
       )
     }
-    # Each column must offer at least two distinct values: a constant column is
-    # not a distribution to resample and cannot reproduce a correlation (its
-    # sample correlation is undefined), and a single-row source would resample a
-    # length-one vector -- both of which yield silently wrong or degenerate draws.
+    # A constant column (or a single-row source) has no variance, so it cannot carry a
+    # correlation.
     n_distinct <- apply(marginal_data, 2L, function(col) length(unique(col)))
     if (any(n_distinct < 2L)) {
       bad <- as.character(which(n_distinct < 2L))
@@ -801,37 +805,12 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
         class = "efa_simulate_input"
       )
     }
-
-    # Default the reproduction's factor count to the model's when the population
-    # was built from Lambda; a supplied R carries no such count, so require it.
-    if (is.null(n_factors)) {
-      if (have_lambda) {
-        n_factors <- ncol(Lambda)
-      } else {
-        cli::cli_abort(
-          c("{.arg n_factors} is required when the population is supplied via {.arg R}.",
-            "i" = "It sets the factor count of the rank-matching reproduction."),
-          class = "efa_simulate_input"
-        )
-      }
-    }
-    checkmate::assert_count(n_factors, positive = TRUE)
-    # The iterative principal-axis step extracts n_factors factors from a p by p
-    # matrix, which requires n_factors < p.
-    if (n_factors >= p) {
-      cli::cli_abort(
-        c("{.arg n_factors} must be smaller than the number of variables ({p}).",
-          "x" = "The reproduction uses {n_factors} factor{?s} for {p} variable{?s}.",
-          "i" = "When not supplied, {.arg n_factors} defaults to the number of columns of {.arg Lambda}."),
-        class = "efa_simulate_input"
-      )
-    }
   }
 
   # The VM/IG non-normal paths need target marginal moments; validate them,
   # recycle to length p, and precompute the Fleishman transform once. None of the
   # solves below draw random numbers, so they live outside the replicate loop.
-  vm_ftable <- vm_Rinter <- ig_ftable <- ig_L <- ig_Lt <- NULL
+  vm_ftable <- vm_Rinter <- ig_ftable <- ig_L <- ig_Lt <- emp_sorted <- emp_Rinter <- NULL
   kurt_default <- FALSE
   if (marginals %in% c("VM", "IG")) {
     if (is.null(skewness) && is.null(kurtosis)) {
@@ -865,46 +844,23 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     # Vale-Maurelli (1983): draw normal deviates at an intermediate correlation
     # chosen so the per-variable Fleishman cubic reproduces the target correlation.
     vm_ftable <- .fleishman_table(skewness, kurtosis, kurt_default)
-    vm_Rinter <- .vm_intermediate_cor(R_pop, vm_ftable)
-    # The pairwise cubic solves ignore joint positive-definiteness, so the
-    # intermediate matrix can be indefinite even when R_pop is not. Reject it, or
-    # project it to the nearest correlation matrix on request.
-    min_ev_i <- min(eigen(vm_Rinter, symmetric = TRUE, only.values = TRUE)$values)
-    if (min_ev_i < -tol) {
-      if (!force_pd) {
-        cli::cli_abort(
-          c("The Vale-Maurelli intermediate correlation matrix is not positive definite.",
-            "x" = "Its smallest eigenvalue is {.val {min_ev_i}}.",
-            "i" = "Set {.code force_pd = TRUE} to project it to the nearest correlation matrix, or lower the target correlations or non-normality."),
-          class = "efa_simulate_intermediate_not_pd"
-        )
-      }
-      # Muffle cor.smooth's routine note; re-surface a single classed warning.
-      vm_Rinter <- withCallingHandlers(
-        psych::cor.smooth(vm_Rinter),
-        warning = function(w) {
-          if (grepl("smoothing was done", conditionMessage(w), fixed = TRUE)) {
-            invokeRestart("muffleWarning")
-          }
-        }
-      )
-      vm_Rinter <- (vm_Rinter + t(vm_Rinter)) / 2
-      # The projected intermediate matrix no longer solves the Vale-Maurelli cubic, so the
-      # data are drawn from a population other than the target. Push the projected
-      # intermediate correlations back through that same cubic to obtain the population
-      # actually drawn from in closed form (no simulation), and report it in `population`
-      # so a recovery or bias study measures against the right target.
-      R_ach <- .vm_achieved_cor(vm_Rinter, vm_ftable)
-      drift <- max(abs(R_ach - R_pop)[lower.tri(R_pop)])
-      R_pop <- R_ach
-      dimnames(R_pop) <- list(var_names, var_names)
-      cli::cli_warn(
-        c("The Vale-Maurelli intermediate correlation matrix was not positive definite; it has been projected to the nearest correlation matrix.",
-          "i" = "Projection was applied via {.fun psych::cor.smooth}; the population drawn from therefore drifts from the target by up to {.val {round(drift, 4)}} (largest absolute correlation difference).",
-          "i" = "The returned {.field population} is the population actually drawn from, not the target."),
-        class = "efa_simulate_pd_forced"
-      )
-    }
+    inter <- .repair_intermediate(.vm_intermediate_cor(R_pop, vm_ftable), R_pop,
+                                  function(Ri) .vm_achieved_cor(Ri, vm_ftable),
+                                  "Vale-Maurelli", force_pd, tol)
+    vm_Rinter <- inter$Rinter
+    R_pop <- inter$population
+
+  } else if (marginals == "empirical") {
+    # NORTA (Cario & Nelson, 1997): normal deviates at an intermediate correlation, each
+    # column mapped through its empirical quantile function, so every dataset is a fresh
+    # draw of independent cases. The intermediate correlation is solved once, pair by pair.
+    emp <- lapply(seq_len(p), function(j) .empirical_marginal(marginal_data[, j]))
+    emp_sorted <- lapply(emp, `[[`, "sorted")
+    inter <- .repair_intermediate(.empirical_intermediate_cor(R_pop, emp), R_pop,
+                                  function(Ri) .empirical_achieved_cor(Ri, emp),
+                                  "empirical-marginal", force_pd, tol)
+    emp_Rinter <- inter$Rinter
+    R_pop <- inter$population
 
   } else if (marginals == "IG") {
     # Independent generator (Foldnes & Olsson, 2016): X = L Z with L the lower
@@ -914,7 +870,7 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
       cli::cli_abort(
         c("{.code marginals = \"IG\"} needs a positive definite population correlation matrix.",
           "x" = "The population is singular, so it has no Cholesky factor.",
-          "i" = "Use {.code marginals = \"VM\"} or {.code marginals = \"empirical\"} for a singular population."),
+          "i" = "Use {.code marginals = \"VM\"} for a singular population."),
         class = "efa_simulate_input"
       )
     }
@@ -1015,7 +971,8 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     seq_len(n_datasets),
     function(i) {
       dat <- if (marginals == "empirical") {
-        .simulate_cfm_empirical(R_pop, marginal_data, n_factors, N)
+        # normal deviates at the intermediate correlation, then the empirical quantile maps.
+        .empirical_transform(.simulate_cfm_mvn(emp_Rinter, N), emp_sorted)
       } else if (marginals == "VM") {
         # normal deviates at the intermediate correlation, then the cubic map.
         .fleishman_transform(.simulate_cfm_mvn(vm_Rinter, N), vm_ftable)
@@ -1093,171 +1050,6 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
     ),
     class = "efa_simulated"
   )
-}
-
-
-# Ruscio-Kaczetow iterative rank-matching: draw `N` cases that reproduce the
-# target correlation `R` while carrying the empirical column marginals of `x`
-# (each column is resampled with replacement from the matching column of `x`).
-# The target correlation and the marginal source are separate arguments so an
-# arbitrary population `R` can be paired with any supplied marginals; the shared
-# rank-matching loop otherwise follows Ruscio & Kaczetow (2008). `stats::cor()`,
-# `sort()`, `sort.list()`, and `.paf_iter()` draw no random numbers, so with
-# `R = stats::cor(x, method = cor_method)` the stream, and hence the output, is
-# identical to the observed-data special case that `CD()` uses to draw its
-# comparison populations. `x` may be a data frame or a matrix (`CD()` passes its
-# raw input, `efa_simulate()` a matrix); `x[, i]` and `sample()` treat both
-# identically.
-# Ruscio, J., & Kaczetow, W. (2008). Simulating multivariate nonnormal data
-# using an iterative algorithm. Multivariate Behavioral Research, 43(3),
-# 355-381. doi: 10.1080/00273170802285693
-.simulate_cfm_empirical <- function(R, x, n_factors, N, cor_method = "pearson",
-                                    max_trials = 5, initial_multiplier = 1,
-                                    max_iter = 100) {
-
-  k <- ncol(x)
-  # The reproduction correlates the drawn cases, which needs at least two of them; with
-  # fewer there is no correlation to match and the row indexing below has nothing to read.
-  # efa_simulate() gates this at its own boundary, so this catches the CD path.
-  if (N < 2L) {
-    cli::cli_abort(
-      c("At least 2 cases must be drawn to reproduce the population correlation.",
-        "x" = "You asked for {N}."),
-      class = "efa_simulate_degenerate_marginal"
-    )
-  }
-  sim_dat <- matrix(0, nrow = N, ncol = k)         # Simulated data
-  dists <- matrix(0, nrow = N, ncol = k)           # Each variable's marginal
-  best_RMSE <- 1                                    # Lowest RMSE correlation
-  t_no_impr <- 0                                    # Trial counter
-
-  # Resample the supplied empirical marginals (sorted) for each variable. A resample can
-  # come out constant even from a non-constant source -- a category rare enough that N
-  # draws miss all but one of its values -- and a constant column has no correlation, so
-  # the RMSE below would be NA and the acceptance test would fail on a missing value.
-  # Report it here instead (the sorted column makes the check its two extremes).
-  for (i in 1:k) {
-    dists[, i] <- sort(sample(x[, i], size = N, replace = TRUE))
-  }
-  constant <- dists[1L, ] == dists[N, ]
-  if (any(constant)) {
-    bad <- as.character(which(constant))
-    cli::cli_abort(
-      c("{cli::qty(bad)}Resampling the empirical marginals produced {?a constant column/constant columns} ({bad}).",
-        "x" = "A constant column has no correlation, so the population cannot be reproduced.",
-        "i" = "Draw more cases, or use a marginal whose rarest category is less rare."),
-      class = "efa_simulate_degenerate_marginal"
-    )
-  }
-
-  # The target correlation is supplied; keep a working and a best-so-far copy so
-  # the no-improvement branch below is safe even if the first iteration does not
-  # lower the initial RMSE (best_RMSE = 1).
-  R_inter <- R
-  R_best <- R_inter
-  res_best <- matrix(0, nrow = k, ncol = k)
-
-  # Random normal shared and unique components; factor loadings applied below.
-  shared_comp <- matrix(stats::rnorm(N * n_factors, 0, 1), nrow = N,
-                        ncol = n_factors)
-  unique_comp <- matrix(stats::rnorm(N * k, 0, 1), nrow = N, ncol = k)
-  shared_load <- matrix(0, nrow = k, ncol = n_factors)
-  unique_load <- matrix(0, nrow = k, ncol = 1)
-
-  # Iterate until a set number of trials pass without improving the RMSE between
-  # the reproduced and target correlations.
-  while (t_no_impr < max_trials) {
-
-    # Factor loadings for the current intermediate correlation.
-    L <- suppressWarnings(.paf_iter(rep(1, k), criterion = .001, R = R_inter,
-                   n_fac = n_factors, abs_eig = TRUE, crit_type = 1,
-                   max_iter = max_iter)$L)
-
-    shared_load[, 1:n_factors] <- L
-
-    # get rid of Heywood cases
-    shared_load[shared_load > 1] <- 1
-    shared_load[shared_load < -1] <- -1
-
-    if (shared_load[1, 1] < 0) {
-      shared_load <- shared_load * -1
-    }
-
-    for (i in seq_len(k)) {
-      if (sum(shared_load[i, ] * shared_load[i, ]) < 1) {
-        unique_load[i, 1] <-
-          (1 - sum(shared_load[i, ] * shared_load[i, ]))
-      } else {
-        unique_load[i, 1] <- 0
-      }
-    }
-
-    unique_load <- sqrt(unique_load)
-
-    for (i in seq_len(k)) {
-      sim_dat[, i] <- (shared_comp %*% t(shared_load))[, i] +
-        unique_comp[, i] * unique_load[i, 1]
-    }
-
-    # Replace the normal scores with the empirical marginals via rank matching.
-    for (i in seq_len(k)) {
-      sim_dat <- sim_dat[sort.list(sim_dat[, i]), ]
-      sim_dat[, i] <- dists[, i]
-    }
-
-    # RMSE between reproduced and target correlations; accept or shrink the step.
-    R_rep <- stats::cor(sim_dat, method = cor_method)
-    R_res <- R - R_rep
-    RMSE <- sqrt(sum(R_res[lower.tri(R_res)] * R_res[lower.tri(R_res)]) /
-                   (.5 * (k * k - k)))
-
-    if (RMSE < best_RMSE) {
-      best_RMSE <- RMSE
-      R_best <- R_inter
-      res_best <- R_res
-      R_inter <- R_inter + initial_multiplier * R_res
-      t_no_impr <- 0
-    } else {
-      t_no_impr <- t_no_impr + 1
-      current_multiplier <- initial_multiplier * .5 ^ t_no_impr
-      R_inter <- R_best + current_multiplier * res_best
-    }
-  }
-
-  # Reconstruct the data set from the best intermediate correlation.
-  L <- suppressWarnings(.paf_iter(rep(1, k), criterion = .001, R = R_best,
-                n_fac = n_factors, abs_eig = TRUE, crit_type = 1,
-                max_iter = max_iter)$L)
-  shared_load[, seq_len(n_factors)] <- L
-
-  shared_load[shared_load > 1] <- 1
-  shared_load[shared_load < -1] <- -1
-  if (shared_load[1, 1] < 0) {
-    shared_load <- shared_load * -1
-  }
-
-  for (i in seq_len(k)) {
-    if (sum(shared_load[i, ] * shared_load[i, ]) < 1) {
-      unique_load[i, 1] <-
-        (1 - sum(shared_load[i, ] * shared_load[i, ]))
-    } else {
-      unique_load[i, 1] <- 0
-    }
-  }
-
-  unique_load <- sqrt(unique_load)
-
-  for (i in seq_len(k)) {
-    sim_dat[, i] <- (shared_comp %*% t(shared_load))[, i] +
-      unique_comp[, i] * unique_load[i, 1]
-  }
-
-  for (i in seq_len(k)) {
-    sim_dat <- sim_dat[sort.list(sim_dat[, i]), ]
-    sim_dat[, i] <- dists[, i]
-  }
-
-  sim_dat
 }
 
 
@@ -1394,6 +1186,196 @@ efa_simulate <- function(N = NULL, Lambda = NULL, Phi = NULL, Psi = NULL,
   R <- Rinter * kk$k1 + Rinter^2 * kk$k2 + Rinter^3 * kk$k3
   diag(R) <- 1
   (R + t(R)) / 2
+}
+
+# Screen the intermediate correlation matrix of the VM or empirical path. Its pairwise solves
+# ignore joint positive-definiteness, so it can be indefinite even when `R_pop` is not. Abort,
+# or with `force_pd` smooth it and return, via `achieved`, the population the smoothed matrix
+# actually reaches, so that a recovery study measures against the right target.
+.repair_intermediate <- function(Rinter, R_pop, achieved, label, force_pd, tol) {
+  min_ev <- min(eigen(Rinter, symmetric = TRUE, only.values = TRUE)$values)
+  if (min_ev >= -tol) return(list(Rinter = Rinter, population = R_pop))
+  if (!force_pd) {
+    cli::cli_abort(
+      c("The {label} intermediate correlation matrix is not positive definite.",
+        "x" = "Its smallest eigenvalue is {.val {min_ev}}.",
+        "i" = "Set {.code force_pd = TRUE} to smooth it to a positive-definite correlation matrix, or lower the target correlations or the non-normality of the marginals."),
+      class = "efa_simulate_intermediate_not_pd"
+    )
+  }
+  Rinter <- .project_cor_pd(Rinter)
+  Rinter <- (Rinter + t(Rinter)) / 2
+  R_ach <- achieved(Rinter)
+  dimnames(R_ach) <- dimnames(R_pop)
+  drift <- max(abs(R_ach - R_pop)[lower.tri(R_pop)])
+  cli::cli_warn(
+    c("The {label} intermediate correlation matrix was not positive definite; it was smoothed to a positive-definite correlation matrix.",
+      "i" = "The population drawn from differs from the target by up to {.val {round(drift, 4)}} (largest absolute correlation difference).",
+      "i" = "The returned {.field population} is the population actually drawn from, not the target."),
+    class = "efa_simulate_pd_forced"
+  )
+  list(Rinter = Rinter, population = R_ach)
+}
+
+# Summary of an empirical marginal for the NORTA draw X = Q(pnorm(Z)), Q the type-1 empirical
+# quantile function: the sorted column (for the draw), the distinct values standardized to mean
+# 0 and variance 1 with their cumulative proportions `cp` (for the attainable bounds), the
+# standardized jumps of Q at the normal-scale cuts (for the exact correlation), and the
+# standardized Hermite coefficients `beta` with the variance `rest` that they leave out. As
+# E[1(Z > c) h_k(Z)] = dnorm(c) h_{k-1}(c) / sqrt(k) for the orthonormal Hermite polynomials
+# h_k (stable three-term recurrence below), Mehler's series of the bivariate normal density
+# gives cor(X_i, X_j) = sum_k rho^k beta_ik beta_jk (Mehler, 1866; Lancaster, 1957).
+# Mehler, F. G. (1866). Ueber die Entwicklung einer Function von beliebig vielen Variablen nach
+# Laplaceschen Functionen hoeherer Ordnung. Journal fuer die reine und angewandte Mathematik,
+# 66, 161-176.
+# Lancaster, H. O. (1957). Some properties of the bivariate normal distribution considered in
+# the form of a contingency table. Biometrika, 44(1/2), 289-292.
+.empirical_marginal <- function(x, K = 500L) {
+  xs <- sort(x)
+  runs <- rle(xs)
+  v <- runs$values
+  cp <- cumsum(runs$lengths) / length(xs)
+  pr <- diff(c(0, cp))
+  m <- sum(pr * v)
+  sdv <- sqrt(sum(pr * (v - m)^2))
+  cuts <- stats::qnorm(cp[-length(cp)])
+  jump <- diff(v) / sdv
+  w <- jump * stats::dnorm(cuts)
+  beta <- numeric(K)
+  h_prev <- 0
+  h <- rep(1, length(cuts))
+  for (k in seq_len(K)) {
+    beta[k] <- sum(w * h) / sqrt(k)
+    h_next <- (cuts * h - sqrt(k - 1) * h_prev) / sqrt(k)
+    h_prev <- h
+    h <- h_next
+  }
+  list(sorted = xs, z = (v - m) / sdv, cp = cp, cuts = cuts, jump = jump, beta = beta,
+       rest = max(0, 1 - sum(beta^2)))
+}
+
+# Correlation of two empirical marginals under the comonotone coupling (Q_i(u), Q_j(u)) or, with
+# `anti`, the antitone coupling (Q_i(u), Q_j(1 - u)): the largest and the smallest correlation
+# the two marginals can attain (Hoeffding-Frechet bounds), reached by the NORTA draw at rho = 1
+# and -1. Both quantile functions are constant between the merged breakpoints `u`.
+.coupling_cor <- function(mi, mj, anti = FALSE) {
+  bj <- if (anti) 1 - c(0, mj$cp[-length(mj$cp)]) else mj$cp
+  u <- sort(unique(c(mi$cp, bj)))
+  du <- diff(c(0, u))
+  mid <- u - du / 2
+  zi <- mi$z[findInterval(mid, mi$cp) + 1L]
+  zj <- mj$z[findInterval(if (anti) 1 - mid else mid, mj$cp) + 1L]
+  sum(du * zi * zj)
+}
+
+# Correlation of two empirical quantile maps as a function `f` of the normal correlation r.
+# Mehler's series is used where its dropped terms are negligible: by Cauchy-Schwarz they are at
+# most |r|^(K + 1) sqrt(rest_i rest_j), which is at most `tol` for |r| <= `r_ok`. Beyond `r_ok`,
+# which only marginals with few values and large jumps reach in practice, the exact Hoeffding
+# covariance sum_ab jump_a jump_b (Phi2(c_a, d_b; r) - Phi(c_a) Phi(d_b)) is used, written with
+# Plackett's (1954) identity as the integral of the bivariate normal density from 0 to r. The
+# substitution t = sin(theta) removes the density's singularity at t = +-1. For marginals with
+# many values the exact sum is costly but `rest` is small, so the series is kept.
+# Plackett, R. L. (1954). A reduction formula for normal multivariate integrals. Biometrika,
+# 41(3/4), 351-360.
+.empirical_pair <- function(mi, mj, tol = 1e-6) {
+  K <- length(mi$beta)
+  b <- mi$beta * mj$beta
+  rest <- sqrt(mi$rest * mj$rest)
+  r_ok <- if (rest > 0) min(1, (tol / rest)^(1 / (K + 1))) else 1
+  exact <- as.numeric(length(mi$jump)) * length(mj$jump) <= 1e4
+  A <- if (exact) outer(mi$jump, mj$jump * stats::dnorm(mj$cuts)) / sqrt(2 * pi)
+  dens <- function(theta) {
+    vapply(theta, function(th) {
+      sum(A * exp(-outer(mi$cuts, sin(th) * mj$cuts, "-")^2 / (2 * cos(th)^2)))
+    }, numeric(1L))
+  }
+  f <- function(r) {
+    if (abs(r) >= 1) return(.coupling_cor(mi, mj, anti = r < 0))
+    if (abs(r) <= r_ok || !exact) return(sum(b * cumprod(rep(r, K))))
+    th <- asin(r)
+    sign(r) * stats::integrate(dens, min(0, th), max(0, th), rel.tol = 1e-10,
+                               abs.tol = 1e-12)$value
+  }
+  list(f = f, r_ok = r_ok)
+}
+
+# NORTA intermediate correlation for each variable pair: the normal correlation rho at which the
+# two empirical quantile maps (`marg`, from .empirical_marginal()) attain the target. The
+# attained correlation is nondecreasing in rho (Cario & Nelson, 1997), so the root in [-1, 1] is
+# unique. A target that the series reaches within [-r_ok, r_ok] needs no bounds; otherwise a
+# target outside the coupling bounds cannot be attained, and a target on a bound needs
+# rho = +-1.
+# Cario, M. C., & Nelson, B. L. (1997). Modeling and generating random vectors with arbitrary
+# marginal distributions and correlation matrix. Technical report, Northwestern University.
+.empirical_intermediate_cor <- function(R, marg) {
+  p <- ncol(R)
+  nm <- rownames(R)
+  Rint <- diag(p)
+  bad <- character(0L)
+  for (j in seq_len(p - 1L)) {
+    for (i in (j + 1L):p) {
+      target <- R[i, j]
+      if (target == 0) next                # an uncorrelated pair stays at rho = 0
+      pair <- .empirical_pair(marg[[i]], marg[[j]])
+      ends <- c(-pair$r_ok, pair$r_ok)
+      f_ends <- c(pair$f(ends[1L]), pair$f(ends[2L]))
+      if (target <= f_ends[1L] || target >= f_ends[2L]) {
+        ends <- c(-1, 1)
+        f_ends <- c(pair$f(-1), pair$f(1))
+        if (target < f_ends[1L] - 1e-10 || target > f_ends[2L] + 1e-10) {
+          bad <- c(bad, sprintf("%s and %s: target %.3f, attainable %.3f to %.3f",
+                                nm[j], nm[i], target, f_ends[1L], f_ends[2L]))
+          next
+        }
+        if (target <= f_ends[1L] + 1e-10 || target >= f_ends[2L] - 1e-10) {
+          Rint[i, j] <- Rint[j, i] <- sign(target)
+          next
+        }
+      }
+      # Near +-1 the attained correlation changes like sqrt(1 - |rho|), so rho needs a far finer
+      # tolerance than the correlation.
+      Rint[i, j] <- Rint[j, i] <- stats::uniroot(
+        function(r) pair$f(r) - target, ends, f.lower = f_ends[1L] - target,
+        f.upper = f_ends[2L] - target, tol = .Machine$double.eps)$root
+    }
+  }
+  if (length(bad)) {
+    # Variable names may hold braces, which cli would read as interpolation.
+    bad <- gsub("}", "}}", gsub("{", "{{", bad, fixed = TRUE), fixed = TRUE)
+    cli::cli_abort(
+      c("The marginals in {.arg marginal_data} cannot attain {cli::qty(length(bad))}{?this/these} population correlation{?s}.",
+        stats::setNames(utils::head(bad, 5L), rep("x", min(length(bad), 5L))),
+        if (length(bad) > 5L) c("x" = "... and {length(bad) - 5L} more pair{?s}."),
+        "i" = "Marginals of very different shape limit the attainable correlation; lower the correlation or use marginals of more similar shape."),
+      class = "efa_simulate_unattainable_cor"
+    )
+  }
+  Rint
+}
+
+# The population correlation a NORTA draw at intermediate correlation `Rint` reaches: the forward
+# direction of .empirical_intermediate_cor(). Needed when the intermediate matrix has been
+# smoothed and no longer gives the target.
+.empirical_achieved_cor <- function(Rint, marg) {
+  p <- ncol(Rint)
+  R <- diag(p)
+  for (j in seq_len(p - 1L)) {
+    for (i in (j + 1L):p) {
+      R[i, j] <- R[j, i] <- .empirical_pair(marg[[i]], marg[[j]])$f(Rint[i, j])
+    }
+  }
+  R
+}
+
+# Map each column of normal deviates Z through the type-1 empirical quantile function of the
+# matching sorted marginal, Q(u) = x_(ceiling(n u)).
+.empirical_transform <- function(Z, sorted) {
+  for (j in seq_len(ncol(Z))) {
+    xs <- sorted[[j]]
+    Z[, j] <- xs[pmax(1L, ceiling(length(xs) * stats::pnorm(Z[, j])))]
+  }
+  Z
 }
 
 # Independent-generator moments (Foldnes & Olsson, 2016). With X = L Z, L the

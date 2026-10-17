@@ -14,18 +14,12 @@ SL(
 )
 }
 \arguments{
-\item{x}{object of class \code{\link[=efa_fit]{efa_fit()}}, class \code{\link[psych:fa]{psych::fa()}},
-class \code{lavaan::lavaan()}, a matrix, or an \code{efa_loadings}/\code{loadings} object. If class \code{\link[=efa_fit]{efa_fit()}} or
-class \code{\link[psych:fa]{psych::fa()}}, pattern coefficients and factor
-intercorrelations are taken from this object. If class \code{lavaan::lavaan()},
-it must be a second-order CFA solution. In this case first-order and second-order
-factor loadings are taken from this object and the \code{g_name} argument has
-to be specified.
-x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).}
+\item{x}{An oblique \code{\link[=efa_fit]{efa_fit()}} or \code{\link[psych:fa]{psych::fa()}} solution, a pattern matrix (give its
+factor intercorrelations in \code{Phi}), or a second-order CFA solution from \code{lavaan}.}
 
-\item{Phi}{matrix. A matrix of factor intercorrelations from an oblique factor
-solution. Only needs to be specified if a pattern matrix is entered directly
-into \code{x}.}
+\item{Phi}{matrix. The factor intercorrelations of the pattern matrix in \code{x}. With an
+\code{\link[=efa_fit]{efa_fit()}} or \code{\link[psych:fa]{psych::fa()}} solution in \code{x}, \code{Phi} replaces the fitted factor
+intercorrelations. Not used for a \code{lavaan} solution.}
 
 \item{type}{character. One of "EFAtools" (default), "psych", "SPSS", or "none". This is
 used to control the procedure of the second-order factor analysis. In
@@ -35,14 +29,14 @@ used to control the procedure of the second-order factor analysis. In
 \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} as its \code{estimator} argument. One of \code{"PAF"}, \code{"ML"}, \code{"ULS"}, or
 \code{"MINRES"}.}
 
-\item{g_name}{character. The name of the general factor. This needs only be
-specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".}
+\item{g_name}{character. The name of the general factor of a \code{lavaan} second-order
+solution. Default is \code{"g"}.}
 
-\item{...}{Further arguments passed on to the second-order \code{\link[=efa_fit]{efa_fit()}}, including the
-estimation tuning knobs (\code{init_comm}, \code{criterion}, \code{criterion_type}, \code{max_iter},
-\code{abs_eigen}, \code{start_method}), which are repacked, together with \code{type}, into an
-\code{\link[=estimate_control]{estimate_control()}} object so that they tune that fit exactly as they always did.
-The estimator is selected with \code{method}.}
+\item{...}{The estimation tuning knobs of the second-order \code{\link[=efa_fit]{efa_fit()}} (\code{init_comm},
+\code{criterion}, \code{criterion_type}, \code{max_iter}, \code{abs_eigen}, \code{start_method}). They are
+repacked, together with \code{type}, into an \code{\link[=estimate_control]{estimate_control()}} object, so that they tune
+that fit exactly as they always did. Other \code{\link[=efa_fit]{efa_fit()}} arguments have no effect, and
+\code{se}, \code{b_boot}, \code{ci}, and \code{seed} give an error. The estimator is selected with \code{method}.}
 }
 \value{
 A list of class \code{c("efa_schmid_leiman", "SL")}, identical to the value
@@ -52,8 +46,7 @@ of \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}; see there for the comp
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
 
 \code{SL()} has been superseded by \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}, which is the recommended
-interface going forward. It remains available and unchanged so existing code
-keeps working.
+interface going forward. It remains available so existing code keeps working.
 }
 \seealso{
 \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}}

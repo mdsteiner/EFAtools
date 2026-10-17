@@ -2,7 +2,8 @@
 #'
 #' `print()` shows a summarised output of the [efa_schmid_leiman()] function: a
 #' model header (when the settings are available), the Schmid-Leiman loading
-#' matrix, and the variances accounted for. `format()` assembles the same report
+#' matrix, the second-order loadings, and the variances accounted for. `format()`
+#' assembles the same report
 #' and returns it as a character vector; `print()` is `cat(format(x), sep = "\n")`.
 #' The lines follow the active console theme, so they are plain when colours are
 #' disabled (for example when captured into a file or stripped with
@@ -62,9 +63,13 @@ format.efa_schmid_leiman <- function(x, ...) {
       }
     }
 
-    # print the loadings and the variances
+    # print the loadings, the second-order loadings (one column per first-order factor),
+    # and the variances
     .print_efa_rule("Schmid-Leiman Solution")
     .efa_emit_lines(format(x$sl))
+
+    .print_efa_rule("Second-order Loadings")
+    .efa_emit_lines(.efa_corr_lines(t(x$L2), digits = 3))
 
     .print_efa_rule("Variances Accounted for")
     .efa_emit_lines(.efa_corr_lines(x$vars_accounted, digits = 3))

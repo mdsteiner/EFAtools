@@ -130,16 +130,16 @@ test_that(".rel_adapt_efa gives model-appropriate correlated-factors coefficient
   expect_no_error(.reliability_core(.rel_adapt_efa(efa2), "correlation"))
 })
 
-test_that(".rel_adapt_efa carries Phi in the column order of the loadings", {
-  # The loading columns are ordered by the factor number in their labels, and the
-  # group-row omega totals are a quadratic form in Phi, so Phi must be permuted the
-  # same way or every correlated-factors total is scored against the wrong factors.
+test_that(".rel_adapt_efa keeps the loading columns and Phi in the order of the fit", {
+  # The group-row omega totals are a quadratic form in Phi, so Phi must stay paired with
+  # the loading columns: neither is reordered, whatever the column labels are.
   efa_perm <- efa_mod
   colnames(efa_perm$rot_loadings) <- c("F2", "F3", "F1")
   spec <- .rel_adapt_efa(efa_perm)
 
-  expect_equal(unname(spec$s_load), unname(unclass(efa_mod$rot_loadings)[, c(3, 1, 2)]))
-  expect_equal(unname(spec$Phi), unname(efa_mod$Phi[c(3, 1, 2), c(3, 1, 2)]))
+  expect_equal(unname(spec$s_load), unname(unclass(efa_mod$rot_loadings)))
+  expect_equal(unname(spec$Phi), unname(efa_mod$Phi))
+  expect_identical(spec$fac_names, c("F2", "F3", "F1"))
 })
 
 test_that(".rel_adapt_efa handles rotations that leave the loading columns unlabelled", {
@@ -269,10 +269,12 @@ test_that("a cormat supplied as a data frame is accepted and handed on as a matr
                efa_reliability(efa_mod, cormat = cm))
 })
 
-test_that(".rel_adapt_efa requires an oblique solution", {
+test_that(".rel_adapt_efa reads an orthogonal solution with uncorrelated factors", {
   efa_orth <- EFA(test_models$baseline$cormat, N = 500, n_factors = 3,
                   type = "EFAtools", method = "PAF", rotation = "varimax")
-  expect_error(.rel_adapt_efa(efa_orth), class = "efa_reliability_not_oblique")
+  spec <- .rel_adapt_efa(efa_orth)
+  expect_equal(spec$Phi, diag(3), ignore_attr = TRUE)
+  expect_true(all(spec$g_load == 0))
 })
 
 test_that(".rel_adapt_efa reads a one-factor solution from its unrotated loadings", {
@@ -395,7 +397,7 @@ test_that(".rel_adapt_lavaan normalizes a correlated-factors fit to an oblique s
   adapt <- .rel_adapt_lavaan(fit)
   expect_true(adapt$correlated)
   expect_false(adapt$higher_order)
-  # A simple structure would otherwise trip the "did you enter a bifactor model?" note.
+  # OMEGA()'s note about too few loadings belongs to bifactor fits only.
   expect_false(adapt$few_loadings)
 
   spec <- adapt$groups[[1]]

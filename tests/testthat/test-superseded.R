@@ -371,9 +371,11 @@ test_that("SL() adds no condition and stays transparent", {
   expect_no_condition(SL(efa_mod, type = "EFAtools", method = "PAF"))
 
   # it neither swallows nor adds to the conditions efa_schmid_leiman() raises:
-  # supplying Phi alongside an EFA object still warns
-  expect_warning(SL(efa_mod, type = "EFAtools", method = "PAF", Phi = efa_mod$Phi),
-                 class = "efa_sl_phi_specified")
+  # two first-order factors still warn
+  L2 <- matrix(0, 4, 2)
+  L2[1:2, 1] <- L2[3:4, 2] <- .7
+  expect_warning(SL(L2, Phi = matrix(c(1, .5, .5, 1), 2), type = "EFAtools", method = "PAF"),
+                 class = "efa_sl_underidentified")
 })
 
 # OMEGA() and FACTOR_SCORES() carry the superseded badge but keep their own
@@ -865,8 +867,6 @@ test_that("the former `method` argument is rejected with a pointer to `estimator
   # Forwarded bare, `method` would travel into the per-criterion fits and surface as an
   # opaque failure (efa_retain); the error names the rename instead.
   expect_error(efa_retain(cormat, N = 500, criteria = "EKC", method = "ML"),
-               class = "efa_renamed_arg")
-  expect_error(efa_schmid_leiman(oblique_efa, method = "PAF"),
                class = "efa_renamed_arg")
   # the functions that fit through their dots reject it at their own boundary, so the
   # message names the function the user called (not efa_fit, and in efa_group's case not

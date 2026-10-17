@@ -9,8 +9,7 @@ spec <- list(g_load = sl_mod$sl[, "g"], s_load = sl_mod$sl[, c("F1", "F2", "F3")
              u2 = sl_mod$sl[, "u2"], map = fc, cormat = test_models$baseline$cormat,
              var_names = rownames(sl_mod$sl), fac_names = c("F1", "F2", "F3"))
 
-# A full coefficient matrix (also carries the core's CR/AVE columns, which the result
-# must drop).
+# A full coefficient matrix.
 mat <- .reliability_core(spec, "correlation", add_ind = TRUE, add_rel = TRUE)
 res <- .reliability_result(mat, settings = list(variance = "correlation"))
 
@@ -45,8 +44,8 @@ test_that("the result is a long data.frame with the documented schema", {
 })
 
 test_that("only the surfaced menu is carried; CR/AVE/GLB/beta never appear", {
-  # mat carries CR and AVE, but the result surfaces neither, nor any deferred surrogate.
-  expect_true(all(c("CR", "AVE") %in% colnames(mat)))
+  # Neither the core nor the result carries CR, AVE, or any deferred surrogate.
+  expect_false(any(c("CR", "AVE") %in% colnames(mat)))
   expect_false(any(c("CR", "AVE", "GLB", "beta") %in% res$coefficient))
   expect_setequal(res$coefficient,
                   c("omega_total", "omega_hierarchical", "omega_subscale",
@@ -170,29 +169,6 @@ test_that("a group factor sharing the whole-scale row's label keeps its own prin
   out <- format(res)
   expect_match(out, "\\.880", all = FALSE)
   expect_match(out, "\\.770", all = FALSE)
-})
-
-test_that("the correlated-factors note agrees with the table it introduces", {
-  local_reproducible_output()
-  # The note states whether the two omega columns coincide, so it has to be decided from
-  # the values as printed: two coefficients less than one last decimal apart can still
-  # straddle a rounding boundary and print as different numbers, which "equals" would
-  # then contradict.
-  build <- function(tot, sub) {
-    m <- cbind(tot = c(0.9, tot), sub = c(NA_real_, sub))
-    rownames(m) <- c("g", paste0("F", seq_along(tot)))
-    .reliability_result(m, settings = list(variance = "correlation",
-                                           no_general = TRUE))
-  }
-  txt <- function(x) gsub("\\s+", " ", paste(cli::ansi_strip(format(x)), collapse = " "))
-  equal_note <- "subscale omega equals its total omega"
-
-  expect_match(txt(build(c(0.769, 0.745), c(0.769, 0.745))), equal_note, fixed = TRUE)
-
-  # Apart by 9e-4 -- inside the last printed decimal, but on either side of it.
-  differ <- txt(build(c(0.7694, 0.745), c(0.7685, 0.745)))
-  expect_false(grepl(equal_note, differ, fixed = TRUE))
-  expect_match(differ, "F1 .769 .768", fixed = TRUE)
 })
 
 test_that("print output is stable", {

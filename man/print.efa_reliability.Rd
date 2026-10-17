@@ -22,15 +22,10 @@ rounded to. Default is 3.}
 character vector with the report lines.
 }
 \description{
-\code{print()} shows the reliability coefficients for the general factor and the
-group factors, for a single group or for each group: the reliability
-coefficients (omega total, omega hierarchical, and omega subscale, standardized
-Cronbach's alpha, and the H index) and the common-variance indices (the explained
-common variance, ECV, and the percent of uncontaminated correlations, PUC).
-\code{format()} assembles the same report and returns it as a character vector;
-\code{print()} is \code{cat(format(x), sep = "\\n")}. The lines follow the active console
-theme, so they are plain when colours are disabled (for example when captured
-into a file or stripped with \code{\link[cli:ansi_strip]{cli::ansi_strip()}}).
+\code{print()} shows the reliability coefficients (omega total, hierarchical, and subscale,
+standardized alpha, and the H index) of each factor and the common-variance indices (ECV
+and PUC) of the general factor, for one solution or for each group. \code{format()} returns the same lines as a character
+vector. The lines follow the active console theme, and are plain when colours are disabled.
 }
 \examples{
 efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,

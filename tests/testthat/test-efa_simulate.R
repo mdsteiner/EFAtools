@@ -217,42 +217,133 @@ test_that("variable names fall back to the columns of R when rows are unnamed", 
 })
 
 test_that("empirical marginals reproduce the target R and are preserved", {
-  # Ruscio-Kaczetow reproduces the population correlation whatever the supplied
-  # marginals are; check recovery at a large N and that each drawn column's
-  # values come only from the matching (skewed) empirical source column.
+  # The draw reproduces the population correlation whatever the supplied marginals are;
+  # check recovery at a large N and that each drawn column's values come only from the
+  # matching (skewed) empirical source column.
   p <- nrow(Lambda_pop)
   set.seed(2024)
   x_skew <- matrix(stats::rexp(400 * p), nrow = 400, ncol = p)
 
-  dat <- efa_simulate(N = 1e4, Lambda = Lambda_pop, Phi = Phi_pop,
-                      marginals = "empirical", marginal_data = x_skew,
-                      n_factors = 3, seed = 42)$data
+  dat <- efa_simulate(N = 5e4, Lambda = Lambda_pop, Phi = Phi_pop,
+                      marginals = "empirical", marginal_data = x_skew, seed = 42)$data
 
   expect_true(is.matrix(dat))
-  expect_equal(dim(dat), c(1e4, p))
+  expect_equal(dim(dat), c(5e4, p))
   expect_equal(colnames(dat), rownames(Lambda_pop))
-  expect_lt(max(abs(stats::cor(dat) - R_pop)), 0.05)
+  expect_lt(max(abs(stats::cor(dat) - R_pop)), 0.04)
   # Each drawn column carries only values from its empirical marginal.
   expect_true(all(vapply(seq_len(p),
                          function(i) all(dat[, i] %in% x_skew[, i]),
                          logical(1))))
 })
 
-test_that("empirical n_factors defaults to the model's factor count", {
+test_that("empirical datasets vary like samples of independent cases", {
+  # With normal source marginals, the sample correlations of each dataset scatter around the
+  # population as much as those of normal draws do. Correlations fitted per dataset would
+  # scatter about a third less. The rows come in random order.
+  p <- nrow(Lambda_pop)
+  set.seed(8)
+  x_norm <- matrix(stats::rnorm(5000 * p), nrow = 5000, ncol = p)
+  rms_dev <- function(sims) {
+    mean(vapply(sims, function(d) {
+      r <- stats::cor(d) - R_pop
+      sqrt(mean(r[lower.tri(r)]^2))
+    }, numeric(1)))
+  }
+  emp <- efa_simulate(N = 100, R = R_pop, marginals = "empirical", marginal_data = x_norm,
+                      n_datasets = 200, seed = 1)$data
+  nor <- efa_simulate(N = 100, R = R_pop, n_datasets = 200, seed = 2)$data
+  expect_equal(rms_dev(emp), rms_dev(nor), tolerance = 0.1)
+  expect_true(all(apply(emp[[1]], 2L, is.unsorted)))
+})
+
+test_that("empirical marginals keep the model error of the population", {
+  skip_on_cran()
+  p <- nrow(Lambda_pop)
+  set.seed(4)
+  x_skew <- matrix(stats::rchisq(1000 * p, df = 3), nrow = 1000, ncol = p)
+  sim <- efa_simulate(N = 1e5, Lambda = Lambda_pop, Phi = Phi_pop, target_rmsea = 0.08,
+                      marginals = "empirical", marginal_data = x_skew, seed = 3)
+  rms <- function(A) sqrt(mean(A[lower.tri(A)]^2))
+  # The perturbation is several times the sampling error at this N, and the data follow it.
+  expect_gt(rms(sim$population - R_pop), 0.03)
+  expect_lt(rms(stats::cor(sim$data) - sim$population), 0.01)
+})
+
+test_that("the empirical intermediate correlation matches bivariate-normal oracles", {
+  # Two symmetric binary marginals: the correlation of dichotomized normals is
+  # (2 / pi) asin(rho) (Sheppard's formula), so the target r needs rho = sin(pi r / 2). The
+  # larger targets lie close to the bound 1, where the series alone is not accurate.
+  m_bin <- rep(list(.empirical_marginal(rep(0:1, 50))), 2)
+  for (r in c(0.4, 0.975, 1 - 1e-6)) {
+    R2 <- matrix(c(1, r, r, 1), 2, 2)
+    Rint <- .empirical_intermediate_cor(R2, m_bin)
+    expect_equal(Rint[1, 2], sin(pi * r / 2), tolerance = 1e-6)
+    expect_equal(.empirical_achieved_cor(Rint, m_bin), R2, tolerance = 1e-6)
+  }
+  # The attainable bounds are exact: binary marginals with proportions .9 and .1 attain at
+  # most (.1 - .09) / .09 = 1 / 9 and at least -1.
+  m_skew <- list(.empirical_marginal(rep(c(1, 0), c(90, 10))),
+                 .empirical_marginal(rep(c(1, 0), c(10, 90))))
+  expect_equal(.coupling_cor(m_skew[[1]], m_skew[[2]]), 1 / 9)
+  expect_equal(.coupling_cor(m_skew[[1]], m_skew[[2]], anti = TRUE), -1)
+  for (r in c(0.11, 1 / 9 - 1e-7)) {
+    R2 <- matrix(c(1, r, r, 1), 2, 2)
+    Rint <- .empirical_intermediate_cor(R2, m_skew)
+    expect_equal(.empirical_achieved_cor(Rint, m_skew), R2, tolerance = 1e-6)
+  }
+  # A marginal of normal quantiles is nearly the identity map, so rho is nearly the target.
+  m_nor <- rep(list(.empirical_marginal(stats::qnorm(stats::ppoints(2000)))), 2)
+  R2 <- matrix(c(1, 0.4, 0.4, 1), 2, 2)
+  expect_equal(.empirical_intermediate_cor(R2, m_nor)[1, 2], 0.4, tolerance = 1e-3)
+})
+
+test_that("a correlation of 1 between identical empirical marginals is drawn", {
+  # Two variables with a communality of 1 on one factor and the same marginal: the target lies
+  # on the attainable bound, so rho = 1 and the drawn columns are identical.
+  x <- rep(1:5, c(10, 20, 40, 20, 10))
+  R1 <- matrix(1, 2, 2)
+  dat <- efa_simulate(N = 200, R = R1, marginals = "empirical", marginal_data = cbind(x, x),
+                      seed = 1)$data
+  expect_equal(dat[, 1], dat[, 2])
+})
+
+test_that("a correlation that the empirical marginals cannot attain is rejected", {
+  # Binary variables with proportions .9 and .1 attain a correlation of at most about .11.
+  x_bin <- cbind(rep(c(1, 0), c(90, 10)), rep(c(1, 0), c(10, 90)))
+  R2 <- matrix(c(1, 0.8, 0.8, 1), 2, 2)
+  expect_error(efa_simulate(N = 100, R = R2, marginals = "empirical", marginal_data = x_bin),
+               class = "efa_simulate_unattainable_cor")
+})
+
+test_that("a non-positive-definite empirical intermediate matrix is guarded", {
+  # For symmetric binary marginals rho = sin(pi r / 2) exceeds r, so this positive-definite
+  # target (smallest eigenvalue about .01) needs an indefinite intermediate matrix.
+  x_bin <- matrix(rep(0:1, 150), ncol = 3)
+  R3 <- matrix(c(1, 0.7, 0.7, 0.7, 1, 0, 0.7, 0, 1), 3, 3)
+  expect_error(efa_simulate(N = 100, R = R3, marginals = "empirical", marginal_data = x_bin),
+               class = "efa_simulate_intermediate_not_pd")
+  expect_warning(
+    sim <- efa_simulate(N = 100, R = R3, marginals = "empirical", marginal_data = x_bin,
+                        force_pd = TRUE, seed = 1),
+    class = "efa_simulate_pd_forced")
+  # The returned population is the one the smoothed draw attains, not the target.
+  expect_gt(max(abs(sim$population - R3)), 0.01)
+  expect_equal(diag(sim$population), rep(1, 3), ignore_attr = TRUE)
+})
+
+test_that("the deprecated n_factors is accepted, warned about, and ignored", {
   p <- nrow(Lambda_pop)
   set.seed(3)
   x_emp <- matrix(stats::rnorm(200 * p), nrow = 200, ncol = p)
-
-  # Built from Lambda: n_factors defaults to ncol(Lambda) and the call runs.
-  dat <- efa_simulate(N = 500, Lambda = Lambda_pop, Phi = Phi_pop,
-                      marginals = "empirical", marginal_data = x_emp, seed = 1)$data
-  expect_equal(dim(dat), c(500, p))
-
-  # Supplied via R: no factor count is implied, so n_factors is required.
-  expect_error(
-    efa_simulate(N = 500, R = R_pop, marginals = "empirical",
-                 marginal_data = x_emp, seed = 1),
-    class = "efa_simulate_input")
+  expect_warning(
+    deprecated <- efa_simulate(N = 50, Lambda = Lambda_pop, Phi = Phi_pop,
+                               marginals = "empirical", marginal_data = x_emp,
+                               n_factors = 3, seed = 1),
+    class = "lifecycle_warning_deprecated")
+  current <- efa_simulate(N = 50, Lambda = Lambda_pop, Phi = Phi_pop,
+                          marginals = "empirical", marginal_data = x_emp, seed = 1)
+  expect_equal(deprecated, current, tolerance = fp_tol)
 })
 
 test_that("empirical-path inputs are validated", {
@@ -269,11 +360,6 @@ test_that("empirical-path inputs are validated", {
     efa_simulate(N = 100, Lambda = Lambda_pop, Phi = Phi_pop, marginals = "empirical",
                  marginal_data = x_emp[, 1:5]),
     class = "efa_simulate_input")
-  # n_factors must be smaller than the number of variables.
-  expect_error(
-    efa_simulate(N = 100, Lambda = Lambda_pop, Phi = Phi_pop, marginals = "empirical",
-                 marginal_data = x_emp, n_factors = p),
-    class = "efa_simulate_input")
   # Non-finite marginal_data.
   x_bad <- x_emp
   x_bad[1, 1] <- Inf
@@ -281,8 +367,7 @@ test_that("empirical-path inputs are validated", {
     efa_simulate(N = 100, Lambda = Lambda_pop, Phi = Phi_pop, marginals = "empirical",
                  marginal_data = x_bad),
     class = "efa_simulate_input")
-  # A single-row marginal source would resample a length-one vector (tripping
-  # sample()'s length-1 behaviour), so it is rejected.
+  # A single-row marginal source is constant, so it is rejected.
   expect_error(
     efa_simulate(N = 100, Lambda = Lambda_pop, Phi = Phi_pop, marginals = "empirical",
                  marginal_data = x_emp[1, , drop = FALSE]),
@@ -294,35 +379,10 @@ test_that("empirical-path inputs are validated", {
     efa_simulate(N = 100, Lambda = Lambda_pop, Phi = Phi_pop, marginals = "empirical",
                  marginal_data = x_const),
     class = "efa_simulate_input")
-  # The reproduction needs at least two cases to draw.
-  expect_error(
-    efa_simulate(N = 1, Lambda = Lambda_pop, Phi = Phi_pop, marginals = "empirical",
-                 marginal_data = x_emp),
-    class = "efa_simulate_input")
-  # marginal_data / n_factors only apply to the empirical path.
+  # marginal_data only applies to the empirical path.
   expect_error(
     efa_simulate(N = 100, Lambda = Lambda_pop, Phi = Phi_pop, marginal_data = x_emp),
     class = "efa_simulate_input")
-  expect_error(
-    efa_simulate(N = 100, Lambda = Lambda_pop, Phi = Phi_pop, n_factors = 2),
-    class = "efa_simulate_input")
-})
-
-test_that("a resample that comes out constant is reported with a classed error", {
-  # The source column is non-normal but legal (two distinct values), so it passes the
-  # boundary check; its rare category is rare enough that a small draw almost never
-  # includes it, leaving a constant resample that has no correlation to match.
-  p <- nrow(Lambda_pop)
-  set.seed(9)
-  x_rare <- matrix(stats::rnorm(2000 * p), nrow = 2000, ncol = p)
-  x_rare[, 1] <- c(1, rep(0, 1999))
-  # The draw runs in a future, which re-raises the error but also emits its own
-  # cancellation warning; only the classed error is of interest here.
-  expect_error(
-    suppressWarnings(
-      efa_simulate(N = 10, Lambda = Lambda_pop, Phi = Phi_pop, marginals = "empirical",
-                   marginal_data = x_rare, seed = 1)),
-    class = "efa_simulate_degenerate_marginal")
 })
 
 test_that("empirical n_datasets > 1 returns a reproducible list", {
@@ -332,7 +392,7 @@ test_that("empirical n_datasets > 1 returns a reproducible list", {
 
   run <- function() {
     efa_simulate(N = 300, Lambda = Lambda_pop, Phi = Phi_pop, marginals = "empirical",
-                 marginal_data = x_emp, n_factors = 3, n_datasets = 2, seed = 11)
+                 marginal_data = x_emp, n_datasets = 2, seed = 11)
   }
   sims1 <- run()
   sims2 <- run()
@@ -453,14 +513,14 @@ test_that("a non-positive-definite Vale-Maurelli intermediate matrix is guarded"
   expect_error(
     efa_simulate(N = 10, R = R_bad, marginals = "VM", skewness = 2.5, kurtosis = 10),
     class = "efa_simulate_intermediate_not_pd")
-  # force_pd projects the intermediate matrix to the nearest correlation matrix
+  # force_pd smooths the intermediate matrix to a positive-definite correlation matrix
   # and warns, rather than aborting.
   expect_warning(
     dat <- efa_simulate(N = 500, R = R_bad, marginals = "VM", skewness = 2.5,
                         kurtosis = 10, force_pd = TRUE, seed = 1),
     class = "efa_simulate_pd_forced")
   expect_equal(dim(dat$data), c(500, 3))
-  # The projected intermediate matrix no longer solves the Vale-Maurelli cubic for the
+  # The smoothed intermediate matrix no longer solves the Vale-Maurelli cubic for the
   # target, so `population` reports the population the draw actually attains -- which
   # differs from the target and keeps a unit diagonal and the variable names.
   expect_false(isTRUE(all.equal(dat$population, R_bad, check.attributes = FALSE)))
@@ -469,7 +529,7 @@ test_that("a non-positive-definite Vale-Maurelli intermediate matrix is guarded"
 })
 
 test_that(".vm_achieved_cor inverts the intermediate-correlation cubic", {
-  # Where the intermediate matrix is not projected, the achieved population must be the
+  # Where the intermediate matrix is not smoothed, the achieved population must be the
   # target: the two helpers are the two directions of the same Vale-Maurelli equation.
   ftab <- .fleishman_table(rep(1, ncol(R_vm)), rep(2, ncol(R_vm)))
   expect_equal(.vm_achieved_cor(.vm_intermediate_cor(R_vm, ftab), ftab),
@@ -480,7 +540,7 @@ test_that("the forced-PD Vale-Maurelli population is the one the draw converges 
   skip_on_cran()
   skip_if_not_slow()
   # Strongly correlated variables with heavy, mixed-sign non-normality: the intermediate
-  # matrix is far outside the positive-definite cone, so the projection moves the
+  # matrix is far outside the positive-definite cone, so the smoothing moves the
   # population it implies a long way from the target (here by about 0.21).
   R_bad <- diag(5)
   R_bad[lower.tri(R_bad)] <- c(0.8606, -0.5258, 0.8610, 0.5717, -0.8367, 0.9447,
@@ -494,7 +554,7 @@ test_that("the forced-PD Vale-Maurelli population is the one the draw converges 
   emp <- stats::cor(sim$data)
   off <- function(x) x[lower.tri(x)]
   # The realized correlations converge on the reported population, not on the target the
-  # projection abandoned -- the drift is a population property, not sampling noise.
+  # smoothing abandoned -- the drift is a population property, not sampling noise.
   expect_lt(max(abs(off(emp) - off(sim$population))), 0.02)
   expect_gt(max(abs(off(sim$population) - off(R_bad))), 0.1)
 })
@@ -512,7 +572,7 @@ test_that("VM/IG moment arguments are validated and gated", {
   # skewness/kurtosis only apply to the VM/IG paths.
   expect_error(efa_simulate(N = 10, R = R_vm, skewness = 1), class = "efa_simulate_input")
   expect_error(efa_simulate(N = 10, R = R_vm, kurtosis = 1), class = "efa_simulate_input")
-  # force_pd only applies to the Vale-Maurelli path, not normal or IG.
+  # force_pd only applies to the VM and empirical paths, not normal or IG.
   expect_error(efa_simulate(N = 10, R = R_vm, force_pd = TRUE), class = "efa_simulate_input")
   expect_error(
     efa_simulate(N = 10, R = R_vm, marginals = "IG", skewness = 1, kurtosis = 2,
@@ -762,7 +822,7 @@ test_that("categories are not supported with empirical marginals", {
   md <- matrix(stats::rexp(200 * ncol(R_vm)), ncol = ncol(R_vm))
   expect_error(
     efa_simulate(N = 100, R = R_vm, marginals = "empirical", marginal_data = md,
-                 n_factors = 2, categories = 5),
+                 categories = 5),
     class = "efa_simulate_input")
 })
 
@@ -863,7 +923,7 @@ test_that("missingness is orthogonal to the marginal distribution", {
   set.seed(30)
   x_emp <- matrix(stats::rexp(300 * p), nrow = 300, ncol = p)
   d_emp <- efa_simulate(N = 5000, Lambda = Lambda_pop, Phi = Phi_pop,
-                        marginals = "empirical", marginal_data = x_emp, n_factors = 3,
+                        marginals = "empirical", marginal_data = x_emp,
                         missing = "MAR", missing_prop = 0.2, seed = 31)$data
   expect_lt(max(abs(colMeans(is.na(d_emp)) - 0.2)), 0.03)
 
@@ -1332,7 +1392,7 @@ test_that("model-error arguments are validated and gated", {
   expect_error(efa_simulate(N = 10, Lambda = Lambda_me, Phi = Phi_me,
                             model_error = "TKL", target_cfi = 1),
                class = "efa_simulate_input")
-  # force_pd needs VM or a model-error target.
+  # force_pd needs VM or empirical marginals, or a model-error target.
   expect_error(efa_simulate(N = 10, Lambda = Lambda_me, Phi = Phi_me, force_pd = TRUE),
                class = "efa_simulate_input")
 })

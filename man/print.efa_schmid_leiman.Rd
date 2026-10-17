@@ -22,7 +22,8 @@ character vector with the report lines.
 \description{
 \code{print()} shows a summarised output of the \code{\link[=efa_schmid_leiman]{efa_schmid_leiman()}} function: a
 model header (when the settings are available), the Schmid-Leiman loading
-matrix, and the variances accounted for. \code{format()} assembles the same report
+matrix, the second-order loadings, and the variances accounted for. \code{format()}
+assembles the same report
 and returns it as a character vector; \code{print()} is \code{cat(format(x), sep = "\\n")}.
 The lines follow the active console theme, so they are plain when colours are
 disabled (for example when captured into a file or stripped with

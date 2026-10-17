@@ -171,11 +171,8 @@
 #' to it, counting every factor its variables load on; they differ only in the
 #' variance that is divided into. `variance = "correlation"` uses the composite's
 #' observed variance, giving the observed-score form of omega; `"sums_load"` uses its
-#' model-implied variance, which partitions exactly into omega hierarchical plus omega
-#' subscale on the whole-scale row. The two settings agree up to model misfit, and
-#' differ mainly in the whole-scale omega subscale, which counts all group-factor
-#' variance under `"sums_load"` but only the assigned subscale composites under
-#' `"correlation"`.
+#' model-implied variance. With both settings, omega total is omega hierarchical plus
+#' omega subscale on the whole-scale row. The two settings agree up to model misfit.
 #'
 #'
 #' @return If found for an SL or `lavaan` second-order or bifactor solution

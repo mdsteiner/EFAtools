@@ -180,11 +180,6 @@ test_that("a bare flat knob is rejected even when the call runs no fit", {
                class = "efa_flat_knob_in_dots")
   expect_error(efa_hull(cormat, N = 500, gof = "CAF", abs_eigen = TRUE),
                class = "efa_flat_knob_in_dots")
-  expect_error(
-    efa_schmid_leiman(efa_fit(cormat, n_factors = 3, N = 500, estimator = "PAF",
-                              rotation = "promax"),
-                      max_iter = 300),
-    class = "efa_flat_knob_in_dots")
 })
 
 test_that("an unknown dot is rejected even when the call runs no fit", {

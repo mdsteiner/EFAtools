@@ -536,9 +536,8 @@ rotate_control <- function(type = c("EFAtools", "psych", "SPSS", "none"),
 #     what governs it.
 # The hints must hold for every caller, so neither claims that this particular call fits, or
 # simulates, or is a retention criterion: efa_retain() with a criterion such as MAP fits no
-# model at all, efa_kgc() and efa_scree() fit one but simulate nothing, and
-# efa_schmid_leiman() is not a criterion and keeps its internal fit's loadings rather than
-# eigenvalues.
+# model at all, efa_kgc() and efa_scree() fit one but simulate nothing, and SL() is not a
+# criterion and keeps its internal fit's loadings rather than eigenvalues.
 # Takes the argument NAMES (`...names()`), so the dots are never forced.
 .reject_inference_dots <- function(nms, fn) {
   bad <- intersect(nms, .fit_inference_args)

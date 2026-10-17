@@ -10,158 +10,113 @@ factor solutions. Psychometrika, 22(1), 53–61. doi:10.1007/BF02289209
 Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order
 factor structure with the Schmid-Leiman solution: Syntax codes for SPSS and
 SAS. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
+
+Mansolf, M., & Reise, S. P. (2016). Exploratory bifactor analysis: The
+Schmid-Leiman orthogonalization and Jennrich-Bentler analytic rotations. Multivariate
+Behavioral Research, 51(5), 698–717. doi:10.1080/00273171.2016.1215898
 }
 \usage{
 efa_schmid_leiman(
   x,
   Phi = NULL,
   estimator = c("PAF", "ML", "ULS", "MINRES"),
-  g_name = "g",
-  estimate_control = NULL,
-  ...
+  g_name = NULL,
+  estimate_control = NULL
 )
 }
 \arguments{
-\item{x}{object of class \code{\link[=efa_fit]{efa_fit()}}, class \code{\link[psych:fa]{psych::fa()}},
-class \code{lavaan::lavaan()}, a matrix, or an \code{efa_loadings}/\code{loadings} object. If class \code{\link[=efa_fit]{efa_fit()}} or
-class \code{\link[psych:fa]{psych::fa()}}, pattern coefficients and factor
-intercorrelations are taken from this object. If class \code{lavaan::lavaan()},
-it must be a second-order CFA solution. In this case first-order and second-order
-factor loadings are taken from this object and the \code{g_name} argument has
-to be specified.
-x can also be a pattern matrix from an oblique factor solution (see \code{Phi}).}
+\item{x}{An oblique \code{\link[=efa_fit]{efa_fit()}} or \code{\link[psych:fa]{psych::fa()}} solution, a pattern matrix (give its
+factor intercorrelations in \code{Phi}), or a second-order CFA solution from \code{lavaan}.}
 
-\item{Phi}{matrix. A matrix of factor intercorrelations from an oblique factor
-solution. Only needs to be specified if a pattern matrix is entered directly
-into \code{x}.}
+\item{Phi}{matrix. The factor intercorrelations of the pattern matrix in \code{x}. With an
+\code{\link[=efa_fit]{efa_fit()}} or \code{\link[psych:fa]{psych::fa()}} solution in \code{x}, \code{Phi} replaces the fitted factor
+intercorrelations. Not used for a \code{lavaan} solution.}
 
-\item{estimator}{character. One of "PAF", "ML", or "ULS" to use
-principal axis factoring, maximum likelihood, or unweighted least squares,
-respectively, used in \code{\link[=efa_fit]{efa_fit()}} to find the second-order loadings. "MINRES" is
-accepted as a synonym for "ULS" (the same estimator).}
+\item{estimator}{character. The estimator of the second-order \code{\link[=efa_fit]{efa_fit()}}: \code{"PAF"}
+(default), \code{"ML"}, or \code{"ULS"}. \code{"MINRES"} is a synonym for \code{"ULS"}. Not used for a
+\code{lavaan} solution and for two first-order factors, for which no second-order EFA is done.}
 
-\item{g_name}{character. The name of the general factor. This needs only be
-specified if \code{x} is a \code{lavaan} second-order solution. Default is "g".}
+\item{g_name}{character. The name of the general factor in a \code{lavaan} solution. If
+\code{NULL} (default), the latent variable that loads on the other latent variables is used.}
 
-\item{estimate_control}{an \code{\link[=estimate_control]{estimate_control()}} object with the estimation settings for the
-second-order \code{\link[=efa_fit]{efa_fit()}} fit, including the \code{type} preset. \code{NULL} (default) uses the
-\code{\link[=efa_fit]{efa_fit()}} defaults. The second-order fit is unrotated, so no rotation settings apply.}
-
-\item{...}{Arguments to be passed to \code{\link[=efa_fit]{efa_fit()}}. The estimation tuning knobs are not passed
-here; they live in \code{estimate_control}, and the standard-error arguments (\code{se}, \code{b_boot},
-\code{ci}, \code{seed}) are not accepted because the second-order fit is an internal step run against
-a placeholder sample size and only its loadings are kept.}
+\item{estimate_control}{An \code{\link[=estimate_control]{estimate_control()}} object with the settings of the
+second-order \code{\link[=efa_fit]{efa_fit()}}. \code{NULL} (default) uses the \code{\link[=efa_fit]{efa_fit()}} defaults. Not used for
+a \code{lavaan} solution and for two first-order factors.}
 }
 \value{
-A list of class \code{c("efa_schmid_leiman", "SL")} containing the following
-\item{orig_R}{Original correlation matrix.}
-\item{sl}{A matrix with general factor loadings, group factor loadings, communalities,
-and uniquenesses.}
-\item{L2}{Second-order factor loadings.}
-\item{vars_accounted}{A matrix of explained variances and sums of squared loadings.}
-\item{iter}{The number of iterations needed for convergence in EFA.}
-\item{convergence}{Integer convergence code of the second-order EFA (0 =
-converged); \code{NA} for a lavaan input. See \code{\link[=efa_fit]{efa_fit()}}.}
-\item{settings}{list. The settings (arguments) used in EFA to get the
-second-order loadings.}
+A list of class \code{c("efa_schmid_leiman", "SL")}:
+\item{orig_R}{The correlation matrix of the input solution. \code{NA} for a pattern matrix.}
+\item{sl}{The Schmid-Leiman loadings: the general factor (\code{g}), the group factors, the
+communalities (\code{h2}), and the uniquenesses (\code{u2}).}
+\item{L2}{The second-order loadings, with one row for each first-order factor.}
+\item{vars_accounted}{The variances explained by the general factor and the group
+factors.}
+\item{iter}{The number of iterations of the second-order EFA.}
+\item{convergence}{The convergence code of the second-order EFA (0 = converged; see
+\code{\link[=efa_fit]{efa_fit()}}).}
+\item{settings}{The estimator and the estimation settings of the second-order EFA.}
+
+\code{iter}, \code{convergence}, and \code{settings} are \code{NA} if no second-order EFA was done, that is,
+for a \code{lavaan} solution and for two first-order factors.
 }
 \description{
-This function implements the Schmid-Leiman (SL) transformation
-(Schmid & Leiman, 1957). It takes the pattern coefficients and factor
-intercorrelations from an oblique factor solution as
-input and can reproduce the results from \code{\link[psych:schmid]{psych::schmid()}}
-and from the SPSS implementation from Wolff & Preising (2005). Other arguments
-from \code{\link[=efa_fit]{efa_fit()}} can be used to control the procedure to find the
-second-order loadings more flexibly. The function can also be used on a
-second-order confirmatory factor analysis (CFA) solution from lavaan.
-The group factors of the returned solution are sorted and relabelled, so their
-column order can differ from the input solution's (see Details).
+Transforms an oblique factor solution into a hierarchical solution with one general
+factor and group factors that are uncorrelated with it and with each other (Schmid &
+Leiman, 1957). With the same settings, the results agree with \code{\link[psych:schmid]{psych::schmid()}} and with
+the SPSS syntax of Wolff and Preising (2005).
 }
 \details{
-The SL transformation (also called SL orthogonalization) is a procedure with
-which an oblique factor solution is transformed into a hierarchical,
-orthogonalized solution. As a first step, the factor intercorrelations are
-factor analyzed to extract a single second-order (general) factor, yielding a
-two-level hierarchical structure. The first-order factor and the second-order
-factor are then orthogonalized, resulting in an orthogonalized factor solution
-with proportionality constraints. The procedure thus makes a suggested
-hierarchical data structure based on factor intercorrelations explicit. One
-major advantage of SL transformation is that it enables variance
-partitioning between higher-order and first-order factors, including the
-calculation of McDonald's omegas (see \code{\link[=efa_reliability]{efa_reliability()}}).
+The factor intercorrelations are factor analyzed to get one second-order (general)
+factor. The general-factor loadings of the items are their first-order loadings times
+the second-order loadings. The group-factor loadings are the first-order loadings times
+the residual standard deviations of the first-order factors. The general factor and the
+group factors thus divide the common variance, for example for McDonald's omegas (see
+\code{\link[=efa_reliability]{efa_reliability()}}).
 
-Where the first-order factors come from a loading matrix -- an \code{\link[=efa_fit]{efa_fit()}} or a
-\code{\link[psych:fa]{psych::fa()}} solution, or a pattern matrix supplied with \code{Phi} -- they are sorted
-by the number in their column labels, so that \code{"F10"} follows \code{"F2"} rather than
-\code{"F1"}. The sort needs a number in every column label; columns that carry no
-labels, or a label without a number, keep the order they arrive in. A second-order
-\code{lavaan} solution is not sorted at all: its first-order factors keep the order the
-model declares them in.
+The transformation has proportionality constraints: in each group factor, the ratio of
+the group-factor loading to the general-factor loading is the same for all items. Thus,
+it recovers a bifactor structure exactly only if each item loads on one group factor and
+these ratios are equal. If items have cross-loadings, it overestimates their
+general-factor loadings, and the result depends on the oblique rotation of the
+first-order solution (Mansolf & Reise, 2016). The orthogonal bifactor rotation of
+\code{\link[=efa_fit]{efa_fit()}} (\code{rotation = "bifactorT"}) does not have these constraints.
 
-The columns are then labelled \code{"F1"} to \code{"Fk"} by position, on every route, and the
-input solution's own factor names are not carried over. A factor a \code{lavaan} model
-calls \code{"F3"} can therefore come back as \code{"F1"}. Where the sort applies it is
-independent of how the input orders its factors, so the group
-factors of the returned \code{sl} matrix can also be in a different order from the columns
-they came from. A \code{\link[psych:fa]{psych::fa()}} solution shows this most readily: it orders its
-columns by their sums of squared loadings, but keeps each factor's own number in its
-label, so those numbers arrive out of order. A
-solution whose columns are \code{"PA2"}, \code{"PA3"}, \code{"PA1"} comes back with those same
-three factors sorted as \code{PA1}, \code{PA2}, \code{PA3} and labelled \code{"F1"}, \code{"F2"}, \code{"F3"}.
-The first group factor of the result is then the third column of the input. The
-same holds against \code{\link[psych:schmid]{psych::schmid()}}, whose columns keep the input order: the two
-solutions agree column for column only after one of them is permuted to the
-other's order. An \code{\link[=efa_fit]{efa_fit()}} solution already labels its factors \code{"F1"} to \code{"Fk"}
-in that order, so nothing moves for one; the reordering shows itself for a
-\code{\link[psych:fa]{psych::fa()}} solution, and for a pattern matrix supplied with labels of its own.
+With two first-order factors, the second-order loadings are not identified. The two
+loadings then get the same absolute value, and their product is the factor
+intercorrelation, as in \code{\link[psych:schmid]{psych::schmid()}}.
 
-Read the group factors from the returned matrix, therefore, rather than from the
-input. An indicator-to-factor map is matched to the group factors by position, so
-one built in the input solution's column order lines up only where the columns did
-not move; where they did, \code{\link[=efa_reliability]{efa_reliability()}} or \code{\link[=OMEGA]{OMEGA()}} scores each composite
-against the wrong factor. Build such a map from the \code{"F1"} to \code{"Fk"} columns of the
-returned \code{sl} matrix instead, which is right on every route. The \code{fac_names} of
-\code{\link[=efa_reliability]{efa_reliability()}} are matched by position in the same way, so names given in the
-input solution's order label the wrong subscales, and do so without any sign.
+A \code{lavaan} solution must have one second-order factor and no other paths or
+covariances between the latent variables. Its general-factor loadings also include the
+direct loadings of the general factor on the items, if the model has them.
+
+The group factors keep the column order and the names of the input solution. If the
+columns do not have unique names (or a name is \code{"g"}, \code{"h2"}, or \code{"u2"}), all group
+factors are labelled \code{"F1"} to \code{"Fk"}.
 }
 \examples{
-## Use with an output from the EFAtools::efa_fit function, both with type EFAtools
-EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
                    estimator = "PAF", rotation = "promax")
-SL_EFAtools <- efa_schmid_leiman(EFA_mod, estimator = "PAF",
-                                 estimate_control = estimate_control(type = "EFAtools"))
+efa_schmid_leiman(efa_mod)
+
+# A pattern matrix with its factor intercorrelations, for example from another
+# program, gives the same solution
+efa_schmid_leiman(efa_mod$rot_loadings, Phi = efa_mod$Phi)
 
 \donttest{
-## Use with an output from the psych::fa function with type psych
+# A psych::fa() solution, with the psych settings for the second-order EFA
 fa_mod <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
                     fm = "pa", rotate = "Promax")
-SL_psych <- efa_schmid_leiman(fa_mod, estimator = "PAF",
-                              estimate_control = estimate_control(type = "psych"))
-}
+efa_schmid_leiman(fa_mod, estimate_control = estimate_control(type = "psych"))
 
-## Use more flexibly by entering a pattern matrix and phi directly (useful if
-## a factor solution found with another program should be subjected to SL
-## transformation)
-
-## For demonstration, take pattern matrix and phi from an EFA output
-## This gives the same solution as the first example
-SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, estimator = "PAF",
-                             estimate_control = estimate_control(type = "EFAtools"))
-
-\donttest{
-## Use with a lavaan second-order CFA output
+# A lavaan second-order CFA solution
 if (requireNamespace("lavaan", quietly = TRUE)) {
-
-# Create and fit model in lavaan (assume all variables have SDs of 1)
-mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
-        F2 =~ V7 + V8 + V9 + V10 + V11 + V12
-        F3 =~ V13 + V14 + V15 + V16 + V17 + V18
-        g =~ F1 + F2 + F3'
-fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
-                   sample.nobs = 500, estimator = "ml")
-
-SL_lav <- efa_schmid_leiman(fit, g_name = "g")
-
+  mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+          F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+          F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+          g =~ F1 + F2 + F3'
+  fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+                     sample.nobs = 500)
+  efa_schmid_leiman(fit)
 }
 }
 }

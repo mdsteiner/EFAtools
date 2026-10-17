@@ -4,8 +4,6 @@
       print(res)
     Output
       
-      Total variance from the correlation matrix.
-      
       -- Reliability coefficients ----------------------------------------------------
       
            tot  hier   sub  alpha    H
@@ -24,8 +22,6 @@
     Code
       print(res_mg)
     Output
-      
-      Total variance from the correlation matrix.
       
       Group GroupA:
       
@@ -62,8 +58,6 @@
     Code
       print(res_sf)
     Output
-      
-      Total variance from the model-implied composite variance.
       
       -- Reliability coefficients ----------------------------------------------------
       

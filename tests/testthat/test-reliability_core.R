@@ -8,7 +8,7 @@ test_that(".reliability_core reproduces the OMEGA coefficient menu (regression)"
   ref_corr <- structure(c(0.882807712291674, 0.769347951077085,
     0.764969230283489, 0.74510159916687, 0.73987835131636559,
     0.49973769215022423, 0.4935927140365538, 0.51896424927096363,
-    0.12494360637362421, 0.26942847755724941, 0.26981189190244209,
+    0.14292936097530839, 0.26942847755724941, 0.26981189190244209,
     0.22506712638466256, 0.8423884892261212, 0.4630872563777037,
     0.47192399221710424, 0.40799477228556474, 0.65197317077447814, NA, NA,
     NA, 0.70588235294117641, NA, NA, NA), dim = c(4L, 6L),
@@ -88,7 +88,7 @@ test_that("a correlated-factors spec scores the group omega total from the full 
   # still receive true score variance from the other factor through the cross-loadings,
   # just not the part carried by the factor correlation, so every omega total is read off
   # L L' instead of L Phi L' and stays above the factor's own congeneric omega. Only the
-  # totals depend on Phi; the other coefficients do not.
+  # totals and the whole-scale group variance 1' S Psi S' 1 depend on Phi.
   spec_orth <- spec
   spec_orth$Phi <- NULL
   om_orth <- .reliability_core(spec_orth, "correlation", add_ind = TRUE)
@@ -100,8 +100,9 @@ test_that("a correlated-factors spec scores the group omega total from the full 
     expect_gt(om_orth[c("F1", "F2")[j], "tot"], om[c("F1", "F2")[j], "sub"])
   }
   expect_equal(unname(om_orth["g", "tot"]), sum(common_orth) / sum(R))
-  expect_equal(om[, c("hier", "sub", "H", "ECV", "PUC")],
-               om_orth[, c("hier", "sub", "H", "ECV", "PUC")])
+  expect_equal(om[, c("hier", "H", "ECV", "PUC")], om_orth[, c("hier", "H", "ECV", "PUC")])
+  expect_equal(om[-1, "sub"], om_orth[-1, "sub"])
+  expect_equal(unname(om["g", "sub"]), sum(common) / sum(R))
 
   # Control: with exact simple structure a composite receives nothing from the other
   # factor, so its total reduces to the own-column congeneric omega whether or not the
@@ -233,6 +234,9 @@ test_that("a Heywood case (a unique variance at or below zero) is flagged from t
                    fac_names = c("F1", "F2"))
   expect_warning(.reliability_core(spec_bad, "sums_load", TRUE),
                  class = "efa_reliability_heywood")
+  # It is reported without the indices too.
+  expect_warning(.reliability_core(spec_bad, "sums_load", add_ind = FALSE),
+                 class = "efa_reliability_heywood")
 
   # Proper loadings (|lambda| < 1) with proper variances warn about neither.
   spec_ok <- list(g_load = rep(0.5, 6), s_load = s, u2 = rep(0.5, 6), map = map,
@@ -315,11 +319,11 @@ test_that("a missing (NA) loading yields an NA H index rather than an error", {
   expect_true(is.finite(om["F2", "H"]))
 })
 
-## add_rel: Cronbach's alpha, composite reliability (CR), and AVE -----------------
+## add_rel: standardized alpha ------------------------------------------------------
 
 test_that("add_rel = FALSE leaves the OMEGA coefficient columns unchanged", {
   # The OMEGA path never sets add_rel, so its coefficient menu must be untouched;
-  # add_rel = TRUE appends exactly alpha, CR, and AVE.
+  # add_rel = TRUE appends exactly alpha.
   spec <- list(g_load = rep(0.4, 6), s_load = matrix(0.5, 6, 1), u2 = rep(0.59, 6),
                map = matrix(1, 6, 1), cormat = NULL, var_names = paste0("V", 1:6),
                fac_names = "F1")
@@ -328,7 +332,7 @@ test_that("add_rel = FALSE leaves the OMEGA coefficient columns unchanged", {
   expect_identical(colnames(.reliability_core(spec, "sums_load", FALSE)),
                    c("tot", "hier", "sub"))
   expect_identical(colnames(.reliability_core(spec, "sums_load", TRUE, add_rel = TRUE)),
-                   c("tot", "hier", "sub", "H", "ECV", "PUC", "alpha", "CR", "AVE"))
+                   c("tot", "hier", "sub", "H", "ECV", "PUC", "alpha"))
 })
 
 test_that("standardized alpha matches psych::alpha for the whole scale and subscales", {
@@ -377,69 +381,6 @@ test_that("alpha falls back to the model-implied correlation matrix when cormat 
   expect_equal(unname(om["F1", "alpha"]), 3 / 2 * (1 - sum(diag(Rk)) / sum(Rk)))
 })
 
-test_that("CR and AVE match hand-computed values; the general-factor row is NA", {
-  g <- rep(0.4, 6)
-  s <- matrix(0, 6, 2); s[1:3, 1] <- 0.5; s[4:6, 2] <- 0.5
-  u2 <- rep(1 - 0.4^2 - 0.5^2, 6)             # 0.59
-  map <- matrix(0, 6, 2); map[1:3, 1] <- 1; map[4:6, 2] <- 1
-  spec <- list(g_load = g, s_load = s, u2 = u2, map = map, cormat = NULL,
-               var_names = paste0("V", 1:6), fac_names = c("F1", "F2"))
-  om <- .reliability_core(spec, "sums_load", add_ind = FALSE, add_rel = TRUE)
-
-  eF1 <- 3 * 0.59
-  expect_equal(unname(om["F1", "CR"]),  1.5^2 / (1.5^2 + eF1))
-  expect_equal(unname(om["F1", "AVE"]), (3 * 0.25) / (3 * 0.25 + eF1))
-  expect_equal(unname(om["F2", "CR"]),  unname(om["F1", "CR"]))   # symmetry
-  expect_equal(unname(om["F2", "AVE"]), unname(om["F1", "AVE"]))
-
-  # CR and AVE are per-subscale only; the general-factor row is NA. Alpha is not.
-  expect_true(is.na(om["g", "CR"]))
-  expect_true(is.na(om["g", "AVE"]))
-  expect_false(is.na(om["g", "alpha"]))
-})
-
-test_that("CR uses the assigned composite: a foreign item's cross-loading does not change it", {
-  s0 <- matrix(0, 6, 2); s0[1:3, 1] <- 0.5; s0[4:6, 2] <- 0.5
-  map <- matrix(0, 6, 2); map[1:3, 1] <- 1; map[4:6, 2] <- 1
-  base <- list(g_load = rep(0.3, 6), s_load = s0, u2 = 1 - 0.3^2 - rowSums(s0^2),
-               map = map, cormat = NULL, var_names = paste0("V", 1:6),
-               fac_names = c("F1", "F2"))
-  om0 <- .reliability_core(base, "sums_load", add_ind = FALSE, add_rel = TRUE)
-
-  # Item 4 (assigned to F2) gains a 0.3 cross-loading on F1. F1's assigned composite
-  # (items 1-3) is unchanged, so CR_F1 and AVE_F1 must not move.
-  sX <- s0; sX[4, 1] <- 0.3
-  cross <- base; cross$s_load <- sX; cross$u2 <- 1 - 0.3^2 - rowSums(sX^2)
-  omX <- .reliability_core(cross, "sums_load", add_ind = FALSE, add_rel = TRUE)
-
-  expect_equal(unname(omX["F1", "CR"]),  unname(om0["F1", "CR"]))
-  expect_equal(unname(omX["F1", "AVE"]), unname(om0["F1", "AVE"]))
-
-  # It equals the assigned-only formula, not a full-column one that would fold in the 0.3.
-  eF1 <- 3 * (1 - 0.3^2 - 0.25)
-  expect_equal(unname(omX["F1", "CR"]), 1.5^2 / (1.5^2 + eF1))
-  expect_false(isTRUE(all.equal(unname(omX["F1", "CR"]), 1.8^2 / (1.8^2 + eF1))))
-})
-
-test_that("CR equals the lavaan single-factor omega for the k = 1 case", {
-  skip_if_not_installed("lavaan")
-  mod <- 'g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 +
-               V13 + V14 + V15 + V16 + V17 + V18'
-  fit <- suppressWarnings(lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
-                                      sample.nobs = 500, estimator = "ml",
-                                      orthogonal = TRUE))
-  ref <- suppressMessages(.OMEGA_LAVAAN(fit))          # c(Omega, H)
-
-  # Represent the single factor as one group factor (no general factor) and read CR.
-  sf <- .rel_adapt_lavaan(fit)$groups[[1]]
-  p <- length(sf$g_load)
-  spec <- list(g_load = rep(0, p), s_load = matrix(sf$g_load, ncol = 1), u2 = sf$u2,
-               map = matrix(1, p, 1), cormat = NULL, var_names = sf$var_names,
-               fac_names = "F1")
-  om <- .reliability_core(spec, "sums_load", add_ind = FALSE, add_rel = TRUE)
-  expect_equal(unname(om["F1", "CR"]), unname(ref[["Omega"]]), tolerance = 1e-8)
-})
-
 test_that("the coefficients a single factor does not define are degenerate, not merely absent", {
   # The grounds for reporting only omega total, alpha, and the H index for one factor. The
   # core computes the other four for such a spec, and each comes out saying something about
@@ -464,7 +405,7 @@ test_that("the coefficients a single factor does not define are degenerate, not 
   }
 })
 
-test_that("empty and single-item subscales get NA alpha/CR/AVE as appropriate", {
+test_that("empty and single-item subscales get an NA alpha", {
   # Empty F2: all items assigned to F1, so F2 has an all-zero map column.
   s <- matrix(0, 6, 2); s[, 1] <- 0.5
   map <- matrix(0, 6, 2); map[, 1] <- 1
@@ -474,10 +415,10 @@ test_that("empty and single-item subscales get NA alpha/CR/AVE as appropriate", 
   expect_warning(
     om <- .reliability_core(spec, "sums_load", add_ind = FALSE, add_rel = TRUE),
     class = "efa_omega_empty_factor")
-  expect_true(all(is.na(om["F2", c("alpha", "CR", "AVE")])))
-  expect_false(any(is.na(om["F1", c("alpha", "CR", "AVE")])))
+  expect_true(all(is.na(om["F2", "alpha"])))
+  expect_false(any(is.na(om["F1", "alpha"])))
 
-  # Single-item subscale F1: alpha is undefined (NA), CR and AVE are finite.
+  # Single-item subscale F1: alpha is undefined (NA).
   s2 <- matrix(0, 4, 2); s2[1, 1] <- 0.6; s2[2:4, 2] <- 0.5
   map2 <- matrix(0, 4, 2); map2[1, 1] <- 1; map2[2:4, 2] <- 1
   spec2 <- list(g_load = rep(0.3, 4), s_load = s2, u2 = 1 - 0.3^2 - rowSums(s2^2),
@@ -485,6 +426,4 @@ test_that("empty and single-item subscales get NA alpha/CR/AVE as appropriate", 
                 fac_names = c("F1", "F2"))
   om2 <- .reliability_core(spec2, "sums_load", add_ind = FALSE, add_rel = TRUE)
   expect_true(is.na(om2["F1", "alpha"]))
-  expect_true(is.finite(om2["F1", "CR"]))
-  expect_true(is.finite(om2["F1", "AVE"]))
 })

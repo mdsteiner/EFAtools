@@ -145,8 +145,8 @@ round(c(target = 1, achieved = mean(apply(sim_ig$data, 2, sk))), 2)
 ```
 
 A third option, `marginals = "empirical"`, reproduces the population correlation while
-giving each variable the *empirical* marginal of a supplied data set (Ruscio & Kaczetow,
-2008) -- useful when you want your simulated variables to look exactly like real items. Only
+giving each variable the *empirical* marginal of a supplied data set (Cario & Nelson,
+1997) -- useful when you want your simulated variables to look exactly like real items. Only
 the marginals of `marginal_data` are used; its own correlations are ignored.
 
 ```{r}
@@ -381,6 +381,10 @@ for fitting the ordinal and incomplete data simulated above.
 
 ## References
 
+Cario, M. C., & Nelson, B. L. (1997). *Modeling and generating random vectors with arbitrary
+marginal distributions and correlation matrix* (Technical report). Department of Industrial
+Engineering and Management Sciences, Northwestern University.
+
 Cudeck, R., & Browne, M. W. (1992). Constructing a covariance matrix that yields a specified
 minimizer and a specified minimum discrepancy function value. *Psychometrika*, 57, 357-369.
 
@@ -398,9 +402,6 @@ MacCallum, R. C., Browne, M. W., & Sugawara, H. M. (1996). Power analysis and de
 of sample size for covariance structure modeling. *Psychological Methods*, 1, 130-149.
 
 Rubin, D. B. (1976). Inference and missing data. *Biometrika*, 63, 581-592.
-
-Ruscio, J., & Kaczetow, W. (2008). Simulating multivariate nonnormal data using an iterative
-algorithm. *Multivariate Behavioral Research*, 43, 355-381.
 
 Tucker, L. R., Koopman, R. F., & Linn, R. L. (1969). Evaluation of factor analytic research
 procedures by means of simulated correlation matrices. *Psychometrika*, 34, 421-459.

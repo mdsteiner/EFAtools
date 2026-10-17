@@ -51,6 +51,46 @@
   * The multicollinearity recommendation names the variables involved (Belsley's variance-decomposition proportions), and the report shows the condition index instead of the determinant and the condition number.
   * The report is shorter, and conditions that the report already describes no longer also give a warning.
 
+* `efa_reliability()` changes:
+  * An `efa_fit()` solution with an orthogonal rotation is now scored like an oblique solution, with factor correlations of 0, and a `"bifactorT"` solution as a bifactor solution. Before, the function refused both. The function now refuses a `"bifactorQ"` solution (`efa_reliability_bifactor_oblique`), because its group factors are correlated; before, it scored the general factor as a group factor. It also refuses an unrotated solution with two or more factors (`efa_reliability_not_rotated`).
+  * Without `factor_map`, a loading matrix and the components use their non-zero pattern only if most variables have an exact zero group loading, as in a target matrix. Otherwise, each variable is assigned to the group factor with its largest loading. Before, a loading matrix always used its non-zero pattern, so an estimated bifactor matrix assigned every variable to every group factor; a pattern matrix with `Phi` and the components always used the largest loading.
+  * A `lavaan` fit is now a bifactor solution only if variables load on a factor named `g_name` and on other factors. The function now scores correlated-factors fits with cross-loadings and ESEM fits; before, it refused them. In an ESEM block, each variable is assigned to the factor with its largest loading. `OMEGA()` refuses such fits with `efa_reliability_invalid_lavaan`.
+  * The whole-scale omega subscale now counts all group-factor loadings also with `variance = "correlation"`. Thus, on the whole-scale row, omega total is omega hierarchical plus omega subscale with both settings. Before, it counted only the loadings of the assigned variables, as `psych::omega()` does. `OMEGA()` changes too.
+  * A correlated-factors solution no longer gives omega subscale. Omega subscale is the share in addition to a general factor, and when the factors correlate, it is not a share of the variance (Rodriguez et al., 2016). For a `lavaan` fit to a correlation matrix, the omega total of each factor equals `semTools::compRelSEM(fit, obs.var = FALSE)`. Negatively correlated factors no longer give a false out-of-range warning.
+  * The function no longer gives messages about a single factor, a correlated-factors `lavaan` fit, a second-order fit, and variables with fewer than two loadings. `print()` no longer shows the total-variance line and the note about the omega columns of a correlated-factors solution.
+  * A non-positive residual variance of a variable in a `lavaan` fit now gives the Heywood warning of the other inputs, not an error. A non-positive variance or residual variance of a factor still gives an error, with the new class `efa_reliability_factor_heywood`. `OMEGA()` changes too, and now gives the Heywood warning also with `add_ind = FALSE`.
+  * The result has a new attribute, `factor_map`: the assignment of the variables to the group factors that was used.
+  * The mixed-keying warning now also tells what to do when the factors measure opposite constructs. `fac_names` given with a `lavaan` fit now gives the `efa_reliability_args_ignored` warning.
+  * `g_load`, `s_load`, `var_names`, and `pattern` are deprecated. Give the loadings as one matrix in `model` instead.
+  * With the largest-loading rule, a variable without a group loading is no longer assigned to the first group factor. `OMEGA()` changes too.
+  * Without `factor_map`, a Schmid-Leiman solution in which most variables have an exact zero group loading, such as a transformed `lavaan` solution, now uses its non-zero pattern, as the `lavaan` fit does.
+  * A `lavaan` fit with a negative path between latent variables, in addition to the second-order loadings, now gives the error `efa_reliability_higher_order`. Before, it was scored as a second-order model without that path. `OMEGA()` changes too.
+
+* `efa_schmid_leiman()` changes:
+  * For a `lavaan` solution whose general factor also loads directly on items, the general-factor loadings now include these direct loadings. Before, they were dropped with a warning, so an item that loads only on the general factor got a general-factor loading and a communality of 0. `efa_reliability()` and `OMEGA()` change too for such fits.
+  * A `lavaan` solution with more than one second-order factor, other paths between the latent variables, or correlated disturbances now gives an error (`efa_sl_higher_order`, `efa_sl_correlated_factors`). Before, the transformation ignored these parts of the model, and the results were wrong without a warning.
+  * The group factors now keep the column order and the names of the input solution, for example the factor names of a `lavaan` model, or `"PA2"`, `"PA3"`, `"PA1"` of a `psych::fa()` solution. Before, they were sorted by the number in their names and renamed `"F1"` to `"Fk"`, so an indicator-to-factor map built in the input order could match the wrong factors. If the columns do not have unique names, they are still labelled `"F1"` to `"Fk"`. `SL()` changes too.
+  * For a `lavaan` solution, `orig_R` is now the correlation matrix that the model was fitted to, so `efa_reliability()` works with its default `variance = "correlation"`.
+  * `g_name` now defaults to `NULL`: the general factor is the latent variable that loads on the other latent variables. `SL()` keeps `g_name = "g"`. A multiple-group `lavaan` fit now gives the error `efa_sl_multigroup`.
+  * A standardized `lavaan` loading of 1 or more no longer gives an error. With correlated factors, such a loading can occur in a proper solution. A variance of 0 or less still gives an error.
+  * With two first-order factors, the second-order loadings now get the same absolute value, and their product is the factor intercorrelation, as in `psych::schmid()`. No second-order EFA is run for them, and the warning tells this.
+  * `efa_schmid_leiman()` no longer has `...`. The `efa_fit()` arguments that it passed on had no effect on the second-order EFA. Give the settings of this EFA in `estimate_control()`.
+  * A `Phi` given with a fitted solution no longer gives a warning (`efa_sl_phi_specified`). It replaces the fitted factor intercorrelations.
+  * An `efa_fit()` solution with `rotation = "bifactorQ"` now gives the error `efa_sl_bifactor`, because it already has a general factor.
+  * The warnings of the second-order EFA name the first-order factors also for a pattern matrix without names.
+  * `L2` is now a plain matrix with the column `"g"` and one row for each first-order factor, for every input. `settings` keeps only the estimator and the estimation settings of the second-order EFA.
+  * `print()` shows the second-order loadings.
+
+* `efa_simulate()` with `marginals = "empirical"` changes:
+  * Each dataset is now a new draw of independent cases: normal deviates at an intermediate correlation, each mapped through the empirical quantile function of its column of `marginal_data` (Cario & Nelson, 1997). The intermediate correlation of each pair is calculated once from the bivariate normal distribution. Before, the correlations of each dataset were fitted to the population correlation, so the datasets varied less than samples do. This made recovery in simulation studies look too good.
+  * The data now reproduce the population correlation also with model error, or with an `R` that is not an exact factor structure. Before, only the common-factor part of the population was reproduced.
+  * The rows are now in random order. Before, they were sorted by the last variable.
+  * A population correlation that two marginals cannot attain now gives an error (`efa_simulate_unattainable_cor`). An intermediate correlation matrix that is not positive definite gives an error, or with `force_pd = TRUE` is smoothed, as for `marginals = "VM"`.
+  * `n_factors` is deprecated and ignored.
+  * The results for a given seed are different.
+
+* `efa_cd()` generates its comparison-data populations faster, most of all with many variables. The populations have the same distribution as before, but the results for a given seed are different.
+
 # EFAtools 1.1.0
 
 ## Comparing and Averaging Solutions

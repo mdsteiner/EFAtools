@@ -28,6 +28,11 @@
       V17 <num> <num> <num> <num> <num> <num>
       V18 <num> <num> <num> <num> <num> <num>
       
+      -- Second-order Loadings -------------------------------------------------------
+      
+          F1 F2 F3
+      g <num> <num> <num>
+      
       -- Variances Accounted for -----------------------------------------------------
       
                            g     F1    F2     F3
@@ -42,6 +47,6 @@
     Code
       cat(conditionMessage(e))
     Output
-      `x` must be an <EFA>, <fa>, or <lavaan> object, a matrix, or a <LOADINGS>/<loadings> object.
+      `x` must be an oblique `efa_fit()` or `psych::fa()` solution, a second-order <lavaan> solution, or a pattern matrix with `Phi`.
       i From an <efa_average> object, use the averaged loading matrix in `$loadings$average`, with the averaged factor correlations in `$Phi$average`.
 
