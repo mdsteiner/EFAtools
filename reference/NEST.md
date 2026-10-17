@@ -54,7 +54,8 @@ NEST(
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Default is 1000.
+  numeric. The number of reference correlation matrices to simulate.
+  Default is 1000.
 
 - ...:
 

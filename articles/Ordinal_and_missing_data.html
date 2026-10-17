@@ -122,79 +122,66 @@ response categories each item has and whether the data are multivariate
 normal — the two things that decide whether an ordinal treatment is
 worthwhile.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_screen.html">efa_screen</a></span><span class="op">(</span><span class="va">d_ord</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_screen.html">efa_screen</a></span><span class="op">(</span><span class="va">d_ord</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Sampling adequacy and sphericity</span> ────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The overall KMO value for your data is meritorious (Overall KMO = 0.828).</span></span>
-<span><span class="co">#&gt; These data are probably suitable for factor analysis (verbal bands: Kaiser &amp;</span></span>
-<span><span class="co">#&gt; Rice, 1974).</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05.</span></span>
-<span><span class="co">#&gt; These data are probably suitable for factor analysis.</span></span>
-<span><span class="co">#&gt; χ²(153) = 1306.76, <span style="font-style: italic;">p</span> &lt; .001</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Overall KMO = 0.828: meritorious (Kaiser &amp; Rice, 1974).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Bartlett's test of sphericity: χ²(153) = 1306.76, <span style="font-style: italic;">p</span> &lt; .001 (significant).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Multicollinearity</span> ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Determinant: 0.0357. It falls as variables are added, so the condition index</span></span>
-<span><span class="co">#&gt; below carries the verdict.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition number: 7.919 (condition index 2.814). An index of 10 or less is</span></span>
-<span><span class="co">#&gt; rarely of interest (Belsley, 1991).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition index: 2.814. An index of 10 or less is rarely of interest</span></span>
+<span><span class="co">#&gt; (Belsley, 1991).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Per-variable diagnostics</span> ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     variance missing%   SMC   MSA flags</span></span>
-<span><span class="co">#&gt; V1     1.248        0 0.218 0.830      </span></span>
-<span><span class="co">#&gt; V2     1.298        0 0.241 0.817      </span></span>
-<span><span class="co">#&gt; V3     1.222        0 0.278 0.793      </span></span>
-<span><span class="co">#&gt; V4     1.223        0 0.225 0.829      </span></span>
-<span><span class="co">#&gt; V5     1.211        0 0.228 0.801      </span></span>
-<span><span class="co">#&gt; V6     1.266        0 0.297 0.810      </span></span>
-<span><span class="co">#&gt; V7     1.260        0 0.242 0.839      </span></span>
-<span><span class="co">#&gt; V8     1.187        0 0.239 0.836      </span></span>
-<span><span class="co">#&gt; V9     1.182        0 0.259 0.832      </span></span>
-<span><span class="co">#&gt; V10    1.153        0 0.257 0.835      </span></span>
-<span><span class="co">#&gt; V11    1.150        0 0.282 0.806      </span></span>
-<span><span class="co">#&gt; V12    1.193        0 0.244 0.852      </span></span>
-<span><span class="co">#&gt; V13    1.373        0 0.227 0.819      </span></span>
-<span><span class="co">#&gt; V14    1.317        0 0.290 0.851      </span></span>
-<span><span class="co">#&gt; V15    1.206        0 0.224 0.853      </span></span>
-<span><span class="co">#&gt; V16    1.193        0 0.227 0.859      </span></span>
-<span><span class="co">#&gt; V17    1.282        0 0.311 0.832      </span></span>
-<span><span class="co">#&gt; V18    1.223        0 0.274 0.804      </span></span>
+<span><span class="co">#&gt;     variance   SMC   MSA flags</span></span>
+<span><span class="co">#&gt; V1     1.248 0.218 0.830      </span></span>
+<span><span class="co">#&gt; V2     1.298 0.241 0.817      </span></span>
+<span><span class="co">#&gt; V3     1.222 0.278 0.793      </span></span>
+<span><span class="co">#&gt; V4     1.223 0.225 0.829      </span></span>
+<span><span class="co">#&gt; V5     1.211 0.228 0.801      </span></span>
+<span><span class="co">#&gt; V6     1.266 0.297 0.810      </span></span>
+<span><span class="co">#&gt; V7     1.260 0.242 0.839      </span></span>
+<span><span class="co">#&gt; V8     1.187 0.239 0.836      </span></span>
+<span><span class="co">#&gt; V9     1.182 0.259 0.832      </span></span>
+<span><span class="co">#&gt; V10    1.153 0.257 0.835      </span></span>
+<span><span class="co">#&gt; V11    1.150 0.282 0.806      </span></span>
+<span><span class="co">#&gt; V12    1.193 0.244 0.852      </span></span>
+<span><span class="co">#&gt; V13    1.373 0.227 0.819      </span></span>
+<span><span class="co">#&gt; V14    1.317 0.290 0.851      </span></span>
+<span><span class="co">#&gt; V15    1.206 0.224 0.853      </span></span>
+<span><span class="co">#&gt; V16    1.193 0.227 0.859      </span></span>
+<span><span class="co">#&gt; V17    1.282 0.311 0.832      </span></span>
+<span><span class="co">#&gt; V18    1.223 0.274 0.804      </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Multivariate normality</span> ──────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Mardia's skewness: χ²(1140) = 1016.6, p = 0.996.</span></span>
 <span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Mardia's kurtosis: z = -5.79, p &lt; .001.</span></span>
-<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Henze-Zirkler: HZ = 1, p &lt; .001.</span></span>
-<span><span class="co">#&gt; These data depart from multivariate normality: 2 of the 3 tests reject it.</span></span>
+<span><span class="co">#&gt; These data depart from multivariate normality: one of the two tests rejects it.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Outliers</span> ────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> 4 of 400 observations were flagged as multivariate outliers (robust distance</span></span>
-<span><span class="co">#&gt; &gt; 5.61).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> No case is flagged: some variables have fewer than ten distinct values</span></span>
+<span><span class="co">#&gt; (categorical), and a chi-square cutoff is not valid for their Mahalanobis</span></span>
+<span><span class="co">#&gt; distances. The largest distances are in rows 194, 182, 225, 66, and 138.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Recommendations</span> ─────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 18 items have fewer than 5 response categories; treating them as ordinal</span></span>
 <span><span class="co">#&gt;   (polychoric correlations with a categorical estimator such as DWLS) is less</span></span>
-<span><span class="co">#&gt;   biased than normal-theory ML.</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Bartlett's test is significant, but it assumes multivariate normality and</span></span>
-<span><span class="co">#&gt;   grows more sensitive as N increases; because these data are non-normal, treat</span></span>
-<span><span class="co">#&gt;   it as uninformative here and rely on the KMO.</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 4 observations were flagged as potential multivariate outliers; inspect them</span></span>
-<span><span class="co">#&gt;   (see `$outliers$flagged`) before down-weighting or excluding.</span></span></code></pre></div>
+<span><span class="co">#&gt;   biased than normal-theory ML.</span></span></code></pre></div>
 <p>The sampling adequacy (KMO) and sphericity checks confirm the data
 are factorable. The telling parts are the multivariate-normality section
-and the recommendations: Mardia’s kurtosis and the Henze-Zirkler test
-reject normality, and the recommendations flag that every item has fewer
-than five response categories. Together, these point to the same
-conclusion. With few categories and non-normal data, a polychoric
-correlation with a categorical estimator such as DWLS is less biased
-than normal-theory maximum likelihood. The normal-theory standard errors
-and fit indices are also better replaced by robust (sandwich)
-versions.</p>
+and the recommendations: Mardia’s kurtosis test rejects normality, and
+the recommendations flag that every item has fewer than five response
+categories. Together, these point to the same conclusion. With few
+categories and non-normal data, a polychoric correlation with a
+categorical estimator such as DWLS is less biased than normal-theory
+maximum likelihood. The normal-theory standard errors and fit indices
+are also better replaced by robust (sandwich) versions.</p>
 </div>
 <div class="section level3">
 <h3 id="polychoric-correlations-dwls-and-robust-standard-errors">Polychoric Correlations, DWLS, and Robust Standard Errors<a class="anchor" aria-label="anchor" href="#polychoric-correlations-dwls-and-robust-standard-errors"></a>
@@ -210,11 +197,10 @@ these data show.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_poly</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_ord</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>, estimator <span class="op">=</span> <span class="st">"dwls"</span>,</span>
 <span>                    rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
-<span><span class="co">#&gt; the raw data.</span></span>
 <span><span class="va">efa_poly</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">DWLS</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">DWLS</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'</span></span>
+<span><span class="co">#&gt;   (polychoric correlations, N = 400).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -265,9 +251,6 @@ these data show.</p>
 <span><span class="co">#&gt; CFI: 1.00</span></span>
 <span><span class="co">#&gt; TLI: 1.00</span></span>
 <span><span class="co">#&gt; RMSEA [90% CI]: .00 [.00; .03]</span></span>
-<span><span class="co">#&gt; AIC: NA</span></span>
-<span><span class="co">#&gt; BIC: NA</span></span>
-<span><span class="co">#&gt; CAF: .51</span></span>
 <span><span class="co">#&gt; SRMR: .03</span></span></code></pre></div>
 <p>The pattern matrix recovers the three factors cleanly (six indicators
 each), and the model fit reports a <strong>scaled</strong> chi-square
@@ -313,8 +296,6 @@ compare the rotated loadings with <code><a href="../reference/efa_compare.html">
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_cont</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_ord</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"pearson"</span>, estimator <span class="op">=</span> <span class="st">"ML"</span>,</span>
 <span>                    rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
-<span><span class="co">#&gt; the raw data.</span></span>
 <span></span>
 <span><span class="va">cmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_compare.html">efa_compare</a></span><span class="op">(</span><span class="va">efa_poly</span><span class="op">$</span><span class="va">rot_loadings</span>, <span class="va">efa_cont</span><span class="op">$</span><span class="va">rot_loadings</span>,</span>
 <span>                   x_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Polychoric / DWLS"</span>, <span class="st">"Pearson / ML"</span><span class="op">)</span><span class="op">)</span></span>
@@ -419,12 +400,10 @@ only the complete ones. The model fit is reported as corrected two-stage
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_fiml</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_miss</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"fiml"</span>, estimator <span class="op">=</span> <span class="st">"ml"</span>,</span>
 <span>                    rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
-<span><span class="co">#&gt; the raw data.</span></span>
 <span><span class="va">efa_fiml</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
-<span><span class="co">#&gt; Correlations: FIML (two-stage, missing data)</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">ML</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'</span></span>
+<span><span class="co">#&gt;   (two-stage FIML correlations, N = 250).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -475,9 +454,6 @@ only the complete ones. The model fit is reported as corrected two-stage
 <span><span class="co">#&gt; CFI: .99</span></span>
 <span><span class="co">#&gt; TLI: .99</span></span>
 <span><span class="co">#&gt; RMSEA [90% CI]: .02 [.00; .04]</span></span>
-<span><span class="co">#&gt; AIC: NA</span></span>
-<span><span class="co">#&gt; BIC: NA</span></span>
-<span><span class="co">#&gt; CAF: .52</span></span>
 <span><span class="co">#&gt; SRMR: .04</span></span></code></pre></div>
 <p>The solution again recovers the three factors, and the printout
 records that the correlation was obtained by two-stage FIML. Standard
@@ -528,12 +504,10 @@ permutation, so the imputations must be matched before averaging), and
 pools them.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_pooled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_mi.html">efa_mi</a></span><span class="op">(</span><span class="va">dat_list</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, estimator <span class="op">=</span> <span class="st">"ml"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
-<span><span class="co">#&gt; the raw data.</span></span>
 <span><span class="va">efa_pooled</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Pooled EFA across <span style="font-weight: bold;">5</span> imputations performed with estimator = '<span style="font-weight: bold;">ML</span>' and</span></span>
-<span><span class="co">#&gt;   rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
+<span><span class="co">#&gt;   rotation = '<span style="font-weight: bold;">oblimin</span>' (N = 250).</span></span>
 <span><span class="co">#&gt; Pooling settings: target_method = 'first_target',</span></span>
 <span><span class="co">#&gt;   align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -586,10 +560,6 @@ pools them.</p>
 <span><span class="co">#&gt; CFI (avg. over imputations): .93</span></span>
 <span><span class="co">#&gt; TLI (avg. over imputations): .90</span></span>
 <span><span class="co">#&gt; RMSEA [90% CI]: .02 [.00; .04]</span></span>
-<span><span class="co">#&gt; AIC: -92.99</span></span>
-<span><span class="co">#&gt; BIC: -452.18</span></span>
-<span><span class="co">#&gt; ECVI: 1.00</span></span>
-<span><span class="co">#&gt; CAF: .52</span></span>
 <span><span class="co">#&gt; SRMR: .04</span></span>
 <span><span class="co">#&gt; <span style="font-style: italic;">Note:</span> the pooled χ² is the D2 statistic; its <span style="font-style: italic;">p</span> uses the D2 reference F(102,</span></span>
 <span><span class="co">#&gt; 9.0), not the χ²(102) tail.</span></span>
@@ -651,9 +621,9 @@ announces that override rather than applying it silently.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_ord_miss</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_ord_miss</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>,</span>
 <span>                        estimator <span class="op">=</span> <span class="st">"dwls"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> An asymptotic covariance requires complete cases; incomplete rows were</span></span>
-<span><span class="co">#&gt;   dropped (listwise), overriding `use = "pairwise.complete.obs"`.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> An asymptotic covariance requires complete cases, so 238 of 300 rows with</span></span>
+<span><span class="co">#&gt;   missing values were dropped (listwise; N = 62). This overrides `use =</span></span>
+<span><span class="co">#&gt;   "pairwise.complete.obs"`.</span></span>
 <span><span class="va">efa_ord_miss</span><span class="op">$</span><span class="va">settings</span><span class="op">$</span><span class="va">N</span>        <span class="co"># cases the fit is actually based on</span></span>
 <span><span class="co">#&gt; [1] 62</span></span></code></pre></div>
 <p>Every loading, fit index, standard error, and confidence interval of
@@ -672,7 +642,7 @@ it answered. In exchange you give up the DWLS weighting and the robust
 standard errors, and the reported <code>N</code> is the nominal row
 count while each correlation rests on its own smaller subset — so fit
 statistics and analytic standard errors treat the data as more complete
-than they are.</li>
+than they are, and <code><a href="../reference/efa_fit.html">efa_fit()</a></code> warns about this.</li>
 <li>Switch to FIML — but only as a continuous analysis.
 <code>cor_method = "fiml"</code> estimates a saturated <em>normal</em>
 covariance and analyses the resulting Pearson-type correlation; there is
@@ -683,11 +653,8 @@ approximated:</li>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">d_ord_miss</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"fiml"</span>, estimator <span class="op">=</span> <span class="st">"dwls"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;"> in `efa_fit()`:</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> `estimator = "DWLS"` is not compatible with `cor_method = "fiml"`.</span></span>
-<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> DWLS needs a polychoric asymptotic covariance, which the continuous FIML</span></span>
-<span><span class="co">#&gt;   correlation does not provide.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Use `estimator = "ML"`, <span style="color: #0000BB;">"ULS"</span>, or <span style="color: #0000BB;">"PAF"</span>, or `cor_method = "poly"`/<span style="color: #0000BB;">"tetra"</span> for</span></span>
-<span><span class="co">#&gt;   DWLS.</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> `estimator = "DWLS"` cannot be used with `cor_method = "fiml"`.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> DWLS needs polychoric correlations. With FIML, use <span style="color: #0000BB;">"ML"</span>, <span style="color: #0000BB;">"ULS"</span>, or <span style="color: #0000BB;">"PAF"</span>.</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="keeping-both-the-ordinal-treatment-and-the-cases">Keeping Both the Ordinal Treatment and the Cases<a class="anchor" aria-label="anchor" href="#keeping-both-the-ordinal-treatment-and-the-cases"></a>
@@ -707,12 +674,10 @@ respects the response scale.</p>
 <span></span>
 <span><span class="va">efa_ord_pooled</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_mi.html">efa_mi</a></span><span class="op">(</span><span class="va">dat_ord</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>,</span>
 <span>                         estimator <span class="op">=</span> <span class="st">"dwls"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from</span></span>
-<span><span class="co">#&gt; the raw data.</span></span>
 <span><span class="va">efa_ord_pooled</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Pooled EFA across <span style="font-weight: bold;">5</span> imputations performed with estimator = '<span style="font-weight: bold;">DWLS</span>' and</span></span>
-<span><span class="co">#&gt;   rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
+<span><span class="co">#&gt;   rotation = '<span style="font-weight: bold;">oblimin</span>' (polychoric correlations, N = 300).</span></span>
 <span><span class="co">#&gt; Pooling settings: target_method = 'first_target',</span></span>
 <span><span class="co">#&gt;   align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -761,7 +726,6 @@ respects the response scale.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; CAF: .53</span></span>
 <span><span class="co">#&gt; SRMR: .04</span></span>
 <span><span class="co">#&gt; df: 102</span></span>
 <span><span class="co">#&gt; </span></span>

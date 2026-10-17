@@ -124,7 +124,6 @@ and a print/summary method.
 EFA_raw <- efa_fit(DOSPERT_raw, n_factors = 10, estimator = "PAF",
                    rotation = "oblimin",
                    rotate_control = rotate_control(random_starts = 1))
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 fac_scores_raw <- FACTOR_SCORES(DOSPERT_raw, f = EFA_raw, method = "Bartlett")
 
 # Same as above, but with raw data AND a correlation matrix

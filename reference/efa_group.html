@@ -167,11 +167,7 @@ Default is <code>NULL</code>.</p></dd>
 example <code>estimator</code>, <code>rotation</code>, or <code>cor_method</code>). The <code><a href="estimate_control.html">estimate_control()</a></code> and
 <code><a href="estimate_control.html">rotate_control()</a></code> objects are accepted through <code>...</code> as well, although they are not
 declared formals: pass them as <code>estimate_control =</code> / <code>rotate_control =</code> exactly
-as you would to <code><a href="efa_fit.html">efa_fit()</a></code>. A name that is neither an <code><a href="efa_fit.html">efa_fit()</a></code> argument nor a
-rotation-engine extra is rejected.</p>
-<p>A rotation-engine extra that shares a name with an <code>efa_group()</code> argument cannot reach
-the rotation through <code>...</code>, because the argument takes the name first (for example
-geomin's <code>delta</code>; see <code>delta</code> above).</p></dd>
+as you would to <code><a href="efa_fit.html">efa_fit()</a></code>. A name that is not an <code><a href="efa_fit.html">efa_fit()</a></code> argument is rejected.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -348,7 +344,6 @@ doi: 10.1027/1614-2241.2.2.57</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Raw data split by a grouping vector (unrotated, consensus alignment)</span></span></span>
 <span class="r-in"><span><span class="va">g</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"g1"</span>, <span class="st">"g2"</span><span class="op">)</span>, length.out <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">GRiPS_raw</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">mg</span> <span class="op">&lt;-</span> <span class="fu">efa_group</span><span class="op">(</span><span class="va">GRiPS_raw</span>, groups <span class="op">=</span> <span class="va">g</span>, n_factors <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-in"><span><span class="va">mg</span><span class="op">$</span><span class="va">loadings</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $g1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  F1</span>
@@ -404,7 +399,6 @@ doi: 10.1027/1614-2241.2.2.57</p>
 <span class="r-in"><span><span class="co"># approximate-invariance verdict read conservatively off the congruence CI lower bound</span></span></span>
 <span class="r-in"><span><span class="va">mg_ci</span> <span class="op">&lt;-</span> <span class="fu">efa_group</span><span class="op">(</span><span class="va">GRiPS_raw</span>, groups <span class="op">=</span> <span class="va">g</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, b_boot <span class="op">=</span> <span class="fl">100</span>, seed <span class="op">=</span> <span class="fl">42</span>,</span></span>
 <span class="r-in"><span>                   invariance <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `x` is not a correlation matrix; computing correlations from the raw data.</span>
 <span class="r-in"><span><span class="va">mg_ci</span><span class="op">$</span><span class="va">congruence</span><span class="op">$</span><span class="va">matched_ci</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $lower</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> , , F1</span>

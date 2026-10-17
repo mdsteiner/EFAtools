@@ -360,18 +360,16 @@ following `averaging`.
 
   A matrix containing the average, standard deviation, minimum, maximum,
   and range for all applicable fit indices across the respective factor
-  solutions, and the degrees of freedom (df). If the estimator argument
-  contains ML or ULS: Fit indices derived from the unrotated factor
-  loadings: Chi Square (chisq), including significance level,
-  Comparative Fit Index (CFI), Tucker-Lewis Index (TLI), Root Mean
-  Square Error of Approximation (RMSEA), Akaike Information Criterion
-  (AIC), Bayesian Information Criterion (BIC), Expected Cross-Validation
-  Index (ECVI), and the common part accounted for (CAF) index as
-  proposed by Lorenzo-Seva, Timmerman, & Kiers (2011). The
-  residual-based Standardized Root Mean Square Residual (SRMR) and Root
-  Mean Square Residual (RMSR) and the CAF are also computed for PAF; for
-  PAF the remaining (chi-square-based) indices are not available (see
-  details).
+  solutions, and the degrees of freedom (df). Fit indices derived from
+  the unrotated factor loadings: Chi Square (chisq), including
+  significance level, Comparative Fit Index (CFI), Tucker-Lewis Index
+  (TLI), Root Mean Square Error of Approximation (RMSEA), Akaike
+  Information Criterion (AIC), Bayesian Information Criterion (BIC),
+  Expected Cross-Validation Index (ECVI), and the common part accounted
+  for (CAF) index as proposed by Lorenzo-Seva, Timmerman, & Kiers
+  (2011). The residual-based Standardized Root Mean Square Residual
+  (SRMR) and Root Mean Square Residual (RMSR). Without `N`, only the
+  CAF, SRMR, and RMSR are available.
 
 - implementations_grid:
 
@@ -528,21 +526,14 @@ the same model.
 
 The output also includes information on the average, minimum, maximum,
 and variability of the fit indices across the non-problematic factor
-solutions. It is important to note that not all fit indices are computed
-for all fit methods: For ML and ULS, all fit indices can be computed,
-while for PAF the chi-square-based indices (the chi-square statistic and
-its significance, CFI, TLI, RMSEA, AIC, BIC, and ECVI) are NA. The
-common part accounted for (CAF) index (Lorenzo-Seva, Timmerman, & Kiers,
-2011) and the residual-based SRMR and RMSR are still computed for PAF.
-As a consequence, if only "PAF" is included in the `estimator` argument,
-averaging is performed for the CAF, SRMR, and RMSR, while the
-chi-square-based indices are NA. If a combination of "PAF" and "ML"
-and/or "ULS" are included in the `estimator` argument, the CAF, SRMR,
-and RMSR are averaged across all non-problematic factor solutions, while
-the chi-square-based indices are only averaged across the ML and ULS
-solutions. The user should therefore keep in mind that the number of
-EFAs across which the fit indices are averaged can diverge for the CAF,
-SRMR, and RMSR compared to the chi-square-based indices.
+solutions. Without `N`, only the common part accounted for (CAF) index
+(Lorenzo-Seva, Timmerman, & Kiers, 2011) and the residual-based SRMR and
+RMSR are computed; the chi-square-based indices (the chi-square
+statistic and its significance, CFI, TLI, RMSEA, AIC, BIC, and ECVI) are
+NA. A solution can also carry the residual-based indices without a
+chi-square (for example when its model-implied correlation matrix is not
+positive definite), so the number of EFAs across which the fit indices
+are averaged can differ between the two kinds of indices.
 
 Each reported fit index is summarised across the (non-problematic)
 solutions in the same descriptive way: the average, standard deviation,
@@ -569,39 +560,39 @@ Aver_meth <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                          estimator = c("PAF", "ULS", "ML"), type = "EFAtools",
                          start_method = "psych")
 #> ℹ Extracting data
-#> ✔ Extracting data [13ms]
+#> ✔ Extracting data [11ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [40ms]
+#> ✔ Reordering factors [34ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [35ms]
+#> ✔ Averaging data [29ms]
 #> 
 
 # \donttest{
 # Averaging across different implementations of PAF and promax rotation (72 EFAs)
 Aver_PAF <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ℹ Extracting data
-#> ✔ Extracting data [16ms]
+#> ✔ Extracting data [14ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [30ms]
+#> ✔ Reordering factors [26ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [24ms]
+#> ✔ Averaging data [30ms]
 #> 
 
 # Use median instead of mean for averaging (72 EFAs)
 Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                            averaging = "median")
 #> ℹ Extracting data
-#> ✔ Extracting data [16ms]
+#> ✔ Extracting data [15ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [30ms]
+#> ✔ Reordering factors [24ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [29ms]
+#> ✔ Averaging data [25ms]
 #> 
 
 # Averaging across different implementations of PAF and promax rotation,
@@ -609,13 +600,13 @@ Aver_PAF_md <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 Aver_meth_ext <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
                              estimator = c("PAF", "ULS", "ML"))
 #> ℹ Extracting data
-#> ✔ Extracting data [18ms]
+#> ✔ Extracting data [15ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [33ms]
+#> ✔ Reordering factors [38ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [33ms]
+#> ✔ Averaging data [21ms]
 #> 
 
 # Averaging across different oblique rotation methods, using one implementation
@@ -627,10 +618,10 @@ Aver_rot <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500,
 #> ✔ Extracting data [10ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [20ms]
+#> ✔ Reordering factors [18ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [23ms]
+#> ✔ Averaging data [20ms]
 #> 
 # }
 
@@ -646,10 +637,10 @@ Aver_fiml <- efa_average(x_miss, n_factors = 1, estimator = c("PAF", "ML"),
 #> ℹ `n_factors` is 1 but `rotation` is not "none"; setting `rotation` to "none",
 #>   as single-factor solutions cannot be rotated.
 #> ℹ Extracting data
-#> ✔ Extracting data [7ms]
+#> ✔ Extracting data [10ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [14ms]
+#> ✔ Averaging data [19ms]
 #> 
 # }
 ```

@@ -290,7 +290,6 @@ summary(fs)
 # Factor scores from raw data (Bartlett method)
 # \donttest{
 efa_raw <- efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF")
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 efa_scores(GRiPS_raw, f = efa_raw, method = "Bartlett")
 #> 
 #> ── Factor scores (Bartlett) ────────────────────────────────────────────────────

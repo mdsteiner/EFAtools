@@ -1,17 +1,15 @@
 # Print and format an efa_screen object
 
-[`print()`](https://rdrr.io/r/base/print.html) turns the factor-analysis
-screening diagnostics computed by
+[`print()`](https://rdrr.io/r/base/print.html) turns the diagnostics
+computed by
 [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
-into a sectioned report with banded, colour-coded verdicts: sampling
-adequacy and sphericity (the Kaiser-Meyer-Olkin measure and Bartlett's
-test of sphericity), multicollinearity (the determinant and condition
-number of the correlation matrix), the per-variable diagnostics, and,
-when raw data were supplied, multivariate normality and multivariate
-outliers. It closes with a consolidated list of actionable
-recommendations (for example, which items to consider dropping, whether
-to prefer an ordinal or a robust estimator, and a caveat that keeps an
-over-powered Bartlett's test from being over-trusted).
+into a sectioned report with colour-coded verdicts: sampling adequacy
+and sphericity (the Kaiser-Meyer-Olkin measure and Bartlett's test of
+sphericity), multicollinearity (the condition index), the per-variable
+diagnostics, and, when raw data were supplied, multivariate normality
+and multivariate outliers. It closes with a list of recommendations (for
+example, which items to consider dropping, or whether to prefer an
+ordinal or a robust estimator).
 [`format()`](https://rdrr.io/r/base/format.html) assembles the same
 report and returns it as a character vector;
 [`print()`](https://rdrr.io/r/base/print.html) is
@@ -68,40 +66,31 @@ efa_screen(iris[, 1:4])
 #> 
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
-#> ✖ The overall KMO value for your data is miserable (Overall KMO = 0.54).
-#> These data are hardly suitable for factor analysis (verbal bands: Kaiser &
-#> Rice, 1974).
-#> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
-#> These data are probably suitable for factor analysis.
-#> χ²(6) = 706.96, p < .001
+#> ✖ Overall KMO = 0.54: miserable (Kaiser & Rice, 1974).
+#> ✔ Bartlett's test of sphericity: χ²(6) = 706.96, p < .001 (significant).
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ℹ Determinant: 0.00811. It falls as variables are added, so the condition index
-#> below carries the verdict.
-#> ! Condition number: 140.889 (condition index 11.870). The index is above 10,
-#> but not above 30, the value that flags a near linear dependency (Belsley,
-#> 1991).
+#> ! Condition index: 11.870. The index is above 10, but not above 30, the value
+#> that flags a near linear dependency (Belsley, 1991).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
-#>              variance missing%   SMC   MSA
-#> Sepal.Length    0.686        0 0.859 0.584
-#> Sepal.Width     0.190        0 0.524 0.270
-#> Petal.Length    3.116        0 0.968 0.531
-#> Petal.Width     0.581        0 0.938 0.634
+#>              variance   SMC   MSA
+#> Sepal.Length    0.686 0.859 0.584
+#> Sepal.Width     0.190 0.524 0.270
+#> Petal.Length    3.116 0.968 0.531
+#> Petal.Width     0.581 0.938 0.634
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
 #> ✖ Mardia's skewness: χ²(20) = 69.33, p < .001.
 #> ✔ Mardia's kurtosis: z = 0.05, p = 0.956.
-#> ✖ Henze-Zirkler: HZ = 2.34, p < .001.
-#> These data depart from multivariate normality: 2 of the 3 tests reject it.
+#> These data depart from multivariate normality: one of the two tests rejects it.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
-#> ℹ 55 of 150 observations were flagged as multivariate outliers (robust distance
+#> ℹ 9 of 150 observations were flagged as multivariate outliers (robust distance
 #> > 3.34).
 #> 
 #> ── Recommendations ─────────────────────────────────────────────────────────────
@@ -113,33 +102,21 @@ efa_screen(iris[, 1:4])
 #> ! These data depart from multivariate normality; normal-theory standard errors
 #>   and fit statistics may be biased - prefer robust (sandwich) or bootstrapped
 #>   standard errors.
-#> ! Bartlett's test is significant, but it assumes multivariate normality and
-#>   grows more sensitive as N increases; because these data are non-normal, treat
-#>   it as uninformative here and rely on the KMO.
-#> ! 55 of 150 observations (37%) exceed the outlier cutoff, far above the 2.5%
-#>   expected under multivariate normality; this usually means the data are not
-#>   elliptically distributed (subgroups or a mixture) rather than that this many
-#>   cases are contaminated.
+#> ! 9 observations were flagged as potential multivariate outliers; inspect them
+#>   (see `$outliers$flagged`) before down-weighting or excluding.
 
 # From a correlation matrix (supply N for Bartlett's test of sphericity)
 efa_screen(test_models$baseline$cormat, N = 500)
 #> 
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
-#> ✔ The overall KMO value for your data is marvellous (Overall KMO = 0.916).
-#> These data are probably suitable for factor analysis (verbal bands: Kaiser &
-#> Rice, 1974).
-#> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
-#> These data are probably suitable for factor analysis.
-#> χ²(153) = 2173.28, p < .001
+#> ✔ Overall KMO = 0.916: marvellous (Kaiser & Rice, 1974).
+#> ✔ Bartlett's test of sphericity: χ²(153) = 2173.28, p < .001 (significant).
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ℹ Determinant: 0.0121. It falls as variables are added, so the condition index
-#> below carries the verdict.
-#> ✔ Condition number: 11.680 (condition index 3.418). An index of 10 or less is
-#> rarely of interest (Belsley, 1991).
+#> ✔ Condition index: 3.418. An index of 10 or less is rarely of interest
+#> (Belsley, 1991).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
@@ -174,20 +151,13 @@ writeLines(format(efa_screen(test_models$baseline$cormat, N = 500)))
 #> 
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
-#> ✔ The overall KMO value for your data is marvellous (Overall KMO = 0.916).
-#> These data are probably suitable for factor analysis (verbal bands: Kaiser &
-#> Rice, 1974).
-#> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
-#> These data are probably suitable for factor analysis.
-#> χ²(153) = 2173.28, p < .001
+#> ✔ Overall KMO = 0.916: marvellous (Kaiser & Rice, 1974).
+#> ✔ Bartlett's test of sphericity: χ²(153) = 2173.28, p < .001 (significant).
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ℹ Determinant: 0.0121. It falls as variables are added, so the condition index
-#> below carries the verdict.
-#> ✔ Condition number: 11.680 (condition index 3.418). An index of 10 or less is
-#> rarely of interest (Belsley, 1991).
+#> ✔ Condition index: 3.418. An index of 10 or less is rarely of interest
+#> (Belsley, 1991).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 

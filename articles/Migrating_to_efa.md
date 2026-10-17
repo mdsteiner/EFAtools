@@ -33,8 +33,8 @@ The uppercase names are **superseded**, not deprecated. In practice that
 means:
 
 - They keep working with their **original arguments**, and calling them
-  emits **no warning or message**. Existing scripts and saved analyses
-  continue to run byte-for-byte unchanged.
+  emits **no warning or message**. Existing scripts continue to run
+  without changes.
 - Their argument lists are **frozen**. New capabilities are added only
   to the `efa_*` functions, so an uppercase name will never grow a new
   argument.
@@ -80,6 +80,21 @@ are broader than the
 [`FACTOR_SCORES()`](https://mdsteiner.github.io/EFAtools/reference/FACTOR_SCORES.md)
 they replace, but they cover the same use cases and are the recommended
 way to obtain those quantities going forward.
+
+[`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+takes `estimator` and `alpha_CD` where
+[`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md)
+takes `method` and `alpha`. Its parallel analysis, Kaiser-Guttman
+criterion, and scree plot use PCA eigenvalues, and its Hull method uses
+the CAF and the 95th percentile in its parallel analysis by default.
+Thus, its results can differ from those of
+[`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md),
+which keeps its own defaults. In the same way,
+[`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
+uses ML, the CAF, and PCA eigenvalues with the 95th percentile by
+default, but
+[`HULL()`](https://mdsteiner.github.io/EFAtools/reference/HULL.md) keeps
+PAF, all three indices, and SMC eigenvalues with the mean rule.
 
 Alongside the renamed functions, the package ships tools that have **no
 uppercase predecessor** — they are new, and available only under the
@@ -155,25 +170,32 @@ A few points make the translation mechanical:
   constructor to reproduce it. Because the two controls are independent,
   you *can* now give them different presets, but you do not have to.
 - **Three arguments were renamed.** The estimator is selected with
-  `estimator` instead of `method` — passing `method` to
+  `estimator` instead of `method` —
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  is an error that points to the new name, while
+  has no `method` argument, while
   [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) keeps
-  its `method` argument. `P_type` is now `p_type`, and `randomStarts` is
-  now `random_starts`;
+  it. `P_type` is now `p_type`, and `randomStarts` is now
+  `random_starts`;
   [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) still
   accepts those old spellings silently.
 - **Rotation-engine extras** — the criterion-specific arguments a
   rotation may take, such as `maxit`, `gam` (oblimin), or `delta`
   (geomin) — are passed through
   [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)’s
-  `...` (or, equivalently,
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)’s
-  own `...`). Both validate the names: an extra the selected rotation’s
-  engine cannot consume (for example `gamma`, a misspelling of oblimin’s
-  `gam`) is rejected with an error, where
+  `...`. It validates the names: an extra that no rotation engine can
+  consume (for example `gamma`, a misspelling of oblimin’s `gam`) is
+  rejected with an error, where
   [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md)
   silently ignores it.
+- **The default rotation differs.**
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
+  [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md),
+  and
+  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+  use an oblimin rotation unless you set `rotation`, while
+  [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) and
+  [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md)
+  keep no rotation as their default.
 
 The side-by-side below reproduces an SPSS-style analysis. The old flat
 call and the new control-based call give identical results:
@@ -181,10 +203,10 @@ call and the new control-based call give identical results:
 ``` r
 
 # Old flat interface
-efa_old <- EFA(cor_mat, n_factors = 3, N = 500, type = "SPSS")
+efa_old <- EFA(cor_mat, n_factors = 3, N = 500, rotation = "promax", type = "SPSS")
 
 # New interface: the SPSS preset travels through the two control objects
-efa_new <- efa_fit(cor_mat, n_factors = 3, N = 500,
+efa_new <- efa_fit(cor_mat, n_factors = 3, N = 500, rotation = "promax",
                    estimate_control = estimate_control(type = "SPSS"),
                    rotate_control = rotate_control(type = "SPSS"))
 
@@ -203,19 +225,15 @@ efa_fit(cor_mat, n_factors = 3, N = 500, rotation = "promax",
         rotate_control   = rotate_control(type = "SPSS", k = 3))
 ```
 
-One behavioural difference is worth knowing about.
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-**rejects** a tuning knob passed directly, rather than silently ignoring
-it. This turns a common and previously invisible mistake into an
-immediate, informative error that names the constructor the knob belongs
-to:
+has no argument for a tuning knob, so a knob passed directly is an
+error, not silently ignored:
 
 ``` r
 
 efa_fit(cor_mat, n_factors = 3, N = 500, max_iter = 500)
-#> Error: `max_iter` cannot be passed to `efa_fit()` directly.
-#> i The estimation and rotation tuning knobs live in `estimate_control()` and `rotate_control()`.
-#> i For example: `efa_fit(x, ..., estimate_control = estimate_control(max_iter = 500))`.
+#> Error in efa_fit(cor_mat, n_factors = 3, N = 500, max_iter = 500) :
+#>   unused argument (max_iter = 500)
 ```
 
 The same move — collecting flat estimation knobs into

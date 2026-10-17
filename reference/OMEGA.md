@@ -341,11 +341,9 @@ attributes to it, counting every factor its variables load on; they
 differ only in the variance that is divided into.
 `variance = "correlation"` uses the composite's observed variance,
 giving the observed-score form of omega; `"sums_load"` uses its
-model-implied variance, which partitions exactly into omega hierarchical
-plus omega subscale on the whole-scale row. The two settings agree up to
-model misfit, and differ mainly in the whole-scale omega subscale, which
-counts all group-factor variance under `"sums_load"` but only the
-assigned subscale composites under `"correlation"`.
+model-implied variance. With both settings, omega total is omega
+hierarchical plus omega subscale on the whole-scale row. The two
+settings agree up to model misfit.
 
 ## See also
 
@@ -412,7 +410,7 @@ OMEGA(sl_mod, type = "EFAtools", factor_corres = factor_corres_1)
 #> general factor (top row) and omegas and H index for the group factors:
 #> 
 #>      tot  hier   sub     H   ECV   PUC
-#> g  0.883 0.740 0.125 0.842 0.652 0.706
+#> g  0.883 0.740 0.143 0.842 0.652 0.706
 #> F1 0.769 0.500 0.269 0.463            
 #> F2 0.765 0.494 0.270 0.472            
 #> F3 0.745 0.519 0.225 0.408            
@@ -429,7 +427,7 @@ OMEGA(schmid_mod, type = "psych")
 #> general factor (top row) and omegas and H index for the group factors:
 #> 
 #>       tot  hier   sub     H   ECV   PUC
-#> g   0.883 0.750 0.122 0.845 0.661 0.706
+#> g   0.883 0.750 0.133 0.845 0.661 0.706
 #> F1* 0.769 0.498 0.272 0.466            
 #> F2* 0.766 0.494 0.271 0.473            
 #> F3* 0.746 0.543 0.202 0.379            
@@ -440,7 +438,7 @@ OMEGA(schmid_mod, type = "psych", cormat = test_models$baseline$cormat)
 #> general factor (top row) and omegas and H index for the group factors:
 #> 
 #>       tot  hier   sub     H   ECV   PUC
-#> g   0.883 0.750 0.122 0.845 0.661 0.706
+#> g   0.883 0.750 0.133 0.845 0.661 0.706
 #> F1* 0.769 0.498 0.272 0.466            
 #> F2* 0.765 0.494 0.270 0.473            
 #> F3* 0.745 0.543 0.202 0.379            
@@ -463,7 +461,7 @@ OMEGA(model = NULL, type = "EFAtools", var_names = rownames(sl_mod$sl),
 #> general factor (top row) and omegas and H index for the group factors:
 #> 
 #>     tot  hier   sub     H   ECV   PUC
-#> g 0.883 0.740 0.125 0.842 0.652 0.706
+#> g 0.883 0.740 0.143 0.842 0.652 0.706
 #> 1 0.769 0.500 0.269 0.463            
 #> 2 0.765 0.494 0.270 0.472            
 #> 3 0.745 0.519 0.225 0.408            

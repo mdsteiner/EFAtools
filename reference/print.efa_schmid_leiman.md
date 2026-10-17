@@ -4,7 +4,8 @@
 of the
 [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
 function: a model header (when the settings are available), the
-Schmid-Leiman loading matrix, and the variances accounted for.
+Schmid-Leiman loading matrix, the second-order loadings, and the
+variances accounted for.
 [`format()`](https://rdrr.io/r/base/format.html) assembles the same
 report and returns it as a character vector;
 [`print()`](https://rdrr.io/r/base/print.html) is
@@ -72,6 +73,11 @@ sl_mod
 #> V17  .477   .402  -.023  -.016  .390  .610
 #> V18  .485   .336   .003   .029  .350  .650
 #> 
+#> ── Second-order Loadings ───────────────────────────────────────────────────────
+#> 
+#>     F1    F2    F3
+#> g  .796  .777  .814
+#> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                      g     F1    F2     F3
@@ -107,6 +113,11 @@ writeLines(format(sl_mod))
 #> V16  .476   .336  -.032   .053  .343  .657
 #> V17  .477   .402  -.023  -.016  .390  .610
 #> V18  .485   .336   .003   .029  .350  .650
+#> 
+#> ── Second-order Loadings ───────────────────────────────────────────────────────
+#> 
+#>     F1    F2    F3
+#> g  .796  .777  .814
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 

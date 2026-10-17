@@ -2,10 +2,387 @@
 
 ## EFAtools 1.1.0.9000
 
+- [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  changes:
+
+  - The default rotation is now oblimin (`rotation = "oblimin"`). With
+    one factor, no rotation is done.
+    [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
+    and
+    [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+    use the same default; for this oblique default,
+    [`efa_group()`](https://mdsteiner.github.io/EFAtools/reference/efa_group.md)
+    aligns the groups to the first group unless `reference_group` is
+    given.
+    [`EFA()`](https://mdsteiner.github.io/EFAtools/reference/EFA.md) and
+    [`EFA_POOLED()`](https://mdsteiner.github.io/EFAtools/reference/EFA_POOLED.md)
+    keep no rotation as their default.
+  - PAF now gives the same chi-square-based fit indices as ULS
+    (chi-square, CFI, TLI, RMSEA, AIC, BIC, ECVI), because a converged
+    PAF solution is the ULS solution (Jöreskog & van Thillo, 1971).
+    Thus, PAF without `N` now also gives a warning that these indices
+    are not available.
+    [`efa_average()`](https://mdsteiner.github.io/EFAtools/reference/efa_average.md)
+    and
+    [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+    report them for PAF too.
+  - [`print()`](https://rdrr.io/r/base/print.html) shows the chi-square,
+    CFI, TLI, RMSEA, and SRMR.
+    [`summary()`](https://rdrr.io/r/base/summary.html) adds AIC, BIC,
+    and ECVI. CAF is not printed, because a correctly specified model
+    gives a CAF near 0.5, not near 1. A CAF that cannot be computed is
+    now `NA`, not 0, and gives no warning.
+  - With `se = "np-boot"`, the bootstrap intervals of RMSEA, CFI, and
+    TLI now come from cases transformed so that their misfit equals the
+    estimated misfit (Yuan, Hayashi, & Yanagihara, 2007). The earlier
+    intervals moved toward worse fit, because each resample added
+    sampling misfit. Their coverage was often much too low (Zhang &
+    Savalei, 2016). [`print()`](https://rdrr.io/r/base/print.html) and
+    [`summary()`](https://rdrr.io/r/base/summary.html) show the
+    intervals of CFI and TLI. The other fit indices no longer get
+    bootstrap standard errors or intervals. The new intervals need
+    `cor_method = "pearson"`, no missing values in the analysed cases,
+    and a chi-square with df \> 0; otherwise, `SE`, `CI`, and
+    `replicates` have no `fit_indices`. The additional fits make the
+    bootstrap slower. In
+    [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md),
+    `fit_indices_descriptive` now pools these replicates of RMSEA, CFI,
+    and TLI.
+  - With pairwise deletion of missing values, a new warning
+    (`efa_pairwise_n`) shows that `N`, the number of rows, overstates
+    the cases behind each correlation, so the chi-square is too large
+    and the standard errors are too small. `cor_method = "fiml"` (or
+    [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
+    for ordinal data) avoids this.
+  - `se = "np-boot"` with a correlation matrix now gives an error
+    (`efa_boot_cormat`), as the other unavailable standard-error methods
+    do.
+  - [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+    no longer has `...`. Give the rotation-engine arguments `gam`,
+    `delta`, and `maxit` to
+    [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
+  - Raw data no longer give the message that correlations are computed
+    from the raw data.
+  - The parallel workers of the bootstrap now also compute the
+    correlations of the resamples, which take most of the time for
+    polychoric and FIML correlations. A parallel plan is thus much
+    faster there. This change alone leaves the results for a given seed
+    unchanged.
+  - A fit with `se = "sandwich"` no longer returns `Gamma`, which needs
+    about 11 MB at 50 variables.
+  - The printed header shows `N` and a correlation type other than
+    Pearson, and the Heywood alert names the variables. A
+    just-identified model (df = 0) shows only SRMR and df.
+  - The tables of analytic confidence intervals name their covariance
+    (expected information, robust sandwich, or two-stage FIML sandwich).
+  - [`summary()`](https://rdrr.io/r/base/summary.html) no longer repeats
+    the simple-structure counts and the largest residual in the model
+    diagnostics; it states when no simple-structure problem occurs.
+    `summary(ci = "separate")` was removed, because it did the same as
+    `"auto"`.
+  - The message about the rows dropped for an asymptotic covariance now
+    gives their number.
+
+- A tuning knob set in
+  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  or
+  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
+  together with a `type` preset no longer gives a warning
+  (`efa_type_override`). The value you set is used.
+
 - Removed unnecessary warning from
   [`efa_map()`](https://mdsteiner.github.io/EFAtools/reference/efa_map.md)
   that warned when the residual variance reached 0 and thus the search
   ended early.
+
+- [`efa_kgc()`](https://mdsteiner.github.io/EFAtools/reference/efa_kgc.md)
+  now counts the eigenvalues greater than 0, not greater than 1, for
+  `eigen_type = "SMC"` and `"EFA"`. These eigenvalues come from the
+  reduced correlation matrix, and the cutoff 1 has no basis for it. With
+  SMCs, the number of positive eigenvalues is a lower bound to the
+  number of factors (Guttman, 1954). These types now suggest more
+  factors, often too many in samples. `"PCA"` keeps the cutoff 1. The
+  report and the plot show the cutoff of each type.
+  [`KGC()`](https://mdsteiner.github.io/EFAtools/reference/KGC.md) and
+  `N_FACTORS(criteria = "KGC")` change too, and so does
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  with `eigen_type_other = "SMC"` or `"EFA"`.
+
+- [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
+  no longer gives a warning when it increases the largest number of
+  factors that it fits to 3. This is a rule of the method, not a change
+  to a user setting.
+
+- [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md)
+  and
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  are much faster for large samples, and so are
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
+  and
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md),
+  which use them. They now draw each simulated correlation matrix
+  directly from its exact distribution and do not simulate raw data
+  ([`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  does this for Pearson correlations only). The reference eigenvalues
+  have the same distribution as before, but the results for a given seed
+  are different.
+
+- [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  changes:
+
+  - Parallel analysis, also in the Hull method, now uses PCA eigenvalues
+    by default (`eigen_type_other = "PCA"`, `eigen_type_HULL = "PCA"`),
+    not SMC, which often retains too many factors (Lim & Jahng, 2019).
+    The Kaiser-Guttman criterion and the scree plot also use PCA
+    eigenvalues. For the upper bound of the Hull method, parallel
+    analysis now uses the 95th percentile (new argument
+    `decision_rule_HULL = "percentile"`; Lorenzo-Seva et al., 2011);
+    `decision_rule` applies only to `PARALLEL`, and
+    [`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md)
+    keeps the mean rule for both.
+  - The Hull method now uses only the CAF by default (`gof = "CAF"`).
+    With strongly correlated factors, CFI and RMSEA can make the Hull
+    method retain too few factors. The CAF works with every estimator,
+    so `estimator = "PAF"` no longer gives a message.
+  - Because of these new defaults, the results can be different from
+    earlier versions.
+    [`N_FACTORS()`](https://mdsteiner.github.io/EFAtools/reference/N_FACTORS.md)
+    keeps the earlier defaults.
+  - With `cor_method = "poly"` or `"tetra"`, `CD` now runs on the
+    Pearson correlations of the raw data. This is the original method
+    (Ruscio & Roche, 2012): its comparison data resample the observed
+    values. Bartlett’s test also uses the Pearson correlations of the
+    raw data, because its chi-square distribution is not valid for
+    polychoric correlations.
+  - Fewer warnings. Skipped criteria give one warning, and failed
+    criteria give one more. A default criterion that cannot use the
+    input is skipped without a warning; a missing `N` still gives one. A
+    skipped Bartlett’s test shows only in the report.
+  - An invalid argument (for example `n_datasets = 0`) now gives an
+    error before any criterion runs, not a warning that a criterion
+    could not be run.
+  - The Hull method now uses the simulated eigenvalues of the parallel
+    analysis if both run with the same type of eigenvalues, so the
+    simulation runs only once.
+  - The suitability report is shorter and shows the same lines as
+    [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md).
+  - `alpha` is renamed to `alpha_CD`, which you must give by its full
+    name. `alpha` is deprecated.
+
+- [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
+  now has the same defaults as
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md):
+  the ML estimator, only the CAF (`gof = "CAF"`), and PCA eigenvalues
+  with the 95th percentile in the parallel analysis that sets the
+  largest number of factors to fit (`eigen_type = "PCA"`,
+  `decision_rule = "percentile"`; Lorenzo-Seva et al., 2011). Thus, the
+  results can be different from earlier versions.
+  [`HULL()`](https://mdsteiner.github.io/EFAtools/reference/HULL.md)
+  keeps the earlier defaults (PAF, all three indices, SMC eigenvalues,
+  and the mean rule).
+
+- `efa_power(mode = "simulation")` uses the new
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  defaults for `KGC`, `PARALLEL`, and `HULL`, so their variants are now
+  `KGC_PCA`, `PARALLEL_PCA`, and `HULL_CAF`.
+
+- [`efa_screen()`](https://mdsteiner.github.io/EFAtools/reference/efa_screen.md)
+  changes:
+
+  - Outliers are now detected with the deterministic DetMCD algorithm,
+    so the result is the same on every run and large samples are much
+    faster. The `seed` argument is deprecated and has no effect.
+  - `mcd_alpha` now defaults to `0.75` instead of `0.5`, which flags
+    fewer clean cases.
+  - If any variable is categorical (fewer than ten distinct values), no
+    case is flagged as an outlier. The report names the cases with the
+    largest Mahalanobis distances instead. A chi-square cutoff is not
+    valid for rating-scale data, and it flagged many clean cases when
+    items were skewed.
+  - The Henze-Zirkler test was removed; Mardia’s tests remain and are
+    much faster in large samples.
+  - With `cor_method = "poly"` or `"tetra"`, the multivariate normality
+    tests are skipped, and the report no longer recommends polychoric
+    correlations for items with few categories.
+  - A non-significant Bartlett’s test now appears in the
+    recommendations, instead of the note that the data appear suitable.
+  - The multicollinearity recommendation names the variables involved
+    (Belsley’s variance-decomposition proportions), and the report shows
+    the condition index instead of the determinant and the condition
+    number.
+  - The report is shorter, and conditions that the report already
+    describes no longer also give a warning.
+
+- [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+  changes:
+
+  - An
+    [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+    solution with an orthogonal rotation is now scored like an oblique
+    solution, with factor correlations of 0, and a `"bifactorT"`
+    solution as a bifactor solution. Before, the function refused both.
+    The function now refuses a `"bifactorQ"` solution
+    (`efa_reliability_bifactor_oblique`), because its group factors are
+    correlated; before, it scored the general factor as a group factor.
+    It also refuses an unrotated solution with two or more factors
+    (`efa_reliability_not_rotated`).
+  - Without `factor_map`, a loading matrix and the components use their
+    non-zero pattern only if most variables have an exact zero group
+    loading, as in a target matrix. Otherwise, each variable is assigned
+    to the group factor with its largest loading. Before, a loading
+    matrix always used its non-zero pattern, so an estimated bifactor
+    matrix assigned every variable to every group factor; a pattern
+    matrix with `Phi` and the components always used the largest
+    loading.
+  - A `lavaan` fit is now a bifactor solution only if variables load on
+    a factor named `g_name` and on other factors. The function now
+    scores correlated-factors fits with cross-loadings and ESEM fits;
+    before, it refused them. In an ESEM block, each variable is assigned
+    to the factor with its largest loading.
+    [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+    refuses such fits with `efa_reliability_invalid_lavaan`.
+  - The whole-scale omega subscale now counts all group-factor loadings
+    also with `variance = "correlation"`. Thus, on the whole-scale row,
+    omega total is omega hierarchical plus omega subscale with both
+    settings. Before, it counted only the loadings of the assigned
+    variables, as
+    [`psych::omega()`](https://rdrr.io/pkg/psych/man/omega.html) does.
+    [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+    changes too.
+  - A correlated-factors solution no longer gives omega subscale. Omega
+    subscale is the share in addition to a general factor, and when the
+    factors correlate, it is not a share of the variance (Rodriguez et
+    al., 2016). For a `lavaan` fit to a correlation matrix, the omega
+    total of each factor equals
+    `semTools::compRelSEM(fit, obs.var = FALSE)`. Negatively correlated
+    factors no longer give a false out-of-range warning.
+  - The function no longer gives messages about a single factor, a
+    correlated-factors `lavaan` fit, a second-order fit, and variables
+    with fewer than two loadings.
+    [`print()`](https://rdrr.io/r/base/print.html) no longer shows the
+    total-variance line and the note about the omega columns of a
+    correlated-factors solution.
+  - A non-positive residual variance of a variable in a `lavaan` fit now
+    gives the Heywood warning of the other inputs, not an error. A
+    non-positive variance or residual variance of a factor still gives
+    an error, with the new class `efa_reliability_factor_heywood`.
+    [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+    changes too, and now gives the Heywood warning also with
+    `add_ind = FALSE`.
+  - The result has a new attribute, `factor_map`: the assignment of the
+    variables to the group factors that was used.
+  - The mixed-keying warning now also tells what to do when the factors
+    measure opposite constructs. `fac_names` given with a `lavaan` fit
+    now gives the `efa_reliability_args_ignored` warning.
+  - `g_load`, `s_load`, `var_names`, and `pattern` are deprecated. Give
+    the loadings as one matrix in `model` instead.
+  - With the largest-loading rule, a variable without a group loading is
+    no longer assigned to the first group factor.
+    [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+    changes too.
+  - Without `factor_map`, a Schmid-Leiman solution in which most
+    variables have an exact zero group loading, such as a transformed
+    `lavaan` solution, now uses its non-zero pattern, as the `lavaan`
+    fit does.
+  - A `lavaan` fit with a negative path between latent variables, in
+    addition to the second-order loadings, now gives the error
+    `efa_reliability_higher_order`. Before, it was scored as a
+    second-order model without that path.
+    [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+    changes too.
+
+- [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+  changes:
+
+  - For a `lavaan` solution whose general factor also loads directly on
+    items, the general-factor loadings now include these direct
+    loadings. Before, they were dropped with a warning, so an item that
+    loads only on the general factor got a general-factor loading and a
+    communality of 0.
+    [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+    and
+    [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
+    change too for such fits.
+  - A `lavaan` solution with more than one second-order factor, other
+    paths between the latent variables, or correlated disturbances now
+    gives an error (`efa_sl_higher_order`, `efa_sl_correlated_factors`).
+    Before, the transformation ignored these parts of the model, and the
+    results were wrong without a warning.
+  - The group factors now keep the column order and the names of the
+    input solution, for example the factor names of a `lavaan` model, or
+    `"PA2"`, `"PA3"`, `"PA1"` of a
+    [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) solution.
+    Before, they were sorted by the number in their names and renamed
+    `"F1"` to `"Fk"`, so an indicator-to-factor map built in the input
+    order could match the wrong factors. If the columns do not have
+    unique names, they are still labelled `"F1"` to `"Fk"`.
+    [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md)
+    changes too.
+  - For a `lavaan` solution, `orig_R` is now the correlation matrix that
+    the model was fitted to, so
+    [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
+    works with its default `variance = "correlation"`.
+  - `g_name` now defaults to `NULL`: the general factor is the latent
+    variable that loads on the other latent variables.
+    [`SL()`](https://mdsteiner.github.io/EFAtools/reference/SL.md) keeps
+    `g_name = "g"`. A multiple-group `lavaan` fit now gives the error
+    `efa_sl_multigroup`.
+  - A standardized `lavaan` loading of 1 or more no longer gives an
+    error. With correlated factors, such a loading can occur in a proper
+    solution. A variance of 0 or less still gives an error.
+  - With two first-order factors, the second-order loadings now get the
+    same absolute value, and their product is the factor
+    intercorrelation, as in
+    [`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html). No
+    second-order EFA is run for them, and the warning tells this.
+  - [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+    no longer has `...`. The
+    [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+    arguments that it passed on had no effect on the second-order EFA.
+    Give the settings of this EFA in
+    [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md).
+  - A `Phi` given with a fitted solution no longer gives a warning
+    (`efa_sl_phi_specified`). It replaces the fitted factor
+    intercorrelations.
+  - An
+    [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+    solution with `rotation = "bifactorQ"` now gives the error
+    `efa_sl_bifactor`, because it already has a general factor.
+  - The warnings of the second-order EFA name the first-order factors
+    also for a pattern matrix without names.
+  - `L2` is now a plain matrix with the column `"g"` and one row for
+    each first-order factor, for every input. `settings` keeps only the
+    estimator and the estimation settings of the second-order EFA.
+  - [`print()`](https://rdrr.io/r/base/print.html) shows the
+    second-order loadings.
+
+- [`efa_simulate()`](https://mdsteiner.github.io/EFAtools/reference/efa_simulate.md)
+  with `marginals = "empirical"` changes:
+
+  - Each dataset is now a new draw of independent cases: normal deviates
+    at an intermediate correlation, each mapped through the empirical
+    quantile function of its column of `marginal_data` (Cario & Nelson,
+    1997). The intermediate correlation of each pair is calculated once
+    from the bivariate normal distribution. Before, the correlations of
+    each dataset were fitted to the population correlation, so the
+    datasets varied less than samples do. This made recovery in
+    simulation studies look too good.
+  - The data now reproduce the population correlation also with model
+    error, or with an `R` that is not an exact factor structure. Before,
+    only the common-factor part of the population was reproduced.
+  - The rows are now in random order. Before, they were sorted by the
+    last variable.
+  - A population correlation that two marginals cannot attain now gives
+    an error (`efa_simulate_unattainable_cor`). An intermediate
+    correlation matrix that is not positive definite gives an error, or
+    with `force_pd = TRUE` is smoothed, as for `marginals = "VM"`.
+  - `n_factors` is deprecated and ignored.
+  - The results for a given seed are different.
+
+- [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md)
+  generates its comparison-data populations faster, most of all with
+  many variables. The populations have the same distribution as before,
+  but the results for a given seed are different.
 
 ## EFAtools 1.1.0
 

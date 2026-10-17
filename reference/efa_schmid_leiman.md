@@ -1,18 +1,11 @@
 # Schmid-Leiman transformation
 
-This function implements the Schmid-Leiman (SL) transformation (Schmid &
-Leiman, 1957). It takes the pattern coefficients and factor
-intercorrelations from an oblique factor solution as input and can
-reproduce the results from
-[`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html) and from
-the SPSS implementation from Wolff & Preising (2005). Other arguments
-from
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-can be used to control the procedure to find the second-order loadings
-more flexibly. The function can also be used on a second-order
-confirmatory factor analysis (CFA) solution from lavaan. The group
-factors of the returned solution are sorted and relabelled, so their
-column order can differ from the input solution's (see Details).
+Transforms an oblique factor solution into a hierarchical solution with
+one general factor and group factors that are uncorrelated with it and
+with each other (Schmid & Leiman, 1957). With the same settings, the
+results agree with
+[`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html) and with
+the SPSS syntax of Wolff and Preising (2005).
 
 ## Usage
 
@@ -21,9 +14,8 @@ efa_schmid_leiman(
   x,
   Phi = NULL,
   estimator = c("PAF", "ML", "ULS", "MINRES"),
-  g_name = "g",
-  estimate_control = NULL,
-  ...
+  g_name = NULL,
+  estimate_control = NULL
 )
 ```
 
@@ -36,163 +28,129 @@ Wolff, H.-G., & Preising, K. (2005). Exploring item and higher order
 factor structure with the Schmid-Leiman solution: Syntax codes for SPSS
 and SAS. Behavior Research Methods, 37 , 48–58. doi:10.3758/BF03206397
 
+Mansolf, M., & Reise, S. P. (2016). Exploratory bifactor analysis: The
+Schmid-Leiman orthogonalization and Jennrich-Bentler analytic rotations.
+Multivariate Behavioral Research, 51(5), 698–717.
+doi:10.1080/00273171.2016.1215898
+
 ## Arguments
 
 - x:
 
-  object of class
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
-  class [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html), class
-  [`lavaan::lavaan()`](https://rdrr.io/pkg/lavaan/man/lavaan.html), a
-  matrix, or an `efa_loadings`/`loadings` object. If class
+  An oblique
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  or class [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html),
-  pattern coefficients and factor intercorrelations are taken from this
-  object. If class
-  [`lavaan::lavaan()`](https://rdrr.io/pkg/lavaan/man/lavaan.html), it
-  must be a second-order CFA solution. In this case first-order and
-  second-order factor loadings are taken from this object and the
-  `g_name` argument has to be specified. x can also be a pattern matrix
-  from an oblique factor solution (see `Phi`).
+  or [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) solution, a
+  pattern matrix (give its factor intercorrelations in `Phi`), or a
+  second-order CFA solution from `lavaan`.
 
 - Phi:
 
-  matrix. A matrix of factor intercorrelations from an oblique factor
-  solution. Only needs to be specified if a pattern matrix is entered
-  directly into `x`.
+  matrix. The factor intercorrelations of the pattern matrix in `x`.
+  With an
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  or [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) solution in
+  `x`, `Phi` replaces the fitted factor intercorrelations. Not used for
+  a `lavaan` solution.
 
 - estimator:
 
-  character. One of "PAF", "ML", or "ULS" to use principal axis
-  factoring, maximum likelihood, or unweighted least squares,
-  respectively, used in
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  to find the second-order loadings. "MINRES" is accepted as a synonym
-  for "ULS" (the same estimator).
+  character. The estimator of the second-order
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md):
+  `"PAF"` (default), `"ML"`, or `"ULS"`. `"MINRES"` is a synonym for
+  `"ULS"`. Not used for a `lavaan` solution and for two first-order
+  factors, for which no second-order EFA is done.
 
 - g_name:
 
-  character. The name of the general factor. This needs only be
-  specified if `x` is a `lavaan` second-order solution. Default is "g".
+  character. The name of the general factor in a `lavaan` solution. If
+  `NULL` (default), the latent variable that loads on the other latent
+  variables is used.
 
 - estimate_control:
 
-  an
+  An
   [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
-  object with the estimation settings for the second-order
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  fit, including the `type` preset. `NULL` (default) uses the
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  defaults. The second-order fit is unrotated, so no rotation settings
-  apply.
-
-- ...:
-
-  Arguments to be passed to
+  object with the settings of the second-order
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
-  The estimation tuning knobs are not passed here; they live in
-  `estimate_control`, and the standard-error arguments (`se`, `b_boot`,
-  `ci`, `seed`) are not accepted because the second-order fit is an
-  internal step run against a placeholder sample size and only its
-  loadings are kept.
+  `NULL` (default) uses the
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  defaults. Not used for a `lavaan` solution and for two first-order
+  factors.
 
 ## Value
 
-A list of class `c("efa_schmid_leiman", "SL")` containing the following
+A list of class `c("efa_schmid_leiman", "SL")`:
 
 - orig_R:
 
-  Original correlation matrix.
+  The correlation matrix of the input solution. `NA` for a pattern
+  matrix.
 
 - sl:
 
-  A matrix with general factor loadings, group factor loadings,
-  communalities, and uniquenesses.
+  The Schmid-Leiman loadings: the general factor (`g`), the group
+  factors, the communalities (`h2`), and the uniquenesses (`u2`).
 
 - L2:
 
-  Second-order factor loadings.
+  The second-order loadings, with one row for each first-order factor.
 
 - vars_accounted:
 
-  A matrix of explained variances and sums of squared loadings.
+  The variances explained by the general factor and the group factors.
 
 - iter:
 
-  The number of iterations needed for convergence in EFA.
+  The number of iterations of the second-order EFA.
 
 - convergence:
 
-  Integer convergence code of the second-order EFA (0 = converged); `NA`
-  for a lavaan input. See
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
+  The convergence code of the second-order EFA (0 = converged; see
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)).
 
 - settings:
 
-  list. The settings (arguments) used in EFA to get the second-order
-  loadings.
+  The estimator and the estimation settings of the second-order EFA.
+
+`iter`, `convergence`, and `settings` are `NA` if no second-order EFA
+was done, that is, for a `lavaan` solution and for two first-order
+factors.
 
 ## Details
 
-The SL transformation (also called SL orthogonalization) is a procedure
-with which an oblique factor solution is transformed into a
-hierarchical, orthogonalized solution. As a first step, the factor
-intercorrelations are factor analyzed to extract a single second-order
-(general) factor, yielding a two-level hierarchical structure. The
-first-order factor and the second-order factor are then orthogonalized,
-resulting in an orthogonalized factor solution with proportionality
-constraints. The procedure thus makes a suggested hierarchical data
-structure based on factor intercorrelations explicit. One major
-advantage of SL transformation is that it enables variance partitioning
-between higher-order and first-order factors, including the calculation
-of McDonald's omegas (see
+The factor intercorrelations are factor analyzed to get one second-order
+(general) factor. The general-factor loadings of the items are their
+first-order loadings times the second-order loadings. The group-factor
+loadings are the first-order loadings times the residual standard
+deviations of the first-order factors. The general factor and the group
+factors thus divide the common variance, for example for McDonald's
+omegas (see
 [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)).
 
-Where the first-order factors come from a loading matrix – an
+The transformation has proportionality constraints: in each group
+factor, the ratio of the group-factor loading to the general-factor
+loading is the same for all items. Thus, it recovers a bifactor
+structure exactly only if each item loads on one group factor and these
+ratios are equal. If items have cross-loadings, it overestimates their
+general-factor loadings, and the result depends on the oblique rotation
+of the first-order solution (Mansolf & Reise, 2016). The orthogonal
+bifactor rotation of
 [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-or a [`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) solution, or
-a pattern matrix supplied with `Phi` – they are sorted by the number in
-their column labels, so that `"F10"` follows `"F2"` rather than `"F1"`.
-The sort needs a number in every column label; columns that carry no
-labels, or a label without a number, keep the order they arrive in. A
-second-order `lavaan` solution is not sorted at all: its first-order
-factors keep the order the model declares them in.
+(`rotation = "bifactorT"`) does not have these constraints.
 
-The columns are then labelled `"F1"` to `"Fk"` by position, on every
-route, and the input solution's own factor names are not carried over. A
-factor a `lavaan` model calls `"F3"` can therefore come back as `"F1"`.
-Where the sort applies it is independent of how the input orders its
-factors, so the group factors of the returned `sl` matrix can also be in
-a different order from the columns they came from. A
-[`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) solution shows
-this most readily: it orders its columns by their sums of squared
-loadings, but keeps each factor's own number in its label, so those
-numbers arrive out of order. A solution whose columns are `"PA2"`,
-`"PA3"`, `"PA1"` comes back with those same three factors sorted as
-`PA1`, `PA2`, `PA3` and labelled `"F1"`, `"F2"`, `"F3"`. The first group
-factor of the result is then the third column of the input. The same
-holds against
-[`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html), whose
-columns keep the input order: the two solutions agree column for column
-only after one of them is permuted to the other's order. An
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-solution already labels its factors `"F1"` to `"Fk"` in that order, so
-nothing moves for one; the reordering shows itself for a
-[`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) solution, and for
-a pattern matrix supplied with labels of its own.
+With two first-order factors, the second-order loadings are not
+identified. The two loadings then get the same absolute value, and their
+product is the factor intercorrelation, as in
+[`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html).
 
-Read the group factors from the returned matrix, therefore, rather than
-from the input. An indicator-to-factor map is matched to the group
-factors by position, so one built in the input solution's column order
-lines up only where the columns did not move; where they did,
-[`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
-or [`OMEGA()`](https://mdsteiner.github.io/EFAtools/reference/OMEGA.md)
-scores each composite against the wrong factor. Build such a map from
-the `"F1"` to `"Fk"` columns of the returned `sl` matrix instead, which
-is right on every route. The `fac_names` of
-[`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
-are matched by position in the same way, so names given in the input
-solution's order label the wrong subscales, and do so without any sign.
+A `lavaan` solution must have one second-order factor and no other paths
+or covariances between the latent variables. Its general-factor loadings
+also include the direct loadings of the general factor on the items, if
+the model has them.
+
+The group factors keep the column order and the names of the input
+solution. If the columns do not have unique names (or a name is `"g"`,
+`"h2"`, or `"u2"`), all group factors are labelled `"F1"` to `"Fk"`.
 
 ## See also
 
@@ -206,43 +164,179 @@ Other reliability coefficients:
 ## Examples
 
 ``` r
-## Use with an output from the EFAtools::efa_fit function, both with type EFAtools
-EFA_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
+efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
                    estimator = "PAF", rotation = "promax")
-SL_EFAtools <- efa_schmid_leiman(EFA_mod, estimator = "PAF",
-                                 estimate_control = estimate_control(type = "EFAtools"))
+efa_schmid_leiman(efa_mod)
+#> 
+#> EFA for second-order loadings performed with estimator = 'PAF'
+#> 
+#> ── Schmid-Leiman Solution ──────────────────────────────────────────────────────
+#> 
+#>        g     F1     F2     F3    h2    u2
+#> V1   .489  -.029   .022   .356  .367  .633
+#> V2   .444  -.001   .042   .280  .277  .723
+#> V3   .459   .036   .035   .263  .283  .717
+#> V4   .522   .061  -.005   .320  .378  .622
+#> V5   .468   .095  -.011   .254  .293  .707
+#> V6   .478  -.044  -.031   .409  .399  .601
+#> V7   .491   .001   .336   .054  .357  .643
+#> V8   .463  -.010   .366   .018  .349  .651
+#> V9   .457   .023   .347   .000  .330  .670
+#> V10  .449  -.013   .425  -.041  .383  .617
+#> V11  .477   .009   .224   .135  .297  .703
+#> V12  .513   .012   .410  -.006  .432  .568
+#> V13  .502   .372   .054  -.039  .395  .605
+#> V14  .455   .332  -.043   .051  .322  .678
+#> V15  .489   .340   .081  -.041  .363  .637
+#> V16  .476   .336  -.032   .053  .343  .657
+#> V17  .477   .402  -.023  -.016  .390  .610
+#> V18  .485   .336   .003   .029  .350  .650
+#> 
+#> ── Second-order Loadings ───────────────────────────────────────────────────────
+#> 
+#>     F1    F2    F3
+#> g  .796  .777  .814
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>                      g     F1    F2     F3
+#> SS loadings        4.111  .770  .783   .642
+#> Prop Tot Var        .228  .043  .044   .036
+#> Cum Prop Tot Var    .228  .271  .315   .350
+#> Prop Comm Var       .652  .122  .124   .102
+#> Cum Prop Comm Var   .652  .774  .898  1.000
+
+# A pattern matrix with its factor intercorrelations, for example from another
+# program, gives the same solution
+efa_schmid_leiman(efa_mod$rot_loadings, Phi = efa_mod$Phi)
+#> 
+#> EFA for second-order loadings performed with estimator = 'PAF'
+#> 
+#> ── Schmid-Leiman Solution ──────────────────────────────────────────────────────
+#> 
+#>        g     F1     F2     F3    h2    u2
+#> V1   .489  -.029   .022   .356  .367  .633
+#> V2   .444  -.001   .042   .280  .277  .723
+#> V3   .459   .036   .035   .263  .283  .717
+#> V4   .522   .061  -.005   .320  .378  .622
+#> V5   .468   .095  -.011   .254  .293  .707
+#> V6   .478  -.044  -.031   .409  .399  .601
+#> V7   .491   .001   .336   .054  .357  .643
+#> V8   .463  -.010   .366   .018  .349  .651
+#> V9   .457   .023   .347   .000  .330  .670
+#> V10  .449  -.013   .425  -.041  .383  .617
+#> V11  .477   .009   .224   .135  .297  .703
+#> V12  .513   .012   .410  -.006  .432  .568
+#> V13  .502   .372   .054  -.039  .395  .605
+#> V14  .455   .332  -.043   .051  .322  .678
+#> V15  .489   .340   .081  -.041  .363  .637
+#> V16  .476   .336  -.032   .053  .343  .657
+#> V17  .477   .402  -.023  -.016  .390  .610
+#> V18  .485   .336   .003   .029  .350  .650
+#> 
+#> ── Second-order Loadings ───────────────────────────────────────────────────────
+#> 
+#>     F1    F2    F3
+#> g  .796  .777  .814
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>                      g     F1    F2     F3
+#> SS loadings        4.111  .770  .783   .642
+#> Prop Tot Var        .228  .043  .044   .036
+#> Cum Prop Tot Var    .228  .271  .315   .350
+#> Prop Comm Var       .652  .122  .124   .102
+#> Cum Prop Comm Var   .652  .774  .898  1.000
 
 # \donttest{
-## Use with an output from the psych::fa function with type psych
+# A psych::fa() solution, with the psych settings for the second-order EFA
 fa_mod <- psych::fa(test_models$baseline$cormat, nfactors = 3, n.obs = 500,
                     fm = "pa", rotate = "Promax")
-SL_psych <- efa_schmid_leiman(fa_mod, estimator = "PAF",
-                              estimate_control = estimate_control(type = "psych"))
-# }
+efa_schmid_leiman(fa_mod, estimate_control = estimate_control(type = "psych"))
+#> 
+#> EFA for second-order loadings performed with estimator = 'PAF'
+#> 
+#> ── Schmid-Leiman Solution ──────────────────────────────────────────────────────
+#> 
+#>        g    PA2    PA3    PA1    h2    u2
+#> V1   .501  -.037   .015   .338  .367  .633
+#> V2   .453  -.006   .036   .265  .277  .723
+#> V3   .468   .031   .029   .248  .283  .717
+#> V4   .533   .054  -.012   .302  .378  .622
+#> V5   .476   .090  -.017   .240  .293  .707
+#> V6   .493  -.053  -.040   .390  .399  .601
+#> V7   .492   .003   .335   .044  .357  .643
+#> V8   .463  -.007   .366   .009  .349  .651
+#> V9   .457   .026   .348  -.008  .330  .670
+#> V10  .446  -.009   .427  -.048  .383  .617
+#> V11  .482   .008   .222   .123  .297  .703
+#> V12  .512   .016   .411  -.014  .432  .568
+#> V13  .499   .375   .055  -.046  .395  .605
+#> V14  .456   .332  -.044   .042  .322  .678
+#> V15  .486   .343   .082  -.048  .363  .637
+#> V16  .477   .336  -.033   .044  .343  .657
+#> V17  .475   .404  -.023  -.023  .390  .610
+#> V18  .485   .337   .002   .020  .350  .650
+#> 
+#> ── Second-order Loadings ───────────────────────────────────────────────────────
+#> 
+#>     PA2   PA3   PA1
+#> g  .801  .780  .844
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>                      g     PA2   PA3   PA1
+#> SS loadings        4.170  .775  .786   .575
+#> Prop Tot Var        .232  .043  .044   .032
+#> Cum Prop Tot Var    .232  .275  .318   .350
+#> Prop Comm Var       .661  .123  .125   .091
+#> Cum Prop Comm Var   .661  .784  .909  1.000
 
-## Use more flexibly by entering a pattern matrix and phi directly (useful if
-## a factor solution found with another program should be subjected to SL
-## transformation)
-
-## For demonstration, take pattern matrix and phi from an EFA output
-## This gives the same solution as the first example
-SL_flex <- efa_schmid_leiman(EFA_mod$rot_loadings, Phi = EFA_mod$Phi, estimator = "PAF",
-                             estimate_control = estimate_control(type = "EFAtools"))
-
-# \donttest{
-## Use with a lavaan second-order CFA output
+# A lavaan second-order CFA solution
 if (requireNamespace("lavaan", quietly = TRUE)) {
-
-# Create and fit model in lavaan (assume all variables have SDs of 1)
-mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
-        F2 =~ V7 + V8 + V9 + V10 + V11 + V12
-        F3 =~ V13 + V14 + V15 + V16 + V17 + V18
-        g =~ F1 + F2 + F3'
-fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
-                   sample.nobs = 500, estimator = "ml")
-
-SL_lav <- efa_schmid_leiman(fit, g_name = "g")
-
+  mod <- 'F1 =~ V1 + V2 + V3 + V4 + V5 + V6
+          F2 =~ V7 + V8 + V9 + V10 + V11 + V12
+          F3 =~ V13 + V14 + V15 + V16 + V17 + V18
+          g =~ F1 + F2 + F3'
+  fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
+                     sample.nobs = 500)
+  efa_schmid_leiman(fit)
 }
+#> 
+#> ── Schmid-Leiman Solution ──────────────────────────────────────────────────────
+#> 
+#>        g    F1    F2    F3    h2    u2
+#> V1   .515  .307  .000  .000  .360  .640
+#> V2   .453  .270  .000  .000  .278  .722
+#> V3   .459  .274  .000  .000  .286  .714
+#> V4   .536  .320  .000  .000  .390  .610
+#> V5   .478  .285  .000  .000  .310  .690
+#> V6   .500  .299  .000  .000  .340  .660
+#> V7   .491  .000  .352  .000  .366  .634
+#> V8   .476  .000  .342  .000  .344  .656
+#> V9   .468  .000  .336  .000  .332  .668
+#> V10  .476  .000  .341  .000  .343  .657
+#> V11  .448  .000  .321  .000  .304  .696
+#> V12  .524  .000  .375  .000  .415  .585
+#> V13  .505  .000  .000  .365  .388  .612
+#> V14  .454  .000  .000  .328  .314  .686
+#> V15  .485  .000  .000  .350  .358  .642
+#> V16  .479  .000  .000  .346  .349  .651
+#> V17  .495  .000  .000  .357  .373  .627
+#> V18  .481  .000  .000  .347  .352  .648
+#> 
+#> ── Second-order Loadings ───────────────────────────────────────────────────────
+#> 
+#>     F1    F2    F3
+#> g  .859  .813  .811
+#> 
+#> ── Variances Accounted for ─────────────────────────────────────────────────────
+#> 
+#>                      g     F1    F2     F3
+#> SS loadings        4.239  .515  .714   .731
+#> Prop Tot Var        .236  .029  .040   .041
+#> Cum Prop Tot Var    .236  .264  .304   .344
+#> Prop Comm Var       .684  .083  .115   .118
+#> Cum Prop Comm Var   .684  .767  .882  1.000
 # }
 ```

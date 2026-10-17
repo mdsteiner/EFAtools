@@ -140,10 +140,10 @@ together with the RMSEA, in which case it trades the two off:
 efa_simulate(N = 500, Lambda = Lambda, Phi = Phi, model_error = "TKL",
              target_rmsea = 0.05, target_cfi = 0.95, seed = 42)$model_error[c("rmsea", "cfi")]
 #> $rmsea
-#> [1] 0.0455728
+#> [1] 0.04557289
 #> 
 #> $cfi
-#> [1] 0.9479115
+#> [1] 0.9479113
 ```
 
 `"WB"` (Wu & Browne, 2015) draws the population once from an
@@ -200,7 +200,7 @@ round(c(target = 1, achieved = mean(apply(sim_ig$data, 2, sk))), 2)
 
 A third option, `marginals = "empirical"`, reproduces the population
 correlation while giving each variable the *empirical* marginal of a
-supplied data set (Ruscio & Kaczetow, 2008) – useful when you want your
+supplied data set (Cario & Nelson, 1997) – useful when you want your
 simulated variables to look exactly like real items. Only the marginals
 of `marginal_data` are used; its own correlations are ignored.
 
@@ -214,7 +214,7 @@ sim_emp <- efa_simulate(N = 500, Lambda = Lambda, Phi = Phi,
 round(c(source = mean(apply(src, 2, sk)),
         simulated = mean(apply(sim_emp$data, 2, sk))), 2)
 #>    source simulated 
-#>      1.60      1.58
+#>      1.60      1.67
 ```
 
 ### Ordinal data
@@ -592,6 +592,11 @@ vignette for fitting the ordinal and incomplete data simulated above.
 
 ## References
 
+Cario, M. C., & Nelson, B. L. (1997). *Modeling and generating random
+vectors with arbitrary marginal distributions and correlation matrix*
+(Technical report). Department of Industrial Engineering and Management
+Sciences, Northwestern University.
+
 Cudeck, R., & Browne, M. W. (1992). Constructing a covariance matrix
 that yields a specified minimizer and a specified minimum discrepancy
 function value. *Psychometrika*, 57, 357-369.
@@ -613,10 +618,6 @@ modeling. *Psychological Methods*, 1, 130-149.
 
 Rubin, D. B. (1976). Inference and missing data. *Biometrika*, 63,
 581-592.
-
-Ruscio, J., & Kaczetow, W. (2008). Simulating multivariate nonnormal
-data using an iterative algorithm. *Multivariate Behavioral Research*,
-43, 355-381.
 
 Tucker, L. R., Koopman, R. F., & Linn, R. L. (1969). Evaluation of
 factor analytic research procedures by means of simulated correlation

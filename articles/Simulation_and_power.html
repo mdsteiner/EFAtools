@@ -187,10 +187,10 @@ two off:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_simulate.html">efa_simulate</a></span><span class="op">(</span>N <span class="op">=</span> <span class="fl">500</span>, Lambda <span class="op">=</span> <span class="va">Lambda</span>, Phi <span class="op">=</span> <span class="va">Phi</span>, model_error <span class="op">=</span> <span class="st">"TKL"</span>,</span>
 <span>             target_rmsea <span class="op">=</span> <span class="fl">0.05</span>, target_cfi <span class="op">=</span> <span class="fl">0.95</span>, seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span><span class="op">$</span><span class="va">model_error</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rmsea"</span>, <span class="st">"cfi"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $rmsea</span></span>
-<span><span class="co">#&gt; [1] 0.0455728</span></span>
+<span><span class="co">#&gt; [1] 0.04557289</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $cfi</span></span>
-<span><span class="co">#&gt; [1] 0.9479115</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.9479113</span></span></code></pre></div>
 <p><code>"WB"</code> (Wu &amp; Browne, 2015) draws the population once
 from an inverse-Wishart distribution around the model-implied
 correlation. Being a single random draw, its realized RMSEA varies
@@ -237,9 +237,9 @@ informative error.</p>
 <span><span class="co">#&gt;     1.00     0.96</span></span></code></pre></div>
 <p>A third option, <code>marginals = "empirical"</code>, reproduces the
 population correlation while giving each variable the <em>empirical</em>
-marginal of a supplied data set (Ruscio &amp; Kaczetow, 2008) – useful
-when you want your simulated variables to look exactly like real items.
-Only the marginals of <code>marginal_data</code> are used; its own
+marginal of a supplied data set (Cario &amp; Nelson, 1997) – useful when
+you want your simulated variables to look exactly like real items. Only
+the marginals of <code>marginal_data</code> are used; its own
 correlations are ignored.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
@@ -250,7 +250,7 @@ correlations are ignored.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">src</span>, <span class="fl">2</span>, <span class="va">sk</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>        simulated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">sim_emp</span><span class="op">$</span><span class="va">data</span>, <span class="fl">2</span>, <span class="va">sk</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    source simulated </span></span>
-<span><span class="co">#&gt;      1.60      1.58</span></span></code></pre></div>
+<span><span class="co">#&gt;      1.60      1.67</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="ordinal-data">Ordinal data<a class="anchor" aria-label="anchor" href="#ordinal-data"></a>
@@ -578,6 +578,10 @@ above.</p>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
+<p>Cario, M. C., &amp; Nelson, B. L. (1997). <em>Modeling and generating
+random vectors with arbitrary marginal distributions and correlation
+matrix</em> (Technical report). Department of Industrial Engineering and
+Management Sciences, Northwestern University.</p>
 <p>Cudeck, R., &amp; Browne, M. W. (1992). Constructing a covariance
 matrix that yields a specified minimizer and a specified minimum
 discrepancy function value. <em>Psychometrika</em>, 57, 357-369.</p>
@@ -595,9 +599,6 @@ analysis and determination of sample size for covariance structure
 modeling. <em>Psychological Methods</em>, 1, 130-149.</p>
 <p>Rubin, D. B. (1976). Inference and missing data. <em>Biometrika</em>,
 63, 581-592.</p>
-<p>Ruscio, J., &amp; Kaczetow, W. (2008). Simulating multivariate
-nonnormal data using an iterative algorithm. <em>Multivariate Behavioral
-Research</em>, 43, 355-381.</p>
 <p>Tucker, L. R., Koopman, R. F., &amp; Linn, R. L. (1969). Evaluation
 of factor analytic research procedures by means of simulated correlation
 matrices. <em>Psychometrika</em>, 34, 421-459.</p>

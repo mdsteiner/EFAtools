@@ -93,8 +93,8 @@ keeps working.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>data.frame or matrix. Raw data, or a correlation matrix. If <code>"CD"</code> is
-included as a criterion, x must be raw data.</p></dd>
+<dd><p>data.frame or matrix. Raw data, or a correlation matrix. <code>"CD"</code> needs raw
+data.</p></dd>
 
 
 <dt id="arg-criteria">criteria<a class="anchor" aria-label="anchor" href="#arg-criteria"></a></dt>
@@ -117,17 +117,18 @@ correlation matrix.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw
-data is given as input. Default is <code>"pairwise.complete.obs"</code>.</p></dd>
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data is given as input. Default
+is <code>"pairwise.complete.obs"</code>. <code>"CD"</code> always uses only the complete cases: it removes
+the incomplete rows with a warning.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
 <dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
-<code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
-<code>"tetra"</code> for polychoric / tetrachoric correlations (a two-step estimator).
-<code>CD</code>, <code>PARALLEL</code>, <code>NEST</code>, <code>HULL</code>, and <code>SMT</code> do not support <code>"poly"</code> / <code>"tetra"</code>
-and are skipped automatically if you request them together.
-Default is <code>"pearson"</code>.</p></dd>
+<code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> / <code>"tetra"</code>
+for polychoric / tetrachoric correlations (a two-step estimator). With <code>"poly"</code> /
+<code>"tetra"</code>, <code>"HULL"</code>, <code>"NEST"</code>, <code>"PARALLEL"</code>, and <code>"SMT"</code> are skipped, and <code>"CD"</code> and
+Bartlett's test use the Pearson correlations of the raw data (see details). Default
+is <code>"pearson"</code>.</p></dd>
 
 
 <dt id="arg-n-factors-max">n_factors_max<a class="anchor" aria-label="anchor" href="#arg-n-factors-max"></a></dt>
@@ -149,9 +150,9 @@ from each population. Default is 500.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
-<dd><p>numeric. Passed to <code><a href="efa_cd.html">efa_cd()</a></code>. The alpha level used to test
-the significance of the improvement added by an additional factor.
-Default is .30.</p></dd>
+<dd><p>numeric. Passed to <code><a href="efa_retain.html">efa_retain()</a></code> as <code>alpha_CD</code>. The alpha level used to
+test the significance of the improvement added by an additional factor. Default is
+.30.</p></dd>
 
 
 <dt id="arg-max-iter-cd">max_iter_CD<a class="anchor" aria-label="anchor" href="#arg-max-iter-cd"></a></dt>
@@ -174,30 +175,19 @@ passed to <code><a href="efa_retain.html">efa_retain()</a></code> as its <code>e
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
-<dd><p>character. Passed to <code><a href="efa_hull.html">efa_hull()</a></code>. The goodness of fit index
-to use. Either <code>"CAF"</code>, <code>"CFI"</code>, or <code>"RMSEA"</code>, or any
-combination of them. With the <code>"PAF"</code> estimator, only
-the CAF can be used as goodness of fit index. For details on the CAF, see
-Lorenzo-Seva, Timmerman, and Kiers (2011).</p></dd>
+<dd><p>character. Passed to <code><a href="efa_hull.html">efa_hull()</a></code>. The goodness of fit index to use:
+<code>"CAF"</code>, <code>"CFI"</code>, or <code>"RMSEA"</code>, or any combination of them. Default is all three.
+With the <code>"PAF"</code> method, the Hull method uses only the CAF.</p></dd>
 
 
 <dt id="arg-eigen-type-hull">eigen_type_HULL<a class="anchor" aria-label="anchor" href="#arg-eigen-type-hull"></a></dt>
-<dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> in
-<code><a href="efa_hull.html">efa_hull()</a></code>. What the eigenvalues in the parallel analysis are based on.
-One of <code>"SMC"</code>, <code>"PCA"</code>, or <code>"EFA"</code> – different ways of estimating how much
-variance each indicator shares with the others before the eigenvalues are
-computed. <code>"SMC"</code> (default) uses each indicator's squared multiple
-correlation with the others (its diagonal value in the correlation matrix).
-<code>"PCA"</code> leaves the diagonal at 1, so each indicator's total variance – not
-just the shared part – feeds into the eigenvalues. <code>"EFA"</code> uses the
-communalities from a fitted EFA solution instead.</p></dd>
+<dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> in <code><a href="efa_hull.html">efa_hull()</a></code>. One of
+<code>"SMC"</code> (default), <code>"PCA"</code>, or <code>"EFA"</code>.</p></dd>
 
 
 <dt id="arg-eigen-type-other">eigen_type_other<a class="anchor" aria-label="anchor" href="#arg-eigen-type-other"></a></dt>
-<dd><p>character. Passed to <code><a href="efa_kgc.html">efa_kgc()</a></code>,
-<code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code>. The same as eigen_type_HULL,
-but multiple inputs are possible here (any combination of <code>"PCA"</code>, <code>"SMC"</code>,
-and <code>"EFA"</code>). Default is <code>"SMC"</code>.</p></dd>
+<dd><p>character. Passed to <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and
+<code><a href="efa_parallel.html">efa_parallel()</a></code>. One or more of <code>"PCA"</code>, <code>"SMC"</code>, and <code>"EFA"</code>. Default is <code>"SMC"</code>.</p></dd>
 
 
 <dt id="arg-n-factors">n_factors<a class="anchor" aria-label="anchor" href="#arg-n-factors"></a></dt>
@@ -209,7 +199,8 @@ factors to extract if <code>"EFA"</code> is included in <code>eigen_type_HULL</c
 
 <dt id="arg-n-datasets">n_datasets<a class="anchor" aria-label="anchor" href="#arg-n-datasets"></a></dt>
 <dd><p>numeric. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> (also within
-<code><a href="efa_hull.html">efa_hull()</a></code>). The number of datasets to simulate. Default is 1000.</p></dd>
+<code><a href="efa_hull.html">efa_hull()</a></code>). The number of reference correlation matrices to simulate. Default is
+1000.</p></dd>
 
 
 <dt id="arg-percent">percent<a class="anchor" aria-label="anchor" href="#arg-percent"></a></dt>
@@ -220,11 +211,10 @@ Default is 95.</p></dd>
 
 <dt id="arg-decision-rule">decision_rule<a class="anchor" aria-label="anchor" href="#arg-decision-rule"></a></dt>
 <dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> (also within
-<code><a href="efa_hull.html">efa_hull()</a></code>). Which rule to use to determine the number of
-factors to retain. Default is <code>"means"</code>, which uses the average simulated
-eigenvalues. <code>"percentile"</code> uses the percentiles specified in <code>percent</code>.
-<code>"crawford"</code> uses the 95th percentile for the first factor and the mean
-afterwards (based on Crawford et al., 2010).</p></dd>
+<code><a href="efa_hull.html">efa_hull()</a></code>). Which rule to use to determine the number of factors to retain.
+Default is <code>"means"</code>, which uses the average simulated eigenvalues. <code>"percentile"</code>
+uses the percentiles specified in <code>percent</code>. <code>"crawford"</code> uses the 95th percentile
+for the first factor and the mean afterwards (based on Crawford et al., 2010).</p></dd>
 
 
 <dt id="arg-ekc-type">ekc_type<a class="anchor" aria-label="anchor" href="#arg-ekc-type"></a></dt>
@@ -236,8 +226,8 @@ they are no longer computed.</p></dd>
 
 
 <dt id="arg-n-datasets-nest">n_datasets_nest<a class="anchor" aria-label="anchor" href="#arg-n-datasets-nest"></a></dt>
-<dd><p>numeric. Passed to <code><a href="efa_nest.html">efa_nest()</a></code>. The number of
-datasets to simulate. Default is 1000.</p></dd>
+<dd><p>numeric. Passed to <code><a href="efa_nest.html">efa_nest()</a></code>. The number of reference
+correlation matrices to simulate. Default is 1000.</p></dd>
 
 
 <dt id="arg-alpha-nest">alpha_nest<a class="anchor" aria-label="anchor" href="#arg-alpha-nest"></a></dt>

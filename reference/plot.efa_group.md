@@ -67,7 +67,6 @@ Other factor analysis:
 ``` r
 g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
 mg <- efa_group(GRiPS_raw, groups = g, n_factors = 1)
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 
 # Per-factor congruence against the Lorenzo-Seva & ten Berge bands
 plot(mg)

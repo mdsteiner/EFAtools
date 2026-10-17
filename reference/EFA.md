@@ -72,18 +72,22 @@ EFA(
 - N:
 
   numeric. The number of observations. Needs only be specified if a
-  correlation matrix is used; with raw data, `N` is found from the data
-  instead.
+  correlation matrix is used. Without `N`, the chi-square-based fit
+  indices are not available, with a warning; the same applies to a
+  positive `N` that is very small relative to the number of variables.
+  With raw data, `N` is found from the data:
 
-  - With `N = NA`, not all fit indices can be computed; a positive `N`
-    that is very small relative to the number of variables leaves the
-    chi-square-derived indices unavailable as well, with a warning.
+  - the number of rows under the default pairwise deletion (`use`), with
+    a warning if values are missing, because each correlation then rests
+    on fewer cases, so the chi-square is too large and the standard
+    errors are too small (Marsh, 1998);
 
-  - With raw data, `N` is the number of cases the correlation matrix was
-    actually computed from – see `use` for the general rule and how
-    missing values change it. Under `cor_method = "fiml"`, `use` is
-    ignored and `N` is instead the number of cases carrying at least one
-    observed value.
+  - the number of complete cases under listwise deletion, and whenever
+    an asymptotic covariance is needed (`estimator = "DWLS"` or
+    `se = "sandwich"`, except under `cor_method = "fiml"`);
+
+  - the number of rows with at least one observed value under
+    `cor_method = "fiml"`.
 
 - method:
 
@@ -100,20 +104,21 @@ EFA(
   rotation ("varimax", "equamax", "quartimax", "geominT", "bentlerT", or
   "bifactorT"), or an oblique rotation ("promax", "oblimin",
   "quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ"). See
-  the *Rotations* section in Details for their properties and known
-  issues.
+  the
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  documentation for their properties.
 
 - se:
 
   character. Whether and how to compute standard errors (and matching
   confidence intervals): "none" (default), "information" (analytic
   standard errors from the expected Fisher information of the ML
-  solution), "sandwich" (robust "sandwich" standard errors from raw
-  data, which stay reliable under non-normality or a misspecified
-  estimator weight), or "np-boot" (non-parametric bootstrap). The
-  methods differ in their assumptions, their data requirements, and
-  which estimator, rotation, and `cor_method` combinations they support;
-  see the *Standard errors* section in Details.
+  solution), "sandwich" (robust standard errors from raw data, which
+  stay reliable under non-normality or a misspecified estimator weight),
+  or "np-boot" (non-parametric bootstrap). The methods differ in their
+  assumptions, their data requirements, and which estimator, rotation,
+  and `cor_method` combinations they support; see the *Standard errors*
+  section in Details.
 
 - type:
 

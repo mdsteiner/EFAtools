@@ -1,11 +1,10 @@
-# Reliability and common-variance coefficients for a factor solution
+# Reliability coefficients for a factor solution
 
 Computes model-based reliability coefficients for a factor solution:
 McDonald's omega (total, hierarchical, and subscale), standardized
-Cronbach's alpha, and the H index. For a bifactor solution, it also
-computes two common-variance indices, ECV and PUC, for the general
-factor. The result is a tidy, long-format table with one row per
-coefficient.
+Cronbach's alpha, and the H index. For a solution with a general factor,
+it also computes the common-variance indices ECV and PUC. The result is
+a long-format table with one row per coefficient.
 
 ## Usage
 
@@ -17,13 +16,13 @@ efa_reliability(
   group_names = NULL,
   factor_map = NULL,
   variance = c("correlation", "sums_load"),
-  var_names = NULL,
+  var_names = lifecycle::deprecated(),
   fac_names = NULL,
-  g_load = NULL,
-  s_load = NULL,
+  g_load = lifecycle::deprecated(),
+  s_load = lifecycle::deprecated(),
   u2 = NULL,
   cormat = NULL,
-  pattern = NULL,
+  pattern = lifecycle::deprecated(),
   Phi = NULL
 )
 ```
@@ -95,368 +94,229 @@ Psychological Methods, 21, 137-150.
 
 - model:
 
-  an
+  An
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
   [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md),
-  `schmid`
-  ([`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html)),
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  (oblique), or `lavaan` object; a raw bifactor loading matrix (general
-  factor first), the loading table of an
-  [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
-  solution, or the pattern matrix of an oblique solution together with
-  its `Phi`; or `NULL` to supply the components manually via `g_load`,
-  `s_load`, `u2`, and `var_names`.
+  [`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html), or
+  `lavaan` solution, or a loading matrix (see Input).
 
 - coefficients:
 
-  character. An optional subset of the coefficients to return, any of
+  character. A subset of the coefficients to return: any of
   `"omega_total"`, `"omega_hierarchical"`, `"omega_subscale"`,
-  `"alpha"`, `"H"`, `"ECV"`, and `"PUC"`. Default `NULL` returns all of
-  them.
+  `"alpha"`, `"H"`, `"ECV"`, and `"PUC"`. The default `NULL` returns all
+  that the solution defines.
 
 - g_name:
 
-  character. The name of the general factor in the `lavaan` solution.
-  Only needed for a `lavaan` second-order or bifactor fit. A fit in
-  which every variable loads on a single factor has no general factor,
-  and reads none. No other input is affected by it. Default is `"g"`.
+  character. The name of the general factor of a `lavaan` bifactor or
+  second-order fit. Default is `"g"`.
 
 - group_names:
 
-  character. An optional vector of group names for a `lavaan`
-  multiple-group fit. Its length must match the number of groups. Not
-  used for any other input – including a single-group `lavaan` fit,
-  since every one of those is scored as a single ungrouped solution with
-  no group label.
+  character. Labels for the groups of a `lavaan` multiple-group fit, one
+  per group.
 
 - factor_map:
 
-  matrix. A logical or 0/1 matrix indicating which variable belongs to
-  which group factor, with the same dimensions as the group loading
-  matrix (cross-loadings are allowed). Match its columns to the group
-  factors by position – a map given in a different factor order than the
-  solution still runs, but produces meaningless subscale coefficients.
-  The function warns if a mapped item loads weakly on its assigned
-  factor and more strongly on another one. If `NULL` (default), each
-  variable is assigned to the group factor on which it loads most
-  strongly. Not used for `lavaan` input.
+  matrix. A logical or 0/1 matrix, variables by group factors, that
+  assigns the variables to the group factors. A variable can belong to
+  more than one factor. The columns must be in the column order of the
+  solution. If `NULL` (default), see Input. Not used for `lavaan` input.
 
 - variance:
 
-  character. The total-variance denominator for the coefficients.
-  `"correlation"` (default) takes each composite's variance from the
-  correlation matrix, giving the observed-score omega. `"sums_load"`
-  uses the model-implied composite variance from the loadings and the
-  uniquenesses instead; it needs no correlation matrix, so it is the way
-  to score a bare loading matrix or manual components given without one.
-  `lavaan` input fixes the convention: its composite variances are
-  always model-implied, and include any freed residual covariance as
-  well as the residual variances. Neither convention changes the metric
-  the coefficients are on – with polychoric or tetrachoric correlations,
-  or an `ordered` `lavaan` fit, both describe the latent-response
-  composite rather than the ordinal sum score (see Details).
+  character. The variance of each composite: `"correlation"` (default)
+  takes it from the correlation matrix; `"sums_load"` uses the
+  model-implied variance and needs no correlation matrix. Not used for
+  `lavaan` input (see Details).
 
-- var_names:
+- var_names, g_load, s_load, pattern:
 
-  character. Subtest names in the row order of the loadings. Only needed
-  when `model` is `NULL`.
+  **\[deprecated\]** Give the loadings as one matrix in `model` instead.
 
 - fac_names:
 
-  character. An optional vector of group-factor names in the column
-  order of the loadings. Taken from the input if `NULL`. A single-factor
-  solution has no group factors; `fac_names` then labels its one factor
-  instead. If neither `fac_names` nor the solution names that factor, it
-  is labelled `"F1"`. Not used for `lavaan` input, whose factor labels
-  come from the model syntax.
-
-- g_load:
-
-  numeric. General-factor loadings. Only needed when `model` is `NULL`.
-
-- s_load:
-
-  matrix. Group-factor loadings. Only needed when `model` is `NULL`.
+  character. Labels for the group factors, in the column order of the
+  loadings; for a single-factor solution, the label of its factor. Not
+  used for `lavaan` input.
 
 - u2:
 
-  numeric. Uniquenesses. Only needed when `model` is `NULL`, or to
-  override the communality-based default for a loading matrix. Under
-  `variance = "correlation"`, the coefficients follow from the loadings
-  and the correlation matrix alone, so `u2` only enters the check for an
-  improper solution. Under `"sums_load"`, it is part of every
-  composite's variance.
+  numeric. Uniquenesses, one per variable, to replace the ones derived
+  from a loading matrix in `model`.
 
 - cormat:
 
-  matrix or data.frame. A correlation matrix used when
-  `variance = "correlation"`. It must hold the same variables as the
-  solution: named variables in a different order are reordered to match;
-  a different set of variables, or a different number of them, is an
-  error. The matrix must use the solution's own variable names – for
-  manually supplied components, that means the row names of `s_load`,
-  not `var_names`, which only labels the output. Without row names, the
-  variables are matched by position, so supply the matrix in the row
-  order of the loadings. If `NULL`, it is taken from the input object,
-  or reconstructed from `pattern` and `Phi` where possible. Supply the
-  matrix on the same metric as the loadings: a polychoric or tetrachoric
-  matrix keeps the coefficients on the latent-response metric, while a
-  Pearson matrix given with loadings fitted to a polychoric one mixes
-  the two (see Details).
-
-- pattern:
-
-  matrix. Pattern coefficients from a separate oblique solution, used
-  with `Phi` to reconstruct a correlation matrix when `model` is `NULL`.
-  Supply it for a Schmid-Leiman input, whose `s_load` holds the
-  orthogonalized group loadings rather than the oblique ones. It is an
-  alternative to `cormat`, not a supplement: giving both is an error.
+  matrix or data.frame. The correlation matrix of the variables, on the
+  metric of the loadings, for `variance = "correlation"`. Named
+  variables are matched by name, else by position. If `NULL`, it is
+  taken from the solution where available.
 
 - Phi:
 
-  matrix. Factor intercorrelations. `NULL` (default) means uncorrelated
-  group factors, as a Schmid-Leiman or bifactor solution has. It cannot
-  be combined with a general factor: supplied together with a non-zero
-  `g_load`, or with the loading table of an
+  matrix. The factor intercorrelations of a pattern matrix in `model`.
+  Not used for a fitted solution, and refused for the loading table of
+  an
   [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
-  solution, it is an error.
-
-  Supply it together with `s_load` (manually supplied components, with
-  `g_load` zero throughout), or with a loading matrix of two or more
-  factors in `model`, to score the input as a correlated-factors
-  solution instead.
-
-  Without `Phi`, a loading matrix in `model` is read as a bifactor
-  solution (general factor first). The one exception is a matrix that
-  still carries the loading class
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  gives its output – a class that subsetting a matrix or reordering its
-  rows drops. Such a matrix is rejected instead; supply `Phi` to score
-  it as a correlated-factors solution.
-
-  With `Phi`, a matrix in `model` that carries no loading class is read
-  as a correlated-factors solution, and a warning names this reading
-  (drop `Phi` to read it as a bifactor matrix instead).
-
-  Given together with `pattern` instead, see `pattern` above. With a
-  fitted solution already in `model`, `Phi` is ignored, with a warning,
-  since that solution carries its own factor intercorrelations.
+  solution.
 
 ## Value
 
-An object of class `efa_reliability`: a long-format data frame with one
-row per computed coefficient, with columns
+An object of class `efa_reliability`: a data frame with one row per
+coefficient and the columns
 
 - coefficient:
 
-  the coefficient name (e.g. `"omega_total"`).
+  the coefficient name.
 
 - level:
 
-  `"general"` for the general-factor row, `"total"` for the whole-scale
-  row of a correlated-factors solution, and `"group"` for every other
-  row. A single-factor solution has only the general-factor row.
+  `"general"` for the general factor (or the factor of a single-factor
+  solution), `"total"` for the whole scale of a correlated-factors
+  solution, and `"group"` for a group factor.
 
 - factor:
 
-  the factor label: `"g"` for the general factor of a solution with
-  group factors. A single-factor solution's one factor takes its own
-  name, or `"F1"` if neither the input nor `fac_names` names it. A
-  correlated-factors solution has no general factor, so its first row is
-  labelled `"total"` instead – it describes the composite of every
-  variable, not a factor of the model.
+  the factor label: `"g"` for the general factor, `"total"` for the
+  whole scale of a correlated-factors solution.
 
 - group:
 
-  the group label, or `NA` for a single ungrouped solution.
+  the group of a `lavaan` multiple-group fit, else `NA`.
 
 - value:
 
   the coefficient value.
 
-Structurally undefined cells (for example, ECV and PUC on a group
-factor) are omitted. The object also carries a `settings` attribute (the
-total-variance convention used, and whether the solution has a general
-factor) and a `kind` attribute tagging each coefficient as a reliability
-coefficient or a common-variance index. It has a
-[`print.efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/print.efa_reliability.md)
-method.
+Coefficients that the solution does not define are omitted. The
+attributes are `settings` (the variance used, and whether the solution
+has no general factor), `kind` (reliability coefficient or
+common-variance index), and `factor_map` (the assignment of the
+variables to the group factors that was used: a logical matrix, a list
+of them for a multiple-group fit, or `NULL` for a single factor).
 
 ## Details
 
-The function reads many kinds of input: a Schmid-Leiman solution
-([`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
-or [`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html)), an
-oblique
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-(correlated-factors) solution, a `lavaan` fit (single-factor,
-correlated-factors, second-order, or bifactor), a raw bifactor loading
-matrix, an oblique pattern matrix given with its factor
-intercorrelations, or manually supplied components.
-
 ### Coefficients
 
-The reliability coefficients are McDonald's omegas (McDonald, 1978,
-1985, 1999; Zinbarg et al., 2005, 2006, for omega hierarchical
-specifically), standardized Cronbach's alpha (Cronbach, 1951), and the H
-index (construct replicability; Hancock & Mueller, 2001).
+Each row of the result describes one composite, that is, the
+unit-weighted sum of a set of variables: the whole scale, or the
+variables assigned to one group factor. Each omega is the share of the
+composite's variance that the model gives to the factors (McDonald,
+1978, 1985, 1999; Zinbarg et al., 2005, 2006):
 
-The omegas give the share of true score variance in a unit-weighted
-composite. Omega total is the share due to all factors together. Omega
-hierarchical is the share due to the general factor only. Omega subscale
-is the share due to the group factors: for the whole scale, or for one
-specific group factor in a subscale composite.
+- **Omega total** (`omega_total`): the share due to all factors. On a
+  group-factor row, it is the omega S of Rodriguez et al. (2016a,
+  2016b).
 
-Alpha is the standardized coefficient, computed from the correlation
-matrix of the items. Where no such matrix is available – for `lavaan`
-input, and for components supplied without one – alpha is computed from
-the model-implied correlation matrix instead, so it then reflects the
-fitted model rather than the raw data.
+- **Omega hierarchical** (`omega_hierarchical`): the share due to the
+  general factor. On the whole-scale row, it tells whether the total
+  score measures one construct.
 
-The H index is the reliability of an optimally weighted composite. A low
-value means the factor is not well defined by its indicators.
+- **Omega subscale** (`omega_subscale`): the share due to the group
+  factors; on a group-factor row, the share due to its own group factor.
+  There, it is the omega HS of Rodriguez et al. (2016a, 2016b): what the
+  subscale score measures in addition to the general factor.
 
-All of these coefficients describe the raw sum of the variables as
-fitted, without reverse-coding. If some items are keyed in the opposite
-direction – for example, a reverse-worded item that was not
-reverse-scored – they lower that sum's true-score variance. The
-coefficients then look poor even though the model fits well. The
-function warns when it detects this. Reverse-code such items before
-fitting the solution (Flora, 2020).
+On the whole-scale row, omega total is omega hierarchical plus omega
+subscale. On a group-factor row, omega total can be larger, because
+cross-loadings on other group factors add true-score variance.
 
-The sum these coefficients describe is not always the sum of the raw
-answers. Polychoric and tetrachoric correlations describe the continuous
-latent responses assumed to underlie ordinal answers; a `lavaan` fit
-that declares its indicators `ordered` does the same. In that case the
-loadings, the uniquenesses, the correlation matrix, and the coefficients
-are all on that latent-response metric. They give the reliability of the
-unit-weighted sum of the latent responses, which is not observed – not
-the reliability of the ordinal sum score the user actually computes from
-the answers. The two can differ substantially, especially where the
-answers use few categories or are strongly skewed. Green and Yang (2009)
-give an omega for the ordinal sum score itself, computed from the fitted
-model and its thresholds; this package does not compute it. Pearson
-correlations raise no such distinction, because their metric is the
-answers as scored.
+The other coefficients are:
 
-Omega total is lower when a solution reproduces the observed
-correlations poorly, because residual covariance does not count as true
-score. [`psych::omega()`](https://rdrr.io/pkg/psych/man/omega.html)
-computes the whole-scale omega total differently: residually, from the
-observed total-score variance. The two agree when the model reproduces
-the correlations exactly, and diverge otherwise.
+- **Alpha** (`alpha`): standardized Cronbach's alpha (Cronbach, 1951).
+  It assumes essentially tau-equivalent variables and is a lower bound
+  otherwise. For a multidimensional scale, it is rarely the coefficient
+  to report (Gignac, 2014).
 
-The three coefficients are not generally additive. Omega total need not
-equal omega hierarchical plus omega subscale, except on the whole-scale
-row under `variance = "sums_load"`.
+- **H index** (`H`): the reliability of an optimally weighted composite
+  (Hancock & Mueller, 2001). A low value shows that the variables do not
+  define the factor well.
 
-A single-factor solution is scored as such on every input route, and
-returns omega total, alpha, and the H index. Alpha assumes essentially
-tau-equivalent items, an assumption nested within a one-factor model –
-so a single factor is the case where reporting alpha is defensible, not
-merely possible.
+- **ECV** and **PUC** (general factor only): the share of the common
+  variance due to the general factor, and the proportion of correlations
+  between variables of different group factors (Bonifay et al., 2015;
+  Reise et al., 2013; Rodriguez et al., 2016a, 2016b). Together, they
+  tell whether a unidimensional model is acceptable.
 
-The other coefficients are omitted because a single factor does not
-define them: omega subscale is the variance due to the group factors,
-and there are none; omega hierarchical would equal omega total, since
-the one factor accounts for all common variance; and ECV and PUC would
-both be 1 by construction, which reflects the number of factors in the
-model rather than evidence of unidimensionality.
-
-Each coefficient answers a different question:
-
-- Omega hierarchical: can the total score be read as a measure of one
-  construct?
-
-- Omega subscale: does a subscale score add anything beyond the general
-  factor?
-
-- The H index: is a factor well defined by its indicators?
-
-- ECV together with PUC: is a unidimensional model defensible?
-
-Alpha assumes essentially tau-equivalent items. Factor analysis instead
-yields congeneric solutions, for which alpha is only a lower bound. For
-a multidimensional scale, alpha is rarely the coefficient to report
-(Gignac, 2014).
-
-Composite reliability and average variance extracted (AVE) are not among
-the coefficients this function computes. Use
+A solution without a general factor (a correlated-factors solution)
+gives omega total, alpha, and the H index of each factor, and omega
+total and alpha of the whole scale, whose row is labelled `"total"`.
+Omega subscale is not given: it is the share in addition to a general
+factor, and when the factors correlate, it is not a share of the
+variance. A single-factor solution gives omega total, alpha, and the H
+index. Use
 [`semTools::compRelSEM()`](https://rdrr.io/pkg/semTools/man/compRelSEM.html)
-and [`semTools::AVE()`](https://rdrr.io/pkg/semTools/man/AVE.html) to
-compute them from a `lavaan` fit.
+for composite reliability and
+[`semTools::AVE()`](https://rdrr.io/pkg/semTools/man/AVE.html) for the
+average variance extracted of a `lavaan` fit.
 
-The common-variance indices ECV and PUC (Bonifay et al., 2015; Reise et
-al., 2013; Rodriguez et al., 2016a, 2016b) describe the general factor,
-so they are reported for the general factor only. ECV is the share of
-the common variance explained by the general factor. PUC is the
-proportion of correlations that reflect general-factor variance alone –
-correlations between indicators of different group factors. The higher
-the PUC, the more the general factor resembles the single factor of a
-unidimensional model.
+### Total variance
+
+With `variance = "correlation"`, the variance of a composite is the sum
+of its block of the correlation matrix, so residual correlations that
+the model does not reproduce change omega total. With `"sums_load"`, it
+is the model-implied variance. `lavaan` input always uses the
+model-implied variance, which includes freed residual covariances.
+[`psych::omega()`](https://rdrr.io/pkg/psych/man/omega.html) gives other
+values: it computes the whole-scale omega total from the residual
+variances, and it leaves cross-loadings out of the whole-scale omega
+subscale and of the omega total of a subscale.
+
+### Reverse-keyed and ordinal variables
+
+The coefficients describe the raw sum of the variables as fitted.
+Variables keyed in the opposite direction decrease the true-score
+variance of that sum, and the function warns when it finds such
+variables. Reverse-code them before you fit the solution (Flora, 2020).
+
+With polychoric or tetrachoric correlations, or a `lavaan` fit with
+`ordered` variables, the coefficients describe the sum of the latent
+continuous responses, not the sum of the ordinal answers. The two can be
+very different when the answers have few categories or are skewed. Green
+and Yang (2009) give an omega for the ordinal sum score; this function
+does not compute it.
 
 ### Input
 
-`efa_reliability()` reads several kinds of input, illustrated in the
-examples below.
-
-- **An oblique
+- **An
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  solution** is scored as the correlated-factors model it is. It has no
-  general factor, so it omits the bifactor indices (omega hierarchical,
-  ECV, and PUC). Its whole-scale row is labelled `"total"` rather than
-  `"g"`.
+  solution.** An oblique solution is a correlated-factors solution. An
+  orthogonal solution is scored in the same way, with factor
+  correlations of 0. A `"bifactorT"` solution is a bifactor solution,
+  whose general factor is the factor that loads on every variable (the
+  column whose smallest absolute loading is largest). A `"bifactorQ"`
+  solution, whose group factors are correlated, and an unrotated
+  solution with two or more factors are refused.
 
 - **An
   [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
-  solution** – or a `schmid` object from
-  [`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html), or a
-  raw bifactor loading matrix with the general factor in its first
-  column – is scored as a bifactor solution, with the whole-scale row
-  labelled `"g"`. Indicator-to-factor correspondences come from
-  `factor_map` if supplied (see `factor_map` below). Without one, an
-  [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
   or [`psych::schmid()`](https://rdrr.io/pkg/psych/man/schmid.html)
-  solution is mapped by each variable's strongest group loading. A raw
-  bifactor matrix instead defaults to its exact zero pattern – supply
-  `factor_map` explicitly if that matrix has no exact zeros (e.g. an
-  estimated rather than a target matrix).
+  solution**, or the loading table of an
+  [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
+  solution: a bifactor solution.
 
-- **A `lavaan` fit** – single-factor, correlated-factors, second-order,
-  or bifactor – is scored per its structure. The structure is detected
-  automatically, not taken from `g_name`. The general-factor
-  coefficients need the latent factors to be uncorrelated: fit a
-  bifactor model with `orthogonal = TRUE` (`lavaan`'s default leaves the
-  factors correlated), and leave a second-order model's first-order
-  factor covariances at zero. A fit whose factors correlate is rejected
-  rather than scored as though they did not. `variance` is not used for
-  `lavaan` input: its composite variances are always model-implied,
-  computed separately per group for a multiple-group fit.
+- **A loading matrix.** Without `Phi`, the first column is the general
+  factor and the other columns are the group factors. With `Phi`, the
+  matrix is the pattern matrix of a correlated-factors solution (not the
+  structure matrix). Give the variable names as row names. A pattern
+  matrix needs `cormat` for `variance = "correlation"`.
 
-- **A pattern matrix with its `Phi`** – for example, the loadings and
-  `Phi` of an oblique
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  solution – is scored as the correlated-factors solution it represents.
-  Uniquenesses are derived from the loadings under `Phi`, unless `u2` is
-  given. Supply the pattern matrix, not the structure matrix – the
-  structure matrix would be read as a pattern too, giving the wrong
-  result. Unlike a fitted solution, this pair carries no correlation
-  matrix. `variance = "correlation"` then needs one, supplied in
-  `cormat`, and errors without it. `variance = "sums_load"` needs none.
+- **A `lavaan` fit**: single-factor, correlated-factors (cross-loadings
+  are permitted), second-order, or bifactor. A fit is a bifactor
+  solution if variables load on a factor named `g_name` and on other
+  factors. Fit it with `orthogonal = TRUE`, because the coefficients
+  need uncorrelated factors. A second-order solution is Schmid-Leiman
+  transformed. A multiple-group fit is scored per group.
 
-A one-factor solution – a one-column loading matrix, a single-factor
-`lavaan` fit, a single-factor
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-solution, or single-factor components – is scored the same way
-regardless of route (see Coefficients above for what it returns). Its
-row is labelled with the factor's own name, with `fac_names` if
-supplied, or with `"F1"` if neither names it; it is never labelled
-`"g"`.
-
-Manually supplied components (`g_load`, `s_load`, `u2`, `var_names`,
-`Phi`) follow the same reading rules as the matrix routes above. Do not
-pass a correlation matrix as `s_load` (or as `model`, for the matrix
-routes) – supply it as `cormat` instead.
+Without `factor_map`, each variable is assigned to the group factor with
+its largest absolute loading, and a variable without a group loading to
+none. A loading matrix or a Schmid-Leiman solution in which most
+variables have an exact zero group loading (a target matrix, or a
+transformed `lavaan` solution) uses its non-zero pattern instead. So
+does a `lavaan` fit, but in an ESEM block, each variable is assigned to
+the block's factor with its largest loading.
 
 ## See also
 
@@ -473,38 +333,29 @@ Other reliability coefficients:
 ## Examples
 
 ``` r
-## From an oblique EFA (correlated-factors) solution. With no factor_map, each
-## item is auto-assigned to its highest-loading factor.
+## From an oblique EFA (correlated-factors) solution. Each variable is assigned to the
+## factor with its largest loading.
 efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
                    estimator = "PAF", rotation = "promax")
 efa_reliability(efa_mod)
 #> 
-#> Total variance from the correlation matrix.
-#> 
-#> Correlated-factors solution: a factor's total omega counts the true score
-#> variance its composite receives from every factor, through its cross-loadings
-#> and any factor correlations; its subscale omega counts only that factor's own
-#> contribution.
-#> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
-#>         tot   sub  alpha    H
-#> total  .883         .868
-#> F1     .769  .734   .768  .760
-#> F2     .765  .680   .763  .753
-#> F3     .745  .667   .743  .738
+#>         tot  alpha    H
+#> total  .883   .868
+#> F1     .769   .768  .760
+#> F2     .765   .763  .753
+#> F3     .745   .743  .738
 
-## From a Schmid-Leiman solution, with an explicit indicator-to-factor map.
+## From a Schmid-Leiman solution, with an explicit variable-to-factor map.
 sl_mod <- efa_schmid_leiman(efa_mod, estimator = "PAF")
 fc <- sl_mod$sl[, c("F1", "F2", "F3")] >= .2
 efa_reliability(sl_mod, factor_map = fc)
 #> 
-#> Total variance from the correlation matrix.
-#> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
 #>      tot  hier   sub  alpha    H
-#> g   .883  .740  .125   .868  .842
+#> g   .883  .740  .143   .868  .842
 #> F1  .769  .500  .269   .768  .463
 #> F2  .765  .494  .270   .763  .472
 #> F3  .745  .519  .225   .743  .408
@@ -517,8 +368,6 @@ efa_reliability(sl_mod, factor_map = fc)
 ## Request a subset of the coefficients only.
 efa_reliability(sl_mod, factor_map = fc,
                 coefficients = c("omega_total", "alpha"))
-#> 
-#> Total variance from the correlation matrix.
 #> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
@@ -533,20 +382,13 @@ efa_reliability(sl_mod, factor_map = fc,
 efa_reliability(efa_mod$rot_loadings, Phi = efa_mod$Phi,
                 cormat = test_models$baseline$cormat)
 #> 
-#> Total variance from the correlation matrix.
-#> 
-#> Correlated-factors solution: a factor's total omega counts the true score
-#> variance its composite receives from every factor, through its cross-loadings
-#> and any factor correlations; its subscale omega counts only that factor's own
-#> contribution.
-#> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
-#>         tot   sub  alpha    H
-#> total  .883         .868
-#> F1     .769  .734   .768  .760
-#> F2     .765  .680   .763  .753
-#> F3     .745  .667   .743  .738
+#>         tot  alpha    H
+#> total  .883   .868
+#> F1     .769   .768  .760
+#> F2     .765   .763  .753
+#> F3     .745   .743  .738
 
 ## From lavaan fits: a bifactor solution, and a correlated-factors one.
 # \donttest{
@@ -559,43 +401,20 @@ mod <- paste(mod_cf, 'g =~ V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 +
              sep = "\n")
 fit <- lavaan::cfa(mod, sample.cov = test_models$baseline$cormat,
                    sample.nobs = 500, estimator = "ml", orthogonal = TRUE)
-print(efa_reliability(fit, g_name = "g"))
+efa_reliability(fit, g_name = "g")
 
-## No general factor: omega hierarchical, ECV, and PUC are omitted.
+## No general factor: omega hierarchical, omega subscale, ECV, and PUC are omitted.
 fit_cf <- lavaan::cfa(mod_cf, sample.cov = test_models$baseline$cormat,
                       sample.nobs = 500, estimator = "ml")
 efa_reliability(fit_cf)
 }
 #> 
-#> Total variance from the model-implied composite variance.
-#> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
-#>      tot  hier   sub  alpha    H
-#> g   .883  .765  .118   .868  .849
-#> F1  .748  .570  .177   .742  .379
-#> F2  .767  .501  .265   .762  .482
-#> F3  .769  .494  .274   .768  .473
-#> 
-#> ── Common-variance indices ─────────────────────────────────────────────────────
-#> 
-#>     ECV   PUC
-#> g  .672  .706
-#> ℹ Each variable loads on one factor only, so the fit is scored as a
-#>   correlated-factors solution; omega hierarchical, ECV, and PUC are not defined
-#>   for it and are omitted.
-#> 
-#> Total variance from the model-implied composite variance.
-#> 
-#> Correlated-factors solution: with no general factor, each factor's subscale
-#> omega equals its total omega.
-#> 
-#> ── Reliability coefficients ────────────────────────────────────────────────────
-#> 
-#>         tot   sub  alpha    H
-#> total  .882         .868
-#> F1     .744  .744   .743  .747
-#> F2     .764  .764   .763  .765
-#> F3     .768  .768   .768  .769
+#>         tot  alpha    H
+#> total  .882   .868
+#> F1     .744   .743  .747
+#> F2     .764   .763  .765
+#> F3     .768   .768  .769
 # }
 ```

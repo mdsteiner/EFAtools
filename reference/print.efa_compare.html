@@ -132,13 +132,20 @@ default): a negative cell means the first solution is the lower of the two there
 <span class="r-in"><span><span class="va">EFA_SPSS_5</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">IDS2_R</span>, n_factors <span class="op">=</span> <span class="fl">5</span>,</span></span>
 <span class="r-in"><span>                      estimate_control <span class="op">=</span> <span class="fu"><a href="estimate_control.html">estimate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"SPSS"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                      rotate_control <span class="op">=</span> <span class="fu"><a href="estimate_control.html">rotate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"SPSS"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`N` is <span style="color: #0000BB;">"NA"</span>; not all fit indices could be computed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Provide `N` or raw data to compute all fit indices.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Reached the maximum number of iterations without convergence; results may not</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> be interpretable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Only the <span style="color: #0000BB;">"promax"</span> and <span style="color: #0000BB;">"varimax"</span> rotations are validated against the SPSS</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> implementation.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> <span style="color: #0000BB;">"oblimin"</span> results may differ from those returned by SPSS.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># A type psych EFA to mimick the psych::fa() implementation</span></span></span>
 <span class="r-in"><span><span class="va">EFA_psych_5</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">IDS2_R</span>, n_factors <span class="op">=</span> <span class="fl">5</span>,</span></span>
 <span class="r-in"><span>                       estimate_control <span class="op">=</span> <span class="fu"><a href="estimate_control.html">estimate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"psych"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                       rotate_control <span class="op">=</span> <span class="fu"><a href="estimate_control.html">rotate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"psych"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`N` is <span style="color: #0000BB;">"NA"</span>; not all fit indices could be computed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Provide `N` or raw data to compute all fit indices.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># compare the two</span></span></span>
 <span class="r-in"><span><span class="va">comp</span> <span class="op">&lt;-</span> <span class="fu"><a href="efa_compare.html">efa_compare</a></span><span class="op">(</span><span class="va">EFA_SPSS_5</span><span class="op">$</span><span class="va">unrot_loadings</span>, <span class="va">EFA_psych_5</span><span class="op">$</span><span class="va">unrot_loadings</span>,</span></span>

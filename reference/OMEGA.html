@@ -368,11 +368,8 @@ To do this, <code>factor_corres</code> must be left <code>NULL</code>.</p>
 to it, counting every factor its variables load on; they differ only in the
 variance that is divided into. <code>variance = "correlation"</code> uses the composite's
 observed variance, giving the observed-score form of omega; <code>"sums_load"</code> uses its
-model-implied variance, which partitions exactly into omega hierarchical plus omega
-subscale on the whole-scale row. The two settings agree up to model misfit, and
-differ mainly in the whole-scale omega subscale, which counts all group-factor
-variance under <code>"sums_load"</code> but only the assigned subscale composites under
-<code>"correlation"</code>.</p>
+model-implied variance. With both settings, omega total is omega hierarchical plus
+omega subscale on the whole-scale row. The two settings agree up to model misfit.</p>
 </div>
 
     </div>
@@ -441,7 +438,7 @@ result.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">general factor (top row) and omegas and H index for the group factors:</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      tot  hier   sub     H   ECV   PUC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> g  0.883 0.740 0.125 0.842 0.652 0.706</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> g  0.883 0.740 0.143 0.842 0.652 0.706</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F1 0.769 0.500 0.269 0.463            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F2 0.765 0.494 0.270 0.472            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F3 0.745 0.519 0.225 0.408            </span>
@@ -458,7 +455,7 @@ result.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">general factor (top row) and omegas and H index for the group factors:</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       tot  hier   sub     H   ECV   PUC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> g   0.883 0.750 0.122 0.845 0.661 0.706</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> g   0.883 0.750 0.133 0.845 0.661 0.706</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F1* 0.769 0.498 0.272 0.466            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.766 0.494 0.271 0.473            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F3* 0.746 0.543 0.202 0.379            </span>
@@ -469,7 +466,7 @@ result.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">general factor (top row) and omegas and H index for the group factors:</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       tot  hier   sub     H   ECV   PUC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> g   0.883 0.750 0.122 0.845 0.661 0.706</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> g   0.883 0.750 0.133 0.845 0.661 0.706</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F1* 0.769 0.498 0.272 0.466            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F2* 0.765 0.494 0.270 0.473            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> F3* 0.745 0.543 0.202 0.379            </span>
@@ -492,7 +489,7 @@ result.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">general factor (top row) and omegas and H index for the group factors:</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     tot  hier   sub     H   ECV   PUC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> g 0.883 0.740 0.125 0.842 0.652 0.706</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> g 0.883 0.740 0.143 0.842 0.652 0.706</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.769 0.500 0.269 0.463            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.765 0.494 0.270 0.472            </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.745 0.519 0.225 0.408            </span>

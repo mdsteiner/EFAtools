@@ -137,20 +137,14 @@
 <code class="sourceCode R"><span></span>
 <span><span class="co"># Run multiple factor retention methods</span></span>
 <span><span class="fu"><a href="reference/efa_retain.html">efa_retain</a></span><span class="op">(</span><span class="va">GRiPS_raw</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The suggested maximum number of factors was 2, but the Hull method needs at</span></span>
-<span><span class="co">#&gt; least 3.</span></span>
-<span><span class="co">#&gt; ℹ Setting it to 3.</span></span>
-<span><span class="co">#&gt; ── Tests for the suitability of the data for factor analysis ───────────────────</span></span>
+<span><span class="co">#&gt; ── Sampling adequacy and sphericity ────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:</span></span>
-<span><span class="co">#&gt;   χ²(28) = 5054.06, p &lt; .001. These data are probably suitable for factor</span></span>
-<span><span class="co">#&gt;   analysis.</span></span>
-<span><span class="co">#&gt; ✔ The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.955). These data are</span></span>
-<span><span class="co">#&gt;   probably suitable for factor analysis.</span></span>
+<span><span class="co">#&gt; ✔ Overall KMO = 0.955: marvellous (Kaiser &amp; Rice, 1974).</span></span>
+<span><span class="co">#&gt; ✔ Bartlett's test of sphericity: χ²(28) = 5054.06, p &lt; .001 (significant).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Suggested number of factors ─────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; 9 suggestions from 6 criteria, all suggesting 1 factor.</span></span>
+<span><span class="co">#&gt; 7 suggestions from 6 criteria, all suggesting 1 factor.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Comparison data</span></span>
 <span><span class="co">#&gt; • Suggested number of factors: 1</span></span>
@@ -161,8 +155,6 @@
 <span><span class="co">#&gt; Hull method</span></span>
 <span><span class="co">#&gt; Estimator: ML</span></span>
 <span><span class="co">#&gt; • CAF: 1</span></span>
-<span><span class="co">#&gt; • CFI: 1</span></span>
-<span><span class="co">#&gt; • RMSEA: 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Minimum average partial</span></span>
 <span><span class="co">#&gt; • Original implementation (TR2): 1</span></span>
@@ -172,34 +164,27 @@
 <span><span class="co">#&gt; • Suggested number of factors: 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Parallel analysis</span></span>
-<span><span class="co">#&gt; Eigenvalues found using SMC; 1000 simulated datasets.</span></span>
-<span><span class="co">#&gt; • SMC: 1</span></span></code></pre></div>
+<span><span class="co">#&gt; Eigenvalues found using PCA; 1000 simulated datasets.</span></span>
+<span><span class="co">#&gt; • PCA: 1</span></span></code></pre></div>
 <p>With a correlation matrix, <code><a href="reference/efa_retain.html">efa_retain()</a></code> skips the criteria that need raw data:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="reference/efa_retain.html">efa_retain</a></span><span class="op">(</span><span class="va">DOSPERT</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="va">DOSPERT</span><span class="op">$</span><span class="va">N</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: `x` is a correlation matrix, but "CD" needs raw data.</span></span>
-<span><span class="co">#&gt; ℹ Skipping "CD".</span></span>
-<span><span class="co">#&gt; ── Tests for the suitability of the data for factor analysis ───────────────────</span></span>
+<span><span class="co">#&gt; ── Sampling adequacy and sphericity ────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ✔ The Bartlett's test of sphericity was significant at an alpha level of .05:</span></span>
-<span><span class="co">#&gt;   χ²(780) = 16071.13, p &lt; .001. These data are probably suitable for factor</span></span>
-<span><span class="co">#&gt;   analysis.</span></span>
-<span><span class="co">#&gt; ✔ The Kaiser-Meyer-Olkin criterion is meritorious (KMO = 0.9). These data are</span></span>
-<span><span class="co">#&gt;   probably suitable for factor analysis.</span></span>
+<span><span class="co">#&gt; ✔ Overall KMO = 0.9: meritorious (Kaiser &amp; Rice, 1974).</span></span>
+<span><span class="co">#&gt; ✔ Bartlett's test of sphericity: χ²(780) = 16071.13, p &lt; .001 (significant).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Suggested number of factors ─────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; 8 suggestions from 5 criteria, ranging from 1 to 12 factors (most common: 10).</span></span>
+<span><span class="co">#&gt; 6 suggestions from 5 criteria, ranging from 1 to 10 factors (most common: 10).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Empirical Kaiser Criterion</span></span>
 <span><span class="co">#&gt; • Braeken &amp; van Assen (2017): 10</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Hull method</span></span>
 <span><span class="co">#&gt; Estimator: ML</span></span>
-<span><span class="co">#&gt; • CAF: 12</span></span>
-<span><span class="co">#&gt; • CFI: 1</span></span>
-<span><span class="co">#&gt; • RMSEA: 1</span></span>
+<span><span class="co">#&gt; • CAF: 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Minimum average partial</span></span>
 <span><span class="co">#&gt; • Original implementation (TR2): 5</span></span>
@@ -209,12 +194,12 @@
 <span><span class="co">#&gt; • Suggested number of factors: 10</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Parallel analysis</span></span>
-<span><span class="co">#&gt; Eigenvalues found using SMC; 1000 simulated datasets.</span></span>
-<span><span class="co">#&gt; • SMC: 12</span></span>
+<span><span class="co">#&gt; Eigenvalues found using PCA; 1000 simulated datasets.</span></span>
+<span><span class="co">#&gt; • PCA: 7</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── Criteria that could not be run ──────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; ── Criteria not run ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ! CD: needs raw data, but a correlation matrix was supplied</span></span></code></pre></div>
+<span><span class="co">#&gt; • CD: needs raw data, but a correlation matrix was supplied</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="efa">EFA<a class="anchor" aria-label="anchor" href="#efa"></a>
@@ -223,16 +208,15 @@
 <h4 id="raw-data-input">Raw-Data Input<a class="anchor" aria-label="anchor" href="#raw-data-input"></a>
 </h4>
 <p>With raw data, you can use every feature: sandwich and bootstrap standard errors, DWLS estimation with polychoric correlations, and two-stage FIML estimation of correlations.</p>
-<p>In the first example below, which uses bootstrap SEs (<code>se = "np-boot"</code>), the confidence intervals are percentile intervals over refitted resamples. For the loadings and factor correlations, the intervals are centred on the point estimate. For the indices derived from the chi-square (RMSEA, AIC, BIC, ECVI), the intervals are located above the point estimate, because each resample carries the sample’s own misfit plus fresh sampling noise. So a point estimate can fall below its own lower bound in some cases. CFI and TLI are unaffected because they are ratios: their baseline chi-square shifts together with the model chi-square.</p>
+<p>In the first example below, which uses bootstrap SEs (<code>se = "np-boot"</code>), the confidence intervals are percentile intervals over refitted resamples. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> shows them for the loadings and factor correlations. For CFI and TLI, <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> shows bootstrap intervals from cases transformed so that their misfit equals the estimated misfit (Yuan, Hayashi, &amp; Yanagihara, 2007; see <code><a href="reference/efa_fit.html">?efa_fit</a></code>). Without this transformation, each resample adds sampling misfit to the misfit the sample already has, and the intervals move toward worse fit.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
-<span><span class="co"># ULS / MINRES estimation with oblimin rotation and bootstrap SEs</span></span>
-<span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">DOSPERT_raw</span>, n_factors <span class="op">=</span> <span class="fl">5</span>, estimator <span class="op">=</span> <span class="st">"uls"</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span>,</span>
+<span><span class="co"># ULS / MINRES estimation with (the default) oblimin rotation and bootstrap SEs</span></span>
+<span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">DOSPERT_raw</span>, n_factors <span class="op">=</span> <span class="fl">5</span>, estimator <span class="op">=</span> <span class="st">"uls"</span>,</span>
 <span>               se <span class="op">=</span> <span class="st">"np-boot"</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ℹ `x` is not a correlation matrix; computing correlations from the raw data.</span></span>
 <span><span class="va">mod</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = 'ULS' and rotation = 'oblimin'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'ULS' and rotation = 'oblimin' (N = 3123).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Rotated Loadings ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -289,35 +273,22 @@
 <span><span class="co">#&gt; ── Model Fit ───────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; χ²(295) = 3604.56, p &lt; .001</span></span>
-<span><span class="co">#&gt; CFI [95% bootstrap-CI]: .90 [.88, .90]</span></span>
-<span><span class="co">#&gt; TLI [95% bootstrap-CI]: .85 [.82, .85]</span></span>
-<span><span class="co">#&gt; RMSEA [90% CI] [95% bootstrap-CI]: .06 [.06; .06] [.06, .07]</span></span>
-<span><span class="co">#&gt; AIC [95% bootstrap-CI]: 3014.56 [3034.98, 3700.48]</span></span>
-<span><span class="co">#&gt; BIC [95% bootstrap-CI]: 1230.83 [1251.25, 1916.74]</span></span>
-<span><span class="co">#&gt; ECVI [95% bootstrap-CI]: 1.26 [1.27, 1.48]</span></span>
-<span><span class="co">#&gt; CAF [95% bootstrap-CI]: .43 [.43, .45]</span></span>
-<span><span class="co">#&gt; SRMR [95% bootstrap-CI]: .03 [.03, .04]</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Note: Bootstrap CIs based on 1000 bootstrap samples.</span></span>
+<span><span class="co">#&gt; CFI [95% bootstrap CI]: .90 [.88; .91]</span></span>
+<span><span class="co">#&gt; TLI [95% bootstrap CI]: .85 [.83; .86]</span></span>
+<span><span class="co">#&gt; RMSEA [90% CI]: .06 [.06; .06]</span></span>
+<span><span class="co">#&gt; SRMR: .03</span></span>
 <span><span class="co"># detailed output with summary()</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = 'ULS' and rotation = 'oblimin'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'ULS' and rotation = 'oblimin' (N = 3123).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Model Diagnostics ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Factors: 5</span></span>
-<span><span class="co">#&gt; Variables: 30</span></span>
 <span><span class="co">#&gt; N: 3123</span></span>
 <span><span class="co">#&gt; Bootstrap samples: 1000</span></span>
 <span><span class="co">#&gt; Valid target-rotated samples: 1000 out of 1000</span></span>
 <span><span class="co">#&gt; Rotation local optima: 1 distinct from 6 of 101 starts</span></span>
 <span><span class="co">#&gt; Heywood cases: 0</span></span>
-<span><span class="co">#&gt; Cross-loading items (|loading| &gt;= .300): 0</span></span>
-<span><span class="co">#&gt; Items without salient loading (|loading| &gt;= .300): 0</span></span>
-<span><span class="co">#&gt; Factors with fewer than 3 salient indicators: 0</span></span>
-<span><span class="co">#&gt; Items with primary-loading gap &lt; .200: 2</span></span>
-<span><span class="co">#&gt; Largest |residual|: .246</span></span>
 <span><span class="co">#&gt; Factor intercorrelations &gt; .85: none</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Rotated Loadings ────────────────────────────────────────────────────────────</span></span>
@@ -464,14 +435,13 @@
 <span><span class="co">#&gt; ── Model Fit ───────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; χ²(295) = 3604.56, p &lt; .001</span></span>
-<span><span class="co">#&gt; CFI [95% bootstrap-CI]: .90 [.88, .90]</span></span>
-<span><span class="co">#&gt; TLI [95% bootstrap-CI]: .85 [.82, .85]</span></span>
-<span><span class="co">#&gt; RMSEA [90% CI] [95% bootstrap-CI]: .06 [.06; .06] [.06, .07]</span></span>
-<span><span class="co">#&gt; AIC [95% bootstrap-CI]: 3014.56 [3034.98, 3700.48]</span></span>
-<span><span class="co">#&gt; BIC [95% bootstrap-CI]: 1230.83 [1251.25, 1916.74]</span></span>
-<span><span class="co">#&gt; ECVI [95% bootstrap-CI]: 1.26 [1.27, 1.48]</span></span>
-<span><span class="co">#&gt; CAF [95% bootstrap-CI]: .43 [.43, .45]</span></span>
-<span><span class="co">#&gt; SRMR [95% bootstrap-CI]: .03 [.03, .04]</span></span>
+<span><span class="co">#&gt; CFI [95% bootstrap CI]: .90 [.88; .91]</span></span>
+<span><span class="co">#&gt; TLI [95% bootstrap CI]: .85 [.83; .86]</span></span>
+<span><span class="co">#&gt; RMSEA [90% CI]: .06 [.06; .06]</span></span>
+<span><span class="co">#&gt; SRMR: .03</span></span>
+<span><span class="co">#&gt; AIC: 3014.56</span></span>
+<span><span class="co">#&gt; BIC: 1230.83</span></span>
+<span><span class="co">#&gt; ECVI: 1.26</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Note: Bootstrap CIs based on 1000 bootstrap samples.</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -684,7 +654,6 @@
 <span><span class="co"># DWLS estimation based on polychoric correlations, with robust sandwich SEs</span></span>
 <span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">GRiPS_raw</span>, n_factors <span class="op">=</span> <span class="fl">1</span>, estimator <span class="op">=</span> <span class="st">"dwls"</span>, cor_method <span class="op">=</span> <span class="st">"poly"</span>,</span>
 <span>               se <span class="op">=</span> <span class="st">"sandwich"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ℹ `x` is not a correlation matrix; computing correlations from the raw data.</span></span>
 <span><span class="co">#&gt; Warning: 22 variable pairs have an empty response-category combination despite a</span></span>
 <span><span class="co">#&gt; non-negligible expected count.</span></span>
 <span><span class="co">#&gt; ✖ Affected pairs: "fun-friends", "fun-attracted", "friends-enjoy",</span></span>
@@ -695,7 +664,8 @@
 <span><span class="co">#&gt;   in these variables.</span></span>
 <span><span class="va">mod</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = 'DWLS' and rotation = 'none'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'DWLS' and rotation = 'none'</span></span>
+<span><span class="co">#&gt;   (polychoric correlations, N = 810).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Unrotated Loadings ──────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -721,25 +691,16 @@
 <span><span class="co">#&gt; CFI: .99</span></span>
 <span><span class="co">#&gt; TLI: .99</span></span>
 <span><span class="co">#&gt; RMSEA [90% CI]: .12 [.10; .13]</span></span>
-<span><span class="co">#&gt; AIC: NA</span></span>
-<span><span class="co">#&gt; BIC: NA</span></span>
-<span><span class="co">#&gt; CAF: .49</span></span>
 <span><span class="co">#&gt; SRMR: .02</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = 'DWLS' and rotation = 'none'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'DWLS' and rotation = 'none'</span></span>
+<span><span class="co">#&gt;   (polychoric correlations, N = 810).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Model Diagnostics ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Factors: 1</span></span>
-<span><span class="co">#&gt; Variables: 8</span></span>
 <span><span class="co">#&gt; N: 810</span></span>
 <span><span class="co">#&gt; Heywood cases: 0</span></span>
-<span><span class="co">#&gt; Cross-loading items (|loading| &gt;= .300): 0</span></span>
-<span><span class="co">#&gt; Items without salient loading (|loading| &gt;= .300): 0</span></span>
-<span><span class="co">#&gt; Factors with fewer than 3 salient indicators: 0</span></span>
-<span><span class="co">#&gt; Items with primary-loading gap &lt; .200: 0</span></span>
-<span><span class="co">#&gt; Largest |residual|: .038</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Unrotated Loadings ──────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -753,7 +714,7 @@
 <span><span class="co">#&gt; chances    .817  .668  .332</span></span>
 <span><span class="co">#&gt; attracted  .859  .738  .262</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── 95% Wald CIs for salient unrotated loadings ─────────────────────────────────</span></span>
+<span><span class="co">#&gt; ── 95% Wald CIs (robust sandwich) for salient unrotated loadings ───────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Variable   Factor  est    lower  upper</span></span>
 <span><span class="co">#&gt; fun        F1       .818   .798   .838</span></span>
@@ -765,6 +726,12 @@
 <span><span class="co">#&gt; chances    F1       .817   .795   .840</span></span>
 <span><span class="co">#&gt; attracted  F1       .859   .842   .877</span></span>
 <span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── Simple Structure Diagnostics ────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; All items have a salient loading (|loading| &gt;= .300) and no cross-loading</span></span>
+<span><span class="co">#&gt; (|loading| &gt;= .300), all primary-loading gaps are at least .200, and all</span></span>
+<span><span class="co">#&gt; factors have at least 3 salient indicators.</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Variances Accounted for ─────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                 F1</span></span>
@@ -777,12 +744,7 @@
 <span><span class="co">#&gt; CFI: .99</span></span>
 <span><span class="co">#&gt; TLI: .99</span></span>
 <span><span class="co">#&gt; RMSEA [90% CI]: .12 [.10; .13]</span></span>
-<span><span class="co">#&gt; AIC: NA</span></span>
-<span><span class="co">#&gt; BIC: NA</span></span>
-<span><span class="co">#&gt; CAF: .49</span></span>
 <span><span class="co">#&gt; SRMR: .02</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Note: Wald CIs from the robust (Godambe) sandwich covariance.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Residual Diagnostics ────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -806,7 +768,7 @@
 <span>           rotation <span class="op">=</span> <span class="st">"oblimin"</span>, se <span class="op">=</span> <span class="st">"information"</span><span class="op">)</span></span>
 <span><span class="va">mod</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = 'ML' and rotation = 'oblimin'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'ML' and rotation = 'oblimin' (N = 500).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Rotated Loadings ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -852,27 +814,16 @@
 <span><span class="co">#&gt; CFI: .99</span></span>
 <span><span class="co">#&gt; TLI: .98</span></span>
 <span><span class="co">#&gt; RMSEA [90% CI]: .02 [.00; .03]</span></span>
-<span><span class="co">#&gt; AIC: -80.25</span></span>
-<span><span class="co">#&gt; BIC: -510.14</span></span>
-<span><span class="co">#&gt; ECVI: 0.52</span></span>
-<span><span class="co">#&gt; CAF: .50</span></span>
 <span><span class="co">#&gt; SRMR: .03</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = 'ML' and rotation = 'oblimin'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = 'ML' and rotation = 'oblimin' (N = 500).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Model Diagnostics ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Factors: 3</span></span>
-<span><span class="co">#&gt; Variables: 18</span></span>
 <span><span class="co">#&gt; N: 500</span></span>
 <span><span class="co">#&gt; Rotation local optima: 1 distinct from 6 of 101 starts</span></span>
 <span><span class="co">#&gt; Heywood cases: 0</span></span>
-<span><span class="co">#&gt; Cross-loading items (|loading| &gt;= .300): 0</span></span>
-<span><span class="co">#&gt; Items without salient loading (|loading| &gt;= .300): 0</span></span>
-<span><span class="co">#&gt; Factors with fewer than 3 salient indicators: 0</span></span>
-<span><span class="co">#&gt; Items with primary-loading gap &lt; .200: 1</span></span>
-<span><span class="co">#&gt; Largest |residual|: .069</span></span>
 <span><span class="co">#&gt; Factor intercorrelations &gt; .85: none</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Rotated Loadings ────────────────────────────────────────────────────────────</span></span>
@@ -897,7 +848,7 @@
 <span><span class="co">#&gt; V17   .652  -.035  -.013  .390  .610</span></span>
 <span><span class="co">#&gt; V18   .549   .012   .052  .349  .651</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── 95% Wald CIs for salient rotated loadings ───────────────────────────────────</span></span>
+<span><span class="co">#&gt; ── 95% Wald CIs (expected information) for salient rotated loadings ────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Variable  Factor  est    lower  upper</span></span>
 <span><span class="co">#&gt; V13       F1       .612   .488   .736</span></span>
@@ -926,7 +877,7 @@
 <span><span class="co">#&gt; F2   .591  1.000</span></span>
 <span><span class="co">#&gt; F3   .621   .596  1.000</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── 95% Wald CIs for factor intercorrelations ───────────────────────────────────</span></span>
+<span><span class="co">#&gt; ── 95% Wald CIs (expected information) for factor intercorrelations ────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Factors   est    lower  upper</span></span>
 <span><span class="co">#&gt; F1 ~~ F2   .591   .499   .683</span></span>
@@ -976,11 +927,10 @@
 <span><span class="co">#&gt; CFI: .99</span></span>
 <span><span class="co">#&gt; TLI: .98</span></span>
 <span><span class="co">#&gt; RMSEA [90% CI]: .02 [.00; .03]</span></span>
+<span><span class="co">#&gt; SRMR: .03</span></span>
 <span><span class="co">#&gt; AIC: -80.25</span></span>
 <span><span class="co">#&gt; BIC: -510.14</span></span>
 <span><span class="co">#&gt; ECVI: 0.52</span></span>
-<span><span class="co">#&gt; CAF: .50</span></span>
-<span><span class="co">#&gt; SRMR: .03</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Residual Diagnostics ────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>

@@ -212,8 +212,9 @@ analyse. Default is <code>500</code>.</p></dd>
 <dd><p>character. Simulation mode. The factor-retention criteria to
 evaluate the hit-rate for, any of <code>"CD"</code>, <code>"EKC"</code>, <code>"HULL"</code>, <code>"KGC"</code>, <code>"MAP"</code>,
 <code>"NEST"</code>, <code>"PARALLEL"</code>, and <code>"SMT"</code> (see <code><a href="efa_retain.html">efa_retain()</a></code>). Default is
-<code>c("EKC", "MAP")</code>. Criteria that simulate internally (<code>"CD"</code>, <code>"HULL"</code>,
-<code>"NEST"</code>, <code>"PARALLEL"</code>) make each run substantially slower.</p></dd>
+<code>c("EKC", "MAP")</code>. Apart from <code>estimator</code>, the criteria use the <code><a href="efa_retain.html">efa_retain()</a></code>
+defaults, for example PCA eigenvalues for <code>"KGC"</code> and <code>"PARALLEL"</code>, and the CAF for
+<code>"HULL"</code>. <code>"CD"</code> and <code>"HULL"</code> make each run substantially slower.</p></dd>
 
 
 <dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>

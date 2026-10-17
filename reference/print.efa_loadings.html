@@ -170,7 +170,7 @@ named <code>h2</code> vector is used in the supplied order.</p>
 <span class="r-in"><span>                        estimator <span class="op">=</span> <span class="st">"PAF"</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">EFAtools_PAF</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">promax</span>'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">promax</span>' (N = 500).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -217,9 +217,11 @@ named <code>h2</code> vector is used in the supplied order.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> CAF: .50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> χ²(102) = 123.92, <span style="font-style: italic;">p</span> = .069</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CFI: .99</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> TLI: .98</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RMSEA [90% CI]: .02 [.00; .03]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SRMR: .02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> df: 102</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># format() returns the same lines as a character vector:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">EFAtools_PAF</span><span class="op">$</span><span class="va">rot_loadings</span><span class="op">)</span><span class="op">)</span></span></span>

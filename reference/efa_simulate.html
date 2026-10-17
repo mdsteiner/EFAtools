@@ -81,7 +81,7 @@ and a misfit target perturbs the population with model error; see <em>Details</e
 <span>  target_cfi <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  marginals <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"normal"</span>, <span class="st">"empirical"</span>, <span class="st">"VM"</span>, <span class="st">"IG"</span><span class="op">)</span>,</span>
 <span>  marginal_data <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  n_factors <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_factors <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  skewness <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  kurtosis <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  force_pd <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -171,15 +171,13 @@ marginals supplied in <code>marginal_data</code>; or <code>"VM"</code> (Vale-Mau
 <dd><p>matrix or data frame. Only used with
 <code>marginals = "empirical"</code>, where it is required: a data set with one numeric
 column per variable (<code>p</code> columns), each with at least two distinct values,
-whose per-column distributions are resampled as the marginals of the drawn
-data. Its correlations are ignored. Default is <code>NULL</code>.</p></dd>
+whose per-column distributions become the marginals of the drawn data. Its
+correlations are ignored. Default is <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-n-factors">n_factors<a class="anchor" aria-label="anchor" href="#arg-n-factors"></a></dt>
-<dd><p>numeric. Only used with <code>marginals = "empirical"</code>: the number
-of factors the rank-matching reproduction fits. Default is <code>NULL</code>, in which
-case it is the number of columns of <code>Lambda</code> when the population is built
-from a factor model; it must be given when the population is supplied via <code>R</code>.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Ignored. Empirical marginals
+do not use a factor model.</p></dd>
 
 
 <dt id="arg-skewness">skewness<a class="anchor" aria-label="anchor" href="#arg-skewness"></a></dt>
@@ -196,14 +194,14 @@ applied to every variable or a length-<code>p</code> vector. Default is <code>NU
 
 
 <dt id="arg-force-pd">force_pd<a class="anchor" aria-label="anchor" href="#arg-force-pd"></a></dt>
-<dd><p>logical. Used with <code>marginals = "VM"</code> and with Cudeck-Browne model error
-(<code>model_error = "CB"</code>), where <code>FALSE</code> (the default) rejects a population or intermediate
-matrix that is not positive definite. What <code>TRUE</code> accepts instead differs by path, in
-both cases with a warning: for <code>marginals = "VM"</code> the intermediate correlation matrix is
-projected to the nearest correlation matrix (via <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth()</a></code>), and the returned
-<code>population</code> becomes the one the projected draw attains; for <code>model_error = "CB"</code> there is
-no such projection – the closest positive-definite perturbation is kept instead, whose
-achieved RMSEA is <strong>below</strong> the target. Has no effect for the <code>"TKL"</code> or <code>"WB"</code> methods.</p></dd>
+<dd><p>logical. Used with <code>marginals = "VM"</code> or <code>"empirical"</code> and with
+Cudeck-Browne model error (<code>model_error = "CB"</code>), where <code>FALSE</code> (the default) rejects an
+intermediate matrix or population that is not positive definite. With <code>TRUE</code>, a warning
+is given instead: for <code>"VM"</code> and <code>"empirical"</code>, the intermediate correlation matrix is
+smoothed to a positive-definite correlation matrix (as <code><a href="https://rdrr.io/pkg/psych/man/cor.smooth.html" class="external-link">psych::cor.smooth()</a></code> does), and
+the returned <code>population</code> becomes the one the smoothed draw attains; for <code>"CB"</code>, the closest
+positive-definite perturbation is kept, whose achieved RMSEA is <strong>below</strong> the target. Has
+no effect for the <code>"TKL"</code> or <code>"WB"</code> methods.</p></dd>
 
 
 <dt id="arg-categories">categories<a class="anchor" aria-label="anchor" href="#arg-categories"></a></dt>
@@ -288,9 +286,9 @@ global RNG state unchanged. Default is <code>NULL</code> (no seeding).</p></dd>
 <dt id="arg-return-pop">return_pop<a class="anchor" aria-label="anchor" href="#arg-return-pop"></a></dt>
 <dd><p>logical. If <code>TRUE</code>, return only the population correlation
 matrix and draw no data. Default is <code>FALSE</code>. Because no data are drawn, the
-Vale-Maurelli intermediate correlation matrix is never formed, so its
-positive-definiteness (and any <code>force_pd</code> projection of it) is neither checked nor
-reflected in the returned population.</p></dd>
+intermediate correlation matrix of <code>marginals = "VM"</code> or <code>"empirical"</code> is never
+formed, so its positive-definiteness (and any <code>force_pd</code> smoothing of it) is neither
+checked nor reflected in the returned population.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -303,9 +301,10 @@ category codes when <code>categories</code> is set, or a length-<code>n_datasets
 
 <dt>population</dt>
 <dd><p>The <code>p</code> by <code>p</code> population correlation matrix drawn from,
-model-error-perturbed when requested. When <code>force_pd = TRUE</code> causes <code>marginals = "VM"</code>'s intermediate matrix to be projected, <code>population</code> is the population the
-projected draw actually reaches, differing from the target by the drift the warning
-reports.</p></dd>
+model-error-perturbed when requested. When <code>force_pd = TRUE</code> causes the intermediate
+matrix of <code>marginals = "VM"</code> or <code>"empirical"</code> to be smoothed, <code>population</code> is the
+population the smoothed draw actually reaches, differing from the target by the drift
+the warning reports.</p></dd>
 
 <dt>model_error</dt>
 <dd><p><code>NULL</code>, or, when model error was applied, a list of the method, the
@@ -336,12 +335,17 @@ correlation/covariance structure) population. Cases with normal marginals (the
 default) are drawn through a matrix square root of the population correlation –
 a Cholesky factor, or a symmetric eigen square root when it is singular (e.g. a
 communality of exactly 1).</p>
-<p>With <code>marginals = "empirical"</code>, the iterative rank-matching algorithm of Ruscio
-and Kaczetow (2008) reproduces the population correlation while each variable
-takes the empirical marginal distribution of the matching column of
-<code>marginal_data</code> (resampled with replacement). Only the marginals of
-<code>marginal_data</code> are used; its own correlations are ignored, and the drawn columns
-follow the population's variables, not those of <code>marginal_data</code>.</p>
+<p>With <code>marginals = "empirical"</code>, each variable takes the empirical marginal distribution
+of the matching column of <code>marginal_data</code>; the correlations of <code>marginal_data</code> are
+ignored. Each dataset is a new draw of independent cases: normal deviates at an
+intermediate correlation, each mapped through the empirical quantile function of its
+column (Cario &amp; Nelson, 1997). The intermediate correlation of each pair is calculated
+once from the bivariate normal distribution (Mehler, 1866; Lancaster, 1957), so the
+data reproduce the population correlation, including any model error.
+Two marginals of very different shape cannot attain every correlation (for example,
+two binary variables with proportions .9 and .1); such a request is rejected. The
+pairwise solutions can also give an intermediate correlation matrix that is not
+positive definite, which is rejected unless <code>force_pd</code> allows it.</p>
 <p>With <code>marginals = "VM"</code> (Vale-Maurelli, 1983) or <code>"IG"</code> (the independent-generator
 method; Foldnes &amp; Olsson, 2016), the cases reproduce the population correlation
 while carrying non-normal marginals with the target <code>skewness</code> and (excess)
@@ -417,7 +421,11 @@ output is identical regardless of the number of workers.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Cudeck, R., &amp; Browne, M. W. (1992). Constructing a covariance matrix
+    <p>Cario, M. C., &amp; Nelson, B. L. (1997). Modeling and generating random
+vectors with arbitrary marginal distributions and correlation matrix. Technical
+report, Department of Industrial Engineering and Management Sciences, Northwestern
+University.</p>
+<p>Cudeck, R., &amp; Browne, M. W. (1992). Constructing a covariance matrix
 that yields a specified minimizer and a specified minimum discrepancy function
 value. Psychometrika, 57(3), 357-369. <a href="https://doi.org/10.1007/BF02295424" class="external-link">doi:10.1007/BF02295424</a></p>
 <p>Fleishman, A. I. (1978). A method for simulating non-normal
@@ -429,16 +437,19 @@ simulation approach? Psychometrika, 80(4), 1066-1083.
 nonnormal data with prespecified skewness, kurtosis, and covariance matrix.
 Multivariate Behavioral Research, 51(2-3), 207-219.
 <a href="https://doi.org/10.1080/00273171.2015.1133274" class="external-link">doi:10.1080/00273171.2015.1133274</a></p>
+<p>Lancaster, H. O. (1957). Some properties of the bivariate normal distribution
+considered in the form of a contingency table. Biometrika, 44(1/2), 289-292.
+<a href="https://doi.org/10.1093/biomet/44.1-2.289" class="external-link">doi:10.1093/biomet/44.1-2.289</a></p>
 <p>MacCallum, R. C. (2003). 2001 Presidential Address: Working with imperfect
 models. Multivariate Behavioral Research, 38(1), 113-139.
 <a href="https://doi.org/10.1207/S15327906MBR3801_5" class="external-link">doi:10.1207/S15327906MBR3801_5</a></p>
+<p>Mehler, F. G. (1866). Ueber die Entwicklung einer Function von beliebig vielen
+Variablen nach Laplaceschen Functionen höherer Ordnung. Journal für die reine und
+angewandte Mathematik, 66, 161-176. <a href="https://doi.org/10.1515/crll.1866.66.161" class="external-link">doi:10.1515/crll.1866.66.161</a></p>
 <p>Olsson, U. (1979). Maximum likelihood estimation of the polychoric correlation
 coefficient. Psychometrika, 44(4), 443-460. <a href="https://doi.org/10.1007/BF02296207" class="external-link">doi:10.1007/BF02296207</a></p>
 <p>Rubin, D. B. (1976). Inference and missing data. Biometrika, 63(3), 581-592.
 <a href="https://doi.org/10.1093/biomet/63.3.581" class="external-link">doi:10.1093/biomet/63.3.581</a></p>
-<p>Ruscio, J., &amp; Kaczetow, W. (2008). Simulating multivariate nonnormal data
-using an iterative algorithm. Multivariate Behavioral Research, 43(3),
-355-381. <a href="https://doi.org/10.1080/00273170802285693" class="external-link">doi:10.1080/00273170802285693</a></p>
 <p>Tucker, L. R., Koopman, R. F., &amp; Linn, R. L. (1969). Evaluation of factor
 analytic research procedures by means of simulated correlation matrices.
 Psychometrika, 34(4), 421-459. <a href="https://doi.org/10.1007/BF02290601" class="external-link">doi:10.1007/BF02290601</a></p>

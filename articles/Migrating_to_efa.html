@@ -95,7 +95,7 @@ In practice that means:</p>
 <ul>
 <li>They keep working with their <strong>original arguments</strong>,
 and calling them emits <strong>no warning or message</strong>. Existing
-scripts and saved analyses continue to run byte-for-byte unchanged.</li>
+scripts continue to run without changes.</li>
 <li>Their argument lists are <strong>frozen</strong>. New capabilities
 are added only to the <code>efa_*</code> functions, so an uppercase name
 will never grow a new argument.</li>
@@ -202,6 +202,16 @@ only the name changes.</p>
 broader than the <code><a href="../reference/OMEGA.html">OMEGA()</a></code> and <code><a href="../reference/FACTOR_SCORES.html">FACTOR_SCORES()</a></code>
 they replace, but they cover the same use cases and are the recommended
 way to obtain those quantities going forward.</p>
+<p><code><a href="../reference/efa_retain.html">efa_retain()</a></code> takes <code>estimator</code> and
+<code>alpha_CD</code> where <code><a href="../reference/N_FACTORS.html">N_FACTORS()</a></code> takes
+<code>method</code> and <code>alpha</code>. Its parallel analysis,
+Kaiser-Guttman criterion, and scree plot use PCA eigenvalues, and its
+Hull method uses the CAF and the 95th percentile in its parallel
+analysis by default. Thus, its results can differ from those of
+<code><a href="../reference/N_FACTORS.html">N_FACTORS()</a></code>, which keeps its own defaults. In the same way,
+<code><a href="../reference/efa_hull.html">efa_hull()</a></code> uses ML, the CAF, and PCA eigenvalues with the
+95th percentile by default, but <code><a href="../reference/HULL.html">HULL()</a></code> keeps PAF, all three
+indices, and SMC eigenvalues with the mean rule.</p>
 <p>Alongside the renamed functions, the package ships tools that have
 <strong>no uppercase predecessor</strong> — they are new, and available
 only under the <code>efa_*</code> interface (and the two control
@@ -321,9 +331,8 @@ different presets, but you do not have to.</li>
 <li>
 <strong>Three arguments were renamed.</strong> The estimator is
 selected with <code>estimator</code> instead of <code>method</code> —
-passing <code>method</code> to <code><a href="../reference/efa_fit.html">efa_fit()</a></code> is an error that
-points to the new name, while <code><a href="../reference/EFA.html">EFA()</a></code> keeps its
-<code>method</code> argument. <code>P_type</code> is now
+<code><a href="../reference/efa_fit.html">efa_fit()</a></code> has no <code>method</code> argument, while
+<code><a href="../reference/EFA.html">EFA()</a></code> keeps it. <code>P_type</code> is now
 <code>p_type</code>, and <code>randomStarts</code> is now
 <code>random_starts</code>; <code><a href="../reference/EFA.html">EFA()</a></code> still accepts those old
 spellings silently.</li>
@@ -331,21 +340,26 @@ spellings silently.</li>
 <strong>Rotation-engine extras</strong> — the criterion-specific
 arguments a rotation may take, such as <code>maxit</code>,
 <code>gam</code> (oblimin), or <code>delta</code> (geomin) — are passed
-through <code><a href="../reference/estimate_control.html">rotate_control()</a></code>’s <code>...</code> (or,
-equivalently, <code><a href="../reference/efa_fit.html">efa_fit()</a></code>’s own <code>...</code>). Both
-validate the names: an extra the selected rotation’s engine cannot
-consume (for example <code>gamma</code>, a misspelling of oblimin’s
-<code>gam</code>) is rejected with an error, where <code><a href="../reference/EFA.html">EFA()</a></code>
-silently ignores it.</li>
+through <code><a href="../reference/estimate_control.html">rotate_control()</a></code>’s <code>...</code>. It validates
+the names: an extra that no rotation engine can consume (for example
+<code>gamma</code>, a misspelling of oblimin’s <code>gam</code>) is
+rejected with an error, where <code><a href="../reference/EFA.html">EFA()</a></code> silently ignores
+it.</li>
+<li>
+<strong>The default rotation differs.</strong>
+<code><a href="../reference/efa_fit.html">efa_fit()</a></code>, <code><a href="../reference/efa_group.html">efa_group()</a></code>, and
+<code><a href="../reference/efa_mi.html">efa_mi()</a></code> use an oblimin rotation unless you set
+<code>rotation</code>, while <code><a href="../reference/EFA.html">EFA()</a></code> and
+<code><a href="../reference/EFA_POOLED.html">EFA_POOLED()</a></code> keep no rotation as their default.</li>
 </ul>
 <p>The side-by-side below reproduces an SPSS-style analysis. The old
 flat call and the new control-based call give identical results:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Old flat interface</span></span>
-<span><span class="va">efa_old</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/EFA.html">EFA</a></span><span class="op">(</span><span class="va">cor_mat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>, type <span class="op">=</span> <span class="st">"SPSS"</span><span class="op">)</span></span>
+<span><span class="va">efa_old</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/EFA.html">EFA</a></span><span class="op">(</span><span class="va">cor_mat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>, rotation <span class="op">=</span> <span class="st">"promax"</span>, type <span class="op">=</span> <span class="st">"SPSS"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># New interface: the SPSS preset travels through the two control objects</span></span>
-<span><span class="va">efa_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">cor_mat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>,</span>
+<span><span class="va">efa_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">cor_mat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>, rotation <span class="op">=</span> <span class="st">"promax"</span>,</span>
 <span>                   estimate_control <span class="op">=</span> <span class="fu"><a href="../reference/estimate_control.html">estimate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"SPSS"</span><span class="op">)</span>,</span>
 <span>                   rotate_control <span class="op">=</span> <span class="fu"><a href="../reference/estimate_control.html">rotate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"SPSS"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -358,16 +372,12 @@ flat call and the new control-based call give identical results:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">cor_mat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>, rotation <span class="op">=</span> <span class="st">"promax"</span>,</span>
 <span>        estimate_control <span class="op">=</span> <span class="fu"><a href="../reference/estimate_control.html">estimate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"SPSS"</span>, max_iter <span class="op">=</span> <span class="fl">500</span><span class="op">)</span>,</span>
 <span>        rotate_control   <span class="op">=</span> <span class="fu"><a href="../reference/estimate_control.html">rotate_control</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"SPSS"</span>, k <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>One behavioural difference is worth knowing about.
-<code><a href="../reference/efa_fit.html">efa_fit()</a></code> <strong>rejects</strong> a tuning knob passed
-directly, rather than silently ignoring it. This turns a common and
-previously invisible mistake into an immediate, informative error that
-names the constructor the knob belongs to:</p>
+<p><code><a href="../reference/efa_fit.html">efa_fit()</a></code> has no argument for a tuning knob, so a knob
+passed directly is an error, not silently ignored:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">cor_mat</span>, n_factors <span class="op">=</span> <span class="fl">3</span>, N <span class="op">=</span> <span class="fl">500</span>, max_iter <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Error: `max_iter` cannot be passed to `efa_fit()` directly.</span></span>
-<span><span class="co">#&gt; i The estimation and rotation tuning knobs live in `estimate_control()` and `rotate_control()`.</span></span>
-<span><span class="co">#&gt; i For example: `efa_fit(x, ..., estimate_control = estimate_control(max_iter = 500))`.</span></span></code></pre></div>
+<span><span class="co">#&gt; Error in efa_fit(cor_mat, n_factors = 3, N = 500, max_iter = 500) :</span></span>
+<span><span class="co">#&gt;   unused argument (max_iter = 500)</span></span></code></pre></div>
 <p>The same move — collecting flat estimation knobs into
 <code><a href="../reference/estimate_control.html">estimate_control()</a></code> — applies to the other functions that
 fit a model internally: <code><a href="../reference/efa_retain.html">efa_retain()</a></code>,

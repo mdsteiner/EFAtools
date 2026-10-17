@@ -50,10 +50,11 @@ CD(
 
 - cor_method:
 
-  character. One of `"pearson"`, `"spearman"`, or `"kendall"`, passed to
-  [`stats::cor()`](https://rdrr.io/r/stats/cor.html). `"poly"` and
-  `"tetra"` are not supported because `CD` compares the data against
-  simulated continuous reference data. Default is "pearson".
+  character. One of `"pearson"` (default), `"spearman"`, or `"kendall"`,
+  passed to [`stats::cor()`](https://rdrr.io/r/stats/cor.html). Ruscio
+  and Roche (2012) use Pearson correlations, and the comparison data
+  keep the observed values of each variable, so `"pearson"` also suits
+  ordinal data. `"poly"` and `"tetra"` are not available.
 
 - max_iter:
 

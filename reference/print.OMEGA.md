@@ -63,7 +63,7 @@ om
 #> general factor (top row) and omegas and H index for the group factors:
 #> 
 #>      tot  hier   sub     H   ECV   PUC
-#> g  0.883 0.740 0.125 0.842 0.652 0.706
+#> g  0.883 0.740 0.143 0.842 0.652 0.706
 #> F1 0.769 0.500 0.269 0.463            
 #> F2 0.765 0.494 0.270 0.472            
 #> F3 0.745 0.519 0.225 0.408            
@@ -75,7 +75,7 @@ writeLines(format(om))
 #> general factor (top row) and omegas and H index for the group factors:
 #> 
 #>      tot  hier   sub     H   ECV   PUC
-#> g  0.883 0.740 0.125 0.842 0.652 0.706
+#> g  0.883 0.740 0.143 0.842 0.652 0.706
 #> F1 0.769 0.500 0.269 0.463            
 #> F2 0.765 0.494 0.270 0.472            
 #> F3 0.745 0.519 0.225 0.408            

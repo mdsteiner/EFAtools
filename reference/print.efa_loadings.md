@@ -127,7 +127,7 @@ EFAtools_PAF <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
                         estimator = "PAF", rotation = "promax")
 EFAtools_PAF
 #> 
-#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -174,9 +174,11 @@ EFAtools_PAF
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF: .50
+#> χ²(102) = 123.92, p = .069
+#> CFI: .99
+#> TLI: .98
+#> RMSEA [90% CI]: .02 [.00; .03]
 #> SRMR: .02
-#> df: 102
 
 # format() returns the same lines as a character vector:
 writeLines(format(EFAtools_PAF$rot_loadings))

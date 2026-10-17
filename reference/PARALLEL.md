@@ -49,8 +49,8 @@ PARALLEL(
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Must be at least 1.
-  Default is 1000.
+  numeric. The number of reference correlation matrices to simulate.
+  Must be at least 1. Default is 1000.
 
 - percent:
 
@@ -66,9 +66,9 @@ PARALLEL(
   correlation matrices are left to be 1. If using "EFA", eigenvalues are
   found on the correlation matrices with the final communalities of an
   EFA solution as diagonal. Default is `c("PCA", "SMC", "EFA")`, i.e.
-  all three, which costs roughly six times a single non-EFA type:
-  `"EFA"` fits an EFA to every simulated dataset and dominates that
-  total. Pass a single type if the run is time-critical.
+  all three. `"EFA"` fits an EFA to every simulated correlation matrix
+  and takes most of the run time. Leave out `"EFA"` if the run is
+  time-critical.
 
 - use:
 

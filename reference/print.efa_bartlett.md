@@ -46,7 +46,7 @@ character vector with the report lines.
 bart <- efa_bartlett(test_models$baseline$cormat, N = 500)
 bart
 #> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
+#> ✔ Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
 #> 
 #> χ²(153) = 2173.28, p < .001
@@ -54,7 +54,7 @@ bart
 # format() returns the same lines as a character vector:
 writeLines(format(bart))
 #> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
+#> ✔ Bartlett's test of sphericity was significant at an alpha level of .05.
 #> These data are probably suitable for factor analysis.
 #> 
 #> χ²(153) = 2173.28, p < .001

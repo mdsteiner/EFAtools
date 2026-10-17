@@ -160,9 +160,12 @@ efa_power(
   the hit-rate for, any of `"CD"`, `"EKC"`, `"HULL"`, `"KGC"`, `"MAP"`,
   `"NEST"`, `"PARALLEL"`, and `"SMT"` (see
   [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)).
-  Default is `c("EKC", "MAP")`. Criteria that simulate internally
-  (`"CD"`, `"HULL"`, `"NEST"`, `"PARALLEL"`) make each run substantially
-  slower.
+  Default is `c("EKC", "MAP")`. Apart from `estimator`, the criteria use
+  the
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  defaults, for example PCA eigenvalues for `"KGC"` and `"PARALLEL"`,
+  and the CAF for `"HULL"`. `"CD"` and `"HULL"` make each run
+  substantially slower.
 
 - estimator:
 

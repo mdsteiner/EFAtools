@@ -59,15 +59,15 @@ parallelization.</p>
 <span>  <span class="va">x</span>,</span>
 <span>  N <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  n_fac_theor <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>  estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PAF"</span>, <span class="st">"ULS"</span>, <span class="st">"ML"</span><span class="op">)</span>,</span>
-<span>  gof <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CAF"</span>, <span class="st">"CFI"</span>, <span class="st">"RMSEA"</span><span class="op">)</span>,</span>
-<span>  eigen_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SMC"</span>, <span class="st">"PCA"</span>, <span class="st">"EFA"</span><span class="op">)</span>,</span>
+<span>  estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ML"</span>, <span class="st">"PAF"</span>, <span class="st">"ULS"</span><span class="op">)</span>,</span>
+<span>  gof <span class="op">=</span> <span class="st">"CAF"</span>,</span>
+<span>  eigen_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PCA"</span>, <span class="st">"SMC"</span>, <span class="st">"EFA"</span><span class="op">)</span>,</span>
 <span>  use <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pairwise.complete.obs"</span>, <span class="st">"all.obs"</span>, <span class="st">"complete.obs"</span>, <span class="st">"everything"</span>,</span>
 <span>    <span class="st">"na.or.complete"</span><span class="op">)</span>,</span>
 <span>  cor_method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pearson"</span>, <span class="st">"spearman"</span>, <span class="st">"kendall"</span>, <span class="st">"poly"</span>, <span class="st">"tetra"</span><span class="op">)</span>,</span>
 <span>  n_datasets <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  percent <span class="op">=</span> <span class="fl">95</span>,</span>
-<span>  decision_rule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"means"</span>, <span class="st">"percentile"</span>, <span class="st">"crawford"</span><span class="op">)</span>,</span>
+<span>  decision_rule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percentile"</span>, <span class="st">"means"</span>, <span class="st">"crawford"</span><span class="op">)</span>,</span>
 <span>  n_factors <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  estimate_control <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -76,13 +76,14 @@ parallelization.</p>
 
     <div class="section level2">
     <h2 id="source">Source<a class="anchor" aria-label="anchor" href="#source"></a></h2>
-    <p>Auerswald, M., &amp; Moshagen, M. (2019). How to determine the number of
-factors to retain in exploratory factor analysis: A comparison of extraction
-methods under realistic conditions. Psychological Methods, 24(4), 468–491.
-https://doi.org/10.1037/met0000200</p>
+    <p>Horn, J. L. (1965). A rationale and test for the number of factors in
+factor analysis. Psychometrika, 30(2), 179–185. https://doi.org/10.1007/BF02289447</p>
+<p>Lim, S., &amp; Jahng, S. (2019). Determining the number of factors using
+parallel analysis and its recent variants. Psychological Methods, 24(4), 452–467.
+https://doi.org/10.1037/met0000230</p>
 <p>Lorenzo-Seva, U., Timmerman, M. E., &amp; Kiers, H. A. (2011).
 The Hull method for selecting the number of common factors. Multivariate
-Behavioral Research, 46(2), 340-364.</p>
+Behavioral Research, 46(2), 340-364. https://doi.org/10.1080/00273171.2011.564527</p>
     </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
@@ -106,28 +107,26 @@ is used as the upper bound <em>J</em> of factors to extract in the Hull method.<
 
 
 <dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
-<dd><p>character. The estimator to use. One of  <code>"PAF"</code>,
-<code>"ULS"</code>, or  <code>"ML"</code>, for principal axis factoring, unweighted
-least squares, and maximum likelihood, respectively. Default is <code>"PAF"</code>.</p></dd>
+<dd><p>character. The estimator to use: <code>"ML"</code> (default), <code>"PAF"</code>, or
+<code>"ULS"</code>, for maximum likelihood, principal axis factoring, and unweighted least
+squares, respectively.</p></dd>
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
-<dd><p>character. The goodness of fit index to use. Either <code>"CAF"</code>,
-<code>"CFI"</code>, or <code>"RMSEA"</code>, or any combination of them.
-With the <code>"PAF"</code> estimator, only
-the CAF can be used as goodness of fit index. For details on the CAF, see
-Lorenzo-Seva, Timmerman, and Kiers (2011).</p></dd>
+<dd><p>character. The goodness of fit index to use: <code>"CAF"</code> (default), <code>"CFI"</code>,
+or <code>"RMSEA"</code>, or any combination of them. With the <code>"PAF"</code> estimator, the Hull method
+uses only the CAF. In Lorenzo-Seva, Timmerman, and Kiers (2011), with factor correlations
+up to .40, the CFI was the most accurate index. With strongly correlated factors
+(e.g., .70), CFI and RMSEA can make the Hull method retain too few factors. For
+details on the CAF, see Lorenzo-Seva et al. (2011).</p></dd>
 
 
 <dt id="arg-eigen-type">eigen_type<a class="anchor" aria-label="anchor" href="#arg-eigen-type"></a></dt>
-<dd><p>character. On what the eigenvalues should be found in the
-parallel analysis. Can be one of <code>"SMC"</code>, <code>"PCA"</code>, or <code>"EFA"</code>.
-If using  <code>"SMC"</code> (default), the diagonal of the correlation matrices is
-replaced by the squared multiple correlations (SMCs) of the indicators. If
-using  <code>"PCA"</code>, the diagonal values of the correlation
-matrices are left to be 1. If using  <code>"EFA"</code>, eigenvalues are found on the
-correlation  matrices with the final communalities of an EFA solution as
-diagonal. This is passed to  <code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
+<dd><p>character. The eigenvalues of the parallel analysis that sets the
+upper bound <em>J</em>: <code>"PCA"</code> (default) uses the correlation matrix, <code>"SMC"</code> puts the
+squared multiple correlations on its diagonal, and <code>"EFA"</code> puts the communalities
+of an EFA solution on its diagonal (see details). This is passed to
+<code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
@@ -144,8 +143,8 @@ Default is  <code>"pearson"</code>.</p></dd>
 
 
 <dt id="arg-n-datasets">n_datasets<a class="anchor" aria-label="anchor" href="#arg-n-datasets"></a></dt>
-<dd><p>numeric. The number of datasets to simulate. Must be at
-least 1. Default is 1000. This is passed to <code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
+<dd><p>numeric. The number of reference correlation matrices to simulate.
+Must be at least 1. Default is 1000. This is passed to <code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
 
 
 <dt id="arg-percent">percent<a class="anchor" aria-label="anchor" href="#arg-percent"></a></dt>
@@ -154,11 +153,12 @@ Default is 95. This is passed to <code><a href="efa_parallel.html">efa_parallel(
 
 
 <dt id="arg-decision-rule">decision_rule<a class="anchor" aria-label="anchor" href="#arg-decision-rule"></a></dt>
-<dd><p>character. Which rule to use to determine the number of
-factors to retain. Default is <code>"means"</code>, which will use the average
-simulated eigenvalues. <code>"percentile"</code>, uses the percentiles specified
-in percent. <code>"crawford"</code> uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010). This is passed to <code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
+<dd><p>character. The rule of the parallel analysis that sets the upper
+bound <em>J</em>. Default is <code>"percentile"</code>, which uses the percentile of the simulated
+eigenvalues that <code>percent</code> sets (see details). <code>"means"</code> uses the mean simulated
+eigenvalues. <code>"crawford"</code> uses the 95th percentile for the first factor and the mean
+for the other factors (based on Crawford et al., 2010). This is passed to
+<code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
 
 
 <dt id="arg-n-factors">n_factors<a class="anchor" aria-label="anchor" href="#arg-n-factors"></a></dt>
@@ -207,7 +207,8 @@ warning says so.</p></dd>
 
 <dt>settings</dt>
 <dd><p>A list of the settings used, including <code>n_fac_max</code>, the upper
-bound <em>J</em> of the number of factors to extract (see details). For backwards
+bound <em>J</em> of the number of factors to extract, and the <code>decision_rule</code> and <code>percent</code>
+of the parallel analysis that set it (see details). For backwards
 compatibility the estimator is also repeated in <code>settings$method</code>.</p></dd>
 
 
@@ -224,16 +225,25 @@ model fit and number of parameters, retaining only major factors
 <em>J</em> is the number of factors suggested by parallel analysis (or <code>n_fac_theor</code>,
 if that is larger), plus one – keeps the solutions on the upper boundary of
 the convex hull of goodness-of-fit against degrees of freedom, and selects the
-one at the sharpest elbow, i.e. with the highest <em>st</em> value.</p>
-<p>Because it trades fit against parsimony instead of testing against a null model
-of uncorrelated variables, the Hull method does not lose accuracy for the
-correlated-factor structures where parallel analysis (<code><a href="efa_parallel.html">efa_parallel()</a></code>) tends to
-under-extract; the CAF variant in particular was among the more accurate criteria
-in Auerswald and Moshagen (2019). It needs at least six indicators and fits a
-model at every candidate factor count, so it is comparatively slow and is not an
-option for very short scales.</p>
-<p>The <a href="efa_parallel.html">efa_parallel</a> function and the principal axis factoring of the
-different number of factors can be parallelized using the future framework,
+one at the sharpest elbow, i.e. with the highest <em>st</em> value. <em>J</em> is at least 3
+(or, with few indicators, the largest number of factors that gives an
+over-identified model), so that the hull has sufficient solutions.</p>
+<p>The upper bound <em>J</em> helps to prevent overfactoring. The selected elbow is never the
+first or the last solution of the range, so the Hull method retains at most <em>J</em> - 1
+factors. If fewer than three solutions are on the hull, there is no elbow; the
+solution with the highest goodness of fit is then selected, and a warning says so.</p>
+<p>As Lorenzo-Seva et al. (2011) suggest, this parallel analysis (Horn, 1965) uses PCA
+eigenvalues and the 95th percentile of the simulated eigenvalues by default. With
+the eigenvalues of the reduced correlation matrix (<code>"SMC"</code>), parallel analysis often
+retains too many factors, particularly when the model does not fit the data exactly.
+In Lim and Jahng (2019), parallel analysis with PCA eigenvalues was the most accurate
+in most conditions.</p>
+<p>In the simulation of Lorenzo-Seva et al. (2011), with factor correlations up to .40,
+all Hull variants were more accurate overall than parallel analysis. The Hull method
+needs at least six indicators and fits a model at every candidate factor count, so it
+is comparatively slow and is not an option for very short scales.</p>
+<p>The <a href="efa_parallel.html">efa_parallel</a> function and the fits of the
+different numbers of factors can be parallelized using the future framework,
 by calling the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> function. The examples
 provide example code on how to enable parallel processing.</p>
 <p>The upper bound <em>J</em> comes from <code><a href="efa_parallel.html">efa_parallel()</a></code>, which compares against simulated
@@ -270,22 +280,30 @@ retention criteria.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
-<span class="r-in"><span><span class="co"># using PAF (this will print a message if gof is not specified manually</span></span></span>
-<span class="r-in"><span><span class="co"># and CAF will be used automatically)</span></span></span>
-<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, gof <span class="op">=</span> <span class="st">"CAF"</span>, n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># using the defaults: ML, the CAF, and PCA eigenvalues with the 95th percentile in</span></span></span>
+<span class="r-in"><span><span class="co"># the parallel analysis</span></span></span>
+<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: PAF</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: ML</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • CAF: 3</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># using ML with all available fit indices (CAF, CFI, and RMSEA)</span></span></span>
-<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ML"</span>, n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, gof <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CAF"</span>, <span class="st">"CFI"</span>, <span class="st">"RMSEA"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>         n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: ML</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • CAF: 3</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • CFI: 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • RMSEA: 1</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># using PAF, with which the Hull method uses only the CAF</span></span></span>
+<span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"PAF"</span>, n_datasets <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Hull method ─────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: PAF</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • CAF: 3</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># using ULS with only RMSEA</span></span></span>
 <span class="r-in"><span><span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ULS"</span>, gof <span class="op">=</span> <span class="st">"RMSEA"</span>,</span></span>
@@ -303,7 +321,7 @@ retention criteria.</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/eval.html" class="external-link">local</a></span><span class="op">(</span><span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="va">old_plan</span> <span class="op">&lt;-</span> <span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu">future</span><span class="fu">::</span><span class="va"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span>, workers <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit</a></span><span class="op">(</span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">old_plan</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, gof <span class="op">=</span> <span class="st">"CAF"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">efa_hull</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

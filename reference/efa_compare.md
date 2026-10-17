@@ -209,13 +209,20 @@ to rotate one solution onto another before comparing.
 EFA_SPSS_6 <- efa_fit(test_models$case_11b$cormat, n_factors = 6,
                       estimate_control = estimate_control(type = "SPSS"),
                       rotate_control = rotate_control(type = "SPSS"))
+#> Warning: `N` is "NA"; not all fit indices could be computed.
+#> ℹ Provide `N` or raw data to compute all fit indices.
 #> Warning: Reached the maximum number of iterations without convergence; results may not
 #> be interpretable.
+#> Warning: Only the "promax" and "varimax" rotations are validated against the SPSS
+#> implementation.
+#> ℹ "oblimin" results may differ from those returned by SPSS.
 
 # A type psych EFA to mimick the psych::fa() implementation
 EFA_psych_6 <- efa_fit(test_models$case_11b$cormat, n_factors = 6,
                        estimate_control = estimate_control(type = "psych"),
                        rotate_control = rotate_control(type = "psych"))
+#> Warning: `N` is "NA"; not all fit indices could be computed.
+#> ℹ Provide `N` or raw data to compute all fit indices.
 
 # compare the two
 efa_compare(EFA_SPSS_6$unrot_loadings, EFA_psych_6$unrot_loadings,

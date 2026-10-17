@@ -69,14 +69,16 @@ also check whether the data are suitable for factor analysis.</p>
 <span>  n_factors_max <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  N_pop <span class="op">=</span> <span class="fl">10000</span>,</span>
 <span>  N_samples <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>  alpha <span class="op">=</span> <span class="fl">0.3</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span>,</span>
+<span>  alpha_CD <span class="op">=</span> <span class="fl">0.3</span>,</span>
 <span>  max_iter_CD <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  n_fac_theor <span class="op">=</span> <span class="cn">NA</span>,</span>
 <span>  estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ML"</span>, <span class="st">"PAF"</span>, <span class="st">"ULS"</span><span class="op">)</span>,</span>
-<span>  gof <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CAF"</span>, <span class="st">"CFI"</span>, <span class="st">"RMSEA"</span><span class="op">)</span>,</span>
-<span>  eigen_type_HULL <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SMC"</span>, <span class="st">"PCA"</span>, <span class="st">"EFA"</span><span class="op">)</span>,</span>
-<span>  eigen_type_other <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SMC"</span><span class="op">)</span>,</span>
+<span>  gof <span class="op">=</span> <span class="st">"CAF"</span>,</span>
+<span>  eigen_type_HULL <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PCA"</span>, <span class="st">"SMC"</span>, <span class="st">"EFA"</span><span class="op">)</span>,</span>
+<span>  decision_rule_HULL <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percentile"</span>, <span class="st">"means"</span>, <span class="st">"crawford"</span><span class="op">)</span>,</span>
+<span>  eigen_type_other <span class="op">=</span> <span class="st">"PCA"</span>,</span>
 <span>  n_factors <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  n_datasets <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  percent <span class="op">=</span> <span class="fl">95</span>,</span>
@@ -95,21 +97,31 @@ also check whether the data are suitable for factor analysis.</p>
 factors to retain in exploratory factor analysis: A comparison of extraction
 methods under realistic conditions. Psychological Methods, 24(4), 468–491.
 https://doi.org/10.1037/met0000200</p>
+<p>Lim, S., &amp; Jahng, S. (2019). Determining the number of factors using
+parallel analysis and its recent variants. Psychological Methods, 24(4), 452–467.
+https://doi.org/10.1037/met0000230</p>
+<p>Lorenzo-Seva, U., Timmerman, M. E., &amp; Kiers, H. A. (2011). The Hull method
+for selecting the number of common factors. Multivariate Behavioral Research, 46(2),
+340-364. https://doi.org/10.1080/00273171.2011.564527</p>
+<p>Ruscio, J., &amp; Roche, B. (2012). Determining the number of factors to
+retain in an exploratory factor analysis using comparison data of known
+factorial structure. Psychological Assessment, 24, 282–292.
+https://doi.org/10.1037/a0025697</p>
     </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>data.frame or matrix. Raw data, or a correlation matrix. If <code>"CD"</code> is
-included as a criterion, x must be raw data.</p></dd>
+<dd><p>data.frame or matrix. Raw data, or a correlation matrix. <code>"CD"</code> needs raw
+data.</p></dd>
 
 
 <dt id="arg-criteria">criteria<a class="anchor" aria-label="anchor" href="#arg-criteria"></a></dt>
-<dd><p>character. Which factor retention methods to run: one or
-more of <code>"CD"</code>, <code>"EKC"</code>, <code>"HULL"</code>, <code>"KGC"</code>, <code>"MAP"</code>, <code>"NEST"</code>, <code>"PARALLEL"</code>,
-<code>"SCREE"</code>, and <code>"SMT"</code> (see details). The default runs a subset of commonly
-used, well-performing methods, listed in the details.</p></dd>
+<dd><p>character. The factor retention criteria to run: one or more of
+<code>"CD"</code>, <code>"EKC"</code>, <code>"HULL"</code>, <code>"KGC"</code>, <code>"MAP"</code>, <code>"NEST"</code>, <code>"PARALLEL"</code>, <code>"SCREE"</code>, and
+<code>"SMT"</code>. The default runs a subset of commonly used, well-performing criteria (see
+details).</p></dd>
 
 
 <dt id="arg-suitability">suitability<a class="anchor" aria-label="anchor" href="#arg-suitability"></a></dt>
@@ -124,17 +136,18 @@ correlation matrix.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
-<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw
-data is given as input. Default is <code>"pairwise.complete.obs"</code>.</p></dd>
+<dd><p>character. Passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code> if raw data is given as input. Default
+is <code>"pairwise.complete.obs"</code>. <code>"CD"</code> always uses only the complete cases: it removes
+the incomplete rows with a warning.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
 <dd><p>character. Correlation computed from raw data: <code>"pearson"</code>,
-<code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> /
-<code>"tetra"</code> for polychoric / tetrachoric correlations (a two-step estimator).
-<code>CD</code>, <code>PARALLEL</code>, <code>NEST</code>, <code>HULL</code>, and <code>SMT</code> do not support <code>"poly"</code> / <code>"tetra"</code>
-and are skipped automatically if you request them together.
-Default is <code>"pearson"</code>.</p></dd>
+<code>"spearman"</code>, or <code>"kendall"</code> (passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>), or <code>"poly"</code> / <code>"tetra"</code>
+for polychoric / tetrachoric correlations (a two-step estimator). With <code>"poly"</code> /
+<code>"tetra"</code>, <code>"HULL"</code>, <code>"NEST"</code>, <code>"PARALLEL"</code>, and <code>"SMT"</code> are skipped, and <code>"CD"</code> and
+Bartlett's test use the Pearson correlations of the raw data (see details). Default
+is <code>"pearson"</code>.</p></dd>
 
 
 <dt id="arg-n-factors-max">n_factors_max<a class="anchor" aria-label="anchor" href="#arg-n-factors-max"></a></dt>
@@ -156,21 +169,20 @@ from each population. Default is 500.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
-<dd><p>numeric. Passed to <code><a href="efa_cd.html">efa_cd()</a></code>. The alpha level used to test
-the significance of the improvement added by an additional factor.
-Default is .30.</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use <code>alpha_CD</code> instead.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Further arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code> in
-<code><a href="efa_parallel.html">efa_parallel()</a></code>, <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, <code><a href="efa_nest.html">efa_nest()</a></code>, and (through its parallel
-analysis and its own candidate fits) <code><a href="efa_hull.html">efa_hull()</a></code>. An argument that <code><a href="efa_fit.html">efa_fit()</a></code> does not
-recognize causes an error. The estimation tuning knobs are not passed here; they live in
-<code>estimate_control</code>. The standard-error arguments (<code>se</code>, <code>b_boot</code>, <code>ci</code>, <code>seed</code>) are not
-accepted, because the criterion fits are internal steps whose standard errors are not
-reported. Arguments listed after <code>...</code> must be given by their full name (R matches an
-abbreviated name only against the arguments before <code>...</code>), so a tuning knob such as
-<code>max_iter</code> cannot be mistaken for <code>max_iter_CD</code>.</p></dd>
+<dd><p>Further arguments passed to <code><a href="efa_fit.html">efa_fit()</a></code> in the criteria that fit a model,
+except <code><a href="efa_smt.html">efa_smt()</a></code>. Unknown arguments, rotation settings, estimation settings (use
+<code>estimate_control</code>), and the standard-error arguments (<code>se</code>, <code>b_boot</code>, <code>ci</code>, <code>seed</code>)
+cause an error. Arguments after <code>...</code> must be given by their full name.</p></dd>
+
+
+<dt id="arg-alpha-cd">alpha_CD<a class="anchor" aria-label="anchor" href="#arg-alpha-cd"></a></dt>
+<dd><p>numeric. Passed to <code><a href="efa_cd.html">efa_cd()</a></code> as <code>alpha</code>. The alpha level used to
+test the significance of the improvement added by an additional factor. Default is
+.30.</p></dd>
 
 
 <dt id="arg-max-iter-cd">max_iter_CD<a class="anchor" aria-label="anchor" href="#arg-max-iter-cd"></a></dt>
@@ -187,42 +199,39 @@ upper bound.</p></dd>
 
 
 <dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
-<dd><p>character. Passed to <code><a href="efa_fit.html">efa_fit()</a></code> in <code><a href="efa_hull.html">efa_hull()</a></code>,
-<code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, <code><a href="efa_parallel.html">efa_parallel()</a></code>, and <code><a href="efa_nest.html">efa_nest()</a></code>. The
-estimator to use. One of  <code>"PAF"</code>, <code>"ULS"</code>, or  <code>"ML"</code>,
-for principal axis factoring, unweighted least squares, and maximum
-likelihood, respectively. The default here is <code>"ML"</code>. Some criteria default to
-something else when called on their own (for example, <code><a href="efa_hull.html">efa_hull()</a></code> defaults to
-<code>"PAF"</code>), so results from <code>efa_retain()</code> can differ from calling that criterion
-directly unless you set <code>estimator</code> to match. In <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and
-<code><a href="efa_parallel.html">efa_parallel()</a></code> it only takes effect when the respective <code>eigen_type</code> includes <code>"EFA"</code>.</p></dd>
+<dd><p>character. The estimator for the criteria that fit a model: <code>"ML"</code>
+(default), <code>"PAF"</code>, or <code>"ULS"</code>. Some criteria have a different default when called
+on their own (for example, <code><a href="efa_nest.html">efa_nest()</a></code> uses <code>"PAF"</code>). <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>,
+and <code><a href="efa_parallel.html">efa_parallel()</a></code> use it only for <code>"EFA"</code> eigenvalues. <code><a href="efa_smt.html">efa_smt()</a></code> always uses
+maximum likelihood.</p></dd>
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
-<dd><p>character. Passed to <code><a href="efa_hull.html">efa_hull()</a></code>. The goodness of fit index
-to use. Either <code>"CAF"</code>, <code>"CFI"</code>, or <code>"RMSEA"</code>, or any
-combination of them. With the <code>"PAF"</code> estimator, only
-the CAF can be used as goodness of fit index. For details on the CAF, see
-Lorenzo-Seva, Timmerman, and Kiers (2011).</p></dd>
+<dd><p>character. Passed to <code><a href="efa_hull.html">efa_hull()</a></code>. The goodness of fit index to use:
+<code>"CAF"</code> (default), <code>"CFI"</code>, or <code>"RMSEA"</code>, or any combination of them. With the
+<code>"PAF"</code> estimator, the Hull method uses only the CAF. In Lorenzo-Seva, Timmerman, and Kiers
+(2011), with factor correlations up to .40, the CFI was the most accurate index. With
+strongly correlated factors (e.g., .70), CFI and RMSEA can make the Hull method
+retain too few factors. For details on the CAF, see Lorenzo-Seva et al. (2011).</p></dd>
 
 
 <dt id="arg-eigen-type-hull">eigen_type_HULL<a class="anchor" aria-label="anchor" href="#arg-eigen-type-hull"></a></dt>
-<dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> in
-<code><a href="efa_hull.html">efa_hull()</a></code>. What the eigenvalues in the parallel analysis are based on.
-One of <code>"SMC"</code>, <code>"PCA"</code>, or <code>"EFA"</code> – different ways of estimating how much
-variance each indicator shares with the others before the eigenvalues are
-computed. <code>"SMC"</code> (default) uses each indicator's squared multiple
-correlation with the others (its diagonal value in the correlation matrix).
-<code>"PCA"</code> leaves the diagonal at 1, so each indicator's total variance – not
-just the shared part – feeds into the eigenvalues. <code>"EFA"</code> uses the
-communalities from a fitted EFA solution instead.</p></dd>
+<dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> in <code><a href="efa_hull.html">efa_hull()</a></code>. The
+eigenvalues of the parallel analysis: <code>"PCA"</code> (default) uses the correlation
+matrix, <code>"SMC"</code> puts the squared multiple correlations on its diagonal, and <code>"EFA"</code>
+puts the communalities of an EFA solution on its diagonal (see details).</p></dd>
+
+
+<dt id="arg-decision-rule-hull">decision_rule_HULL<a class="anchor" aria-label="anchor" href="#arg-decision-rule-hull"></a></dt>
+<dd><p>character. Passed to <code><a href="efa_hull.html">efa_hull()</a></code> as <code>decision_rule</code>. The
+rule of the parallel analysis that sets the upper bound of the Hull method, with the
+same choices as <code>decision_rule</code>. Default is <code>"percentile"</code> (see details).</p></dd>
 
 
 <dt id="arg-eigen-type-other">eigen_type_other<a class="anchor" aria-label="anchor" href="#arg-eigen-type-other"></a></dt>
-<dd><p>character. Passed to <code><a href="efa_kgc.html">efa_kgc()</a></code>,
-<code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code>. The same as eigen_type_HULL,
-but multiple inputs are possible here (any combination of <code>"PCA"</code>, <code>"SMC"</code>,
-and <code>"EFA"</code>). Default is <code>"SMC"</code>.</p></dd>
+<dd><p>character. Passed to <code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and
+<code><a href="efa_parallel.html">efa_parallel()</a></code>. The same types as <code>eigen_type_HULL</code>, but one or more of them.
+Default is <code>"PCA"</code>.</p></dd>
 
 
 <dt id="arg-n-factors">n_factors<a class="anchor" aria-label="anchor" href="#arg-n-factors"></a></dt>
@@ -234,7 +243,8 @@ factors to extract if <code>"EFA"</code> is included in <code>eigen_type_HULL</c
 
 <dt id="arg-n-datasets">n_datasets<a class="anchor" aria-label="anchor" href="#arg-n-datasets"></a></dt>
 <dd><p>numeric. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> (also within
-<code><a href="efa_hull.html">efa_hull()</a></code>). The number of datasets to simulate. Default is 1000.</p></dd>
+<code><a href="efa_hull.html">efa_hull()</a></code>). The number of reference correlation matrices to simulate. Default is
+1000.</p></dd>
 
 
 <dt id="arg-percent">percent<a class="anchor" aria-label="anchor" href="#arg-percent"></a></dt>
@@ -244,11 +254,11 @@ Default is 95.</p></dd>
 
 
 <dt id="arg-decision-rule">decision_rule<a class="anchor" aria-label="anchor" href="#arg-decision-rule"></a></dt>
-<dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> (also within
-<code><a href="efa_hull.html">efa_hull()</a></code>). Which rule to use to determine the number of
-factors to retain. Default is <code>"means"</code>, which uses the average simulated
-eigenvalues. <code>"percentile"</code> uses the percentiles specified in <code>percent</code>.
-<code>"crawford"</code> uses the 95th percentile for the first factor and the mean
+<dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> for the <code>"PARALLEL"</code>
+criterion only (the Hull method uses <code>decision_rule_HULL</code>). Which rule to use to
+determine the number of factors to retain. Default is <code>"means"</code>, which uses the
+average simulated eigenvalues. <code>"percentile"</code> uses the percentiles specified in
+<code>percent</code>. <code>"crawford"</code> uses the 95th percentile for the first factor and the mean
 afterwards (based on Crawford et al., 2010).</p></dd>
 
 
@@ -261,8 +271,8 @@ they are no longer computed.</p></dd>
 
 
 <dt id="arg-n-datasets-nest">n_datasets_nest<a class="anchor" aria-label="anchor" href="#arg-n-datasets-nest"></a></dt>
-<dd><p>numeric. Passed to <code><a href="efa_nest.html">efa_nest()</a></code>. The number of
-datasets to simulate. Default is 1000.</p></dd>
+<dd><p>numeric. Passed to <code><a href="efa_nest.html">efa_nest()</a></code>. The number of reference
+correlation matrices to simulate. Default is 1000.</p></dd>
 
 
 <dt id="arg-alpha-nest">alpha_nest<a class="anchor" aria-label="anchor" href="#arg-alpha-nest"></a></dt>
@@ -277,14 +287,11 @@ console. Default is FALSE.</p></dd>
 
 
 <dt id="arg-estimate-control">estimate_control<a class="anchor" aria-label="anchor" href="#arg-estimate-control"></a></dt>
-<dd><p>an <code><a href="estimate_control.html">estimate_control()</a></code> object with the estimation settings for the
-<code><a href="efa_fit.html">efa_fit()</a></code> fits run by the criteria that fit a model (<code><a href="efa_hull.html">efa_hull()</a></code>, <code><a href="efa_kgc.html">efa_kgc()</a></code>,
-<code><a href="efa_scree.html">efa_scree()</a></code>, <code><a href="efa_parallel.html">efa_parallel()</a></code>, <code><a href="efa_nest.html">efa_nest()</a></code>, and <code><a href="efa_smt.html">efa_smt()</a></code>). <code>NULL</code> (default) uses the
-<code><a href="efa_fit.html">efa_fit()</a></code> defaults. It only applies to criteria that fit a model, and only to the parts of
-that fit each criterion actually runs. <code><a href="efa_cd.html">efa_cd()</a></code>, <code><a href="efa_ekc.html">efa_ekc()</a></code>, and <code><a href="efa_map.html">efa_map()</a></code> fit no model.
-<code><a href="efa_kgc.html">efa_kgc()</a></code>, <code><a href="efa_scree.html">efa_scree()</a></code>, and <code><a href="efa_parallel.html">efa_parallel()</a></code> only fit one when their <code>eigen_type</code>
-includes <code>"EFA"</code>. <code><a href="efa_smt.html">efa_smt()</a></code> fits with maximum likelihood by definition, so only
-<code>start_method</code> takes effect there. All fits are unrotated, so no rotation settings apply.</p></dd>
+<dd><p>an <code><a href="estimate_control.html">estimate_control()</a></code> object with the estimation settings
+for the unrotated <code><a href="efa_fit.html">efa_fit()</a></code> fits of the criteria that fit a model (all except
+<code><a href="efa_cd.html">efa_cd()</a></code>, <code><a href="efa_ekc.html">efa_ekc()</a></code>, and <code><a href="efa_map.html">efa_map()</a></code>). <code>NULL</code> (default) uses the <code><a href="efa_fit.html">efa_fit()</a></code>
+defaults. <code><a href="efa_smt.html">efa_smt()</a></code> always uses maximum likelihood, so only <code>start_method</code> applies
+there.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -295,40 +302,37 @@ superseded name. It contains</p>
 <dl><dt>suitability</dt>
 <dd><p>A list with the results from <code><a href="efa_bartlett.html">efa_bartlett()</a></code> and
 <code><a href="efa_kmo.html">efa_kmo()</a></code> (<code>bartlett</code> and <code>kmo</code>), or <code>NULL</code> if
-<code>suitability = FALSE</code>.</p></dd>
+<code>suitability = FALSE</code>. <code>bartlett</code> is <code>NULL</code> if <code>N</code> is missing.</p></dd>
 
 <dt>outputs</dt>
 <dd><p>A named list with one <code>efa_retention</code> object per factor
-retention criterion that was run (see, e.g., <code><a href="efa_ekc.html">efa_ekc()</a></code>).</p></dd>
+retention criterion that was run, in alphabetical order (see, e.g., <code><a href="efa_ekc.html">efa_ekc()</a></code>).</p></dd>
 
 <dt>n_factors</dt>
-<dd><p>A named numeric vector with the suggested number of factors
-per criterion and, where a criterion has several variants, per variant
-(e.g. <code>EKC_BvA2017</code> or <code>PARALLEL_SMC</code>). Criteria without a numeric
-suggestion (the scree plot) are not included. The printed summary's "most common"
-value is based on each criterion's own most frequent (modal) suggestion among its
-variants, not a plain tally of this vector, so counting entries here by hand can
-give a different answer.</p></dd>
+<dd><p>A named numeric vector with the suggested number of factors per
+criterion and variant (e.g. <code>EKC_BvA2017</code> or <code>PARALLEL_PCA</code>), without the scree plot.</p></dd>
 
 <dt>not_run</dt>
 <dd><p>A named character vector with the criteria that were skipped
 or failed and the reason, or <code>NULL</code> if all requested criteria ran.</p></dd>
 
 <dt>settings</dt>
-<dd><p>A list of the settings used. Its <code>criteria</code> element records the
-requested criteria, in the order they were given, while <code>outputs</code> and <code>n_factors</code>
-are in the order in which the criteria were run. <code>gof</code> records the requested Hull
-goodness-of-fit indices, and <code>gof_used</code> records the ones the Hull method actually
-computed (it reduces them to <code>"CAF"</code> for the PAF estimator). <code>gof_used</code> is <code>NA</code>
-when HULL was not requested, was skipped, or failed.</p></dd>
+<dd><p>A list of the settings used. <code>gof_used</code> records the Hull goodness of
+fit indices that were computed (<code>NA</code> if the Hull method did not run).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>By default, the entered data are checked for suitability for factor analysis
-using the following methods (see the respective documentation for details):</p><ul><li><p>Bartlett's test of sphericity (see <code><a href="efa_bartlett.html">efa_bartlett()</a></code>)</p></li>
-<li><p>Kaiser-Meyer-Olkin criterion (see <code><a href="efa_kmo.html">efa_kmo()</a></code>)</p></li>
-</ul><p>The available factor retention criteria are the following (see the
+    <p>By default, <code>efa_retain()</code> checks if the data are suitable for factor analysis. It
+uses Bartlett's test of sphericity (<code><a href="efa_bartlett.html">efa_bartlett()</a></code>), which needs <code>N</code>, and the
+Kaiser-Meyer-Olkin criterion (<code><a href="efa_kmo.html">efa_kmo()</a></code>). A significant Bartlett's test only shows
+that the correlation matrix is not an identity matrix. This is almost always true for
+realistic sample sizes. With <code>cor_method = "poly"</code> or <code>"tetra"</code> and raw data,
+Bartlett's test uses the Pearson correlations of the raw data. Its chi-square
+distribution is not valid for polychoric correlations, because these have a larger
+sampling variance. Zero polychoric correlations give zero Pearson correlations, so the
+test has the same null hypothesis. The KMO uses the analysed correlations.</p>
+<p>The available factor retention criteria are the following (see the
 respective documentation for details):</p><ul><li><p>Comparison data (see <code><a href="efa_cd.html">efa_cd()</a></code>)</p></li>
 <li><p>Empirical Kaiser criterion (see <code><a href="efa_ekc.html">efa_ekc()</a></code>)</p></li>
 <li><p>Hull method (see <code><a href="efa_hull.html">efa_hull()</a></code>)</p></li>
@@ -343,13 +347,30 @@ respective documentation for details):</p><ul><li><p>Comparison data (see <code>
 Hull method, MAP, NEST, and parallel analysis. No single criterion is the most
 accurate in all conditions. <code>efa_retain()</code> therefore runs several criteria
 together, and the printed summary gives the range of their suggestions and the
-most common one. Auerswald and Moshagen (2019) compare the criteria and give
-guidance on the selection.</p>
-<p>The comparison data, parallel analysis, and NEST criteria compare the data
-against simulated reference data, so their suggested numbers of factors vary
-slightly from run to run. The Hull method also varies, because it calls
-<code><a href="efa_parallel.html">efa_parallel()</a></code> to set its upper bound. Call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">base::set.seed()</a></code> before
-<code>efa_retain()</code> to make the results reproducible.</p>
+most common one (one vote per criterion). Auerswald and Moshagen (2019) compare the
+criteria and give guidance on the selection.</p>
+<p>Parallel analysis, also in the Hull method, uses PCA eigenvalues by default. With
+the eigenvalues of the reduced correlation matrix (<code>"SMC"</code>), parallel analysis often
+retains too many factors, particularly when the model does not fit the data exactly.
+In Lim and Jahng (2019), parallel analysis with PCA eigenvalues was the most accurate
+in most conditions. The <code>"PARALLEL"</code> criterion compares the observed eigenvalues with
+the mean simulated eigenvalues by default. To set the upper bound of the Hull method,
+parallel analysis uses the 95th percentile instead, as Lorenzo-Seva et al. (2011)
+suggest. This helps to prevent overfactoring (see <code><a href="efa_hull.html">efa_hull()</a></code>). The Hull method uses
+the CAF by default (see <code>gof</code>).</p>
+<p>A criterion that cannot use the input is skipped: <code>"CD"</code> with a correlation matrix,
+and <code>"HULL"</code>, <code>"NEST"</code>, <code>"PARALLEL"</code>, and <code>"SMT"</code> with <code>cor_method = "poly"</code> or
+<code>"tetra"</code>. If you do not set <code>criteria</code>, this occurs without a warning. With a
+correlation matrix and no <code>N</code>, the criteria that need <code>N</code> (<code>"EKC"</code>, <code>"HULL"</code>,
+<code>"NEST"</code>, <code>"PARALLEL"</code>, and <code>"SMT"</code>) are skipped with a warning. The printed result
+shows all criteria that did not run. With <code>cor_method = "poly"</code> or <code>"tetra"</code>,
+comparison data use the Pearson correlations of the raw data (see <code><a href="efa_cd.html">efa_cd()</a></code>).</p>
+<p>Comparison data, parallel analysis, NEST, and the Hull method use simulated reference
+data, so their suggestions can change slightly from run to run. The Hull method uses
+simulation only for the parallel analysis that sets its upper bound. If parallel
+analysis also runs and <code>eigen_type_other</code> includes <code>eigen_type_HULL</code>, the Hull method
+uses its simulated eigenvalues with <code>decision_rule_HULL</code>, and does not simulate again.
+To make the results reproducible, call <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">base::set.seed()</a></code> first.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -370,41 +391,75 @@ the chosen number of factors.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
-<span class="r-in"><span><span class="co"># Default criteria, with correlation matrix and estimator "ML" (where needed)</span></span></span>
-<span class="r-in"><span><span class="co"># This will throw a warning for CD, as no raw data were specified</span></span></span>
-<span class="r-in"><span><span class="co"># The simulation-based criteria are seeded to make the run reproducible</span></span></span>
+<span class="r-in"><span><span class="co"># The simulation-based criteria are seeded to make the runs reproducible</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">nfac_all</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"ML"</span>,</span></span>
-<span class="r-in"><span>                       n_datasets <span class="op">=</span> <span class="fl">100</span>, n_datasets_nest <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`x` is a correlation matrix, but <span style="color: #0000BB;">"CD"</span> needs raw data.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Skipping <span style="color: #0000BB;">"CD"</span>.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># The same as above, but without "CD"</span></span></span>
-<span class="r-in"><span><span class="va">nfac_wo_CD</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EKC"</span>,</span></span>
-<span class="r-in"><span>                         <span class="st">"HULL"</span>, <span class="st">"PARALLEL"</span>, <span class="st">"NEST"</span><span class="op">)</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>                         estimator <span class="op">=</span> <span class="st">"ML"</span>, n_datasets <span class="op">=</span> <span class="fl">100</span>,</span></span>
-<span class="r-in"><span>                         n_datasets_nest <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Correlation matrix: the default criteria except "CD", which needs raw data</span></span></span>
+<span class="r-in"><span><span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, n_datasets <span class="op">=</span> <span class="fl">100</span>,</span></span>
+<span class="r-in"><span>           n_datasets_nest <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Sampling adequacy and sphericity ────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Overall KMO = 0.916: marvellous (Kaiser &amp; Rice, 1974).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Bartlett's test of sphericity: χ²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001 (significant).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Suggested number of factors ─────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 suggestions from 5 criteria, ranging from 1 to 3 factors (most common: 3).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Empirical Kaiser Criterion</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Braeken &amp; van Assen (2017): 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Hull method</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: ML</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • CAF: 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Minimum average partial</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Original implementation (TR2): 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Revised implementation (TR4): 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Next Eigenvalue Sufficiency Test</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Parallel analysis</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Eigenvalues found using PCA; 100 simulated datasets.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • PCA: 3</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Criteria not run ────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> CD: needs raw data, but a correlation matrix was supplied</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Use PAF instead of ML (this will take longer). PAF only supports "CAF" as</span></span></span>
-<span class="r-in"><span><span class="co"># gof for the Hull method, so set it explicitly to avoid the automatic message.</span></span></span>
-<span class="r-in"><span><span class="va">nfac_PAF</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EKC"</span>,</span></span>
-<span class="r-in"><span>                       <span class="st">"HULL"</span>, <span class="st">"PARALLEL"</span>, <span class="st">"NEST"</span><span class="op">)</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>                       estimator <span class="op">=</span> <span class="st">"PAF"</span>, gof <span class="op">=</span> <span class="st">"CAF"</span>, n_datasets <span class="op">=</span> <span class="fl">100</span>,</span></span>
-<span class="r-in"><span>                       n_datasets_nest <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Back to the default ML estimator (unlike above), with only "PCA" type eigenvalues</span></span></span>
-<span class="r-in"><span><span class="va">nfac_PCA</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EKC"</span>,</span></span>
-<span class="r-in"><span>                       <span class="st">"HULL"</span>, <span class="st">"PARALLEL"</span>, <span class="st">"NEST"</span><span class="op">)</span>, N <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>                       estimator <span class="op">=</span> <span class="st">"ML"</span>, eigen_type_other <span class="op">=</span> <span class="st">"PCA"</span>,</span></span>
-<span class="r-in"><span>                       n_datasets <span class="op">=</span> <span class="fl">100</span>, n_datasets_nest <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Use raw data, such that CD can also be performed</span></span></span>
-<span class="r-in"><span><span class="va">nfac_raw</span> <span class="op">&lt;-</span> <span class="fu">efa_retain</span><span class="op">(</span><span class="va">GRiPS_raw</span>, estimator <span class="op">=</span> <span class="st">"ML"</span>, N_pop <span class="op">=</span> <span class="fl">500</span>,</span></span>
-<span class="r-in"><span>                        N_samples <span class="op">=</span> <span class="fl">20</span>, n_datasets <span class="op">=</span> <span class="fl">100</span>,</span></span>
-<span class="r-in"><span>                        n_datasets_nest <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The suggested maximum number of factors was 2, but the Hull method needs at</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> least 3.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Setting it to 3.</span>
+<span class="r-in"><span><span class="co"># Raw data: "CD" runs too</span></span></span>
+<span class="r-in"><span><span class="fu">efa_retain</span><span class="op">(</span><span class="va">GRiPS_raw</span>, N_pop <span class="op">=</span> <span class="fl">500</span>, N_samples <span class="op">=</span> <span class="fl">20</span>, n_datasets <span class="op">=</span> <span class="fl">100</span>,</span></span>
+<span class="r-in"><span>           n_datasets_nest <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Sampling adequacy and sphericity ────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Overall KMO = 0.955: marvellous (Kaiser &amp; Rice, 1974).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Bartlett's test of sphericity: χ²(28) = 5054.06, <span style="font-style: italic;">p</span> &lt; .001 (significant).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Suggested number of factors ─────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7 suggestions from 6 criteria, all suggesting 1 factor.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Comparison data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Empirical Kaiser Criterion</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Braeken &amp; van Assen (2017): 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Hull method</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimator: ML</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • CAF: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Minimum average partial</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Original implementation (TR2): 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Revised implementation (TR4): 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Next Eigenvalue Sufficiency Test</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Suggested number of factors: 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Parallel analysis</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Eigenvalues found using PCA; 100 simulated datasets.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • PCA: 1</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

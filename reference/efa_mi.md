@@ -123,6 +123,9 @@ efa_mi(
   declared formals: pass them as `estimate_control =` /
   `rotate_control =` exactly as you would to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
+  A name that is not an
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  argument is rejected.
 
 ## Value
 
@@ -190,12 +193,10 @@ object carries:
   used (`"gauge_invariant"` for communalities and
   `"signed_permutation_approx"` for rotated loadings and, for oblique
   rotations, factor correlations and structure coefficients).
-  `fit_indices_descriptive`, on the bootstrap path, pools every fit
-  index the bootstrap replicates carry, so the structural constants
-  among them (`df`, `df_null`) appear with a standard error of 0. The
-  RMSEA confidence bounds are not among them: the replicate fits run
-  without confidence intervals, so no per-replicate value exists to
-  pool.
+  `fit_indices_descriptive`, on the bootstrap path, pools the bootstrap
+  replicates of RMSEA, CFI, and TLI. It is present only when every
+  component fit has them (see *Standard errors* in
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)).
 
 - mi_fit:
 
@@ -520,11 +521,10 @@ same recipe but is less benchmarked.
 
 Errors and warnings raised by `efa_mi()` are classed, with an
 `efa_pooled_` prefix (`efa_consensus_` for the consensus target) –
-except the dots validation shared with
-[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
-which signals `efa_flat_knob_in_dots` or `efa_renamed_arg` – so they can
-be caught programmatically. The message shown explains what went wrong
-and, where relevant, how to fix it.
+except the validation of `...`, which signals `efa_flat_knob_in_dots`,
+`efa_renamed_arg`, or `efa_unused_dots` – so they can be caught
+programmatically. The message shown explains what went wrong and, where
+relevant, how to fix it.
 
 ## References
 
@@ -614,25 +614,24 @@ Andreas Soteriades, Markus Steiner
 # e.g. mice.
 dat_list <- lapply(1:3, function(x) GRiPS_raw[sample(1:nrow(GRiPS_raw), replace = TRUE),])
 mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML")
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mod
 #> 
 #> Pooled EFA across 3 imputations performed with estimator = 'ML' and
-#>   rotation = 'none'.
+#>   rotation = 'none' (N = 810).
 #> Pooling settings: align_unrotated = 'signed_tucker_congruence',
 #>   fit_pool_method = 'D2'.
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
 #>             F1    h2    u2
-#> fun        .808  .652  .348
-#> friends    .837  .701  .299
-#> enjoy      .871  .759  .241
-#> hurt       .757  .573  .427
-#> part       .814  .662  .338
-#> commonly   .818  .669  .331
-#> chances    .783  .613  .387
-#> attracted  .844  .713  .287
+#> fun        .796  .634  .366
+#> friends    .859  .738  .262
+#> enjoy      .865  .749  .251
+#> hurt       .753  .567  .433
+#> part       .813  .660  .340
+#> commonly   .828  .686  .314
+#> chances    .788  .622  .378
+#> attracted  .855  .731  .269
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
@@ -642,21 +641,17 @@ mod
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                 F1
-#> SS loadings   5.343
-#> Prop Tot Var   .668
+#> SS loadings   5.386
+#> Prop Tot Var   .673
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> D2-pooled χ²(20) = 0.00, p = 1.000
-#> CFI (avg. over imputations): .99
+#> D2-pooled χ²(20) = 38.80, p = .630
+#> CFI (avg. over imputations): .98
 #> TLI (avg. over imputations): .98
-#> RMSEA [90% CI]: .00 [.00; .00]
-#> AIC: -40.00
-#> BIC: -133.94
-#> ECVI: 0.04
-#> CAF: .50
+#> RMSEA [90% CI]: .03 [.02; .05]
 #> SRMR: .02
-#> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .1),
+#> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .5),
 #> not the χ²(20) tail.
 #> Note: CFI and TLI are averaged over the imputations, not formed from the
 #> separately pooled model and baseline statistics in `mi_diagnostics`.
@@ -664,25 +659,24 @@ mod
 # \donttest{
 # add computation of standard errors and CIs
 mod <- efa_mi(dat_list, n_factors = 1, estimator = "ML", se = "np-boot")
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mod
 #> 
 #> Pooled EFA across 3 imputations performed with estimator = 'ML' and
-#>   rotation = 'none'.
+#>   rotation = 'none' (N = 810).
 #> Pooling settings: align_unrotated = 'signed_tucker_congruence',
 #>   fit_pool_method = 'D2'.
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
 #>             F1    h2    u2
-#> fun        .808  .652  .348
-#> friends    .837  .701  .299
-#> enjoy      .871  .759  .241
-#> hurt       .757  .573  .427
-#> part       .814  .662  .338
-#> commonly   .818  .669  .331
-#> chances    .783  .613  .387
-#> attracted  .844  .713  .287
+#> fun        .796  .634  .366
+#> friends    .859  .738  .262
+#> enjoy      .865  .749  .251
+#> hurt       .753  .567  .433
+#> part       .813  .660  .340
+#> commonly   .828  .686  .314
+#> chances    .788  .622  .378
+#> attracted  .855  .731  .269
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
@@ -692,25 +686,19 @@ mod
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                 F1
-#> SS loadings   5.343
-#> Prop Tot Var   .668
+#> SS loadings   5.386
+#> Prop Tot Var   .673
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> D2-pooled χ²(20) = 0.00, p = 1.000
-#> CFI (avg. over imputations) [95% bootstrap/MI-CI]: .99 [.96, 1.02]
-#> TLI (avg. over imputations) [95% bootstrap/MI-CI]: .98 [.94, 1.02]
-#> RMSEA [90% CI] [95% bootstrap/MI-CI]: .00 [.00; .00] [-.01, .14]
-#> AIC [95% bootstrap/MI-CI]: -40.00 [-93.87, 197.52]
-#> BIC [95% bootstrap/MI-CI]: -133.94 [-187.82, 103.58]
-#> ECVI [95% bootstrap/MI-CI]: 0.04 [-.03, .33]
-#> CAF [95% bootstrap/MI-CI]: .50 [.48, .52]
-#> SRMR [95% bootstrap/MI-CI]: .02 [.00, .03]
-#> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .1),
+#> D2-pooled χ²(20) = 38.80, p = .630
+#> CFI (avg. over imputations): .98
+#> TLI (avg. over imputations): .98
+#> RMSEA [90% CI]: .03 [.02; .05]
+#> SRMR: .02
+#> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(20, .5),
 #> not the χ²(20) tail.
 #> Note: CFI and TLI are averaged over the imputations, not formed from the
 #> separately pooled model and baseline statistics in `mi_diagnostics`.
-#> 
-#> Note: Bootstrap/MI CIs based on 1000 bootstrap samples per imputation.
 # }
 ```

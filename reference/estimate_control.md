@@ -216,11 +216,11 @@ Each argument that governs a `type` preset defaults to `NA`, meaning
 "leave this knob to the preset". Setting `type` to one of `"EFAtools"`,
 `"psych"`, or `"SPSS"` fills those knobs from the corresponding preset
 when the fit is run; setting `type = "none"` requires the relevant knobs
-to be supplied explicitly. The control object only records the chosen
-`type` and the knobs you set: the preset is resolved (and any "argument
-set alongside `type`" warning issued) when the object is used to fit a
-model, exactly as it is today, because which preset applies depends on
-the estimator and rotation.
+to be supplied explicitly. A knob you set is used as given and takes
+precedence over the preset. The control object only records the chosen
+`type` and the knobs you set: the preset is resolved when the object is
+used to fit a model, because which preset applies depends on the
+estimator and rotation.
 
 ## See also
 

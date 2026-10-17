@@ -1,18 +1,12 @@
 # Print and format a reliability object
 
 [`print()`](https://rdrr.io/r/base/print.html) shows the reliability
-coefficients for the general factor and the group factors, for a single
-group or for each group: the reliability coefficients (omega total,
-omega hierarchical, and omega subscale, standardized Cronbach's alpha,
-and the H index) and the common-variance indices (the explained common
-variance, ECV, and the percent of uncontaminated correlations, PUC).
-[`format()`](https://rdrr.io/r/base/format.html) assembles the same
-report and returns it as a character vector;
-[`print()`](https://rdrr.io/r/base/print.html) is
-`cat(format(x), sep = "\n")`. The lines follow the active console theme,
-so they are plain when colours are disabled (for example when captured
-into a file or stripped with
-[`cli::ansi_strip()`](https://cli.r-lib.org/reference/ansi_strip.html)).
+coefficients (omega total, hierarchical, and subscale, standardized
+alpha, and the H index) of each factor and the common-variance indices
+(ECV and PUC) of the general factor, for one solution or for each group.
+[`format()`](https://rdrr.io/r/base/format.html) returns the same lines
+as a character vector. The lines follow the active console theme, and
+are plain when colours are disabled.
 
 ## Usage
 
@@ -59,36 +53,22 @@ efa_mod <- efa_fit(test_models$baseline$cormat, N = 500, n_factors = 3,
 rel <- efa_reliability(efa_mod)
 rel
 #> 
-#> Total variance from the correlation matrix.
-#> 
-#> Correlated-factors solution: a factor's total omega counts the true score
-#> variance its composite receives from every factor, through its cross-loadings
-#> and any factor correlations; its subscale omega counts only that factor's own
-#> contribution.
-#> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
-#>         tot   sub  alpha    H
-#> total  .883         .868
-#> F1     .769  .734   .768  .760
-#> F2     .765  .680   .763  .753
-#> F3     .745  .667   .743  .738
+#>         tot  alpha    H
+#> total  .883   .868
+#> F1     .769   .768  .760
+#> F2     .765   .763  .753
+#> F3     .745   .743  .738
 
 # format() returns the same lines as a character vector:
 writeLines(format(rel))
 #> 
-#> Total variance from the correlation matrix.
-#> 
-#> Correlated-factors solution: a factor's total omega counts the true score
-#> variance its composite receives from every factor, through its cross-loadings
-#> and any factor correlations; its subscale omega counts only that factor's own
-#> contribution.
-#> 
 #> ── Reliability coefficients ────────────────────────────────────────────────────
 #> 
-#>         tot   sub  alpha    H
-#> total  .883         .868
-#> F1     .769  .734   .768  .760
-#> F2     .765  .680   .763  .753
-#> F3     .745  .667   .743  .738
+#>         tot  alpha    H
+#> total  .883   .868
+#> F1     .769   .768  .760
+#> F2     .765   .763  .753
+#> F3     .745   .743  .738
 ```

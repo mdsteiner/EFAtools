@@ -11,15 +11,15 @@ efa_hull(
   x,
   N = NA,
   n_fac_theor = NA,
-  estimator = c("PAF", "ULS", "ML"),
-  gof = c("CAF", "CFI", "RMSEA"),
-  eigen_type = c("SMC", "PCA", "EFA"),
+  estimator = c("ML", "PAF", "ULS"),
+  gof = "CAF",
+  eigen_type = c("PCA", "SMC", "EFA"),
   use = c("pairwise.complete.obs", "all.obs", "complete.obs", "everything",
     "na.or.complete"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra"),
   n_datasets = 1000,
   percent = 95,
-  decision_rule = c("means", "percentile", "crawford"),
+  decision_rule = c("percentile", "means", "crawford"),
   n_factors = 1,
   estimate_control = NULL,
   ...
@@ -28,14 +28,18 @@ efa_hull(
 
 ## Source
 
-Auerswald, M., & Moshagen, M. (2019). How to determine the number of
-factors to retain in exploratory factor analysis: A comparison of
-extraction methods under realistic conditions. Psychological Methods,
-24(4), 468–491. https://doi.org/10.1037/met0000200
+Horn, J. L. (1965). A rationale and test for the number of factors in
+factor analysis. Psychometrika, 30(2), 179–185.
+https://doi.org/10.1007/BF02289447
+
+Lim, S., & Jahng, S. (2019). Determining the number of factors using
+parallel analysis and its recent variants. Psychological Methods, 24(4),
+452–467. https://doi.org/10.1037/met0000230
 
 Lorenzo-Seva, U., Timmerman, M. E., & Kiers, H. A. (2011). The Hull
 method for selecting the number of common factors. Multivariate
 Behavioral Research, 46(2), 340-364.
+https://doi.org/10.1080/00273171.2011.564527
 
 ## Arguments
 
@@ -61,27 +65,27 @@ Behavioral Research, 46(2), 340-364.
 
 - estimator:
 
-  character. The estimator to use. One of `"PAF"`, `"ULS"`, or `"ML"`,
-  for principal axis factoring, unweighted least squares, and maximum
-  likelihood, respectively. Default is `"PAF"`.
+  character. The estimator to use: `"ML"` (default), `"PAF"`, or
+  `"ULS"`, for maximum likelihood, principal axis factoring, and
+  unweighted least squares, respectively.
 
 - gof:
 
-  character. The goodness of fit index to use. Either `"CAF"`, `"CFI"`,
-  or `"RMSEA"`, or any combination of them. With the `"PAF"` estimator,
-  only the CAF can be used as goodness of fit index. For details on the
-  CAF, see Lorenzo-Seva, Timmerman, and Kiers (2011).
+  character. The goodness of fit index to use: `"CAF"` (default),
+  `"CFI"`, or `"RMSEA"`, or any combination of them. With the `"PAF"`
+  estimator, the Hull method uses only the CAF. In Lorenzo-Seva,
+  Timmerman, and Kiers (2011), with factor correlations up to .40, the
+  CFI was the most accurate index. With strongly correlated factors
+  (e.g., .70), CFI and RMSEA can make the Hull method retain too few
+  factors. For details on the CAF, see Lorenzo-Seva et al. (2011).
 
 - eigen_type:
 
-  character. On what the eigenvalues should be found in the parallel
-  analysis. Can be one of `"SMC"`, `"PCA"`, or `"EFA"`. If using `"SMC"`
-  (default), the diagonal of the correlation matrices is replaced by the
-  squared multiple correlations (SMCs) of the indicators. If using
-  `"PCA"`, the diagonal values of the correlation matrices are left to
-  be 1. If using `"EFA"`, eigenvalues are found on the correlation
-  matrices with the final communalities of an EFA solution as diagonal.
-  This is passed to
+  character. The eigenvalues of the parallel analysis that sets the
+  upper bound *J*: `"PCA"` (default) uses the correlation matrix,
+  `"SMC"` puts the squared multiple correlations on its diagonal, and
+  `"EFA"` puts the communalities of an EFA solution on its diagonal (see
+  details). This is passed to
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
 
 - use:
@@ -100,8 +104,8 @@ Behavioral Research, 46(2), 340-364.
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Must be at least 1.
-  Default is 1000. This is passed to
+  numeric. The number of reference correlation matrices to simulate.
+  Must be at least 1. Default is 1000. This is passed to
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
 
 - percent:
@@ -112,12 +116,12 @@ Behavioral Research, 46(2), 340-364.
 
 - decision_rule:
 
-  character. Which rule to use to determine the number of factors to
-  retain. Default is `"means"`, which will use the average simulated
-  eigenvalues. `"percentile"`, uses the percentiles specified in
-  percent. `"crawford"` uses the 95th percentile for the first factor
-  and the mean afterwards (based on Crawford et al, 2010). This is
-  passed to
+  character. The rule of the parallel analysis that sets the upper bound
+  *J*. Default is `"percentile"`, which uses the percentile of the
+  simulated eigenvalues that `percent` sets (see details). `"means"`
+  uses the mean simulated eigenvalues. `"crawford"` uses the 95th
+  percentile for the first factor and the mean for the other factors
+  (based on Crawford et al., 2010). This is passed to
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
 
 - n_factors:
@@ -184,8 +188,10 @@ for the print and plot methods). Its main fields are:
 - settings:
 
   A list of the settings used, including `n_fac_max`, the upper bound
-  *J* of the number of factors to extract (see details). For backwards
-  compatibility the estimator is also repeated in `settings$method`.
+  *J* of the number of factors to extract, and the `decision_rule` and
+  `percent` of the parallel analysis that set it (see details). For
+  backwards compatibility the estimator is also repeated in
+  `settings$method`.
 
 For backwards compatibility the per-index suggestions are additionally
 available as the top-level fields `n_fac_CAF`, `n_fac_CFI` and
@@ -201,21 +207,34 @@ where *J* is the number of factors suggested by parallel analysis (or
 `n_fac_theor`, if that is larger), plus one – keeps the solutions on the
 upper boundary of the convex hull of goodness-of-fit against degrees of
 freedom, and selects the one at the sharpest elbow, i.e. with the
-highest *st* value.
+highest *st* value. *J* is at least 3 (or, with few indicators, the
+largest number of factors that gives an over-identified model), so that
+the hull has sufficient solutions.
 
-Because it trades fit against parsimony instead of testing against a
-null model of uncorrelated variables, the Hull method does not lose
-accuracy for the correlated-factor structures where parallel analysis
-([`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md))
-tends to under-extract; the CAF variant in particular was among the more
-accurate criteria in Auerswald and Moshagen (2019). It needs at least
-six indicators and fits a model at every candidate factor count, so it
-is comparatively slow and is not an option for very short scales.
+The upper bound *J* helps to prevent overfactoring. The selected elbow
+is never the first or the last solution of the range, so the Hull method
+retains at most *J* - 1 factors. If fewer than three solutions are on
+the hull, there is no elbow; the solution with the highest goodness of
+fit is then selected, and a warning says so.
+
+As Lorenzo-Seva et al. (2011) suggest, this parallel analysis (Horn,
+1965) uses PCA eigenvalues and the 95th percentile of the simulated
+eigenvalues by default. With the eigenvalues of the reduced correlation
+matrix (`"SMC"`), parallel analysis often retains too many factors,
+particularly when the model does not fit the data exactly. In Lim and
+Jahng (2019), parallel analysis with PCA eigenvalues was the most
+accurate in most conditions.
+
+In the simulation of Lorenzo-Seva et al. (2011), with factor
+correlations up to .40, all Hull variants were more accurate overall
+than parallel analysis. The Hull method needs at least six indicators
+and fits a model at every candidate factor count, so it is comparatively
+slow and is not an option for very short scales.
 
 The
 [efa_parallel](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
-function and the principal axis factoring of the different number of
-factors can be parallelized using the future framework, by calling the
+function and the fits of the different numbers of factors can be
+parallelized using the future framework, by calling the
 [`future::plan()`](https://future.futureverse.org/reference/plan.html)
 function. The examples provide example code on how to enable parallel
 processing.
@@ -265,22 +284,30 @@ Other factor retention criteria:
 
 ``` r
 # \donttest{
-# using PAF (this will print a message if gof is not specified manually
-# and CAF will be used automatically)
-efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF", n_datasets = 100)
+# using the defaults: ML, the CAF, and PCA eigenvalues with the 95th percentile in
+# the parallel analysis
+efa_hull(test_models$baseline$cormat, N = 500, n_datasets = 100)
 #> ── Hull method ─────────────────────────────────────────────────────────────────
-#> Estimator: PAF
+#> Estimator: ML
 #> 
 #> • CAF: 3
 
 # using ML with all available fit indices (CAF, CFI, and RMSEA)
-efa_hull(test_models$baseline$cormat, N = 500, estimator = "ML", n_datasets = 100)
+efa_hull(test_models$baseline$cormat, N = 500, gof = c("CAF", "CFI", "RMSEA"),
+         n_datasets = 100)
 #> ── Hull method ─────────────────────────────────────────────────────────────────
 #> Estimator: ML
 #> 
 #> • CAF: 3
 #> • CFI: 1
 #> • RMSEA: 1
+
+# using PAF, with which the Hull method uses only the CAF
+efa_hull(test_models$baseline$cormat, N = 500, estimator = "PAF", n_datasets = 100)
+#> ── Hull method ─────────────────────────────────────────────────────────────────
+#> Estimator: PAF
+#> 
+#> • CAF: 3
 
 # using ULS with only RMSEA
 efa_hull(test_models$baseline$cormat, N = 500, estimator = "ULS", gof = "RMSEA",
@@ -298,7 +325,7 @@ if (FALSE) { # \dontrun{
 local({
   old_plan <- future::plan(future::multisession, workers = 2)
   on.exit(future::plan(old_plan), add = TRUE)
-  efa_hull(test_models$baseline$cormat, N = 500, gof = "CAF")
+  efa_hull(test_models$baseline$cormat, N = 500)
 })
 } # }
 ```

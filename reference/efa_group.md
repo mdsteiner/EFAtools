@@ -131,14 +131,9 @@ efa_group(
   declared formals: pass them as `estimate_control =` /
   `rotate_control =` exactly as you would to
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
-  A name that is neither an
+  A name that is not an
   [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  argument nor a rotation-engine extra is rejected.
-
-  A rotation-engine extra that shares a name with an `efa_group()`
-  argument cannot reach the rotation through `...`, because the argument
-  takes the name first (for example geomin's `delta`; see `delta`
-  above).
+  argument is rejected.
 
 ## Value
 
@@ -343,7 +338,6 @@ Other factor analysis:
 # Raw data split by a grouping vector (unrotated, consensus alignment)
 g <- rep(c("g1", "g2"), length.out = nrow(GRiPS_raw))
 mg <- efa_group(GRiPS_raw, groups = g, n_factors = 1)
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mg$loadings
 #> $g1
 #>                  F1
@@ -399,7 +393,6 @@ mg$flags
 # approximate-invariance verdict read conservatively off the congruence CI lower bound
 mg_ci <- efa_group(GRiPS_raw, groups = g, n_factors = 1, b_boot = 100, seed = 42,
                    invariance = TRUE)
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 mg_ci$congruence$matched_ci
 #> $lower
 #> , , F1

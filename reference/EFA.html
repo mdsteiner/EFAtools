@@ -120,13 +120,15 @@ otherwise). Use <code><a href="efa_retain.html">efa_retain()</a></code> to decid
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
 <dd><p>numeric. The number of observations. Needs only be specified if a
-correlation matrix is used; with raw data, <code>N</code> is found from the data instead.</p><ul><li><p>With <code>N = NA</code>, not all fit indices can be computed; a positive <code>N</code> that is very
-small relative to the number of variables leaves the chi-square-derived indices
-unavailable as well, with a warning.</p></li>
-<li><p>With raw data, <code>N</code> is the number of cases the correlation matrix was actually
-computed from – see <code>use</code> for the general rule and how missing values change it.
-Under <code>cor_method = "fiml"</code>, <code>use</code> is ignored and <code>N</code> is instead the number of
-cases carrying at least one observed value.</p></li>
+correlation matrix is used. Without <code>N</code>, the chi-square-based fit indices are not
+available, with a warning; the same applies to a positive <code>N</code> that is very small
+relative to the number of variables. With raw data, <code>N</code> is found from the data:</p><ul><li><p>the number of rows under the default pairwise deletion (<code>use</code>), with a warning
+if values are missing, because each correlation then rests on fewer cases, so the
+chi-square is too large and the standard errors are too small (Marsh, 1998);</p></li>
+<li><p>the number of complete cases under listwise deletion, and whenever an asymptotic
+covariance is needed (<code>estimator = "DWLS"</code> or <code>se = "sandwich"</code>, except under
+<code>cor_method = "fiml"</code>);</p></li>
+<li><p>the number of rows with at least one observed value under <code>cor_method = "fiml"</code>.</p></li>
 </ul></dd>
 
 
@@ -138,23 +140,21 @@ properties and data requirements.</p></dd>
 
 
 <dt id="arg-rotation">rotation<a class="anchor" aria-label="anchor" href="#arg-rotation"></a></dt>
-<dd><p>character. Either perform no rotation ("none"; default),
-an orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
-"bentlerT", or "bifactorT"), or an oblique rotation ("promax", "oblimin",
-"quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ"). See the
-<em>Rotations</em> section in Details for their properties and known issues.</p></dd>
+<dd><p>character. Either perform no rotation ("none"; default), an orthogonal
+rotation ("varimax", "equamax", "quartimax", "geominT", "bentlerT", or "bifactorT"), or
+an oblique rotation ("promax", "oblimin", "quartimin", "simplimax", "bentlerQ",
+"geominQ", or "bifactorQ"). See the <code><a href="efa_fit.html">efa_fit()</a></code> documentation for their properties.</p></dd>
 
 
 <dt id="arg-se">se<a class="anchor" aria-label="anchor" href="#arg-se"></a></dt>
 <dd><p>character. Whether and how to compute standard errors (and matching
-confidence intervals): "none" (default), "information" (analytic
-standard errors from the expected Fisher information of the ML solution), "sandwich"
-(robust "sandwich" standard errors from raw data, which stay reliable under
-non-normality or a misspecified estimator weight), or "np-boot" (non-parametric
-bootstrap). The
-methods differ in their assumptions, their data requirements, and which estimator,
-rotation, and <code>cor_method</code> combinations they support; see the <em>Standard errors</em>
-section in Details.</p></dd>
+confidence intervals): "none" (default), "information" (analytic standard errors
+from the expected Fisher information of the ML solution), "sandwich" (robust
+standard errors from raw data, which stay reliable under non-normality or a
+misspecified estimator weight), or "np-boot" (non-parametric bootstrap). The methods
+differ in their assumptions, their data requirements, and which estimator, rotation,
+and <code>cor_method</code> combinations they support; see the <em>Standard errors</em> section in
+Details.</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>

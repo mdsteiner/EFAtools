@@ -30,6 +30,9 @@ efa_parallel(
 
 ## Source
 
+Anderson, T. W. (2003). An introduction to multivariate statistical
+analysis (3rd ed.). Wiley.
+
 Braeken, J., & van Assen, M. A. (2017). An empirical Kaiser criterion.
 Psychological Methods, 22, 450–466. https://doi.org/10.1037/met0000074
 
@@ -69,8 +72,8 @@ https://doi.org/10.1007/BF02289447
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Must be at least 1.
-  Default is 1000.
+  numeric. The number of reference correlation matrices to simulate.
+  Must be at least 1. Default is 1000.
 
 - percent:
 
@@ -86,9 +89,9 @@ https://doi.org/10.1007/BF02289447
   correlation matrices are left to be 1. If using "EFA", eigenvalues are
   found on the correlation matrices with the final communalities of an
   EFA solution as diagonal. Default is `c("PCA", "SMC", "EFA")`, i.e.
-  all three, which costs roughly six times a single non-EFA type:
-  `"EFA"` fits an EFA to every simulated dataset and dominates that
-  total. Pass a single type if the run is time-critical.
+  all three. `"EFA"` fits an EFA to every simulated correlation matrix
+  and takes most of the run time. Leave out `"EFA"` if the run is
+  time-critical.
 
 - use:
 
@@ -192,8 +195,16 @@ eigenvalues are conditional on the earlier ones in the sequence and thus
 the shared variance is already accounted in the first eigenvalue (e.g.,
 Braeken & van Assen, 2017).
 
-The reference eigenvalues are obtained from simulated data, so the
-suggested number of factors varies slightly from run to run. Call
+For Pearson correlations, each simulated correlation matrix comes
+directly from the exact sampling distribution of the correlation matrix
+of `N` cases of uncorrelated normal variables. It is a Wishart matrix
+scaled to correlations (Anderson, 2003, Sec. 7.2). No raw data are
+simulated, so the time for the simulation does not increase with `N`.
+Rank correlations (`"spearman"`, `"kendall"`) need raw data, so for them
+the data are simulated and then correlated.
+
+The reference eigenvalues are obtained by simulation, so the suggested
+number of factors varies slightly from run to run. Call
 [`base::set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to
 make a run reproducible; the result is then also independent of the
 parallel plan set via

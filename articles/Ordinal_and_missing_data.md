@@ -65,77 +65,65 @@ decide whether an ordinal treatment is worthwhile.
 
 ``` r
 
-efa_screen(d_ord, seed = 42)
+efa_screen(d_ord)
 #> 
 #> ── Sampling adequacy and sphericity ────────────────────────────────────────────
 #> 
-#> ✔ The overall KMO value for your data is meritorious (Overall KMO = 0.828).
-#> These data are probably suitable for factor analysis (verbal bands: Kaiser &
-#> Rice, 1974).
-#> 
-#> ✔ The Bartlett's test of sphericity was significant at an alpha level of .05.
-#> These data are probably suitable for factor analysis.
-#> χ²(153) = 1306.76, p < .001
+#> ✔ Overall KMO = 0.828: meritorious (Kaiser & Rice, 1974).
+#> ✔ Bartlett's test of sphericity: χ²(153) = 1306.76, p < .001 (significant).
 #> 
 #> ── Multicollinearity ───────────────────────────────────────────────────────────
 #> 
-#> ℹ Determinant: 0.0357. It falls as variables are added, so the condition index
-#> below carries the verdict.
-#> ✔ Condition number: 7.919 (condition index 2.814). An index of 10 or less is
-#> rarely of interest (Belsley, 1991).
+#> ✔ Condition index: 2.814. An index of 10 or less is rarely of interest
+#> (Belsley, 1991).
 #> 
 #> ── Per-variable diagnostics ────────────────────────────────────────────────────
 #> 
-#>     variance missing%   SMC   MSA flags
-#> V1     1.248        0 0.218 0.830      
-#> V2     1.298        0 0.241 0.817      
-#> V3     1.222        0 0.278 0.793      
-#> V4     1.223        0 0.225 0.829      
-#> V5     1.211        0 0.228 0.801      
-#> V6     1.266        0 0.297 0.810      
-#> V7     1.260        0 0.242 0.839      
-#> V8     1.187        0 0.239 0.836      
-#> V9     1.182        0 0.259 0.832      
-#> V10    1.153        0 0.257 0.835      
-#> V11    1.150        0 0.282 0.806      
-#> V12    1.193        0 0.244 0.852      
-#> V13    1.373        0 0.227 0.819      
-#> V14    1.317        0 0.290 0.851      
-#> V15    1.206        0 0.224 0.853      
-#> V16    1.193        0 0.227 0.859      
-#> V17    1.282        0 0.311 0.832      
-#> V18    1.223        0 0.274 0.804      
+#>     variance   SMC   MSA flags
+#> V1     1.248 0.218 0.830      
+#> V2     1.298 0.241 0.817      
+#> V3     1.222 0.278 0.793      
+#> V4     1.223 0.225 0.829      
+#> V5     1.211 0.228 0.801      
+#> V6     1.266 0.297 0.810      
+#> V7     1.260 0.242 0.839      
+#> V8     1.187 0.239 0.836      
+#> V9     1.182 0.259 0.832      
+#> V10    1.153 0.257 0.835      
+#> V11    1.150 0.282 0.806      
+#> V12    1.193 0.244 0.852      
+#> V13    1.373 0.227 0.819      
+#> V14    1.317 0.290 0.851      
+#> V15    1.206 0.224 0.853      
+#> V16    1.193 0.227 0.859      
+#> V17    1.282 0.311 0.832      
+#> V18    1.223 0.274 0.804      
 #> 
 #> ── Multivariate normality ──────────────────────────────────────────────────────
 #> 
 #> ✔ Mardia's skewness: χ²(1140) = 1016.6, p = 0.996.
 #> ✖ Mardia's kurtosis: z = -5.79, p < .001.
-#> ✖ Henze-Zirkler: HZ = 1, p < .001.
-#> These data depart from multivariate normality: 2 of the 3 tests reject it.
+#> These data depart from multivariate normality: one of the two tests rejects it.
 #> 
 #> ── Outliers ────────────────────────────────────────────────────────────────────
 #> 
-#> ℹ 4 of 400 observations were flagged as multivariate outliers (robust distance
-#> > 5.61).
+#> ℹ No case is flagged: some variables have fewer than ten distinct values
+#> (categorical), and a chi-square cutoff is not valid for their Mahalanobis
+#> distances. The largest distances are in rows 194, 182, 225, 66, and 138.
 #> 
 #> ── Recommendations ─────────────────────────────────────────────────────────────
 #> 
 #> ! 18 items have fewer than 5 response categories; treating them as ordinal
 #>   (polychoric correlations with a categorical estimator such as DWLS) is less
 #>   biased than normal-theory ML.
-#> ! Bartlett's test is significant, but it assumes multivariate normality and
-#>   grows more sensitive as N increases; because these data are non-normal, treat
-#>   it as uninformative here and rely on the KMO.
-#> ! 4 observations were flagged as potential multivariate outliers; inspect them
-#>   (see `$outliers$flagged`) before down-weighting or excluding.
 ```
 
 The sampling adequacy (KMO) and sphericity checks confirm the data are
 factorable. The telling parts are the multivariate-normality section and
-the recommendations: Mardia’s kurtosis and the Henze-Zirkler test reject
-normality, and the recommendations flag that every item has fewer than
-five response categories. Together, these point to the same conclusion.
-With few categories and non-normal data, a polychoric correlation with a
+the recommendations: Mardia’s kurtosis test rejects normality, and the
+recommendations flag that every item has fewer than five response
+categories. Together, these point to the same conclusion. With few
+categories and non-normal data, a polychoric correlation with a
 categorical estimator such as DWLS is less biased than normal-theory
 maximum likelihood. The normal-theory standard errors and fit indices
 are also better replaced by robust (sandwich) versions.
@@ -155,11 +143,10 @@ these data show.
 
 efa_poly <- efa_fit(d_ord, n_factors = 3, cor_method = "poly", estimator = "dwls",
                     rotation = "oblimin", se = "sandwich")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
 efa_poly
 #> 
-#> EFA performed with estimator = 'DWLS' and rotation = 'oblimin'.
+#> EFA performed with estimator = 'DWLS' and rotation = 'oblimin'
+#>   (polychoric correlations, N = 400).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -210,9 +197,6 @@ efa_poly
 #> CFI: 1.00
 #> TLI: 1.00
 #> RMSEA [90% CI]: .00 [.00; .03]
-#> AIC: NA
-#> BIC: NA
-#> CAF: .51
 #> SRMR: .03
 ```
 
@@ -267,8 +251,6 @@ compare the rotated loadings with
 
 efa_cont <- efa_fit(d_ord, n_factors = 3, cor_method = "pearson", estimator = "ML",
                     rotation = "oblimin")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
 
 cmp <- efa_compare(efa_poly$rot_loadings, efa_cont$rot_loadings,
                    x_labels = c("Polychoric / DWLS", "Pearson / ML"))
@@ -382,12 +364,10 @@ only the complete ones. The model fit is reported as corrected two-stage
 
 efa_fiml <- efa_fit(d_miss, n_factors = 3, cor_method = "fiml", estimator = "ml",
                     rotation = "oblimin")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
 efa_fiml
 #> 
-#> EFA performed with estimator = 'ML' and rotation = 'oblimin'.
-#> Correlations: FIML (two-stage, missing data)
+#> EFA performed with estimator = 'ML' and rotation = 'oblimin'
+#>   (two-stage FIML correlations, N = 250).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -438,9 +418,6 @@ efa_fiml
 #> CFI: .99
 #> TLI: .99
 #> RMSEA [90% CI]: .02 [.00; .04]
-#> AIC: NA
-#> BIC: NA
-#> CAF: .52
 #> SRMR: .04
 ```
 
@@ -510,12 +487,10 @@ and pools them.
 ``` r
 
 efa_pooled <- efa_mi(dat_list, n_factors = 3, estimator = "ml", rotation = "oblimin")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
 efa_pooled
 #> 
 #> Pooled EFA across 5 imputations performed with estimator = 'ML' and
-#>   rotation = 'oblimin'.
+#>   rotation = 'oblimin' (N = 250).
 #> Pooling settings: target_method = 'first_target',
 #>   align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
 #> 
@@ -568,10 +543,6 @@ efa_pooled
 #> CFI (avg. over imputations): .93
 #> TLI (avg. over imputations): .90
 #> RMSEA [90% CI]: .02 [.00; .04]
-#> AIC: -92.99
-#> BIC: -452.18
-#> ECVI: 1.00
-#> CAF: .52
 #> SRMR: .04
 #> Note: the pooled χ² is the D2 statistic; its p uses the D2 reference F(102,
 #> 9.0), not the χ²(102) tail.
@@ -639,9 +610,9 @@ announces that override rather than applying it silently.
 
 efa_ord_miss <- efa_fit(d_ord_miss, n_factors = 3, cor_method = "poly",
                         estimator = "dwls", rotation = "oblimin")
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
-#> ℹ An asymptotic covariance requires complete cases; incomplete rows were
-#>   dropped (listwise), overriding `use = "pairwise.complete.obs"`.
+#> ℹ An asymptotic covariance requires complete cases, so 238 of 300 rows with
+#>   missing values were dropped (listwise; N = 62). This overrides `use =
+#>   "pairwise.complete.obs"`.
 efa_ord_miss$settings$N        # cases the fit is actually based on
 #> [1] 62
 ```
@@ -663,7 +634,9 @@ Two adjustments avoid it, each with a cost:
   weighting and the robust standard errors, and the reported `N` is the
   nominal row count while each correlation rests on its own smaller
   subset — so fit statistics and analytic standard errors treat the data
-  as more complete than they are.
+  as more complete than they are, and
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
+  warns about this.
 - Switch to FIML — but only as a continuous analysis.
   `cor_method = "fiml"` estimates a saturated *normal* covariance and
   analyses the resulting Pearson-type correlation; there is no
@@ -675,11 +648,8 @@ Two adjustments avoid it, each with a cost:
 
 efa_fit(d_ord_miss, n_factors = 3, cor_method = "fiml", estimator = "dwls")
 #> Error in `efa_fit()`:
-#> ! `estimator = "DWLS"` is not compatible with `cor_method = "fiml"`.
-#> ✖ DWLS needs a polychoric asymptotic covariance, which the continuous FIML
-#>   correlation does not provide.
-#> ℹ Use `estimator = "ML"`, "ULS", or "PAF", or `cor_method = "poly"`/"tetra" for
-#>   DWLS.
+#> ! `estimator = "DWLS"` cannot be used with `cor_method = "fiml"`.
+#> ℹ DWLS needs polychoric correlations. With FIML, use "ML", "ULS", or "PAF".
 ```
 
 ### Keeping Both the Ordinal Treatment and the Cases
@@ -703,12 +673,10 @@ dat_ord <- lapply(seq_len(imp_ord$m), function(i) mice::complete(imp_ord, i))
 
 efa_ord_pooled <- efa_mi(dat_ord, n_factors = 3, cor_method = "poly",
                          estimator = "dwls", rotation = "oblimin")
-#> ℹ `x` is not a correlation matrix; computing correlations from
-#> the raw data.
 efa_ord_pooled
 #> 
 #> Pooled EFA across 5 imputations performed with estimator = 'DWLS' and
-#>   rotation = 'oblimin'.
+#>   rotation = 'oblimin' (polychoric correlations, N = 300).
 #> Pooling settings: target_method = 'first_target',
 #>   align_unrotated = 'signed_tucker_congruence', fit_pool_method = 'D2'.
 #> 
@@ -757,7 +725,6 @@ efa_ord_pooled
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF: .53
 #> SRMR: .04
 #> df: 102
 #> 

@@ -104,28 +104,12 @@ EFA_POOLED(
 - ...:
 
   Additional arguments passed to
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  (e.g. `estimator`, `rotation`, `se`, `n_factors`, `N`). These select
-  the estimator, rotation, standard-error method, and fit indices used
-  for every imputation; see
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)
-  for the available options, their properties, and which combinations
-  are valid. Two of them shape the pooled object rather than a single
-  fit: `seed` sets the random state once for the whole
   [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
-  call – every component bootstrap and every random-start rotation draws
-  from it, so a seeded call is reproducible as a whole, and the caller's
-  random stream is restored afterwards – and `b_boot` sets the number of
-  bootstrap replicates drawn per imputation under `se = "np-boot"`,
-  which is what the pooled within-imputation variances are estimated
-  from and is recorded in `settings$b_boot`. The
-  [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
-  and
-  [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
-  objects are accepted through `...` as well, although they are not
-  declared formals: pass them as `estimate_control =` /
-  `rotate_control =` exactly as you would to
-  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md).
+  and from there to
+  [`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md),
+  in the flat form of the former interface (e.g. `method`, `rotation`,
+  `type`, `max_iter`, or the extras of the selected rotation such as
+  `gam`). Names that the former interface could not use are ignored.
 
 ## Value
 

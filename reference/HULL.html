@@ -99,26 +99,18 @@ is used as the upper bound <em>J</em> of factors to extract in the Hull method.<
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>character. The estimator to use; passed to <code><a href="efa_hull.html">efa_hull()</a></code> as its
-<code>estimator</code> argument. One of <code>"PAF"</code>, <code>"ULS"</code>, or <code>"ML"</code>.</p></dd>
+<code>estimator</code> argument. One of <code>"PAF"</code> (default), <code>"ULS"</code>, or <code>"ML"</code>.</p></dd>
 
 
 <dt id="arg-gof">gof<a class="anchor" aria-label="anchor" href="#arg-gof"></a></dt>
-<dd><p>character. The goodness of fit index to use. Either <code>"CAF"</code>,
-<code>"CFI"</code>, or <code>"RMSEA"</code>, or any combination of them.
-With the <code>"PAF"</code> estimator, only
-the CAF can be used as goodness of fit index. For details on the CAF, see
-Lorenzo-Seva, Timmerman, and Kiers (2011).</p></dd>
+<dd><p>character. Passed to <code><a href="efa_hull.html">efa_hull()</a></code>. The goodness of fit index to use:
+<code>"CAF"</code>, <code>"CFI"</code>, or <code>"RMSEA"</code>, or any combination of them. Default is all three.
+With the <code>"PAF"</code> method, the Hull method uses only the CAF.</p></dd>
 
 
 <dt id="arg-eigen-type">eigen_type<a class="anchor" aria-label="anchor" href="#arg-eigen-type"></a></dt>
-<dd><p>character. On what the eigenvalues should be found in the
-parallel analysis. Can be one of <code>"SMC"</code>, <code>"PCA"</code>, or <code>"EFA"</code>.
-If using  <code>"SMC"</code> (default), the diagonal of the correlation matrices is
-replaced by the squared multiple correlations (SMCs) of the indicators. If
-using  <code>"PCA"</code>, the diagonal values of the correlation
-matrices are left to be 1. If using  <code>"EFA"</code>, eigenvalues are found on the
-correlation  matrices with the final communalities of an EFA solution as
-diagonal. This is passed to  <code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
+<dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> in <code><a href="efa_hull.html">efa_hull()</a></code>. One of
+<code>"SMC"</code> (default), <code>"PCA"</code>, or <code>"EFA"</code>.</p></dd>
 
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
@@ -135,8 +127,8 @@ Default is  <code>"pearson"</code>.</p></dd>
 
 
 <dt id="arg-n-datasets">n_datasets<a class="anchor" aria-label="anchor" href="#arg-n-datasets"></a></dt>
-<dd><p>numeric. The number of datasets to simulate. Must be at
-least 1. Default is 1000. This is passed to <code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
+<dd><p>numeric. The number of reference correlation matrices to simulate.
+Must be at least 1. Default is 1000. This is passed to <code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
 
 
 <dt id="arg-percent">percent<a class="anchor" aria-label="anchor" href="#arg-percent"></a></dt>
@@ -145,11 +137,11 @@ Default is 95. This is passed to <code><a href="efa_parallel.html">efa_parallel(
 
 
 <dt id="arg-decision-rule">decision_rule<a class="anchor" aria-label="anchor" href="#arg-decision-rule"></a></dt>
-<dd><p>character. Which rule to use to determine the number of
-factors to retain. Default is <code>"means"</code>, which will use the average
-simulated eigenvalues. <code>"percentile"</code>, uses the percentiles specified
-in percent. <code>"crawford"</code> uses the 95th percentile for the first factor
-and the mean afterwards (based on Crawford et al, 2010). This is passed to <code><a href="efa_parallel.html">efa_parallel()</a></code>.</p></dd>
+<dd><p>character. Passed to <code><a href="efa_parallel.html">efa_parallel()</a></code> in <code><a href="efa_hull.html">efa_hull()</a></code>. Which rule
+to use to determine the number of factors to retain. Default is <code>"means"</code>, which uses
+the average simulated eigenvalues. <code>"percentile"</code> uses the percentiles specified in
+<code>percent</code>. <code>"crawford"</code> uses the 95th percentile for the first factor and the mean
+afterwards (based on Crawford et al., 2010).</p></dd>
 
 
 <dt id="arg-n-factors">n_factors<a class="anchor" aria-label="anchor" href="#arg-n-factors"></a></dt>

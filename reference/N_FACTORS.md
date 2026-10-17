@@ -44,8 +44,8 @@ N_FACTORS(
 
 - x:
 
-  data.frame or matrix. Raw data, or a correlation matrix. If `"CD"` is
-  included as a criterion, x must be raw data.
+  data.frame or matrix. Raw data, or a correlation matrix. `"CD"` needs
+  raw data.
 
 - criteria:
 
@@ -71,7 +71,9 @@ N_FACTORS(
 
   character. Passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html) if raw data is
-  given as input. Default is `"pairwise.complete.obs"`.
+  given as input. Default is `"pairwise.complete.obs"`. `"CD"` always
+  uses only the complete cases: it removes the incomplete rows with a
+  warning.
 
 - cor_method:
 
@@ -79,9 +81,10 @@ N_FACTORS(
   `"spearman"`, or `"kendall"` (passed to
   [`stats::cor()`](https://rdrr.io/r/stats/cor.html)), or `"poly"` /
   `"tetra"` for polychoric / tetrachoric correlations (a two-step
-  estimator). `CD`, `PARALLEL`, `NEST`, `HULL`, and `SMT` do not support
-  `"poly"` / `"tetra"` and are skipped automatically if you request them
-  together. Default is `"pearson"`.
+  estimator). With `"poly"` / `"tetra"`, `"HULL"`, `"NEST"`,
+  `"PARALLEL"`, and `"SMT"` are skipped, and `"CD"` and Bartlett's test
+  use the Pearson correlations of the raw data (see details). Default is
+  `"pearson"`.
 
 - n_factors_max:
 
@@ -107,9 +110,9 @@ N_FACTORS(
 - alpha:
 
   numeric. Passed to
-  [`efa_cd()`](https://mdsteiner.github.io/EFAtools/reference/efa_cd.md).
-  The alpha level used to test the significance of the improvement added
-  by an additional factor. Default is .30.
+  [`efa_retain()`](https://mdsteiner.github.io/EFAtools/reference/efa_retain.md)
+  as `alpha_CD`. The alpha level used to test the significance of the
+  improvement added by an additional factor. Default is .30.
 
 - max_iter_CD:
 
@@ -138,10 +141,9 @@ N_FACTORS(
 
   character. Passed to
   [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
-  The goodness of fit index to use. Either `"CAF"`, `"CFI"`, or
-  `"RMSEA"`, or any combination of them. With the `"PAF"` estimator,
-  only the CAF can be used as goodness of fit index. For details on the
-  CAF, see Lorenzo-Seva, Timmerman, and Kiers (2011).
+  The goodness of fit index to use: `"CAF"`, `"CFI"`, or `"RMSEA"`, or
+  any combination of them. Default is all three. With the `"PAF"`
+  method, the Hull method uses only the CAF.
 
 - eigen_type_HULL:
 
@@ -149,14 +151,7 @@ N_FACTORS(
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
   in
   [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
-  What the eigenvalues in the parallel analysis are based on. One of
-  `"SMC"`, `"PCA"`, or `"EFA"` – different ways of estimating how much
-  variance each indicator shares with the others before the eigenvalues
-  are computed. `"SMC"` (default) uses each indicator's squared multiple
-  correlation with the others (its diagonal value in the correlation
-  matrix). `"PCA"` leaves the diagonal at 1, so each indicator's total
-  variance – not just the shared part – feeds into the eigenvalues.
-  `"EFA"` uses the communalities from a fitted EFA solution instead.
+  One of `"SMC"` (default), `"PCA"`, or `"EFA"`.
 
 - eigen_type_other:
 
@@ -165,9 +160,7 @@ N_FACTORS(
   [`efa_scree()`](https://mdsteiner.github.io/EFAtools/reference/efa_scree.md),
   and
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
-  The same as eigen_type_HULL, but multiple inputs are possible here
-  (any combination of `"PCA"`, `"SMC"`, and `"EFA"`). Default is
-  `"SMC"`.
+  One or more of `"PCA"`, `"SMC"`, and `"EFA"`. Default is `"SMC"`.
 
 - n_factors:
 
@@ -187,7 +180,8 @@ N_FACTORS(
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
   (also within
   [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)).
-  The number of datasets to simulate. Default is 1000.
+  The number of reference correlation matrices to simulate. Default is
+  1000.
 
 - percent:
 
@@ -222,7 +216,8 @@ N_FACTORS(
 
   numeric. Passed to
   [`efa_nest()`](https://mdsteiner.github.io/EFAtools/reference/efa_nest.md).
-  The number of datasets to simulate. Default is 1000.
+  The number of reference correlation matrices to simulate. Default is
+  1000.
 
 - alpha_nest:
 

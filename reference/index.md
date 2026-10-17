@@ -106,7 +106,7 @@ hierarchical one.
 Reliability coefficients for a fitted or user-specified factor solution.
 
 - [`efa_reliability()`](https://mdsteiner.github.io/EFAtools/reference/efa_reliability.md)
-  : Reliability and common-variance coefficients for a factor solution
+  : Reliability coefficients for a factor solution
 - [`efa_schmid_leiman()`](https://mdsteiner.github.io/EFAtools/reference/efa_schmid_leiman.md)
   : Schmid-Leiman transformation
 - [`print(`*`<efa_reliability>`*`)`](https://mdsteiner.github.io/EFAtools/reference/print.efa_reliability.md)

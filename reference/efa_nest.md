@@ -29,6 +29,9 @@ Achim, A. (2017). Testing the number of required dimensions in
 exploratory factor analysis. The Quantitative Methods for Psychology,
 13(1), 64–74. https://doi.org/10.20982/tqmp.13.1.p064
 
+Anderson, T. W. (2003). An introduction to multivariate statistical
+analysis (3rd ed.). Wiley.
+
 Brandenburg, N., & Papenberg, M. (2024). Reassessment of innovative
 methods to determine the number of factors: A simulation-based
 comparison of exploratory graph analysis and Next Eigenvalue Sufficiency
@@ -72,7 +75,8 @@ publication. https://doi.org/10.1177/00131644241308528
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Default is 1000.
+  numeric. The number of reference correlation matrices to simulate.
+  Default is 1000.
 
 - estimate_control:
 
@@ -147,18 +151,22 @@ Because each reference model carries the factors already retained, NEST
 does not lose accuracy for the strongly correlated factor structures
 where parallel analysis tends to under-extract, and it was among the
 more accurate criteria in the simulation studies of Brandenburg and
-Papenberg (2024) and Caron (2025). The price is runtime: a fresh set of
-`n_datasets` reference datasets is drawn and eigen-decomposed at every
-candidate factor count, which makes NEST one of the slowest criteria
-available here.
+Papenberg (2024) and Caron (2025).
+
+At each candidate factor count, NEST draws `n_datasets` new reference
+correlation matrices. Each matrix comes directly from the exact sampling
+distribution of the Pearson correlation matrix of `N` normal cases from
+the reference model. It is a Wishart matrix scaled to correlations
+(Anderson, 2003, Sec. 7.2). No raw data are simulated, so the time for
+the simulation does not increase with `N`.
 
 The reference models are fitted without inequality constraints. A
 Heywood case in one of them leaves no unique variance to simulate the
 reference data from, so NEST aborts rather than continuing from an
 inadmissible reference.
 
-The reference eigenvalues are obtained from simulated data, so the
-suggested number of factors varies slightly from run to run. Call
+The reference eigenvalues are obtained by simulation, so the suggested
+number of factors varies slightly from run to run. Call
 [`base::set.seed()`](https://rdrr.io/r/base/Random.html) beforehand to
 make a run reproducible.
 

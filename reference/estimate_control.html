@@ -252,10 +252,10 @@ the components <code>type</code>, <code>init_comm</code>, <code>criterion</code>
 knob to the preset". Setting <code>type</code> to one of <code>"EFAtools"</code>, <code>"psych"</code>, or
 <code>"SPSS"</code> fills those knobs from the corresponding preset when the fit is run;
 setting <code>type = "none"</code> requires the relevant knobs to be supplied explicitly.
-The control object only records the chosen <code>type</code> and the knobs you set: the
-preset is resolved (and any "argument set alongside <code>type</code>" warning issued) when
-the object is used to fit a model, exactly as it is today, because which preset
-applies depends on the estimator and rotation.</p>
+A knob you set is used as given and takes precedence over the preset. The control
+object only records the chosen <code>type</code> and the knobs you set: the preset is resolved
+when the object is used to fit a model, because which preset applies depends on the
+estimator and rotation.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -97,10 +97,10 @@ improvement added by an additional factor. Default is .30.</p></dd>
 
 
 <dt id="arg-cor-method">cor_method<a class="anchor" aria-label="anchor" href="#arg-cor-method"></a></dt>
-<dd><p>character. One of <code>"pearson"</code>, <code>"spearman"</code>, or <code>"kendall"</code>,
-passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>. <code>"poly"</code> and <code>"tetra"</code> are not supported because
-<code>CD</code> compares the data against simulated continuous reference data.
-Default is "pearson".</p></dd>
+<dd><p>character. One of <code>"pearson"</code> (default), <code>"spearman"</code>, or
+<code>"kendall"</code>, passed to <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cor()</a></code>. Ruscio and Roche (2012) use Pearson
+correlations, and the comparison data keep the observed values of each variable, so
+<code>"pearson"</code> also suits ordinal data. <code>"poly"</code> and <code>"tetra"</code> are not available.</p></dd>
 
 
 <dt id="arg-max-iter">max_iter<a class="anchor" aria-label="anchor" href="#arg-max-iter"></a></dt>

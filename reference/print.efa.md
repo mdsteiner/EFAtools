@@ -7,11 +7,15 @@ or
 [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
 solution: a model header, the loading matrix (with the factor
 intercorrelations for oblique solutions), the variances accounted for,
-and the model fit. [`summary()`](https://rdrr.io/r/base/summary.html)
-returns a `summary.efa` object whose print method adds the full
-diagnostics: model and simple-structure diagnostics, confidence-interval
-tables, the structure matrix, multiple-imputation uncertainty (for
-pooled objects), and residual diagnostics.
+and the main fit indices (chi-square, CFI, TLI, RMSEA, and SRMR).
+[`summary()`](https://rdrr.io/r/base/summary.html) returns a
+`summary.efa` object whose print method adds the full diagnostics: model
+and simple-structure diagnostics, confidence-interval tables, the
+structure matrix, the information criteria (AIC, BIC, and ECVI),
+multiple-imputation uncertainty (for pooled objects), and residual
+diagnostics. With `se = "np-boot"`, CFI and TLI also show their
+bootstrap interval where it is available (see *Standard errors* in
+[`efa_fit()`](https://mdsteiner.github.io/EFAtools/reference/efa_fit.md)).
 [`format()`](https://rdrr.io/r/base/format.html) assembles the same
 report and returns it as a character vector;
 [`print()`](https://rdrr.io/r/base/print.html) is
@@ -50,7 +54,7 @@ summary(
   cutoff = 0.3,
   digits = 3,
   max_name_length = 10,
-  ci = c("auto", "none", "separate"),
+  ci = c("auto", "none"),
   ci_filter = c("salient", "all", "nonzero"),
   diagnostics_top_n = 10,
   residual_cutoff = 0.1,
@@ -132,10 +136,9 @@ format(x, ...)
 
 - ci:
 
-  character. Which confidence intervals
-  [`summary()`](https://rdrr.io/r/base/summary.html) shows, if
-  available. `"auto"` and `"separate"` print CI sections when CIs were
-  computed; `"none"` suppresses them. Default is `"auto"`.
+  character. Whether [`summary()`](https://rdrr.io/r/base/summary.html)
+  shows the confidence-interval tables: `"auto"` (default) shows them
+  when CIs were computed; `"none"` suppresses them.
 
 - ci_filter:
 
@@ -222,7 +225,7 @@ mod <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
                estimator = "PAF", rotation = "promax")
 mod
 #> 
-#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -269,26 +272,21 @@ mod
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF: .50
+#> χ²(102) = 123.92, p = .069
+#> CFI: .99
+#> TLI: .98
+#> RMSEA [90% CI]: .02 [.00; .03]
 #> SRMR: .02
-#> df: 102
 
 # The full diagnostics, CI tables, and residual diagnostics:
 summary(mod)
 #> 
-#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).
 #> 
 #> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 
-#> Factors: 3
-#> Variables: 18
 #> N: 500
 #> Heywood cases: 0
-#> Cross-loading items (|loading| >= .300): 0
-#> Items without salient loading (|loading| >= .300): 0
-#> Factors with fewer than 3 salient indicators: 0
-#> Items with primary-loading gap < .200: 1
-#> Largest |residual|: .069
 #> Factor intercorrelations > .85: none
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
@@ -364,9 +362,14 @@ summary(mod)
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF: .50
+#> χ²(102) = 123.92, p = .069
+#> CFI: .99
+#> TLI: .98
+#> RMSEA [90% CI]: .02 [.00; .03]
 #> SRMR: .02
-#> df: 102
+#> AIC: -80.08
+#> BIC: -509.97
+#> ECVI: 0.52
 #> 
 #> ── Residual Diagnostics ────────────────────────────────────────────────────────
 #> 
@@ -381,7 +384,7 @@ summary(mod)
 # format() returns the same lines as a character vector, e.g. for a report file:
 writeLines(format(mod))
 #> 
-#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -428,7 +431,9 @@ writeLines(format(mod))
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF: .50
+#> χ²(102) = 123.92, p = .069
+#> CFI: .99
+#> TLI: .98
+#> RMSEA [90% CI]: .02 [.00; .03]
 #> SRMR: .02
-#> df: 102
 ```

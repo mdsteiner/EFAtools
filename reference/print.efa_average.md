@@ -68,13 +68,13 @@ character vector with the report lines.
 # \donttest{
 EFA_aver <- efa_average(test_models$baseline$cormat, n_factors = 3, N = 500)
 #> ℹ Extracting data
-#> ✔ Extracting data [17ms]
+#> ✔ Extracting data [13ms]
 #> 
 #> ℹ Reordering factors
-#> ✔ Reordering factors [32ms]
+#> ✔ Reordering factors [22ms]
 #> 
 #> ℹ Averaging data
-#> ✔ Averaging data [27ms]
+#> ✔ Averaging data [20ms]
 #> 
 EFA_aver
 #> 
@@ -196,13 +196,22 @@ EFA_aver
 #> the averaged loadings printed above, which are a cell-wise summary rather than
 #> a fitted solution.
 #> 
+#> Chi-square-based indices averaged over 72 of 72 solutions.
 #> CAF, RMSR, and SRMR averaged over 72 of 72 solutions.
 #> 
 #>        M (SD) [Min; Max]
-#> CAF:  .50 (.00) [.50; .50]
+#> χ²: 123.92 ( 0.01) [123.92; 123.93]
+#> df: 102
+#> p: .069 (.000) [.069; .069]
+#> CFI: .99 (.00) [.99; .99]
+#> TLI: .98 (.00) [.98; .98]
+#> RMSEA: .02 (.00) [.02; .02]
+#> AIC: -80.08 ( 0.01) [-80.08; -80.07]
+#> BIC: -509.97 ( 0.01) [-509.97; -509.96]
+#> ECVI:  0.52 ( 0.00) [ 0.52;  0.52]
+#> CAF: .50 (.00) [.50; .50]
 #> RMSR: .03 (.00) [.03; .03]
 #> SRMR: .02 (.00) [.02; .02]
-#> df: 102
 
 # format() returns the same lines as a character vector:
 writeLines(format(EFA_aver))
@@ -325,12 +334,21 @@ writeLines(format(EFA_aver))
 #> the averaged loadings printed above, which are a cell-wise summary rather than
 #> a fitted solution.
 #> 
+#> Chi-square-based indices averaged over 72 of 72 solutions.
 #> CAF, RMSR, and SRMR averaged over 72 of 72 solutions.
 #> 
 #>        M (SD) [Min; Max]
-#> CAF:  .50 (.00) [.50; .50]
+#> χ²: 123.92 ( 0.01) [123.92; 123.93]
+#> df: 102
+#> p: .069 (.000) [.069; .069]
+#> CFI: .99 (.00) [.99; .99]
+#> TLI: .98 (.00) [.98; .98]
+#> RMSEA: .02 (.00) [.02; .02]
+#> AIC: -80.08 ( 0.01) [-80.08; -80.07]
+#> BIC: -509.97 ( 0.01) [-509.97; -509.96]
+#> ECVI:  0.52 ( 0.00) [ 0.52;  0.52]
+#> CAF: .50 (.00) [.50; .50]
 #> RMSR: .03 (.00) [.03; .03]
 #> SRMR: .02 (.00) [.02; .02]
-#> df: 102
 # }
 ```

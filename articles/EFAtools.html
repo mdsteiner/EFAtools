@@ -123,134 +123,101 @@ suitable for factor analysis, and whether they satisfy the assumptions
 of the estimator you plan to use. <code><a href="../reference/efa_screen.html">efa_screen()</a></code> collects the
 relevant diagnostics in one place. From raw data it reports the
 Kaiser-Meyer-Olkin (KMO) measure of sampling adequacy (overall and per
-variable), Bartlett’s test of sphericity, the determinant and condition
-number of the correlation matrix, the squared multiple correlation (SMC)
-and per-variable diagnostics for each item, tests of multivariate
-normality (Mardia and Henze-Zirkler), and multivariate outliers, and it
-closes with a set of recommendations.</p>
+variable), Bartlett’s test of sphericity, the condition index of the
+correlation matrix, the squared multiple correlation (SMC) and
+per-variable diagnostics for each item, Mardia’s tests of multivariate
+normality, and multivariate outliers, and it closes with a set of
+recommendations.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_screen.html">efa_screen</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, seed <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_screen.html">efa_screen</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Sampling adequacy and sphericity</span> ────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The overall KMO value for your data is meritorious (Overall KMO = 0.87).</span></span>
-<span><span class="co">#&gt; These data are probably suitable for factor analysis (verbal bands: Kaiser &amp;</span></span>
-<span><span class="co">#&gt; Rice, 1974).</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05.</span></span>
-<span><span class="co">#&gt; These data are probably suitable for factor analysis.</span></span>
-<span><span class="co">#&gt; χ²(435) = 5843.05, <span style="font-style: italic;">p</span> &lt; .001</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Overall KMO = 0.87: meritorious (Kaiser &amp; Rice, 1974).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Bartlett's test of sphericity: χ²(435) = 5843.05, <span style="font-style: italic;">p</span> &lt; .001 (significant).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Multicollinearity</span> ───────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Determinant: 0.00000634. It falls as variables are added, so the condition</span></span>
-<span><span class="co">#&gt; index below carries the verdict.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition number: 46.561 (condition index 6.824). An index of 10 or less is</span></span>
-<span><span class="co">#&gt; rarely of interest (Belsley, 1991).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Condition index: 6.824. An index of 10 or less is rarely of interest</span></span>
+<span><span class="co">#&gt; (Belsley, 1991).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Per-variable diagnostics</span> ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;        variance missing%   SMC   MSA  flags</span></span>
-<span><span class="co">#&gt; ethR_1    2.785        0 0.428 0.908       </span></span>
-<span><span class="co">#&gt; ethR_2    2.469        0 0.312 0.927       </span></span>
-<span><span class="co">#&gt; ethR_3    1.274        0 0.444 0.906 sparse</span></span>
-<span><span class="co">#&gt; ethR_4    2.011        0 0.317 0.818 sparse</span></span>
-<span><span class="co">#&gt; ethR_5    2.202        0 0.310 0.926       </span></span>
-<span><span class="co">#&gt; ethR_6    3.457        0 0.398 0.837       </span></span>
-<span><span class="co">#&gt; finR_1    1.962        0 0.683 0.880       </span></span>
-<span><span class="co">#&gt; finR_2    3.223        0 0.319 0.816       </span></span>
-<span><span class="co">#&gt; finR_3    2.356        0 0.716 0.853       </span></span>
-<span><span class="co">#&gt; finR_4    2.874        0 0.519 0.857       </span></span>
-<span><span class="co">#&gt; finR_5    2.458        0 0.760 0.853       </span></span>
-<span><span class="co">#&gt; finR_6    3.118        0 0.515 0.861       </span></span>
-<span><span class="co">#&gt; heaR_1    4.016        0 0.296 0.912       </span></span>
-<span><span class="co">#&gt; heaR_2    4.532        0 0.277 0.898       </span></span>
-<span><span class="co">#&gt; heaR_3    2.888        0 0.366 0.892       </span></span>
-<span><span class="co">#&gt; heaR_4    2.185        0 0.423 0.889       </span></span>
-<span><span class="co">#&gt; heaR_5    4.099        0 0.254 0.882       </span></span>
-<span><span class="co">#&gt; heaR_6    3.356        0 0.313 0.935       </span></span>
-<span><span class="co">#&gt; recR_1    4.570        0 0.374 0.888       </span></span>
-<span><span class="co">#&gt; recR_2    2.829        0 0.465 0.927       </span></span>
-<span><span class="co">#&gt; recR_3    3.664        0 0.511 0.905       </span></span>
-<span><span class="co">#&gt; recR_4    4.362        0 0.687 0.849       </span></span>
-<span><span class="co">#&gt; recR_5    3.741        0 0.685 0.840       </span></span>
-<span><span class="co">#&gt; recR_6    4.076        0 0.541 0.920       </span></span>
-<span><span class="co">#&gt; socR_1    1.237        0 0.351 0.714 sparse</span></span>
-<span><span class="co">#&gt; socR_2    2.774        0 0.434 0.784       </span></span>
-<span><span class="co">#&gt; socR_3    2.148        0 0.343 0.735       </span></span>
-<span><span class="co">#&gt; socR_4    2.751        0 0.359 0.791       </span></span>
-<span><span class="co">#&gt; socR_5    3.562        0 0.284 0.840       </span></span>
-<span><span class="co">#&gt; socR_6    2.529        0 0.379 0.786       </span></span>
+<span><span class="co">#&gt;        variance   SMC   MSA  flags</span></span>
+<span><span class="co">#&gt; ethR_1    2.785 0.428 0.908       </span></span>
+<span><span class="co">#&gt; ethR_2    2.469 0.312 0.927       </span></span>
+<span><span class="co">#&gt; ethR_3    1.274 0.444 0.906 sparse</span></span>
+<span><span class="co">#&gt; ethR_4    2.011 0.317 0.818 sparse</span></span>
+<span><span class="co">#&gt; ethR_5    2.202 0.310 0.926       </span></span>
+<span><span class="co">#&gt; ethR_6    3.457 0.398 0.837       </span></span>
+<span><span class="co">#&gt; finR_1    1.962 0.683 0.880       </span></span>
+<span><span class="co">#&gt; finR_2    3.223 0.319 0.816       </span></span>
+<span><span class="co">#&gt; finR_3    2.356 0.716 0.853       </span></span>
+<span><span class="co">#&gt; finR_4    2.874 0.519 0.857       </span></span>
+<span><span class="co">#&gt; finR_5    2.458 0.760 0.853       </span></span>
+<span><span class="co">#&gt; finR_6    3.118 0.515 0.861       </span></span>
+<span><span class="co">#&gt; heaR_1    4.016 0.296 0.912       </span></span>
+<span><span class="co">#&gt; heaR_2    4.532 0.277 0.898       </span></span>
+<span><span class="co">#&gt; heaR_3    2.888 0.366 0.892       </span></span>
+<span><span class="co">#&gt; heaR_4    2.185 0.423 0.889       </span></span>
+<span><span class="co">#&gt; heaR_5    4.099 0.254 0.882       </span></span>
+<span><span class="co">#&gt; heaR_6    3.356 0.313 0.935       </span></span>
+<span><span class="co">#&gt; recR_1    4.570 0.374 0.888       </span></span>
+<span><span class="co">#&gt; recR_2    2.829 0.465 0.927       </span></span>
+<span><span class="co">#&gt; recR_3    3.664 0.511 0.905       </span></span>
+<span><span class="co">#&gt; recR_4    4.362 0.687 0.849       </span></span>
+<span><span class="co">#&gt; recR_5    3.741 0.685 0.840       </span></span>
+<span><span class="co">#&gt; recR_6    4.076 0.541 0.920       </span></span>
+<span><span class="co">#&gt; socR_1    1.237 0.351 0.714 sparse</span></span>
+<span><span class="co">#&gt; socR_2    2.774 0.434 0.784       </span></span>
+<span><span class="co">#&gt; socR_3    2.148 0.343 0.735       </span></span>
+<span><span class="co">#&gt; socR_4    2.751 0.359 0.791       </span></span>
+<span><span class="co">#&gt; socR_5    3.562 0.284 0.840       </span></span>
+<span><span class="co">#&gt; socR_6    2.529 0.379 0.786       </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Multivariate normality</span> ──────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Mardia's skewness: χ²(4960) = 11659.84, p &lt; .001.</span></span>
 <span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Mardia's kurtosis: z = 48.3, p &lt; .001.</span></span>
-<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Henze-Zirkler: HZ = 1.03, p &lt; .001.</span></span>
-<span><span class="co">#&gt; These data depart from multivariate normality: 3 of the 3 tests reject it.</span></span>
+<span><span class="co">#&gt; These data depart from multivariate normality: both tests reject it.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Outliers</span> ────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> A robust (MCD) covariance could not be computed; classical Mahalanobis</span></span>
-<span><span class="co">#&gt; distances were used.</span></span>
-<span><span class="co">#&gt; At least half the complete cases lie exactly on a lower-dimensional hyperplane</span></span>
-<span><span class="co">#&gt; (an "exact fit"). This is common with coarse discrete items, where many</span></span>
-<span><span class="co">#&gt; respondents give identical answers on an item pair; it does not mean the data</span></span>
-<span><span class="co">#&gt; are collinear at the correlation level.</span></span>
-<span><span class="co">#&gt; These distances come from a covariance the outliers themselves inflate, so the</span></span>
-<span><span class="co">#&gt; diagnostic is no longer high-breakdown and tends to under-flag.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> 60 of 500 observations were flagged as multivariate outliers (Mahalanobis</span></span>
-<span><span class="co">#&gt; distance &gt; 6.85).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> No case is flagged: some variables have fewer than ten distinct values</span></span>
+<span><span class="co">#&gt; (categorical), and a chi-square cutoff is not valid for their Mahalanobis</span></span>
+<span><span class="co">#&gt; distances. The largest distances are in rows 191, 184, 201, 64, and 374.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Recommendations</span> ─────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> These data depart from multivariate normality; normal-theory standard errors</span></span>
 <span><span class="co">#&gt;   and fit statistics may be biased - prefer robust (sandwich) or bootstrapped</span></span>
 <span><span class="co">#&gt;   standard errors.</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> Bartlett's test is significant, but it assumes multivariate normality and</span></span>
-<span><span class="co">#&gt;   grows more sensitive as N increases; because these data are non-normal, treat</span></span>
-<span><span class="co">#&gt;   it as uninformative here and rely on the KMO.</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 3 variables have a sparse response category (&lt; 5 responses): ethR_3, ethR_4,</span></span>
 <span><span class="co">#&gt;   and socR_1; a low-frequency category can destabilise polychoric estimates -</span></span>
-<span><span class="co">#&gt;   consider collapsing it into an adjacent category.</span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> 60 observations were flagged as potential multivariate outliers; inspect them</span></span>
-<span><span class="co">#&gt;   (see `$outliers$flagged`) before down-weighting or excluding.</span></span></code></pre></div>
+<span><span class="co">#&gt;   consider collapsing it into an adjacent category.</span></span></code></pre></div>
 <p>KMO measures, on a 0-1 scale, how well each variable is predicted by
 the others, and Bartlett’s test checks that the correlations are not all
 zero. The overall KMO is meritorious and Bartlett’s test is clearly
-significant, so the data are factorable. The determinant looks small,
-but it is a product of 30 eigenvalues and falls as variables are added;
-the condition index (6.8) is the measure that does not move with the
-number of variables, and it is well below the value of 30 that flags a
-near linear dependency. More interesting are the last few sections:
-three items have a sparse response category, and both the Mardia and the
-Henze-Zirkler tests reject multivariate normality. A consequence is that
-normal-theory standard errors and fit indices may be biased, so robust
-(sandwich) or bootstrapped standard errors are preferable, and
-Bartlett’s test should be read with caution. For a fully ordinal
-treatment you would move to polychoric correlations with a diagonally
-weighted least-squares (DWLS) estimator.</p>
-<p>The outlier section reports something other than the usual case, and
-it says so. The diagnostic normally measures each case against a
-high-breakdown location and scatter, estimated from a minimum covariance
-determinant (MCD) subset found by a randomized search. For these data
-the search keeps landing on a subset where one item is constant (several
-DOSPERT items have a very common lowest response), so the covariance is
-singular and no valid subset exists.</p>
-<p><code><a href="../reference/efa_screen.html">efa_screen()</a></code> falls back to classical Mahalanobis
-distances. It names the reason and labels the distances it reports. A
-classical covariance uses every observation, outliers included, so the
-outliers inflate the scatter that measures them. The diagnostic is no
-longer high-breakdown and it tends to under-flag. Read the 60 flagged
-cases as a lower bound, and as a sign of the non-normality the tests
-above report, rather than as a list of cases to remove. The MCD does not
-run, so its random subset search does not run either and
-<code>seed</code> changes nothing here. <code>seed</code> matters only
-when the robust estimate is available, as in the ordinal example in the
-<a href="Ordinal_and_missing_data.html">EFA with ordinal and missing
-data</a> vignette. Inspect the flagged cases (via
-<code>$outliers$flagged</code>) rather than deleting them
-automatically.</p>
+significant, so the data are factorable. The condition index (6.8) is
+well below the value of 30 that flags a near linear dependency. More
+interesting are the last few sections: three items have a sparse
+response category, and both of Mardia’s tests reject multivariate
+normality. A consequence is that normal-theory standard errors and fit
+indices may be biased, so robust (sandwich) or bootstrapped standard
+errors are preferable. For a fully ordinal treatment you would move to
+polychoric correlations with a diagonally weighted least-squares (DWLS)
+estimator.</p>
+<p>The outlier section flags no case. The DOSPERT items are rating
+scales, and for categorical variables no distance-based cutoff is valid:
+many respondents give the same answers, which can make a robust (MCD)
+estimate of the centre and scatter degenerate, and the distances do not
+follow the chi-square distribution that a cutoff needs.
+<code><a href="../reference/efa_screen.html">efa_screen()</a></code> therefore names the cases with the largest
+Mahalanobis distances (all distances are in
+<code>$outliers$distances</code>). Inspect these cases, for example for
+careless responding, rather than deleting them automatically. With
+continuous variables, <code><a href="../reference/efa_screen.html">efa_screen()</a></code> flags outliers against a
+robust estimate.</p>
 <p>Bartlett’s test and the KMO criterion, introduced above, are also
 available as standalone functions if you only want the two classic
 factorability tests:</p>
@@ -258,7 +225,7 @@ factorability tests:</p>
 <code class="sourceCode R"><span><span class="co"># Bartlett's test of sphericity</span></span>
 <span><span class="fu"><a href="../reference/efa_bartlett.html">efa_bartlett</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The <span style="font-weight: bold;">Bartlett's test of sphericity</span> was <span style="color: #00BB00; font-weight: bold;">significant</span> at an alpha level of .05.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">Bartlett's test of sphericity</span> was <span style="color: #00BB00; font-weight: bold;">significant</span> at an alpha level of .05.</span></span>
 <span><span class="co">#&gt; These data are probably suitable for factor analysis.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; χ²(435) = 5843.05, <span style="font-style: italic;">p</span> &lt; .001</span></span>
@@ -302,16 +269,16 @@ through <code><a href="../reference/efa_retain.html">efa_retain()</a></code>.</p
 <h3 id="calling-individual-criteria">Calling Individual Criteria<a class="anchor" aria-label="anchor" href="#calling-individual-criteria"></a>
 </h3>
 <p>Each criterion has its own function. For a parallel analysis based on
-squared multiple correlations (SMC; also called parallel analysis with
-principal factors), for example, you would run:</p>
+the eigenvalues of the correlation matrix (PCA), for example, you would
+run:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># parallel analysis based on SMC eigenvalues</span></span>
-<span><span class="va">pa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_parallel.html">efa_parallel</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, eigen_type <span class="op">=</span> <span class="st">"smc"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># parallel analysis based on PCA eigenvalues</span></span>
+<span><span class="va">pa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_parallel.html">efa_parallel</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, eigen_type <span class="op">=</span> <span class="st">"pca"</span><span class="op">)</span></span>
 <span><span class="va">pa</span></span>
 <span><span class="co">#&gt; ── Parallel analysis ───────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; Eigenvalues found using SMC; 1000 simulated datasets.</span></span>
+<span><span class="co">#&gt; Eigenvalues found using PCA; 1000 simulated datasets.</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; • SMC: 10</span></span>
+<span><span class="co">#&gt; • PCA: 5</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Number of factors retained using the "means" decision rule.</span></span></code></pre></div>
 <p>Printing the result reports the suggested number of factors. Each
@@ -358,32 +325,29 @@ Bartlett’s test and computes the KMO. You can pick a subset with the
 <span><span class="co">#&gt;   suggested number of factors may be unreliable; interpret it with caution and</span></span>
 <span><span class="co">#&gt;   cross-check with other criteria.</span></span>
 <span><span class="va">ret</span></span>
-<span><span class="co">#&gt; ── Tests for the suitability of the data for factor analysis ───────────────────</span></span>
+<span><span class="co">#&gt; ── Sampling adequacy and sphericity ────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05:</span></span>
-<span><span class="co">#&gt;   χ²(435) = 5843.05, p &lt; .001. These data are probably suitable for factor</span></span>
-<span><span class="co">#&gt;   analysis.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The Kaiser-Meyer-Olkin criterion is meritorious (KMO = 0.87). These data are</span></span>
-<span><span class="co">#&gt;   probably suitable for factor analysis.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Overall KMO = 0.87: meritorious (Kaiser &amp; Rice, 1974).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Bartlett's test of sphericity: χ²(435) = 5843.05, <span style="font-style: italic;">p</span> &lt; .001 (significant).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Suggested number of factors ─────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; 8 suggestions from 5 criteria, ranging from 4 to 13 factors.</span></span>
+<span><span class="co">#&gt; 8 suggestions from 5 criteria, ranging from 5 to 13 factors (most common: 8).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Empirical Kaiser Criterion</span></span>
 <span><span class="co">#&gt; • Braeken &amp; van Assen (2017): 8</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Kaiser-Guttman criterion</span></span>
-<span><span class="co">#&gt; Eigenvalues found using SMC.</span></span>
-<span><span class="co">#&gt; • SMC: 4</span></span>
+<span><span class="co">#&gt; Eigenvalues found using PCA; cutoff 1.</span></span>
+<span><span class="co">#&gt; • PCA: 8</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Minimum average partial</span></span>
 <span><span class="co">#&gt; • Original implementation (TR2): 6</span></span>
 <span><span class="co">#&gt; • Revised implementation (TR4): 6</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Parallel analysis</span></span>
-<span><span class="co">#&gt; Eigenvalues found using SMC; 1000 simulated datasets.</span></span>
-<span><span class="co">#&gt; • SMC: 10</span></span>
+<span><span class="co">#&gt; Eigenvalues found using PCA; 1000 simulated datasets.</span></span>
+<span><span class="co">#&gt; • PCA: 5</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Sequential model tests</span></span>
 <span><span class="co">#&gt; • Sequential chi-square model tests: 13</span></span>
@@ -409,13 +373,13 @@ instead adds the Kaiser-Guttman criterion and the sequential model
 tests, and drops comparison data (slow on larger data sets), the hull
 method, and the next eigenvalue sufficiency test.</p>
 <p>This is the situation one would rather avoid, but it does happen: the
-criteria disagree, with suggestions ranging from four to well above ten
-factors. When there is no clear convergence, the choice becomes partly a
-matter of judgement. We proceed with six factors, consistent with the
-minimum average partial test and the RMSEA-based sequential model test
-above (this version of the DOSPERT scale is usually modeled with five
-factors; the sixth factor here splits the financial-risk items into
-two).</p>
+criteria disagree, with suggestions ranging from five to 13 factors.
+When there is no clear convergence, the choice becomes partly a matter
+of judgement. We proceed with six factors, consistent with the minimum
+average partial test and the RMSEA-based sequential model test above
+(this version of the DOSPERT scale is usually modeled with five factors,
+as parallel analysis suggests; the sixth factor here splits the
+financial-risk items into two).</p>
 <p>All criteria except comparison data (which needs raw data) can also
 be applied to a correlation matrix, in which case the sample size must
 be supplied. On a cleaner data set the criteria often agree:</p>
@@ -423,13 +387,10 @@ be supplied. On a cleaner data set the criteria often agree:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_retain.html">efa_retain</a></span><span class="op">(</span><span class="va">test_models</span><span class="op">$</span><span class="va">baseline</span><span class="op">$</span><span class="va">cormat</span>, N <span class="op">=</span> <span class="fl">500</span>, estimator <span class="op">=</span> <span class="st">"uls"</span>,</span>
 <span>           criteria <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"parallel"</span>, <span class="st">"ekc"</span>, <span class="st">"smt"</span><span class="op">)</span>,</span>
 <span>           eigen_type_other <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"smc"</span>, <span class="st">"pca"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ── Tests for the suitability of the data for factor analysis ───────────────────</span></span>
+<span><span class="co">#&gt; ── Sampling adequacy and sphericity ────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The Bartlett's test of sphericity was significant at an alpha level of .05:</span></span>
-<span><span class="co">#&gt;   χ²(153) = 2173.28, p &lt; .001. These data are probably suitable for factor</span></span>
-<span><span class="co">#&gt;   analysis.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> The Kaiser-Meyer-Olkin criterion is marvellous (KMO = 0.916). These data are</span></span>
-<span><span class="co">#&gt;   probably suitable for factor analysis.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Overall KMO = 0.916: marvellous (Kaiser &amp; Rice, 1974).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> Bartlett's test of sphericity: χ²(153) = 2173.28, <span style="font-style: italic;">p</span> &lt; .001 (significant).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Suggested number of factors ─────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -472,73 +433,86 @@ both an orthogonal form (<code>geominT</code>, <code>bentlerT</code>,
 the name: <code>geomin</code> on its own matches both forms and is
 rejected. All are computed by rotation engines built into the
 package.</p>
-<p>An EFA with PAF and no rotation is as simple as:</p>
+<p>An EFA with PAF and an oblimin rotation (the defaults) is as simple
+as:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, n_factors <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">none</span>'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>' (N = 500).</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── <span style="font-weight: bold;">Unrotated Loadings</span> ──────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;          <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>     <span style="font-weight: bold;">F4</span>     <span style="font-weight: bold;">F5</span>     <span style="font-weight: bold;">F6</span>    <span style="font-weight: bold;">h2</span>    <span style="font-weight: bold;">u2</span></span></span>
-<span><span class="co">#&gt; ethR_1  <span style="font-weight: bold;">.558</span>  <span style="color: #555555;">-.193</span>  <span style="color: #555555;"> .141</span>  <span style="color: #555555;"> .232</span>  <span style="color: #555555;">-.129</span>  <span style="color: #555555;"> .049</span>  .442  .558</span></span>
-<span><span class="co">#&gt; ethR_2  <span style="font-weight: bold;">.472</span>  <span style="color: #555555;">-.157</span>  <span style="color: #555555;"> .073</span>  <span style="color: #555555;"> .242</span>  <span style="color: #555555;"> .037</span>  <span style="color: #555555;"> .059</span>  .316  .684</span></span>
-<span><span class="co">#&gt; ethR_3  <span style="font-weight: bold;">.507</span>  <span style="font-weight: bold;">-.402</span>  <span style="color: #555555;"> .164</span>  <span style="color: #555555;"> .112</span>  <span style="color: #555555;">-.087</span>  <span style="color: #555555;"> .062</span>  .470  .530</span></span>
-<span><span class="co">#&gt; ethR_4  <span style="font-weight: bold;">.308</span>  <span style="color: #555555;">-.278</span>  <span style="color: #555555;"> .189</span>  <span style="color: #555555;"> .294</span>  <span style="color: #555555;">-.103</span>  <span style="color: #555555;"> .224</span>  .356  .644</span></span>
-<span><span class="co">#&gt; ethR_5  <span style="font-weight: bold;">.459</span>  <span style="color: #555555;">-.173</span>  <span style="color: #555555;"> .202</span>  <span style="color: #555555;"> .042</span>  <span style="color: #555555;">-.082</span>  <span style="color: #555555;"> .045</span>  .292  .708</span></span>
-<span><span class="co">#&gt; ethR_6  <span style="font-weight: bold;">.412</span>  <span style="font-weight: bold;">-.308</span>  <span style="color: #555555;"> .230</span>  <span style="color: #555555;"> .201</span>  <span style="color: #555555;">-.066</span>  <span style="color: #555555;"> .207</span>  .405  .595</span></span>
-<span><span class="co">#&gt; finR_1  <span style="font-weight: bold;">.602</span>  <span style="font-weight: bold;">-.304</span>  <span style="font-weight: bold;">-.461</span>  <span style="color: #555555;">-.045</span>  <span style="color: #555555;"> .244</span>  <span style="color: #555555;"> .028</span>  .730  .270</span></span>
-<span><span class="co">#&gt; finR_2  <span style="color: #555555;">.294</span>  <span style="color: #555555;"> .281</span>  <span style="color: #555555;">-.255</span>  <span style="color: #555555;">-.066</span>  <span style="font-weight: bold;">-.341</span>  <span style="color: #555555;"> .086</span>  .359  .641</span></span>
-<span><span class="co">#&gt; finR_3  <span style="font-weight: bold;">.626</span>  <span style="color: #555555;">-.285</span>  <span style="font-weight: bold;">-.471</span>  <span style="color: #555555;">-.031</span>  <span style="color: #555555;"> .264</span>  <span style="color: #555555;"> .114</span>  .778  .222</span></span>
-<span><span class="co">#&gt; finR_4  <span style="font-weight: bold;">.557</span>  <span style="color: #555555;">-.012</span>  <span style="font-weight: bold;">-.357</span>  <span style="color: #555555;">-.023</span>  <span style="font-weight: bold;">-.437</span>  <span style="color: #555555;">-.063</span>  .633  .367</span></span>
-<span><span class="co">#&gt; finR_5  <span style="font-weight: bold;">.657</span>  <span style="font-weight: bold;">-.342</span>  <span style="font-weight: bold;">-.491</span>  <span style="color: #555555;">-.064</span>  <span style="color: #555555;"> .218</span>  <span style="color: #555555;"> .028</span>  .842  .158</span></span>
-<span><span class="co">#&gt; finR_6  <span style="font-weight: bold;">.551</span>  <span style="color: #555555;"> .157</span>  <span style="font-weight: bold;">-.341</span>  <span style="color: #555555;">-.007</span>  <span style="font-weight: bold;">-.429</span>  <span style="color: #555555;">-.082</span>  .635  .365</span></span>
-<span><span class="co">#&gt; heaR_1  <span style="font-weight: bold;">.464</span>  <span style="color: #555555;">-.079</span>  <span style="color: #555555;"> .047</span>  <span style="color: #555555;"> .133</span>  <span style="color: #555555;"> .010</span>  <span style="color: #555555;"> .046</span>  .244  .756</span></span>
-<span><span class="co">#&gt; heaR_2  <span style="font-weight: bold;">.409</span>  <span style="color: #555555;">-.020</span>  <span style="color: #555555;"> .163</span>  <span style="color: #555555;"> .229</span>  <span style="color: #555555;"> .040</span>  <span style="color: #555555;"> .068</span>  .252  .748</span></span>
-<span><span class="co">#&gt; heaR_3  <span style="font-weight: bold;">.497</span>  <span style="color: #555555;">-.101</span>  <span style="color: #555555;"> .172</span>  <span style="color: #555555;"> .127</span>  <span style="color: #555555;"> .007</span>  <span style="font-weight: bold;">-.325</span>  .409  .591</span></span>
-<span><span class="co">#&gt; heaR_4  <span style="font-weight: bold;">.547</span>  <span style="color: #555555;">-.110</span>  <span style="color: #555555;"> .183</span>  <span style="color: #555555;"> .038</span>  <span style="color: #555555;"> .070</span>  <span style="font-weight: bold;">-.322</span>  .455  .545</span></span>
-<span><span class="co">#&gt; heaR_5  <span style="font-weight: bold;">.382</span>  <span style="color: #555555;"> .002</span>  <span style="color: #555555;"> .175</span>  <span style="color: #555555;"> .250</span>  <span style="color: #555555;"> .028</span>  <span style="color: #555555;"> .010</span>  .240  .760</span></span>
-<span><span class="co">#&gt; heaR_6  <span style="font-weight: bold;">.504</span>  <span style="color: #555555;"> .063</span>  <span style="color: #555555;"> .102</span>  <span style="color: #555555;"> .015</span>  <span style="color: #555555;"> .006</span>  <span style="color: #555555;">-.196</span>  .307  .693</span></span>
-<span><span class="co">#&gt; recR_1  <span style="font-weight: bold;">.443</span>  <span style="font-weight: bold;"> .337</span>  <span style="color: #555555;"> .057</span>  <span style="color: #555555;">-.064</span>  <span style="color: #555555;"> .007</span>  <span style="color: #555555;">-.063</span>  .322  .678</span></span>
-<span><span class="co">#&gt; recR_2  <span style="font-weight: bold;">.617</span>  <span style="color: #555555;">-.012</span>  <span style="color: #555555;"> .147</span>  <span style="color: #555555;">-.141</span>  <span style="color: #555555;"> .126</span>  <span style="color: #555555;">-.232</span>  .493  .507</span></span>
-<span><span class="co">#&gt; recR_3  <span style="font-weight: bold;">.612</span>  <span style="color: #555555;"> .178</span>  <span style="color: #555555;"> .103</span>  <span style="color: #555555;">-.247</span>  <span style="color: #555555;"> .080</span>  <span style="color: #555555;">-.153</span>  .507  .493</span></span>
-<span><span class="co">#&gt; recR_4  <span style="font-weight: bold;">.634</span>  <span style="color: #555555;"> .228</span>  <span style="color: #555555;"> .254</span>  <span style="font-weight: bold;">-.447</span>  <span style="color: #555555;"> .033</span>  <span style="color: #555555;"> .235</span>  .774  .226</span></span>
-<span><span class="co">#&gt; recR_5  <span style="font-weight: bold;">.640</span>  <span style="color: #555555;"> .135</span>  <span style="color: #555555;"> .267</span>  <span style="font-weight: bold;">-.463</span>  <span style="color: #555555;"> .051</span>  <span style="color: #555555;"> .261</span>  .784  .216</span></span>
-<span><span class="co">#&gt; recR_6  <span style="font-weight: bold;">.629</span>  <span style="color: #555555;"> .238</span>  <span style="color: #555555;"> .135</span>  <span style="color: #555555;">-.244</span>  <span style="color: #555555;">-.060</span>  <span style="color: #555555;">-.014</span>  .534  .466</span></span>
-<span><span class="co">#&gt; socR_1  <span style="color: #555555;">.075</span>  <span style="font-weight: bold;"> .528</span>  <span style="color: #555555;">-.024</span>  <span style="color: #555555;"> .233</span>  <span style="color: #555555;"> .213</span>  <span style="color: #555555;"> .124</span>  .400  .600</span></span>
-<span><span class="co">#&gt; socR_2  <span style="font-weight: bold;">.358</span>  <span style="font-weight: bold;"> .428</span>  <span style="color: #555555;">-.083</span>  <span style="color: #555555;"> .247</span>  <span style="color: #555555;"> .147</span>  <span style="color: #555555;"> .013</span>  .401  .599</span></span>
-<span><span class="co">#&gt; socR_3  <span style="color: #555555;">.118</span>  <span style="font-weight: bold;"> .528</span>  <span style="color: #555555;">-.160</span>  <span style="color: #555555;"> .122</span>  <span style="color: #555555;"> .044</span>  <span style="color: #555555;"> .116</span>  .348  .652</span></span>
-<span><span class="co">#&gt; socR_4  <span style="color: #555555;">.235</span>  <span style="font-weight: bold;"> .481</span>  <span style="color: #555555;">-.057</span>  <span style="color: #555555;"> .214</span>  <span style="color: #555555;"> .166</span>  <span style="color: #555555;">-.093</span>  .372  .628</span></span>
-<span><span class="co">#&gt; socR_5  <span style="font-weight: bold;">.317</span>  <span style="font-weight: bold;"> .330</span>  <span style="color: #555555;"> .014</span>  <span style="color: #555555;"> .154</span>  <span style="color: #555555;">-.030</span>  <span style="color: #555555;"> .002</span>  .234  .766</span></span>
-<span><span class="co">#&gt; socR_6  <span style="color: #555555;">.260</span>  <span style="font-weight: bold;"> .462</span>  <span style="color: #555555;">-.058</span>  <span style="color: #555555;"> .267</span>  <span style="color: #555555;">-.023</span>  <span style="color: #555555;"> .082</span>  .363  .637</span></span>
+<span><span class="co">#&gt;           <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>     <span style="font-weight: bold;">F4</span>     <span style="font-weight: bold;">F5</span>     <span style="font-weight: bold;">F6</span>    <span style="font-weight: bold;">h2</span>    <span style="font-weight: bold;">u2</span></span></span>
+<span><span class="co">#&gt; ethR_1  <span style="color: #555555;"> .039</span>  <span style="color: #555555;"> .009</span>  <span style="font-weight: bold;"> .522</span>  <span style="color: #555555;">-.007</span>  <span style="color: #555555;"> .137</span>  <span style="color: #555555;"> .146</span>  .442  .558</span></span>
+<span><span class="co">#&gt; ethR_2  <span style="color: #555555;"> .166</span>  <span style="color: #555555;">-.025</span>  <span style="font-weight: bold;"> .419</span>  <span style="color: #555555;"> .100</span>  <span style="color: #555555;"> .097</span>  <span style="color: #555555;">-.008</span>  .316  .684</span></span>
+<span><span class="co">#&gt; ethR_3  <span style="color: #555555;"> .120</span>  <span style="color: #555555;"> .064</span>  <span style="font-weight: bold;"> .511</span>  <span style="color: #555555;">-.220</span>  <span style="color: #555555;"> .115</span>  <span style="color: #555555;"> .052</span>  .470  .530</span></span>
+<span><span class="co">#&gt; ethR_4  <span style="color: #555555;">-.013</span>  <span style="color: #555555;">-.038</span>  <span style="font-weight: bold;"> .644</span>  <span style="color: #555555;">-.031</span>  <span style="color: #555555;">-.104</span>  <span style="color: #555555;"> .008</span>  .356  .644</span></span>
+<span><span class="co">#&gt; ethR_5  <span style="color: #555555;">-.003</span>  <span style="color: #555555;"> .177</span>  <span style="font-weight: bold;"> .371</span>  <span style="color: #555555;">-.103</span>  <span style="color: #555555;"> .126</span>  <span style="color: #555555;"> .059</span>  .292  .708</span></span>
+<span><span class="co">#&gt; ethR_6  <span style="color: #555555;"> .029</span>  <span style="color: #555555;"> .084</span>  <span style="font-weight: bold;"> .620</span>  <span style="color: #555555;">-.086</span>  <span style="color: #555555;">-.048</span>  <span style="color: #555555;">-.025</span>  .405  .595</span></span>
+<span><span class="co">#&gt; finR_1  <span style="font-weight: bold;"> .851</span>  <span style="color: #555555;">-.013</span>  <span style="color: #555555;">-.012</span>  <span style="color: #555555;"> .003</span>  <span style="color: #555555;"> .004</span>  <span style="color: #555555;"> .028</span>  .730  .270</span></span>
+<span><span class="co">#&gt; finR_2  <span style="color: #555555;">-.023</span>  <span style="color: #555555;"> .102</span>  <span style="color: #555555;">-.039</span>  <span style="color: #555555;"> .106</span>  <span style="color: #555555;">-.137</span>  <span style="font-weight: bold;"> .551</span>  .359  .641</span></span>
+<span><span class="co">#&gt; finR_3  <span style="font-weight: bold;"> .883</span>  <span style="color: #555555;"> .028</span>  <span style="color: #555555;"> .039</span>  <span style="color: #555555;"> .054</span>  <span style="color: #555555;">-.088</span>  <span style="color: #555555;"> .007</span>  .778  .222</span></span>
+<span><span class="co">#&gt; finR_4  <span style="color: #555555;"> .161</span>  <span style="color: #555555;">-.054</span>  <span style="color: #555555;"> .063</span>  <span style="color: #555555;">-.109</span>  <span style="color: #555555;"> .068</span>  <span style="font-weight: bold;"> .725</span>  .633  .367</span></span>
+<span><span class="co">#&gt; finR_5  <span style="font-weight: bold;"> .889</span>  <span style="color: #555555;">-.005</span>  <span style="color: #555555;">-.002</span>  <span style="color: #555555;">-.037</span>  <span style="color: #555555;"> .006</span>  <span style="color: #555555;"> .074</span>  .842  .158</span></span>
+<span><span class="co">#&gt; finR_6  <span style="color: #555555;"> .086</span>  <span style="color: #555555;">-.028</span>  <span style="color: #555555;"> .005</span>  <span style="color: #555555;"> .023</span>  <span style="color: #555555;"> .092</span>  <span style="font-weight: bold;"> .736</span>  .635  .365</span></span>
+<span><span class="co">#&gt; heaR_1  <span style="color: #555555;"> .144</span>  <span style="color: #555555;"> .064</span>  <span style="font-weight: bold;"> .302</span>  <span style="color: #555555;"> .083</span>  <span style="color: #555555;"> .090</span>  <span style="color: #555555;"> .046</span>  .244  .756</span></span>
+<span><span class="co">#&gt; heaR_2  <span style="color: #555555;"> .029</span>  <span style="color: #555555;"> .047</span>  <span style="font-weight: bold;"> .389</span>  <span style="color: #555555;"> .176</span>  <span style="color: #555555;"> .095</span>  <span style="color: #555555;">-.043</span>  .252  .748</span></span>
+<span><span class="co">#&gt; heaR_3  <span style="color: #555555;"> .011</span>  <span style="color: #555555;">-.044</span>  <span style="color: #555555;"> .154</span>  <span style="color: #555555;">-.016</span>  <span style="font-weight: bold;"> .558</span>  <span style="color: #555555;"> .051</span>  .409  .591</span></span>
+<span><span class="co">#&gt; heaR_4  <span style="color: #555555;"> .073</span>  <span style="color: #555555;"> .060</span>  <span style="color: #555555;"> .101</span>  <span style="color: #555555;">-.041</span>  <span style="font-weight: bold;"> .571</span>  <span style="color: #555555;">-.008</span>  .455  .545</span></span>
+<span><span class="co">#&gt; heaR_5  <span style="color: #555555;">-.016</span>  <span style="color: #555555;"> .002</span>  <span style="font-weight: bold;"> .362</span>  <span style="color: #555555;"> .185</span>  <span style="color: #555555;"> .158</span>  <span style="color: #555555;">-.031</span>  .240  .760</span></span>
+<span><span class="co">#&gt; heaR_6  <span style="color: #555555;"> .035</span>  <span style="color: #555555;"> .124</span>  <span style="color: #555555;"> .064</span>  <span style="color: #555555;"> .074</span>  <span style="font-weight: bold;"> .382</span>  <span style="color: #555555;"> .092</span>  .307  .693</span></span>
+<span><span class="co">#&gt; recR_1  <span style="color: #555555;">-.024</span>  <span style="color: #555555;"> .283</span>  <span style="color: #555555;">-.050</span>  <span style="color: #555555;"> .254</span>  <span style="color: #555555;"> .193</span>  <span style="color: #555555;"> .122</span>  .322  .678</span></span>
+<span><span class="co">#&gt; recR_2  <span style="color: #555555;"> .153</span>  <span style="color: #555555;"> .295</span>  <span style="color: #555555;">-.014</span>  <span style="color: #555555;">-.016</span>  <span style="font-weight: bold;"> .466</span>  <span style="color: #555555;">-.028</span>  .493  .507</span></span>
+<span><span class="co">#&gt; recR_3  <span style="color: #555555;"> .105</span>  <span style="font-weight: bold;"> .442</span>  <span style="color: #555555;">-.118</span>  <span style="color: #555555;"> .062</span>  <span style="font-weight: bold;"> .348</span>  <span style="color: #555555;"> .056</span>  .507  .493</span></span>
+<span><span class="co">#&gt; recR_4  <span style="color: #555555;"> .010</span>  <span style="font-weight: bold;"> .882</span>  <span style="color: #555555;"> .053</span>  <span style="color: #555555;"> .013</span>  <span style="color: #555555;">-.061</span>  <span style="color: #555555;"> .001</span>  .774  .226</span></span>
+<span><span class="co">#&gt; recR_5  <span style="color: #555555;"> .052</span>  <span style="font-weight: bold;"> .896</span>  <span style="color: #555555;"> .095</span>  <span style="color: #555555;">-.053</span>  <span style="color: #555555;">-.084</span>  <span style="color: #555555;">-.039</span>  .784  .216</span></span>
+<span><span class="co">#&gt; recR_6  <span style="color: #555555;">-.016</span>  <span style="font-weight: bold;"> .524</span>  <span style="color: #555555;"> .004</span>  <span style="color: #555555;"> .068</span>  <span style="color: #555555;"> .191</span>  <span style="color: #555555;"> .178</span>  .534  .466</span></span>
+<span><span class="co">#&gt; socR_1  <span style="color: #555555;">-.004</span>  <span style="color: #555555;"> .033</span>  <span style="color: #555555;">-.010</span>  <span style="font-weight: bold;"> .656</span>  <span style="color: #555555;">-.104</span>  <span style="color: #555555;">-.134</span>  .400  .600</span></span>
+<span><span class="co">#&gt; socR_2  <span style="color: #555555;"> .109</span>  <span style="color: #555555;"> .000</span>  <span style="color: #555555;"> .043</span>  <span style="font-weight: bold;"> .585</span>  <span style="color: #555555;"> .074</span>  <span style="color: #555555;"> .018</span>  .401  .599</span></span>
+<span><span class="co">#&gt; socR_3  <span style="color: #555555;"> .009</span>  <span style="color: #555555;"> .053</span>  <span style="color: #555555;">-.095</span>  <span style="font-weight: bold;"> .539</span>  <span style="color: #555555;">-.147</span>  <span style="color: #555555;"> .110</span>  .348  .652</span></span>
+<span><span class="co">#&gt; socR_4  <span style="color: #555555;"> .031</span>  <span style="color: #555555;">-.034</span>  <span style="color: #555555;">-.091</span>  <span style="font-weight: bold;"> .576</span>  <span style="color: #555555;"> .169</span>  <span style="color: #555555;">-.015</span>  .372  .628</span></span>
+<span><span class="co">#&gt; socR_5  <span style="color: #555555;">-.061</span>  <span style="color: #555555;"> .059</span>  <span style="color: #555555;"> .091</span>  <span style="font-weight: bold;"> .359</span>  <span style="color: #555555;"> .086</span>  <span style="color: #555555;"> .137</span>  .234  .766</span></span>
+<span><span class="co">#&gt; socR_6  <span style="color: #555555;">-.064</span>  <span style="color: #555555;">-.017</span>  <span style="color: #555555;"> .114</span>  <span style="font-weight: bold;"> .542</span>  <span style="color: #555555;">-.036</span>  <span style="color: #555555;"> .155</span>  .363  .637</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Legend:</span></span>
 <span><span class="co">#&gt;   <span style="font-weight: bold;">bold</span> = |loading| &gt;= .300</span></span>
 <span><span class="co">#&gt;   <span style="color: #555555;">grey</span> = below cutoff</span></span>
 <span><span class="co">#&gt;   <span style="color: #BB0000; font-weight: bold;">red h2/u2</span> = Heywood-relevant value</span></span>
 <span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Factor Intercorrelations</span> ────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;       <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>     <span style="font-weight: bold;">F4</span>     <span style="font-weight: bold;">F5</span>     <span style="font-weight: bold;">F6</span></span></span>
+<span><span class="co">#&gt; F1  1.000</span></span>
+<span><span class="co">#&gt; F2   .303  1.000</span></span>
+<span><span class="co">#&gt; F3   .379   .272  1.000</span></span>
+<span><span class="co">#&gt; F4   .017   .245   .030  1.000</span></span>
+<span><span class="co">#&gt; F5   .367   .412   .436   .173  1.000</span></span>
+<span><span class="co">#&gt; F6   .353   .353   .186   .282   .238  1.000</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Variances Accounted for</span> ─────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;                      <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>     <span style="font-weight: bold;">F4</span>    <span style="font-weight: bold;">F5</span>     <span style="font-weight: bold;">F6</span></span></span>
-<span><span class="co">#&gt; SS loadings        7.013  2.417  1.529  1.246  .850   .641</span></span>
-<span><span class="co">#&gt; Prop Tot Var        .234   .081   .051   .042  .028   .021</span></span>
-<span><span class="co">#&gt; Cum Prop Tot Var    .234   .314   .365   .407  .435   .457</span></span>
-<span><span class="co">#&gt; Prop Comm Var       .512   .177   .112   .091  .062   .047</span></span>
-<span><span class="co">#&gt; Cum Prop Comm Var   .512   .689   .800   .891  .953  1.000</span></span>
+<span><span class="co">#&gt;                      <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>     <span style="font-weight: bold;">F4</span>     <span style="font-weight: bold;">F5</span>     <span style="font-weight: bold;">F6</span></span></span>
+<span><span class="co">#&gt; SS loadings        2.748  2.655  2.465  2.162  1.869  1.797</span></span>
+<span><span class="co">#&gt; Prop Tot Var        .092   .089   .082   .072   .062   .060</span></span>
+<span><span class="co">#&gt; Cum Prop Tot Var    .092   .180   .262   .334   .397   .457</span></span>
+<span><span class="co">#&gt; Prop Comm Var       .201   .194   .180   .158   .136   .131</span></span>
+<span><span class="co">#&gt; Cum Prop Comm Var   .201   .395   .575   .732   .869  1.000</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; CAF: .48</span></span>
-<span><span class="co">#&gt; SRMR: .03</span></span>
-<span><span class="co">#&gt; df: 270</span></span></code></pre></div>
-<p>To rotate the loadings, set the <code>rotation</code> argument. Here
-we use a promax rotation. We assign the result, as later sections reuse
-this solution:</p>
+<span><span class="co">#&gt; χ²(270) = 618.16, <span style="font-style: italic;">p</span> &lt; .001</span></span>
+<span><span class="co">#&gt; CFI: .93</span></span>
+<span><span class="co">#&gt; TLI: .89</span></span>
+<span><span class="co">#&gt; RMSEA [90% CI]: .05 [.05; .06]</span></span>
+<span><span class="co">#&gt; SRMR: .03</span></span></code></pre></div>
+<p>For a different rotation, set the <code>rotation</code> argument.
+Here we use a promax rotation. We assign the result, as later sections
+reuse this solution:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">efa_dospert</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, n_factors <span class="op">=</span> <span class="fl">6</span>, rotation <span class="op">=</span> <span class="st">"promax"</span><span class="op">)</span></span>
 <span><span class="va">efa_dospert</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">promax</span>'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">PAF</span>' and rotation = '<span style="font-weight: bold;">promax</span>' (N = 500).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -600,16 +574,17 @@ this solution:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Model Fit</span> ───────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; CAF: .48</span></span>
-<span><span class="co">#&gt; SRMR: .03</span></span>
-<span><span class="co">#&gt; df: 270</span></span></code></pre></div>
-<p>We can also use a different estimator and rotation, here for example
-ULS and an oblimin rotation:</p>
+<span><span class="co">#&gt; χ²(270) = 618.16, <span style="font-style: italic;">p</span> &lt; .001</span></span>
+<span><span class="co">#&gt; CFI: .93</span></span>
+<span><span class="co">#&gt; TLI: .89</span></span>
+<span><span class="co">#&gt; RMSEA [90% CI]: .05 [.05; .06]</span></span>
+<span><span class="co">#&gt; SRMR: .03</span></span></code></pre></div>
+<p>We can also use a different estimator, here for example ULS:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">efa_uls</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, n_factors <span class="op">=</span> <span class="fl">6</span>, rotation <span class="op">=</span> <span class="st">"oblimin"</span>, estimator <span class="op">=</span> <span class="st">"uls"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">efa_uls</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/efa_fit.html">efa_fit</a></span><span class="op">(</span><span class="va">DOSPERT_sub</span>, n_factors <span class="op">=</span> <span class="fl">6</span>, estimator <span class="op">=</span> <span class="st">"uls"</span><span class="op">)</span></span>
 <span><span class="va">efa_uls</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">ULS</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>'.</span></span>
+<span><span class="co">#&gt; EFA performed with estimator = '<span style="font-weight: bold;">ULS</span>' and rotation = '<span style="font-weight: bold;">oblimin</span>' (N = 500).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Rotated Loadings</span> ────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -675,10 +650,6 @@ ULS and an oblimin rotation:</p>
 <span><span class="co">#&gt; CFI: .93</span></span>
 <span><span class="co">#&gt; TLI: .89</span></span>
 <span><span class="co">#&gt; RMSEA [90% CI]: .05 [.05; .06]</span></span>
-<span><span class="co">#&gt; AIC: 78.06</span></span>
-<span><span class="co">#&gt; BIC: -1059.88</span></span>
-<span><span class="co">#&gt; ECVI: 2.02</span></span>
-<span><span class="co">#&gt; CAF: .48</span></span>
 <span><span class="co">#&gt; SRMR: .03</span></span></code></pre></div>
 <p>Note that <code>estimator = "uls"</code> was written in lowercase
 although the canonical spelling is <code>"ULS"</code>. This holds
@@ -925,18 +896,18 @@ ULS, and ML with a promax rotation:</p>
 <span><span class="co">#&gt; the averaged loadings printed above, which are a cell-wise summary rather than</span></span>
 <span><span class="co">#&gt; a fitted solution.</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Chi-square-based indices averaged over 2 of 3 solutions.</span></span>
+<span><span class="co">#&gt; Chi-square-based indices averaged over 3 of 3 solutions.</span></span>
 <span><span class="co">#&gt; CAF, RMSR, and SRMR averaged over 3 of 3 solutions.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;        M (SD) [Min; Max]</span></span>
-<span><span class="co">#&gt; χ²: 613.61 ( 6.30) [609.15; 618.06]</span></span>
+<span><span class="co">#&gt; χ²: 615.12 ( 5.17) [609.15; 618.16]</span></span>
 <span><span class="co">#&gt; df: 270</span></span>
 <span><span class="co">#&gt; <span style="font-style: italic;">p: </span>.000 (.000) [.000; .000]</span></span>
 <span><span class="co">#&gt; CFI: .93 (.00) [.93; .94]</span></span>
 <span><span class="co">#&gt; TLI: .89 (.00) [.89; .90]</span></span>
 <span><span class="co">#&gt; RMSEA: .05 (.00) [.05; .05]</span></span>
-<span><span class="co">#&gt; AIC: 73.61 ( 6.30) [69.15; 78.06]</span></span>
-<span><span class="co">#&gt; BIC: -1064.34 ( 6.30) [-1068.80; -1059.88]</span></span>
+<span><span class="co">#&gt; AIC: 75.12 ( 5.17) [69.15; 78.16]</span></span>
+<span><span class="co">#&gt; BIC: -1062.82 ( 5.17) [-1068.80; -1059.79]</span></span>
 <span><span class="co">#&gt; ECVI:  2.01 ( 0.01) [ 2.00;  2.02]</span></span>
 <span><span class="co">#&gt; CAF: .48 (.00) [.48; .48]</span></span>
 <span><span class="co">#&gt; RMSR: .03 (.00) [.03; .03]</span></span>
@@ -1107,6 +1078,11 @@ it:</p>
 <span><span class="co">#&gt; socR_5  <span style="font-weight: bold;">.282</span>  <span style="color: #555555;"> .078</span>  <span style="color: #555555;"> .023</span>  <span style="color: #555555;">-.068</span>  <span style="color: #555555;"> .040</span>  <span style="font-weight: bold;"> .352</span>  <span style="color: #555555;"> .090</span>  .225  .775</span></span>
 <span><span class="co">#&gt; socR_6  <span style="font-weight: bold;">.211</span>  <span style="color: #555555;"> .108</span>  <span style="color: #555555;">-.026</span>  <span style="color: #555555;">-.057</span>  <span style="color: #555555;">-.040</span>  <span style="font-weight: bold;"> .540</span>  <span style="color: #555555;"> .109</span>  .366  .634</span></span>
 <span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Second-order Loadings</span> ───────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     <span style="font-weight: bold;">F1</span>    <span style="font-weight: bold;">F2</span>    <span style="font-weight: bold;">F3</span>    <span style="font-weight: bold;">F4</span>    <span style="font-weight: bold;">F5</span>    <span style="font-weight: bold;">F6</span></span></span>
+<span><span class="co">#&gt; g  .593  .668  .610  .857  .307  .645</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Variances Accounted for</span> ─────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                      <span style="font-weight: bold;">g</span>      <span style="font-weight: bold;">F1</span>     <span style="font-weight: bold;">F2</span>     <span style="font-weight: bold;">F3</span>    <span style="font-weight: bold;">F4</span>     <span style="font-weight: bold;">F5</span>     <span style="font-weight: bold;">F6</span></span></span>
@@ -1139,12 +1115,10 @@ explicit map shown afterwards:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/efa_reliability.html">efa_reliability</a></span><span class="op">(</span><span class="va">sl_dospert</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Total variance from the correlation matrix.</span></span>
-<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Reliability coefficients</span> ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;      <span style="font-weight: bold;">tot</span>  <span style="font-weight: bold;">hier</span>   <span style="font-weight: bold;">sub</span>  <span style="font-weight: bold;">alpha</span>    <span style="font-weight: bold;">H</span></span></span>
-<span><span class="co">#&gt; g   .931  .718  .177   .886  .886</span></span>
+<span><span class="co">#&gt; g   .931  .718  .212   .886  .886</span></span>
 <span><span class="co">#&gt; F1  .797  .377  .415   .788  .652</span></span>
 <span><span class="co">#&gt; F2  .872  .474  .393   .845  .683</span></span>
 <span><span class="co">#&gt; F3  .912  .344  .568   .914  .739</span></span>
@@ -1168,12 +1142,10 @@ a theoretical assignment — pass a <code>factor_map</code> matrix:</p>
 <span>                        <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">7</span><span class="op">)</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">18</span><span class="op">)</span><span class="op">)</span>,  <span class="co"># F6: financial (2, 4, 6)</span></span>
 <span>                      ncol <span class="op">=</span> <span class="fl">6</span>, byrow <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Total variance from the correlation matrix.</span></span>
-<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Reliability coefficients</span> ────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;      <span style="font-weight: bold;">tot</span>  <span style="font-weight: bold;">hier</span>   <span style="font-weight: bold;">sub</span>  <span style="font-weight: bold;">alpha</span>    <span style="font-weight: bold;">H</span></span></span>
-<span><span class="co">#&gt; g   .931  .718  .150   .886  .886</span></span>
+<span><span class="co">#&gt; g   .931  .718  .212   .886  .886</span></span>
 <span><span class="co">#&gt; F1  .743  .317  .420   .763  .611</span></span>
 <span><span class="co">#&gt; F2  .851  .535  .292   .844  .689</span></span>
 <span><span class="co">#&gt; F3  .912  .344  .568   .914  .739</span></span>

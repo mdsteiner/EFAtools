@@ -1,8 +1,8 @@
 # Exploratory factor analysis (EFA)
 
-This function does an EFA with either `PAF`, `ML`, `ULS`/`MINRES`, or
-`DWLS` with or without subsequent rotation. Estimation and rotation are
-controlled through the control objects built by
+This function does an EFA with `PAF`, `ML`, `ULS`/`MINRES`, or `DWLS`
+estimation, by default followed by an oblimin rotation. Estimation and
+rotation are controlled through the control objects built by
 [`estimate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md)
 and
 [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md);
@@ -17,8 +17,8 @@ efa_fit(
   n_factors,
   N = NA,
   estimator = c("PAF", "ML", "ULS", "MINRES", "DWLS"),
-  rotation = c("none", "varimax", "equamax", "quartimax", "geominT", "bentlerT",
-    "bifactorT", "promax", "oblimin", "quartimin", "simplimax", "bentlerQ", "geominQ",
+  rotation = c("oblimin", "none", "varimax", "equamax", "quartimax", "geominT",
+    "bentlerT", "bifactorT", "promax", "quartimin", "simplimax", "bentlerQ", "geominQ",
     "bifactorQ"),
   se = c("none", "information", "sandwich", "np-boot"),
   cor_method = c("pearson", "spearman", "kendall", "poly", "tetra", "fiml"),
@@ -28,16 +28,11 @@ efa_fit(
   rotate_control = NULL,
   b_boot = 1000,
   ci = 0.95,
-  seed = NULL,
-  ...
+  seed = NULL
 )
 ```
 
 ## Source
-
-Bollen, K. A., & Stine, R. A. (1992). Bootstrapping goodness-of-fit
-measures in structural equation models. Sociological Methods & Research,
-21, 205–229. doi: 10.1177/0049124192021002004
 
 Grieder, S., & Steiner, M. D. (2022). Algorithmic jingle jungle: A
 comparison of implementations of principal axis factoring and promax
@@ -128,6 +123,25 @@ fit. Sociological Methods & Research, 21, 230–258. doi:
 Bentler, P. M. (1995). EQS structural equations program manual.
 Multivariate Software.
 
+Jöreskog, K. G., & van Thillo, M. (1971). New rapid algorithms for
+factor analysis by unweighted least squares, generalized least squares
+and maximum likelihood (Research Memorandum RM-71-5). Educational
+Testing Service.
+
+Marsh, H. W. (1998). Pairwise deletion for missing data in structural
+equation models: Nonpositive definite matrices, parameter estimates,
+goodness of fit, and adjusted sample sizes. Structural Equation
+Modeling, 5, 22–36. doi: 10.1080/10705519809540087
+
+Yuan, K.-H., Hayashi, K., & Yanagihara, H. (2007). A class of population
+covariance matrices in the bootstrap approach to covariance structure
+analysis. Multivariate Behavioral Research, 42, 261–281. doi:
+10.1080/00273170701360662
+
+Zhang, X., & Savalei, V. (2016). Bootstrapping confidence intervals for
+fit indexes in structural equation modeling. Structural Equation
+Modeling, 23, 392–408. doi: 10.1080/10705511.2015.1118692
+
 ## Arguments
 
 - x:
@@ -147,18 +161,22 @@ Multivariate Software.
 - N:
 
   numeric. The number of observations. Needs only be specified if a
-  correlation matrix is used; with raw data, `N` is found from the data
-  instead.
+  correlation matrix is used. Without `N`, the chi-square-based fit
+  indices are not available, with a warning; the same applies to a
+  positive `N` that is very small relative to the number of variables.
+  With raw data, `N` is found from the data:
 
-  - With `N = NA`, not all fit indices can be computed; a positive `N`
-    that is very small relative to the number of variables leaves the
-    chi-square-derived indices unavailable as well, with a warning.
+  - the number of rows under the default pairwise deletion (`use`), with
+    a warning if values are missing, because each correlation then rests
+    on fewer cases, so the chi-square is too large and the standard
+    errors are too small (Marsh, 1998);
 
-  - With raw data, `N` is the number of cases the correlation matrix was
-    actually computed from – see `use` for the general rule and how
-    missing values change it. Under `cor_method = "fiml"`, `use` is
-    ignored and `N` is instead the number of cases carrying at least one
-    observed value.
+  - the number of complete cases under listwise deletion, and whenever
+    an asymptotic covariance is needed (`estimator = "DWLS"` or
+    `se = "sandwich"`, except under `cor_method = "fiml"`);
+
+  - the number of rows with at least one observed value under
+    `cor_method = "fiml"`.
 
 - estimator:
 
@@ -171,10 +189,11 @@ Multivariate Software.
 
 - rotation:
 
-  character. Either perform no rotation ("none"; default), an orthogonal
-  rotation ("varimax", "equamax", "quartimax", "geominT", "bentlerT", or
-  "bifactorT"), or an oblique rotation ("promax", "oblimin",
-  "quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ"). See
+  character. An oblique rotation ("oblimin", the default, "promax",
+  "quartimin", "simplimax", "bentlerQ", "geominQ", or "bifactorQ"), an
+  orthogonal rotation ("varimax", "equamax", "quartimax", "geominT",
+  "bentlerT", or "bifactorT"), or no rotation ("none"). A single factor
+  cannot be rotated, so with `n_factors = 1` the default is "none". See
   the *Rotations* section in Details for their properties and known
   issues.
 
@@ -183,12 +202,12 @@ Multivariate Software.
   character. Whether and how to compute standard errors (and matching
   confidence intervals): "none" (default), "information" (analytic
   standard errors from the expected Fisher information of the ML
-  solution), "sandwich" (robust "sandwich" standard errors from raw
-  data, which stay reliable under non-normality or a misspecified
-  estimator weight), or "np-boot" (non-parametric bootstrap). The
-  methods differ in their assumptions, their data requirements, and
-  which estimator, rotation, and `cor_method` combinations they support;
-  see the *Standard errors* section in Details.
+  solution), "sandwich" (robust standard errors from raw data, which
+  stay reliable under non-normality or a misspecified estimator weight),
+  or "np-boot" (non-parametric bootstrap). The methods differ in their
+  assumptions, their data requirements, and which estimator, rotation,
+  and `cor_method` combinations they support; see the *Standard errors*
+  section in Details.
 
 - cor_method:
 
@@ -231,7 +250,8 @@ Multivariate Software.
   bundling the rotation control arguments: the `type` preset; Kaiser
   `normalize`; the convergence `precision`; the factor `order_type`; the
   varimax/promax settings `varimax_type` and `p_type`; the
-  simplimax/promax `k`; and `random_starts`. Defaults to
+  simplimax/promax `k`; `random_starts`; and the rotation-engine
+  arguments `gam` (oblimin), `delta` (geomin), and `maxit`. Defaults to
   [`rotate_control()`](https://mdsteiner.github.io/EFAtools/reference/estimate_control.md),
   which uses the `"EFAtools"` type. The estimation and rotation presets
   are independent. See
@@ -257,12 +277,6 @@ Multivariate Software.
 - seed:
 
   numeric. An optional seed for the random-number generator.
-
-- ...:
-
-  Additional arguments forwarded to the rotation engine (usually not
-  needed); an unrecognized one is an error, not a setting that is
-  silently ignored.
 
 ## Value
 
@@ -334,22 +348,16 @@ following:
 
 - fit_indices:
 
-  A named list of fit indices computed from the unrotated loadings. ML
-  and ULS report the full set: the model Chi Square (with its p-value
-  and df), CFI, TLI, RMSEA with its 90% confidence interval, AIC, BIC,
-  ECVI, RMSR, SRMR, and CAF. PAF and DWLS report only RMSR, SRMR, CAF,
-  and df; the Chi-Square-based indices are `NA` there, unless DWLS uses
-  `se = "sandwich"`, which fills the full block from a scaled Chi Square
-  instead. RMSR and SRMR are both included, but the print and summary
-  methods display only SRMR (see *Fit indices* in Details). Whenever the
-  Chi Square is scaled (`se = "sandwich"`, or a `cor_method = "fiml"`
-  fit whose correction could be formed), AIC, BIC, and ECVI are `NA`,
-  and a few extra scaled-statistic fields are appended for advanced
-  diagnostics (see *Fit indices* in Details). The list also carries
-  `Fm`, the estimator's own objective value at the solution – on its own
-  scale, not the discrepancy the Chi Square is built from – and the
-  independence-model baseline `chi_null`, `df_null`, and `p_null` that
-  CFI and TLI are computed from.
+  A named list of fit indices computed from the unrotated loadings (see
+  *Fit indices* in Details): the model Chi Square (`chi`, with `p_chi`
+  and `df`), `CFI`, `TLI`, `RMSEA` with its 90% confidence interval
+  (`RMSEA_LB`, `RMSEA_UB`), `AIC`, `BIC`, `ECVI`, `RMSR`, `SRMR`, `CAF`,
+  and the independence-model baseline `chi_null`, `df_null`, and
+  `p_null` that CFI and TLI are computed from. Whenever the Chi Square
+  is scaled, a few extra scaled-statistic fields are appended for
+  advanced diagnostics. The list also carries `Fm`, the estimator's own
+  objective value at the solution – on its own scale, not the
+  discrepancy the Chi Square is built from.
 
 - model_implied_R:
 
@@ -453,10 +461,12 @@ following:
   not `"none"` (see *Standard errors* in Details for what each method
   assumes and when a component comes back `NA`). For `se = "np-boot"`:
   bootstrap SDs of the loadings (rotated too, if a rotation was
-  applied), the residuals, and the fit indices, plus – for oblique
+  applied), the residuals, and, where available, RMSEA, CFI, and TLI
+  (`fit_indices`, from the transformed cases), plus – for oblique
   rotations – `Phi` and the structure coefficients; `valid_replicates`
   (and, when rotated, `valid_target_rotations`) records how many
-  bootstrap replicates each of those is based on. For
+  bootstrap replicates each of those is based on (for `fit_indices`,
+  count the rows of `replicates$fit_indices` without `NA`). For
   `se = "information"` and `se = "sandwich"`: Wald-type SEs for the
   loadings, the uniquenesses, and the communalities – identical to each
   other, since communality is just `1 - uniqueness` – plus `Phi` and the
@@ -469,14 +479,15 @@ following:
   A named list of confidence intervals of width `ci`, matching the
   components of `SE`: percentile intervals for `se = "np-boot"`, Wald
   intervals for `se = "information"` and `se = "sandwich"`. Only
-  returned if `se` is not `"none"`.
+  returned if `se` is not `"none"`. See *Standard errors* in Details for
+  when the bootstrap gives `fit_indices`.
 
 - replicates:
 
   A named list of raw bootstrap replicate arrays – the aligned loadings,
-  `Phi`, structure coefficients, residuals, and fit indices behind `SE`
-  and `CI` – with one replicate per array's last dimension (first
-  dimension for `fit_indices`). Failed replicates are left `NA`.
+  `Phi`, structure coefficients, residuals, and RMSEA, CFI, and TLI
+  behind `SE` and `CI` – with one replicate per array's last dimension
+  (first dimension for `fit_indices`). Failed replicates are left `NA`.
   Populated only for `se = "np-boot"`; `NULL` otherwise.
 
 - vcov_unrot_loadings:
@@ -493,20 +504,6 @@ following:
   orientation invalidates only the marginal SEs, not the underlying
   covariance.
 
-- Gamma:
-
-  The asymptotic covariance of the off-diagonal sample correlations –
-  the meat of the robust sandwich SEs. A `p (p - 1) / 2` by
-  `p (p - 1) / 2` matrix, rows and columns ordered by
-  [`utils::combn()`](https://rdrr.io/r/utils/combn.html) over the column
-  pairs and labelled `"<var_i>-<var_j>"`. Populated for
-  `se = "sandwich"` on the polychoric/tetrachoric and Pearson paths;
-  `NULL` otherwise (including under `cor_method = "fiml"`, whose meat is
-  not returned). It typically dominates a sandwich fit's size (about 11
-  MB at `p = 50`) and is kept because
-  [`efa_mi()`](https://mdsteiner.github.io/EFAtools/reference/efa_mi.md)
-  needs it from each per-imputation fit to build the pooled covariance.
-
 ## Details
 
 ### Estimators
@@ -515,21 +512,21 @@ The estimator is chosen with `estimator`.
 
 - **PAF** (principal axis factoring) iteratively estimates the
   communalities and makes no distributional assumptions, which makes it
-  robust and a good general-purpose default. Because it minimises no
-  likelihood or weighted discrepancy it provides no model chi-square,
-  and hence no chi-square-based fit indices (see *Fit indices*).
+  robust and a good general-purpose default. A converged PAF solution is
+  a stationary point of the ULS criterion (Jöreskog & van Thillo, 1971),
+  so PAF and ULS give practically the same solution and the same fit
+  indices (see *Fit indices*).
 
 - **ML** (maximum likelihood) maximises the normal-theory likelihood. It
-  yields the full set of fit indices and is the only estimator with
-  analytic expected-information standard errors (`se = "information"`),
-  but it assumes multivariate normality and is the most prone to Heywood
-  (improper) cases. Its starting values are set by `start_method`.
+  is the only estimator with analytic expected-information standard
+  errors (`se = "information"`), but it assumes multivariate normality
+  and is the most prone to Heywood (improper) cases. Its starting values
+  are set by `start_method`.
 
 - **ULS** (unweighted least squares) minimises the sum of squared
   correlation residuals. "MINRES" (minimum residual) is the same
   estimator under a different name and returns identical results. It
-  makes no normality assumption, is robust to mild non-normality, and
-  yields the full set of fit indices.
+  makes no normality assumption and is robust to mild non-normality.
 
 - **DWLS** (diagonally weighted least squares) is the recommended
   estimator for ordinal data. It weights each off-diagonal correlation
@@ -599,7 +596,11 @@ interpretable pattern; all rotations are performed by rotation engines
 built into the package. Orthogonal rotations keep the factors
 uncorrelated, whereas oblique rotations let them correlate (returning a
 pattern matrix, a structure matrix, and the factor intercorrelations
-`Phi`) and are usually more realistic for psychological constructs.
+`Phi`) and are usually more realistic for psychological constructs. The
+default, oblimin, is therefore oblique: if `Phi` comes back near zero
+the oblique solution is essentially the orthogonal one anyway, whereas
+imposing orthogonality on genuinely correlated factors distorts the
+pattern.
 
 For an oblique solution the **pattern** matrix (`rot_loadings`) holds
 each variable's unique contribution from each factor, with the other
@@ -636,18 +637,18 @@ Orthogonal rotations:
 
 Oblique rotations:
 
+- **oblimin** (the default) is quartimin with a tunable argument, `gam`
+  (default 0, i.e. quartimin itself); turning it up trades some row
+  simplicity for more strongly correlated factors, and can drive the
+  solution toward factor collapse, so inspect `Phi` before interpreting
+  a fit with `gam > 0`.
+
 - **promax** is a fast two-step rotation: a varimax solution is raised
   to a power (controlled by `k` and `p_type`) to form a target that is
   then fitted obliquely.
 
 - **quartimin** simplifies the variables (rows), like quartimax, so each
   loads mainly on one factor, but factors are allowed to correlate.
-
-- **oblimin** is quartimin with a tunable argument, `gam` (default 0,
-  i.e. quartimin itself); turning it up trades some of that row
-  simplicity for more strongly correlated factors, and can drive the
-  solution toward factor collapse, so inspect `Phi` before interpreting
-  a fit with `gam > 0`.
 
 - **simplimax** drives the `k` smallest loadings toward zero. Its
   criterion is only piecewise smooth and strongly multimodal, which
@@ -669,12 +670,6 @@ Oblique rotations:
   criterion, with the same two-group-factor requirement as
   **bifactorT**.
 
-Prefer an oblique rotation unless there is a substantive reason to force
-the factors to be uncorrelated: if `Phi` comes back near zero the
-oblique solution is essentially the orthogonal one anyway, whereas
-imposing orthogonality on genuinely correlated factors distorts the
-pattern.
-
 The criterion-based rotations (all except varimax and promax) are fitted
 by gradient projection with `random_starts` random starts to guard
 against local minima; the complexity criteria (simplimax and geominQ in
@@ -687,15 +682,15 @@ is controlled: pass `seed`, or call
 ### Standard errors
 
 `se` selects whether and how standard errors (and matching confidence
-intervals) are computed. Which quantities they cover depends on the
-method. The analytic methods (`"information"` and `"sandwich"`) cover
-the unrotated loadings, the uniquenesses and the communalities and, when
-a rotation is applied, the rotated loadings and – for oblique rotations
-– the factor correlations and the structure coefficients. The bootstrap
-(`"np-boot"`) covers the unrotated loadings, the residuals, and the fit
-indices and, when a rotation is applied, the rotated loadings and – for
-oblique rotations – the factor correlations and the structure
-coefficients; it reports no uniqueness or communality standard errors.
+intervals) are computed. The analytic methods (`"information"` and
+`"sandwich"`) cover the unrotated loadings, the uniquenesses and the
+communalities and, when a rotation is applied, the rotated loadings and
+– for oblique rotations – the factor correlations and the structure
+coefficients. The bootstrap (`"np-boot"`) covers the unrotated loadings,
+the residuals, where available RMSEA, CFI, and TLI, and, when a rotation
+is applied, the rotated loadings and – for oblique rotations – the
+factor correlations and the structure coefficients; it reports no
+uniqueness or communality standard errors.
 
 - **"none"** (default) computes no standard errors.
 
@@ -704,9 +699,7 @@ coefficients; it reports no uniqueness or communality standard errors.
   therefore requires `estimator = "ML"` and `cor_method = "pearson"` (or
   `"fiml"`, see below). The rotated standard errors are obtained by
   propagating the unrotated-loading covariance through the rotation
-  (Jennrich, 1973); because rotated quantities do not depend on how the
-  unrotated solution happens to be oriented, they are directly
-  comparable across programs. Unlike the bootstrap it also works from a
+  (Jennrich, 1973). Unlike the bootstrap it also works from a
   correlation matrix as long as `N` is supplied. These standard errors
   assume multivariate normality and a correctly specified model; under
   heavy-tailed data or model misfit they can understate the sampling
@@ -722,20 +715,15 @@ coefficients; it reports no uniqueness or communality standard errors.
   – in which case the unrotated loadings have no well-defined sampling
   distribution and their standard errors diverge. `efa_fit()` detects
   this and returns `NA` for the unrotated loading standard errors with a
-  warning, rather than reporting a number that looks like a standard
-  error but is an artefact of the orientation; the rotated loadings,
-  `Phi`, the structure coefficients, the uniquenesses, and the
-  communalities are unaffected and still reported. Use those, or
+  warning; the other quantities are unaffected. Use those, or
   `se = "np-boot"`, when the unrotated loadings themselves are the
-  quantity of interest. This detection applies to every analytic route
-  (the Pearson and polychoric paths and the two-stage
-  `cor_method = "fiml"` sandwich alike). A Heywood case (a uniqueness at
-  its lower boundary) is separate and more severe: there the whole
-  `SE`/`CI` block comes back `NA` with a warning, because the
-  standard-error approximation fails for every parameter. The scaled
-  chi-square (from `"sandwich"`, or from `cor_method = "fiml"`) does not
-  rely on that approximation and is still reported, so the fit indices
-  are unaffected.
+  quantity of interest. This detection applies to every analytic route.
+  A Heywood case (a uniqueness at its lower boundary) is more severe:
+  there the whole `SE`/`CI` block comes back `NA` with a warning,
+  because the standard-error approximation fails for every parameter.
+  The scaled chi-square (from `"sandwich"`, or from
+  `cor_method = "fiml"`) does not rely on that approximation and is
+  still reported.
 
 - **"sandwich"** returns robust ("sandwich") standard errors estimated
   from raw data, combining the estimator weight with a distribution-free
@@ -757,15 +745,12 @@ coefficients; it reports no uniqueness or communality standard errors.
   `use`.
 
 - **"np-boot"** draws a non-parametric (case-resampling) bootstrap and
-  needs raw data. A correlation matrix carries no cases to resample;
-  alone among the unsupported combinations this one does not error but
-  warns and downgrades `se` to `"none"`, so the fit is returned without
-  an `SE` slot. It is the most general method – available for any
+  needs raw data. It is the most general method – available for any
   `estimator`, `rotation`, and `cor_method` – and the most robust to
   non-normality and misfit, at the cost of speed; its intervals are
-  bootstrap percentile intervals. The replicate fits run across
-  replicates with the `future` framework; by default they run
-  sequentially, but registering a plan with
+  bootstrap percentile intervals. The replicates run with the `future`
+  framework; by default they run sequentially, but registering a plan
+  with
   [`future::plan()`](https://future.futureverse.org/reference/plan.html)
   runs them in parallel instead, as the examples show. With a fixed
   `seed` the bootstrap is reproducible and yields the same result
@@ -773,30 +758,38 @@ coefficients; it reports no uniqueness or communality standard errors.
   resample also re-runs the EM moment estimation and is therefore slow,
   so a smaller `b_boot` may be advisable.
 
-  The percentile intervals are centred on the point estimate for the
-  loadings, the factor correlations, the structure coefficients, and the
-  residuals, but **not** for the indices derived from the chi-square
-  (`RMSEA`, `AIC`, `BIC`, and `ECVI`): a resample already carries the
-  model's own misfit, so those intervals ride upward and can even place
-  the point estimate below their own lower bound. Read them as a spread
-  rather than a range for the point estimate; correcting that shift
-  needs resampling from a population transformed to fit the model
-  (Bollen & Stine, 1992), which is not what this bootstrap does. `CFI`
-  and `TLI` are not affected, being ratios in which the baseline
-  chi-square shifts along with the model one.
+  The intervals of RMSEA, CFI, and TLI come from a second set of fits. A
+  resample of the raw cases adds sampling misfit to the misfit of the
+  sample, which moves these intervals toward worse fit. Thus,
+  `efa_fit()` first transforms the cases so that their misfit is equal
+  to the estimated population misfit. Then it resamples the same rows
+  (Yuan, Hayashi, & Yanagihara, 2007). If the RMSEA is 0, the
+  transformed cases fit the model exactly. In simulations with normal
+  data, the intervals of RMSEA and CFI had good coverage. Use them with
+  caution if the CFI is below approximately .76 or the RMSEA is above
+  approximately .10 (Zhang & Savalei, 2016). TLI is CFI rescaled by a
+  constant, so its interval behaves in the same way. The transformation
+  needs complete cases and Pearson correlations. Thus, these intervals
+  need `cor_method = "pearson"`, no missing values in the analysed cases
+  (complete data, or listwise deletion), and a chi-square with df \> 0.
+  Otherwise, CFI and TLI are printed without an interval. The other fit
+  indices get no bootstrap interval: SRMR had poor coverage with either
+  bootstrap, and Zhang and Savalei (2016) did not study the others. The
+  second set of fits is not rotated, so it usually takes less time than
+  the first.
 
 The analytic methods (`"information"` and `"sandwich"`) are not
 available with the `"promax"` or `"simplimax"` rotations, which have no
 supported analytic route for the rotated standard errors; use
-`"np-boot"` there. Under `cor_method = "fiml"`, `"information"` and
-`"sandwich"` instead return, for `estimator = "ML"` or `"ULS"`,
-corrected two-stage sandwich standard errors (Yuan & Bentler, 2000;
-Savalei & Bentler, 2009). `estimator = "PAF"` carries no Stage-2 weight
-to build the sandwich from, so use `se = "np-boot"` there instead.
+`"np-boot"` there. They are not available for PAF either; use ULS, which
+gives the same solution at convergence, or `"np-boot"`. Under
+`cor_method = "fiml"`, `"information"` and `"sandwich"` both return, for
+`estimator = "ML"` or `"ULS"`, corrected two-stage sandwich standard
+errors (Yuan & Bentler, 2000; Savalei & Bentler, 2009).
 
 ### Fit indices
 
-For ML and ULS, `efa_fit()` returns the model chi-square (with its
+For ML, ULS, and PAF, `efa_fit()` returns the model chi-square (with its
 p-value and degrees of freedom), the Comparative Fit Index (CFI;
 Bentler, 1990), the Tucker-Lewis Index (TLI, also called the non-normed
 fit index; Tucker & Lewis, 1973), the Root Mean Square Error of
@@ -807,60 +800,57 @@ Mean Squared Residual (RMSR), the Standardized Root Mean Squared
 Residual (SRMR; Bentler, 1995), and the common-part-accounted-for (CAF)
 index (Lorenzo-Seva, Timmerman, & Kiers, 2011). They come with the
 independence-baseline statistics `chi_null`, `df_null`, and `p_null`. On
-the unscaled ML and ULS paths `chi_null` is Bartlett's test of
-sphericity; a scaled chi-square, and the two-stage statistic of a
-`cor_method = "fiml"` fit, each carry their own baseline instead.
+the unscaled paths `chi_null` is Bartlett's test of sphericity; a scaled
+chi-square, and the two-stage statistic of a `cor_method = "fiml"` fit,
+each carry their own baseline instead. The baseline degrees of freedom
+`df_null` are \\p(p - 1)/2\\ for \\p\\ variables.
 
-The degrees of freedom depend on the number of variables and factors;
-the baseline degrees of freedom `df_null` are \\p(p - 1)/2\\ for \\p\\
-variables.
-
-RMSR is the root mean square of the off-diagonal residuals; SRMR
-rescales it by a fixed factor that depends only on the number of
-variables. The print and summary methods show SRMR, not RMSR; RMSR
-remains in the returned object for backward compatibility. Both are
-computed over the same residuals, so an unavailable residual leaves both
-`NA`. (psych's `rms` uses a different divisor and equals
-RMSR\\/\sqrt{2}\\; the two are not directly comparable.)
+The print method shows the chi-square, CFI, TLI, RMSEA, and SRMR;
+[`summary()`](https://rdrr.io/r/base/summary.html) adds AIC, BIC, and
+ECVI, which are only useful to compare models. With `se = "np-boot"`,
+CFI and TLI also show their bootstrap interval (see *Standard errors*).
+RMSEA always shows its analytic 90% interval; its bootstrap interval is
+in `CI$fit_indices`. RMSR is the root mean square of the off-diagonal
+residuals; SRMR rescales it by a fixed factor that depends only on the
+number of variables, and both are `NA` if a residual is unavailable.
+(psych's `rms` uses a different divisor and equals RMSR\\/\sqrt{2}\\.)
+CAF is returned for
+[`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
+but not printed: although Lorenzo-Seva et al. describe it as ranging
+from 0 to 1, a correctly specified model gives a CAF near 0.5, because
+the KMO of residuals that hold only sampling noise is near 0.5. Read it
+as a relative measure. It is `NA` where that KMO is undefined.
 
 The model chi-square is the Bartlett-corrected discrepancy (matching
 [`stats::factanal()`](https://rdrr.io/r/stats/factanal.html) for ML).
-For ULS it is the same maximum-likelihood discrepancy, evaluated at the
-ULS-fitted solution, as in
-[`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html) – not the
-least-squares criterion lavaan reports as its standard ULS test
-statistic, so the two are not comparable. AIC and BIC are built on this
-chi-square and can therefore be negative; ECVI (built on the same
-chi-square plus a non-negative penalty) cannot. Because of the Bartlett
-correction, ECVI differs slightly from the uncorrected Browne-Cudeck
-form reported by lavaan and Mplus (their AIC/BIC use an unrelated
-log-likelihood-based formula, so they are not comparable). On the
-unscaled ML/ULS path, CFI and TLI are computed on a slightly different
-discrepancy scale than the reported chi-square, so you cannot recompute
-one from the other by hand there; on the scaled (sandwich) and FIML
-paths, the reported chi and chi_null are exactly the pair the indices
-use.
+For ULS and PAF it is the same maximum-likelihood discrepancy, evaluated
+at the fitted solution, as in
+[`psych::fa()`](https://rdrr.io/pkg/psych/man/fa.html); its chi-square
+distribution is then an approximation. It is not the least-squares
+criterion lavaan reports as its standard ULS test statistic, so the two
+are not comparable. AIC and BIC are built on this chi-square and can
+therefore be negative; ECVI (built on the same chi-square plus a
+non-negative penalty) cannot. Because of the Bartlett correction, ECVI
+differs slightly from the uncorrected Browne-Cudeck form reported by
+lavaan and Mplus (their AIC/BIC use an unrelated log-likelihood-based
+formula, so they are not comparable). On the unscaled paths, CFI, TLI,
+and RMSEA are computed on the uncorrected \\(N - 1)\\ scale rather than
+on the Bartlett-corrected chi-square, so you cannot recompute one from
+the other by hand there; on the scaled (sandwich) and FIML paths, the
+reported chi and chi_null are exactly the pair the indices use.
 
-Which indices are reported depends on the estimator:
-
-- **ML and ULS** compute the full set above.
-
-- **PAF** returns only the descriptive residual indices (RMSR, SRMR,
-  CAF) and df; the printed model-fit block shows CAF and SRMR. The
-  chi-square-based indices are `NA`, because PAF minimises no
-  discrepancy.
+Two cases differ from the full set:
 
 - **DWLS** by default returns only RMSR, SRMR, CAF, and df, because the
   ordinary maximum-likelihood discrepancy is not its fit function. When
   `se = "sandwich"`, a scaled chi-square and the CFI, TLI, and RMSEA
-  derived from it are reported (AIC and BIC remain `NA`); that statistic
-  is a two-stage correction applied to the polychoric correlation
-  residuals (Browne, 1984), not identical to the full WLSMV test of
-  lavaan or Mplus, which also corrects for the response thresholds.
+  derived from it are reported; that statistic is a two-stage correction
+  applied to the polychoric correlation residuals (Browne, 1984), not
+  identical to the full WLSMV test of lavaan or Mplus, which also
+  corrects for the response thresholds.
 
-- **`cor_method = "fiml"`** (with ML or ULS) reports two-stage-corrected
-  statistics (Yuan, Marshall, & Bentler, 2002); AIC, BIC, and ECVI are
-  left `NA`, as for any scaled chi-square. The correction itself can be
+- **`cor_method = "fiml"`** reports two-stage-corrected statistics
+  (Yuan, Marshall, & Bentler, 2002). The correction itself can be
   degenerate – typically with a small sample, a high proportion of
   missing values, or near-collinear variables – in which case an
   uncorrected likelihood-ratio statistic is reported in its place with a
@@ -868,7 +858,10 @@ Which indices are reported depends on the estimator:
   than `scaled`; read its p-value and the CFI, TLI, and RMSEA derived
   from it as indicative only.
 
-Beyond the estimator, the chi-square and everything derived from it are
+Whenever the chi-square is a scaled one (`se = "sandwich"`, or a
+`cor_method = "fiml"` fit), AIC, BIC, and ECVI are `NA`; see the
+`fit_indices` entry in Value for the additional components then
+returned. Beyond that, the chi-square and everything derived from it are
 `NA` whenever the statistic itself is undefined: when `N` is not
 supplied, when the model is underidentified (a negative df), and when a
 positive `N` is too small relative to the number of variables and
@@ -877,44 +870,8 @@ raises its own warning. The residual summaries (RMSR, SRMR, CAF) and the
 degrees of freedom are still returned there, but residual size does not
 establish that a model is identified: below zero degrees of freedom a
 near-zero residual is an artefact of over-parameterisation, not close
-fit.
-
-Whenever the chi-square is a scaled one (`se = "sandwich"`, or a
-`cor_method = "fiml"` fit whose correction could be formed), AIC, BIC,
-and ECVI are `NA`; see the `fit_indices` entry in Value for the
-additional components then returned. AIC, BIC, and ECVI are `NA` on
-every `cor_method = "fiml"` fit, including the uncorrected fallback
-above. Lorenzo-Seva, Timmerman, and Kiers (2011) describe CAF as ranging
-from 0 to 1, with values near 1 indicating close fit; that does not hold
-here, where a well-fitting model produces a CAF near 0.5, not near 1.
-Read it as a relative rather than an absolute measure.
-
-### Available combinations
-
-Not every estimator, rotation, standard-error, and correlation method
-can be combined:
-
-- **Estimator and correlation method.** `estimator = "DWLS"` requires
-  ordinal data with `cor_method = "poly"` or `"tetra"`.
-  `cor_method = "fiml"` works with PAF, ML, and ULS (not DWLS) and needs
-  raw data with missing values.
-
-- **Standard errors.** `se = "information"` requires `estimator = "ML"`
-  and `cor_method = "pearson"` or `"fiml"`, and can be computed from a
-  correlation matrix when `N` is supplied. `se = "sandwich"` requires
-  raw data, with either a polychoric/tetrachoric `cor_method` (ML, ULS,
-  or DWLS) or a Pearson `cor_method` (ML or ULS); it is not available
-  for PAF. Under `cor_method = "fiml"`, `"information"` and `"sandwich"`
-  are available for ML and ULS only and both return the corrected
-  two-stage sandwich. `se = "np-boot"` requires raw data and works with
-  any estimator, rotation, and correlation method. Neither
-  `"information"` nor `"sandwich"` is available with the `"promax"` or
-  `"simplimax"` rotations.
-
-- **Fit indices.** The chi-square-based indices are available for ML and
-  ULS (and, as scaled statistics, for `cor_method = "fiml"` and for DWLS
-  with `se = "sandwich"`); PAF and DWLS otherwise report only the
-  descriptive residual indices.
+fit. A just-identified model (df = 0) has no test of fit, so the print
+method shows only SRMR and df.
 
 ## See also
 
@@ -942,12 +899,11 @@ Other factor analysis:
 
 ``` r
 
-# Principal axis factoring with oblimin rotation
-mod_oblimin <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                       rotation = "oblimin")
-mod_oblimin
+# Principal axis factoring with oblimin rotation (the defaults)
+mod_paf <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500)
+mod_paf
 #> 
-#> EFA performed with estimator = 'PAF' and rotation = 'oblimin'.
+#> EFA performed with estimator = 'PAF' and rotation = 'oblimin' (N = 500).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -994,25 +950,20 @@ mod_oblimin
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF: .50
+#> χ²(102) = 123.92, p = .069
+#> CFI: .99
+#> TLI: .98
+#> RMSEA [90% CI]: .02 [.00; .03]
 #> SRMR: .02
-#> df: 102
-summary(mod_oblimin)
+summary(mod_paf)
 #> 
-#> EFA performed with estimator = 'PAF' and rotation = 'oblimin'.
+#> EFA performed with estimator = 'PAF' and rotation = 'oblimin' (N = 500).
 #> 
 #> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 
-#> Factors: 3
-#> Variables: 18
 #> N: 500
 #> Rotation local optima: 1 distinct from 6 of 101 starts
 #> Heywood cases: 0
-#> Cross-loading items (|loading| >= .300): 0
-#> Items without salient loading (|loading| >= .300): 0
-#> Factors with fewer than 3 salient indicators: 0
-#> Items with primary-loading gap < .200: 1
-#> Largest |residual|: .069
 #> Factor intercorrelations > .85: none
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
@@ -1088,9 +1039,14 @@ summary(mod_oblimin)
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF: .50
+#> χ²(102) = 123.92, p = .069
+#> CFI: .99
+#> TLI: .98
+#> RMSEA [90% CI]: .02 [.00; .03]
 #> SRMR: .02
-#> df: 102
+#> AIC: -80.08
+#> BIC: -509.97
+#> ECVI: 0.52
 #> 
 #> ── Residual Diagnostics ────────────────────────────────────────────────────────
 #> 
@@ -1102,34 +1058,34 @@ summary(mod_oblimin)
 #> 
 #> Inspect the residual matrix for details (e.g., with residuals()).
 
-# ML estimation with oblimin rotation
-mod_oblimin <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                       estimator = "ML", rotation = "oblimin")
-mod_oblimin
+# ML estimation with promax rotation
+mod_ml <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
+                  estimator = "ML", rotation = "promax")
+mod_ml
 #> 
-#> EFA performed with estimator = 'ML' and rotation = 'oblimin'.
+#> EFA performed with estimator = 'ML' and rotation = 'promax' (N = 500).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
 #>        F1     F2     F3    h2    u2
-#> V1   -.036   .043   .607  .373  .627
-#> V2    .013   .087   .458  .274  .726
-#> V3    .074   .074   .430  .280  .720
-#> V4    .111   .007   .536  .379  .621
-#> V5    .164   .005   .418  .290  .710
-#> V6   -.055  -.036   .687  .402  .598
-#> V7    .017   .524   .095  .355  .645
-#> V8   -.003   .562   .044  .345  .655
-#> V9    .044   .535   .017  .328  .672
-#> V10  -.019   .661  -.051  .385  .615
-#> V11   .030   .352   .230  .296  .704
-#> V12   .034   .649  -.015  .437  .563
-#> V13   .612   .095  -.068  .397  .603
-#> V14   .540  -.053   .086  .320  .680
-#> V15   .552   .137  -.065  .363  .637
-#> V16   .550  -.039   .092  .345  .655
-#> V17   .652  -.035  -.013  .390  .610
-#> V18   .549   .012   .052  .349  .651
+#> V1   -.051   .030   .624  .373  .627
+#> V2    .001   .077   .470  .274  .726
+#> V3    .064   .064   .441  .280  .720
+#> V4    .101  -.008   .551  .379  .621
+#> V5    .157  -.008   .429  .290  .710
+#> V6   -.070  -.053   .709  .402  .598
+#> V7    .005   .532   .089  .355  .645
+#> V8   -.015   .573   .037  .345  .655
+#> V9    .035   .545   .008  .328  .672
+#> V10  -.031   .676  -.063  .385  .615
+#> V11   .019   .353   .231  .296  .704
+#> V12   .023   .663  -.026  .437  .563
+#> V13   .620   .088  -.076  .397  .603
+#> V14   .547  -.066   .086  .320  .680
+#> V15   .559   .133  -.073  .363  .637
+#> V16   .557  -.052   .091  .345  .655
+#> V17   .663  -.046  -.018  .390  .610
+#> V18   .556   .002   .049  .349  .651
 #> 
 #> Legend:
 #>   bold = |loading| >= .300
@@ -1140,17 +1096,17 @@ mod_oblimin
 #> 
 #>       F1     F2     F3
 #> F1  1.000
-#> F2   .591  1.000
-#> F3   .621   .596  1.000
+#> F2   .619  1.000
+#> F3   .647   .631  1.000
 #> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                      F1     F2     F3
-#> SS loadings        2.225  2.088  1.994
-#> Prop Tot Var        .124   .116   .111
-#> Cum Prop Tot Var    .124   .240   .350
-#> Prop Comm Var       .353   .331   .316
-#> Cum Prop Comm Var   .353   .684  1.000
+#> SS loadings        2.204  2.079  2.025
+#> Prop Tot Var        .122   .115   .112
+#> Cum Prop Tot Var    .122   .238   .350
+#> Prop Comm Var       .349   .330   .321
+#> Cum Prop Comm Var   .349   .679  1.000
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
@@ -1158,121 +1114,7 @@ mod_oblimin
 #> CFI: .99
 #> TLI: .98
 #> RMSEA [90% CI]: .02 [.00; .03]
-#> AIC: -80.25
-#> BIC: -510.14
-#> ECVI: 0.52
-#> CAF: .50
 #> SRMR: .03
-summary(mod_oblimin)
-#> 
-#> EFA performed with estimator = 'ML' and rotation = 'oblimin'.
-#> 
-#> ── Model Diagnostics ───────────────────────────────────────────────────────────
-#> 
-#> Factors: 3
-#> Variables: 18
-#> N: 500
-#> Rotation local optima: 1 distinct from 6 of 101 starts
-#> Heywood cases: 0
-#> Cross-loading items (|loading| >= .300): 0
-#> Items without salient loading (|loading| >= .300): 0
-#> Factors with fewer than 3 salient indicators: 0
-#> Items with primary-loading gap < .200: 1
-#> Largest |residual|: .069
-#> Factor intercorrelations > .85: none
-#> 
-#> ── Rotated Loadings ────────────────────────────────────────────────────────────
-#> 
-#>        F1     F2     F3    h2    u2
-#> V1   -.036   .043   .607  .373  .627
-#> V2    .013   .087   .458  .274  .726
-#> V3    .074   .074   .430  .280  .720
-#> V4    .111   .007   .536  .379  .621
-#> V5    .164   .005   .418  .290  .710
-#> V6   -.055  -.036   .687  .402  .598
-#> V7    .017   .524   .095  .355  .645
-#> V8   -.003   .562   .044  .345  .655
-#> V9    .044   .535   .017  .328  .672
-#> V10  -.019   .661  -.051  .385  .615
-#> V11   .030   .352   .230  .296  .704
-#> V12   .034   .649  -.015  .437  .563
-#> V13   .612   .095  -.068  .397  .603
-#> V14   .540  -.053   .086  .320  .680
-#> V15   .552   .137  -.065  .363  .637
-#> V16   .550  -.039   .092  .345  .655
-#> V17   .652  -.035  -.013  .390  .610
-#> V18   .549   .012   .052  .349  .651
-#> 
-#> Legend:
-#>   bold = |loading| >= .300
-#>   grey = below cutoff
-#>   red h2/u2 = Heywood-relevant value
-#> 
-#> ── Factor Intercorrelations ────────────────────────────────────────────────────
-#> 
-#>       F1     F2     F3
-#> F1  1.000
-#> F2   .591  1.000
-#> F3   .621   .596  1.000
-#> 
-#> ── Structure Matrix ────────────────────────────────────────────────────────────
-#> 
-#>       F1    F2    F3
-#> V1   .366  .384  .610
-#> V2   .349  .367  .518
-#> V3   .385  .374  .520
-#> V4   .448  .392  .609
-#> V5   .427  .351  .523
-#> V6   .350  .341  .631
-#> V7   .385  .590  .418
-#> V8   .357  .587  .377
-#> V9   .371  .571  .363
-#> V10  .339  .619  .331
-#> V11  .381  .507  .459
-#> V12  .409  .661  .393
-#> V13  .626  .416  .369
-#> V14  .562  .317  .390
-#> V15  .593  .425  .360
-#> V16  .584  .341  .410
-#> V17  .623  .343  .371
-#> V18  .589  .368  .401
-#> 
-#> ── Simple Structure Diagnostics ────────────────────────────────────────────────
-#> 
-#> Items with primary-loading gap < .200:
-#> • V11: F2 = .352, F3 = .230
-#> 
-#> 
-#> ── Variances Accounted for ─────────────────────────────────────────────────────
-#> 
-#>                      F1     F2     F3
-#> SS loadings        2.225  2.088  1.994
-#> Prop Tot Var        .124   .116   .111
-#> Cum Prop Tot Var    .124   .240   .350
-#> Prop Comm Var       .353   .331   .316
-#> Cum Prop Comm Var   .353   .684  1.000
-#> 
-#> ── Model Fit ───────────────────────────────────────────────────────────────────
-#> 
-#> χ²(102) = 123.75, p = .070
-#> CFI: .99
-#> TLI: .98
-#> RMSEA [90% CI]: .02 [.00; .03]
-#> AIC: -80.25
-#> BIC: -510.14
-#> ECVI: 0.52
-#> CAF: .50
-#> SRMR: .03
-#> 
-#> ── Residual Diagnostics ────────────────────────────────────────────────────────
-#> 
-#> Residual cutoff: |r| > .100
-#> Number of large residuals: 0
-#> Largest absolute residual: .069
-#> 
-#> No absolute residuals > .100 occurred.
-#> 
-#> Inspect the residual matrix for details (e.g., with residuals()).
 
 # Tuning knobs are supplied through the control objects. Here the SPSS preset is
 # used for the estimation and rotation, with the maximum PAF iterations raised.
@@ -1280,12 +1122,9 @@ mod_spss <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
                     rotation = "promax",
                     estimate_control = estimate_control(type = "SPSS", max_iter = 500),
                     rotate_control = rotate_control(type = "SPSS"))
-#> Warning: An argument was set together with `type` = "SPSS"; the supplied value is used
-#> and may differ from the "SPSS" preset:
-#> • max_iter = 500
 mod_spss
 #> 
-#> EFA performed with estimator = 'PAF' and rotation = 'promax'.
+#> EFA performed with estimator = 'PAF' and rotation = 'promax' (N = 500).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -1332,16 +1171,18 @@ mod_spss
 #> 
 #> ── Model Fit ───────────────────────────────────────────────────────────────────
 #> 
-#> CAF: .50
+#> χ²(102) = 123.92, p = .069
+#> CFI: .99
+#> TLI: .98
+#> RMSEA [90% CI]: .02 [.00; .03]
 #> SRMR: .02
-#> df: 102
 
-# Analytic (expected-information) standard errors for the above
+# Analytic (expected-information) standard errors of an ML fit
 ML_info <- efa_fit(test_models$baseline$cormat, n_factors = 3, N = 500,
-                   estimator = "ML", rotation = "oblimin", se = "information")
+                   estimator = "ML", se = "information")
 ML_info
 #> 
-#> EFA performed with estimator = 'ML' and rotation = 'oblimin'.
+#> EFA performed with estimator = 'ML' and rotation = 'oblimin' (N = 500).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -1392,27 +1233,16 @@ ML_info
 #> CFI: .99
 #> TLI: .98
 #> RMSEA [90% CI]: .02 [.00; .03]
-#> AIC: -80.25
-#> BIC: -510.14
-#> ECVI: 0.52
-#> CAF: .50
 #> SRMR: .03
 summary(ML_info)
 #> 
-#> EFA performed with estimator = 'ML' and rotation = 'oblimin'.
+#> EFA performed with estimator = 'ML' and rotation = 'oblimin' (N = 500).
 #> 
 #> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 
-#> Factors: 3
-#> Variables: 18
 #> N: 500
 #> Rotation local optima: 1 distinct from 6 of 101 starts
 #> Heywood cases: 0
-#> Cross-loading items (|loading| >= .300): 0
-#> Items without salient loading (|loading| >= .300): 0
-#> Factors with fewer than 3 salient indicators: 0
-#> Items with primary-loading gap < .200: 1
-#> Largest |residual|: .069
 #> Factor intercorrelations > .85: none
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
@@ -1442,7 +1272,7 @@ summary(ML_info)
 #>   grey = below cutoff
 #>   red h2/u2 = Heywood-relevant value
 #> 
-#> ── 95% Wald CIs for salient rotated loadings ───────────────────────────────────
+#> ── 95% Wald CIs (expected information) for salient rotated loadings ────────────
 #> 
 #> Variable  Factor  est    lower  upper
 #> V13       F1       .612   .488   .736
@@ -1471,7 +1301,7 @@ summary(ML_info)
 #> F2   .591  1.000
 #> F3   .621   .596  1.000
 #> 
-#> ── 95% Wald CIs for factor intercorrelations ───────────────────────────────────
+#> ── 95% Wald CIs (expected information) for factor intercorrelations ────────────
 #> 
 #> Factors   est    lower  upper
 #> F1 ~~ F2   .591   .499   .683
@@ -1521,11 +1351,10 @@ summary(ML_info)
 #> CFI: .99
 #> TLI: .98
 #> RMSEA [90% CI]: .02 [.00; .03]
+#> SRMR: .03
 #> AIC: -80.25
 #> BIC: -510.14
 #> ECVI: 0.52
-#> CAF: .50
-#> SRMR: .03
 #> 
 #> ── Residual Diagnostics ────────────────────────────────────────────────────────
 #> 
@@ -1541,8 +1370,7 @@ summary(ML_info)
 # Robust (sandwich) standard errors and a scaled chi-square for ordinal raw data.
 # These need a polychoric/tetrachoric correlation method and estimator ML, ULS, or DWLS.
 DWLS_rob <- efa_fit(DOSPERT_raw, n_factors = 6, cor_method = "poly",
-                    estimator = "DWLS", rotation = "oblimin", se = "sandwich")
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
+                    estimator = "DWLS", se = "sandwich")
 #> Warning: 18 variable pairs have an empty response-category combination despite a
 #> non-negligible expected count.
 #> ✖ Affected pairs: "ethR_3-recR_3", "ethR_5-heaR_2", "finR_3-finR_6",
@@ -1558,7 +1386,8 @@ DWLS_rob <- efa_fit(DOSPERT_raw, n_factors = 6, cor_method = "poly",
 #>   gauge-invariant and unaffected.
 DWLS_rob
 #> 
-#> EFA performed with estimator = 'DWLS' and rotation = 'oblimin'.
+#> EFA performed with estimator = 'DWLS' and rotation = 'oblimin'
+#>   (polychoric correlations, N = 3123).
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
 #> 
@@ -1624,26 +1453,17 @@ DWLS_rob
 #> CFI: .96
 #> TLI: .93
 #> RMSEA [90% CI]: .06 [.06; .06]
-#> AIC: NA
-#> BIC: NA
-#> CAF: .41
 #> SRMR: .03
 summary(DWLS_rob)
 #> 
-#> EFA performed with estimator = 'DWLS' and rotation = 'oblimin'.
+#> EFA performed with estimator = 'DWLS' and rotation = 'oblimin'
+#>   (polychoric correlations, N = 3123).
 #> 
 #> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 
-#> Factors: 6
-#> Variables: 30
 #> N: 3123
 #> Rotation local optima: 1 distinct from 6 of 101 starts
 #> Heywood cases: 0
-#> Cross-loading items (|loading| >= .300): 3
-#> Items without salient loading (|loading| >= .300): 0
-#> Factors with fewer than 3 salient indicators: 0
-#> Items with primary-loading gap < .200: 5
-#> Largest |residual|: .153
 #> Factor intercorrelations > .85: none
 #> 
 #> ── Rotated Loadings ────────────────────────────────────────────────────────────
@@ -1685,7 +1505,7 @@ summary(DWLS_rob)
 #>   grey = below cutoff
 #>   red h2/u2 = Heywood-relevant value
 #> 
-#> ── 95% Wald CIs for salient rotated loadings ───────────────────────────────────
+#> ── 95% Wald CIs (robust sandwich) for salient rotated loadings ─────────────────
 #> 
 #> Variable  Factor  est    lower  upper
 #> recR_1    F1       .364   .315   .414
@@ -1732,7 +1552,7 @@ summary(DWLS_rob)
 #> F5   .404   .469   .112   .312  1.000
 #> F6   .363   .151   .195   .290   .181  1.000
 #> 
-#> ── 95% Wald CIs for factor intercorrelations ───────────────────────────────────
+#> ── 95% Wald CIs (robust sandwich) for factor intercorrelations ─────────────────
 #> 
 #> Factors   est    lower  upper
 #> F1 ~~ F2   .231   .195   .267
@@ -1815,9 +1635,6 @@ summary(DWLS_rob)
 #> CFI: .96
 #> TLI: .93
 #> RMSEA [90% CI]: .06 [.06; .06]
-#> AIC: NA
-#> BIC: NA
-#> CAF: .41
 #> SRMR: .03
 #> 
 #> ── Residual Diagnostics ────────────────────────────────────────────────────────
@@ -1838,11 +1655,10 @@ summary(DWLS_rob)
 # The same robust SEs and scaled chi-square for continuous data: a Pearson
 # correlation with estimator ML or ULS (the fourth-moment ADF covariance).
 ML_rob <- efa_fit(GRiPS_raw, n_factors = 1, cor_method = "pearson",
-                  estimator = "ML", rotation = "none", se = "sandwich")
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
+                  estimator = "ML", se = "sandwich")
 ML_rob
 #> 
-#> EFA performed with estimator = 'ML' and rotation = 'none'.
+#> EFA performed with estimator = 'ML' and rotation = 'none' (N = 810).
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
@@ -1873,25 +1689,15 @@ ML_rob
 #> CFI: 1.00
 #> TLI: 1.00
 #> RMSEA [90% CI]: .03 [.01; .05]
-#> AIC: NA
-#> BIC: NA
-#> CAF: .50
 #> SRMR: .01
 summary(ML_rob)
 #> 
-#> EFA performed with estimator = 'ML' and rotation = 'none'.
+#> EFA performed with estimator = 'ML' and rotation = 'none' (N = 810).
 #> 
 #> ── Model Diagnostics ───────────────────────────────────────────────────────────
 #> 
-#> Factors: 1
-#> Variables: 8
 #> N: 810
 #> Heywood cases: 0
-#> Cross-loading items (|loading| >= .300): 0
-#> Items without salient loading (|loading| >= .300): 0
-#> Factors with fewer than 3 salient indicators: 0
-#> Items with primary-loading gap < .200: 0
-#> Largest |residual|: .030
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
@@ -1910,7 +1716,7 @@ summary(ML_rob)
 #>   grey = below cutoff
 #>   red h2/u2 = Heywood-relevant value
 #> 
-#> ── 95% Wald CIs for salient unrotated loadings ─────────────────────────────────
+#> ── 95% Wald CIs (robust sandwich) for salient unrotated loadings ───────────────
 #> 
 #> Variable   Factor  est    lower  upper
 #> fun        F1       .796   .761   .831
@@ -1922,6 +1728,12 @@ summary(ML_rob)
 #> chances    F1       .788   .745   .831
 #> attracted  F1       .845   .814   .877
 #> 
+#> ── Simple Structure Diagnostics ────────────────────────────────────────────────
+#> 
+#> All items have a salient loading (|loading| >= .300) and no cross-loading
+#> (|loading| >= .300), all primary-loading gaps are at least .200, and all
+#> factors have at least 3 salient indicators.
+#> 
 #> ── Variances Accounted for ─────────────────────────────────────────────────────
 #> 
 #>                 F1
@@ -1934,12 +1746,7 @@ summary(ML_rob)
 #> CFI: 1.00
 #> TLI: 1.00
 #> RMSEA [90% CI]: .03 [.01; .05]
-#> AIC: NA
-#> BIC: NA
-#> CAF: .50
 #> SRMR: .01
-#> 
-#> Note: Wald CIs from the robust (Godambe) sandwich covariance.
 #> 
 #> ── Residual Diagnostics ────────────────────────────────────────────────────────
 #> 
@@ -1959,11 +1766,10 @@ summary(ML_rob)
 x_miss <- GRiPS_raw
 x_miss[cbind(1:20, 1)] <- NA
 efa_fiml <- efa_fit(x_miss, n_factors = 1, estimator = "ML", cor_method = "fiml")
-#> ℹ `x` is not a correlation matrix; computing correlations from the raw data.
 efa_fiml
 #> 
-#> EFA performed with estimator = 'ML' and rotation = 'none'.
-#> Correlations: FIML (two-stage, missing data)
+#> EFA performed with estimator = 'ML' and rotation = 'none'
+#>   (two-stage FIML correlations, N = 810).
 #> 
 #> ── Unrotated Loadings ──────────────────────────────────────────────────────────
 #> 
@@ -1994,9 +1800,6 @@ efa_fiml
 #> CFI: 1.00
 #> TLI: 1.00
 #> RMSEA [90% CI]: .05 [.03; .06]
-#> AIC: NA
-#> BIC: NA
-#> CAF: .50
 #> SRMR: .01
 # }
 
@@ -2007,7 +1810,7 @@ if (FALSE) { # \dontrun{
 efa_boot <- local({
   old_plan <- future::plan(future::multisession, workers = 2)
   on.exit(future::plan(old_plan), add = TRUE)
-  efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF", rotation = "none",
+  efa_fit(GRiPS_raw, n_factors = 1, estimator = "PAF",
           se = "np-boot", b_boot = 1000, seed = 42)
 })
 } # }

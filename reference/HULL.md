@@ -54,26 +54,24 @@ HULL(
 
   character. The estimator to use; passed to
   [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md)
-  as its `estimator` argument. One of `"PAF"`, `"ULS"`, or `"ML"`.
+  as its `estimator` argument. One of `"PAF"` (default), `"ULS"`, or
+  `"ML"`.
 
 - gof:
 
-  character. The goodness of fit index to use. Either `"CAF"`, `"CFI"`,
-  or `"RMSEA"`, or any combination of them. With the `"PAF"` estimator,
-  only the CAF can be used as goodness of fit index. For details on the
-  CAF, see Lorenzo-Seva, Timmerman, and Kiers (2011).
+  character. Passed to
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
+  The goodness of fit index to use: `"CAF"`, `"CFI"`, or `"RMSEA"`, or
+  any combination of them. Default is all three. With the `"PAF"`
+  method, the Hull method uses only the CAF.
 
 - eigen_type:
 
-  character. On what the eigenvalues should be found in the parallel
-  analysis. Can be one of `"SMC"`, `"PCA"`, or `"EFA"`. If using `"SMC"`
-  (default), the diagonal of the correlation matrices is replaced by the
-  squared multiple correlations (SMCs) of the indicators. If using
-  `"PCA"`, the diagonal values of the correlation matrices are left to
-  be 1. If using `"EFA"`, eigenvalues are found on the correlation
-  matrices with the final communalities of an EFA solution as diagonal.
-  This is passed to
-  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
+  character. Passed to
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  in
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
+  One of `"SMC"` (default), `"PCA"`, or `"EFA"`.
 
 - use:
 
@@ -91,8 +89,8 @@ HULL(
 
 - n_datasets:
 
-  numeric. The number of datasets to simulate. Must be at least 1.
-  Default is 1000. This is passed to
+  numeric. The number of reference correlation matrices to simulate.
+  Must be at least 1. Default is 1000. This is passed to
   [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
 
 - percent:
@@ -103,13 +101,15 @@ HULL(
 
 - decision_rule:
 
-  character. Which rule to use to determine the number of factors to
-  retain. Default is `"means"`, which will use the average simulated
-  eigenvalues. `"percentile"`, uses the percentiles specified in
-  percent. `"crawford"` uses the 95th percentile for the first factor
-  and the mean afterwards (based on Crawford et al, 2010). This is
-  passed to
-  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md).
+  character. Passed to
+  [`efa_parallel()`](https://mdsteiner.github.io/EFAtools/reference/efa_parallel.md)
+  in
+  [`efa_hull()`](https://mdsteiner.github.io/EFAtools/reference/efa_hull.md).
+  Which rule to use to determine the number of factors to retain.
+  Default is `"means"`, which uses the average simulated eigenvalues.
+  `"percentile"` uses the percentiles specified in `percent`.
+  `"crawford"` uses the 95th percentile for the first factor and the
+  mean afterwards (based on Crawford et al., 2010).
 
 - n_factors:
 
