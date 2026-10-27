@@ -19,13 +19,14 @@
 #' curve, so the marks are then omitted.
 #'
 #' @param x An object of class `efa_power` (output from [efa_power()]).
-#' @param n numeric. The total sample sizes to evaluate. If `NULL` (the default) a
-#'   sequence bracketing the object's sample size is chosen automatically.
+#' @param n numeric. The total sample sizes to evaluate, each at least the number of groups. If
+#'   `NULL` (the default) a sequence bracketing the object's sample size is chosen automatically.
 #' @param df numeric. The model degrees of freedom (must be positive). Defaults to the
 #'   object's `df`; a vector of length greater than one draws one curve per value.
-#' @param eps1 numeric. The alternative-hypothesis RMSEA (must differ from the null
-#'   `eps0`). Defaults to the object's `eps1`; a vector of length greater than one draws
-#'   one curve per value. At most one of `df` and `eps1` may be a vector.
+#' @param eps1 numeric. The alternative-hypothesis RMSEA: larger than the null `eps0` for a
+#'   close-fit test, smaller for a not-close-fit test. Defaults to the object's `eps1`; a vector
+#'   of length greater than one draws one curve per value. At most one of `df` and `eps1` may be
+#'   a vector.
 #' @param ... Not used; for consistency with the generic.
 #'
 #' @returns A [ggplot2::ggplot] object.
@@ -79,6 +80,12 @@ plot.efa_power <- function(x, n = NULL, df = NULL, eps1 = NULL, ...) {
         "i" = "Equal null and alternative RMSEA leave no difference to detect."),
       class = "efa_power_unreachable")
   }
+  if (if (s$type == "close") any(eps1 < s$eps0) else any(eps1 > s$eps0)) {
+    side <- if (s$type == "close") "larger" else "smaller"
+    cli::cli_abort(
+      "For a {.val {s$type}}-fit test, {.arg eps1} must be {side} than {.arg eps0} ({s$eps0}).",
+      class = "efa_power_wrong_side")
+  }
 
   # "Sweep df OR eps1": at most one dimension may vary, so a single colour aesthetic
   # carries the overlay. A 2-D grid of both would need faceting and is out of scope.
@@ -106,11 +113,10 @@ plot.efa_power <- function(x, n = NULL, df = NULL, eps1 = NULL, ...) {
     curve_eps1 <- rep(eps1[1L], length(levels_val))
   }
 
-  # Sample-size axis: honour a supplied `n`, otherwise span from 1 up to where the
-  # slowest curve saturates (its N for 0.99 power), so every curve reaches its plateau
-  # and the object's N sits inside. `.efa_power_solve_N()` aborts (efa_power_unreached)
-  # when a target is unreachable (e.g. wrong-side epsilons); fall back to twice the
-  # object's N there, but let any other error surface.
+  # Sample-size axis: honour a supplied `n`, otherwise span from one case per group up to
+  # where the slowest curve saturates (its N for 0.99 power), so every curve reaches its
+  # plateau and the object's N sits inside. An alternative very near the null cannot reach
+  # 0.99 within the search bound (efa_power_unreached); fall back to twice the object's N.
   if (is.null(n)) {
     hi <- vapply(seq_along(levels_val), function(i) {
       tryCatch(
@@ -119,9 +125,9 @@ plot.efa_power <- function(x, n = NULL, df = NULL, eps1 = NULL, ...) {
         efa_power_unreached = function(e) 2 * x$N)
     }, numeric(1))
     n_hi <- max(hi, x$N)
-    n <- unique(round(seq(1, n_hi, length.out = 100L)))
+    n <- unique(round(seq(s$group, n_hi, length.out = 100L)))
   } else {
-    checkmate::assert_numeric(n, lower = 1, finite = TRUE, any.missing = FALSE,
+    checkmate::assert_numeric(n, lower = s$group, finite = TRUE, any.missing = FALSE,
                               min.len = 1)
   }
 

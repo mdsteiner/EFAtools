@@ -39,7 +39,23 @@
 
 * `efa_hull()` now has the same defaults as `efa_retain()`: the ML estimator, only the CAF (`gof = "CAF"`), and PCA eigenvalues with the 95th percentile in the parallel analysis that sets the largest number of factors to fit (`eigen_type = "PCA"`, `decision_rule = "percentile"`; Lorenzo-Seva et al., 2011). Thus, the results can be different from earlier versions. `HULL()` keeps the earlier defaults (PAF, all three indices, SMC eigenvalues, and the mean rule).
 
-* `efa_power(mode = "simulation")` uses the new `efa_retain()` defaults for `KGC`, `PARALLEL`, and `HULL`, so their variants are now `KGC_PCA`, `PARALLEL_PCA`, and `HULL_CAF`.
+* `efa_power()` changes:
+  * `p` and `k` are deprecated; use `n_vars` and `n_factors`, as in the rest of the package. `settings` also uses the new names.
+  * An argument of the other mode is now an error (`efa_power_wrong_mode`); earlier, it was silently ignored. `Lambda` or `R` without `mode` now selects simulation mode.
+  * With `group > 1`, the noncentrality parameter is now (N - group) * df * eps^2 / group (Steiger, 1998), not (N - 1) * df * eps^2 / group as in semTools. At a given `df`, a required `N` can thus be up to `group` cases larger.
+  * With `group > 1`, the `df` from `n_vars` and `n_factors` is now `group` times the single-group value (a separate EFA in each group). Earlier, the single-group `df` gave too little power.
+  * With a very large noncentrality parameter, the power and the required `N` could be wrong. This occurred with an alternative RMSEA near the null or a very large `N`, where `stats::qchisq()` and `stats::pchisq()` are not accurate. For example, `eps1 = 0.0500001` gave a required `N` of about 8 million instead of an error. Above a noncentrality of 1e5, the three-moment approximation of Pearson (1959) is now used.
+  * `eps0` and `eps1` in the wrong order for `type` are now an error (`efa_power_wrong_side`), not a message, because the result was not a power.
+  * A new warning (`efa_power_small_n`) shows when the sample size (per group) is not larger than `n_vars`. The sample correlation matrix is then singular, and the RMSEA power does not apply (MacCallum, Browne, & Sugawara, 1996). With many degrees of freedom, a required `N` can be this small.
+  * `print()` no longer shows the critical value and the noncentrality parameters; they stay in the object.
+  * In simulation mode:
+    * The hit-rate and the recovery rates are now proportions of all replicates. A replicate where a criterion fails or gives no suggestion counts as a miss, and a failed fit counts as not recovered. Earlier, these replicates were left out, which made the rates too high. A criterion that never gives a suggestion thus has a hit-rate of 0, not `NA`.
+    * `hits` has the new column `mcse`, the Monte Carlo standard error of the hit-rate. `print()` shows an upper bound for the Monte Carlo standard error of the rates.
+    * The default `rotation` of the recovery fit is now `"oblimin"`, as in `efa_fit()`, instead of promax (oblique population) or varimax (orthogonal population).
+    * An `N` that is not larger than the number of variables is now an error before the simulation starts.
+    * `print()` is shorter: it shows the number of replicates without a suggestion only if there are some, and the convergence in one line if all fits converged without Heywood cases. For an `R` population, it no longer shows the model-error note and the recovery section.
+    * `settings$has_recovery` is removed; use `!is.null(x$recovery)`.
+    * The criteria use the new `efa_retain()` defaults for `KGC`, `PARALLEL`, and `HULL`, so their variants are now `KGC_PCA`, `PARALLEL_PCA`, and `HULL_CAF`.
 
 * `efa_screen()` changes:
   * Outliers are now detected with the deterministic DetMCD algorithm, so the result is the same on every run and large samples are much faster. The `seed` argument is deprecated and has no effect.

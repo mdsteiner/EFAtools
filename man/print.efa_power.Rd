@@ -12,33 +12,28 @@
 \arguments{
 \item{x}{An object of class \code{efa_power} (output from \code{\link[=efa_power]{efa_power()}}).}
 
-\item{digits}{Integer. The number of decimal places the reported values are
-rounded to. Default is 3.}
+\item{digits}{Integer. The number of decimal places. Default is 3.}
 
 \item{...}{Not used; for consistency with the generic.}
 }
 \value{
-\code{print()} returns its argument \code{x} invisibly. \code{format()} returns a
-character vector with the report lines.
+\code{print()} returns \code{x} invisibly. \code{format()} returns a character vector with the
+report lines.
 }
 \description{
-\code{print()} turns an \code{\link[=efa_power]{efa_power()}} result into a short report, and \code{format()}
-builds the same report as a character vector (\code{print()} is
-\code{cat(format(x), sep = "\\n")}).
+\code{print()} shows an \code{\link[=efa_power]{efa_power()}} result as a short report, and \code{format()} gives the same
+report as a character vector (\code{print()} is \code{cat(format(x), sep = "\\n")}).
 }
 \details{
-For an RMSEA-mode object, the report has a header naming the test, the null and
-alternative hypotheses with the significance level and degrees of freedom, the
-headline result (the power at the sample size, or the required sample size for
-the target power), and the critical value and noncentrality parameters.
+For an RMSEA-mode object, the report shows the test, the hypotheses, the significance level,
+the degrees of freedom, and the power at the sample size or the required sample size.
 
-For a simulation-mode object, the report instead has the population and design,
-the retention hit-rate per criterion, the structure-recovery rate, and the
-convergence and Heywood-case rate.
+For a simulation-mode object, the report shows the population and design, the hit-rate per
+criterion, the structure recovery, the convergence, and an upper bound for the Monte Carlo
+standard error of the rates.
 
-The lines follow the active console theme, so they print as plain text when
-colours are disabled -- for example when captured into a file, or stripped with
-\code{\link[cli:ansi_strip]{cli::ansi_strip()}}.
+The lines follow the active console theme, so they are plain text when colours are off,
+for example in a file, or after \code{\link[cli:ansi_strip]{cli::ansi_strip()}}.
 }
 \examples{
 pw <- efa_power(df = 100, N = 200)

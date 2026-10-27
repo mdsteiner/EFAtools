@@ -32,88 +32,76 @@ test_that("required sample size is the smallest N reaching the target power", {
   expect_equal(efa_power(df = 100)$settings$power, 0.80)
 })
 
-test_that("df is taken from p and k via the EFA df formula", {
-  # p = 20, k = 5 -> ((20 - 5)^2 - (20 + 5)) / 2 = 100
-  from_pk <- efa_power(p = 20, k = 5, N = 200)
+test_that("df is taken from n_vars and n_factors via the EFA df formula", {
+  # n_vars = 20, n_factors = 5 -> ((20 - 5)^2 - (20 + 5)) / 2 = 100
+  from_dims <- efa_power(n_vars = 20, n_factors = 5, N = 200)
   from_df <- efa_power(df = 100, N = 200)
-  expect_equal(from_pk$settings$df, 100)
-  expect_equal(from_pk$power, from_df$power)
+  expect_equal(from_dims$settings$df, 100)
+  expect_equal(from_dims$power, from_df$power)
 })
 
-test_that("the number of groups scales the noncentrality", {
-  g1 <- efa_power(df = 100, N = 200, group = 1)
+test_that("p and k are deprecated aliases of n_vars and n_factors", {
+  new <- efa_power(n_vars = 20, n_factors = 5, N = 200)
+  expect_warning(old_p <- efa_power(p = 20, n_factors = 5, N = 200),
+                 class = "lifecycle_warning_deprecated")
+  expect_warning(old_k <- efa_power(n_vars = 20, k = 5, N = 200),
+                 class = "lifecycle_warning_deprecated")
+  expect_equal(old_p, new)
+  expect_equal(old_k, new)
+})
+
+test_that("the noncentrality uses Steiger's (N - group) / group factor", {
+  # Steiger (1998), eqs. 15-23: n. = N - G, RMSEA = sqrt(G) * sqrt(F / df), so
+  # ncp = (N - G) * df * eps^2 / G. At N = 200, G = 2: 99 * 100 * eps^2.
   g2 <- efa_power(df = 100, N = 200, group = 2)
-  expect_equal(unname(g2$ncp), unname(g1$ncp) / 2)
+  expect_equal(unname(g2$ncp), c(99 * 100 * 0.05^2, 99 * 100 * 0.08^2))
 })
 
-test_that("the solved N is the total across groups, split by N_per_group", {
-  # The 1 / group factor in the noncentrality makes the solved N a total, so it
-  # grows linearly in `group` while the per-group requirement stays near-constant.
-  g1 <- efa_power(df = 102, power = 0.80, group = 1)
-  g2 <- efa_power(df = 102, power = 0.80, group = 2)
-  g3 <- efa_power(df = 102, power = 0.80, group = 3)
+test_that("n_vars and n_factors give the df of a separate EFA in each group", {
+  expect_equal(efa_power(n_vars = 18, n_factors = 3, N = 200, group = 2)$settings$df, 204)
+  # The joint test sums the two groups' chi-squares, so it needs fewer cases per group.
+  two <- efa_power(n_vars = 18, n_factors = 3, group = 2)
+  expect_lt(two$N_per_group, efa_power(n_vars = 18, n_factors = 3)$N)
+})
+
+test_that("an explicit NULL of the other mode is not an error", {
+  expect_s3_class(efa_power(df = 100, N = 200, Lambda = NULL, seed = NULL), "efa_power")
+})
+
+test_that("with equal groups, power depends only on the group size", {
+  # (N - G) / G = m - 1 for G groups of m cases: the single-group noncentrality at m.
+  for (g in 2:3) {
+    expect_equal(efa_power(df = 102, N = 130 * g, group = g)$power,
+                 efa_power(df = 102, N = 130)$power)
+  }
+  g1 <- efa_power(df = 102, power = 0.80)
   expect_equal(g1$N, 130L)
-  expect_equal(g2$N, 260L)
-  expect_equal(g3$N, 390L)
-  expect_equal(g1$N_per_group, 130)
-  expect_equal(g2$N_per_group, 130)
-  expect_equal(g3$N_per_group, 130)
-})
-
-test_that("a solved N is a total that a study can collect", {
-  # All groups have the same size, so a required total must divide by `group`; a total
-  # of 259 over two groups would ask for 129.5 persons in each. Rounding the total up
-  # keeps the reported power the power at the total that is reported. `N_per_group` is
-  # `N / group`, so the modulus is the whole property -- no separate whole-number check.
   for (g in 1:4) {
     x <- efa_power(df = 102, power = 0.80, group = g)
-    expect_equal(x$N %% g, 0)
-    expect_gte(x$power, 0.80)
-    # Still the smallest such total: one person less in each group misses the target.
-    expect_lt(efa_power(df = 102, N = x$N - g, group = g)$power, 0.80)
+    expect_equal(x$N, 130L * g)
+    expect_equal(x$N_per_group, 130)
   }
 
-  # A target below `alpha` is reached at any size, which returns one person per group
-  # rather than a total of one shared out over `group` groups.
+  # A target below `alpha` is reached at any size: one case per group.
   floor_g2 <- efa_power(df = 102, power = 0.01, group = 2)
   expect_equal(floor_g2$N, 2L)
   expect_equal(floor_g2$N_per_group, 1)
-  expect_equal(efa_power(df = 102, power = 0.01, group = 1)$N, 1L)
 
-  # A supplied N is the caller's own total and is reported unchanged, fraction and all.
+  # A given N is the caller's own total and is kept unchanged.
   odd <- efa_power(df = 102, N = 259L, group = 2)
   expect_equal(odd$N, 259L)
   expect_equal(odd$N_per_group, 129.5)
 })
 
-test_that("the solved total matches semTools::findRMSEAsamplesize per group", {
+test_that("the single-group solved N matches semTools::findRMSEAsamplesize", {
   skip_if_not_installed("semTools")
 
-  # findRMSEAsamplesize() searches the same noncentrality but reports the per-group
-  # figure (its last line divides the solved total by `group`), so its value is the
-  # N_per_group counterpart of the total efa_power() returns.
-  #
-  # It divides without rounding, so for a total that does not divide by `group` it
-  # returns a fraction of a person (129.5 at df = 102 with two groups). efa_power()
-  # rounds the total up to the next multiple of `group` instead, because all `group`
-  # groups have the same size. The two therefore agree up to that one step, and the
-  # oracle is compared as ceiling(): a definitional offset, not a numerical one.
-  # Compared as named vectors so a failure names the group count that broke.
-  groups <- c(1, 2, 3)
-  ref <- vapply(groups, function(g) {
-    semTools::findRMSEAsamplesize(rmsea0 = 0.05, rmseaA = 0.08, df = 102,
-                                  power = 0.80, group = g)
-  }, numeric(1))
-  pw <- vapply(groups, function(g) {
-    efa_power(df = 102, power = 0.80, group = g)$N_per_group
-  }, numeric(1))
-  tot <- vapply(groups, function(g) {
-    as.numeric(efa_power(df = 102, power = 0.80, group = g)$N)
-  }, numeric(1))
-  names(ref) <- names(pw) <- names(tot) <- paste0("group", groups)
-
-  expect_equal(pw, ceiling(ref), tolerance = 1e-8)
-  expect_equal(tot, ceiling(ref) * groups, tolerance = 1e-8, ignore_attr = "names")
+  # semTools uses (N - 1) / group for every group count, which agrees with Steiger's
+  # (N - group) / group only for one group; group > 1 is pinned by the invariant above.
+  # findRMSEAsamplesize() reports the first N with power strictly above the target.
+  ref <- semTools::findRMSEAsamplesize(rmsea0 = 0.05, rmseaA = 0.08, df = 102,
+                                       power = 0.80, group = 1)
+  expect_equal(efa_power(df = 102, power = 0.80)$N, ref)
 })
 
 test_that("output has the expected class and structure", {
@@ -121,17 +109,22 @@ test_that("output has the expected class and structure", {
   expect_s3_class(x, "efa_power")
   expect_named(x, c("power", "N", "N_per_group", "crit", "ncp", "solve_for",
                     "settings"))
-  expect_named(x$settings, c("mode", "type", "eps0", "eps1", "df", "p", "k",
-                             "alpha", "group", "power"))
+  expect_named(x$settings, c("mode", "type", "eps0", "eps1", "df", "n_vars",
+                             "n_factors", "alpha", "group", "power"))
 })
 
 test_that("classed conditions fire as expected", {
   # Equal null and alternative RMSEA: nothing to detect.
   expect_error(efa_power(df = 100, N = 200, eps0 = 0.05, eps1 = 0.05),
                class = "efa_power_unreachable")
+  # eps0/eps1 on the wrong side for the chosen test: the result would not be a power.
+  expect_error(efa_power(df = 100, N = 200, type = "close", eps0 = 0.08, eps1 = 0.05),
+               class = "efa_power_wrong_side")
+  expect_error(efa_power(df = 100, N = 200, type = "notclose", eps0 = 0.05, eps1 = 0.08),
+               class = "efa_power_wrong_side")
   # Non-positive degrees of freedom, given directly or from an unidentified model.
   expect_error(efa_power(df = 0, N = 200), class = "efa_power_bad_df")
-  expect_error(efa_power(p = 3, k = 3, N = 200), class = "efa_power_bad_df")
+  expect_error(efa_power(n_vars = 3, n_factors = 3, N = 200), class = "efa_power_bad_df")
   # No way to obtain df.
   expect_error(efa_power(N = 200), class = "efa_power_missing_df")
   # Both N and power supplied: nothing to solve for.
@@ -141,28 +134,65 @@ test_that("classed conditions fire as expected", {
   expect_error(efa_power(df = 100, N = 200, alpha = 0),
                class = "efa_power_bad_alpha")
   expect_error(efa_power(df = 100, power = 1.2), class = "efa_power_bad_power")
+  # Fewer cases than groups.
+  expect_error(efa_power(df = 100, N = 2, group = 3), class = "efa_power_bad_n")
+})
 
-  # eps0/eps1 on the wrong side for the chosen test: a message, and the value is
-  # still returned (the branch follows `type`, not the ordering of the epsilons).
-  expect_message(
-    val <- efa_power(df = 100, N = 200, type = "close", eps0 = 0.08, eps1 = 0.05),
-    class = "efa_power_wrong_side")
-  expect_s3_class(val, "efa_power")
+test_that("a sample size not larger than n_vars gives a warning", {
+  # With 1480 df the test needs only about 30 cases, fewer than the 60 variables
+  # (MacCallum et al., 1996, p. 144).
+  expect_warning(small <- efa_power(n_vars = 60, n_factors = 5),
+                 class = "efa_power_small_n")
+  expect_lte(small$N, 60L)
+  expect_warning(efa_power(n_vars = 60, n_factors = 5, N = 60),
+                 class = "efa_power_small_n")
+  # The check is per group.
+  expect_warning(efa_power(n_vars = 60, n_factors = 5, N = 100, group = 2),
+                 class = "efa_power_small_n")
+  expect_no_warning(efa_power(n_vars = 60, n_factors = 5, N = 61))
+})
+
+test_that("an argument of the other mode is an error, and a population selects simulation", {
+  expect_error(efa_power(df = 100, N = 200, mode = "rmsea", Lambda = diag(3)),
+               class = "efa_power_wrong_mode")
+  expect_error(efa_power(df = 100, N = 200, seed = 1), class = "efa_power_wrong_mode")
+  expect_error(efa_power("simulation", Lambda = diag(3), N = 200, alpha = 0.01),
+               class = "efa_power_wrong_mode")
+  # Lambda without `mode` selects simulation mode, so `df` is then the stray argument.
+  expect_error(efa_power(df = 100, N = 200, Lambda = diag(3)),
+               class = "efa_power_wrong_mode")
+})
+
+test_that("power stays correct at a very large noncentrality", {
+  # stats::qchisq() fails above a noncentrality of about 1e5 and stats::pchisq() above
+  # about 1e7; Pearson's (1959) three-moment approximation takes over there. An
+  # alternative this near the null has power near alpha at any N.
+  expect_equal(efa_power(df = 100, N = 1e7, eps1 = 0.0500001)$power, 0.05,
+               tolerance = 0.01)
+  # Above 1e5 the approximation agrees with the exact values wherever those are still
+  # accurate: pchisq() up to about 1e7, qchisq() at the switch.
+  for (ncp in c(1e5 + 1, 1e6)) {
+    q <- 100 + ncp + c(-2, 2) * sqrt(2 * (100 + 2 * ncp))
+    # Absolute errors of about 1e-7 at tail probabilities of .02 to .98 (relative tolerance).
+    expect_equal(.pchisq_nc(q, 100, ncp, TRUE), stats::pchisq(q, 100, ncp), tolerance = 1e-5)
+    expect_equal(stats::pchisq(.qchisq_nc(0.05, 100, ncp, FALSE), 100, ncp, lower.tail = FALSE),
+                 0.05, tolerance = 1e-5)
+  }
+  expect_equal(.qchisq_nc(0.05, 100, 1e5 + 1, FALSE),
+               suppressWarnings(stats::qchisq(0.05, 100, 1e5 + 1, lower.tail = FALSE)),
+               tolerance = 1e-7)
 })
 
 test_that("an unreachable target aborts cleanly without warning noise", {
-  # Wrong-side epsilons make close-fit power fall short at every N, so the search
-  # runs up to the cap and aborts (the wrong-side message is muffled here).
-  expect_error(
-    suppressMessages(
-      efa_power(df = 100, power = 0.80, type = "close", eps0 = 0.08, eps1 = 0.05)),
-    class = "efa_power_unreached")
+  # An alternative this near the null cannot reach .80 within the search bound.
+  expect_error(efa_power(df = 100, power = 0.80, eps0 = 0.05, eps1 = 0.0500001),
+               class = "efa_power_unreached")
 
   # The search evaluates the noncentral chi-square routines at extreme
   # noncentrality; those base-R precision/convergence notes must not leak.
-  expect_no_warning(suppressMessages(tryCatch(
-    efa_power(df = 100, power = 0.80, type = "close", eps0 = 0.08, eps1 = 0.05),
-    error = function(e) NULL)))
+  expect_no_warning(tryCatch(
+    efa_power(df = 100, power = 0.80, eps0 = 0.05, eps1 = 0.0500001),
+    error = function(e) NULL))
 })
 
 test_that("printed output is stable", {
@@ -186,15 +216,15 @@ test_that("plot() returns a ggplot for the various curves", {
                   "ggplot")
   expect_s3_class(plot(efa_power(df = 100, N = 200), n = seq(50, 400, by = 50)),
                   "ggplot")
-  # Not-close fit with more than one group still plots.
-  expect_s3_class(plot(efa_power(df = 100, N = 200, type = "notclose", group = 2)),
-                  "ggplot")
+  # Not-close fit with more than one group still plots, with finite power on every point.
+  pg <- plot(efa_power(df = 100, N = 200, type = "notclose", group = 2))
+  expect_s3_class(pg, "ggplot")
+  expect_true(all(is.finite(pg$data$power)))
 
-  # Wrong-side epsilons: the automatic N axis cannot solve for 0.99 power, so the
-  # curve span falls back to a multiple of the object's N rather than erroring out.
-  wrong_side <- suppressMessages(
-    efa_power(df = 100, N = 200, type = "close", eps0 = 0.08, eps1 = 0.05))
-  expect_s3_class(suppressMessages(plot(wrong_side)), "ggplot")
+  # An alternative near the null cannot reach 0.99 power within the search bound, so
+  # the N axis falls back to a multiple of the object's N rather than erroring out.
+  near <- efa_power(df = 100, N = 200, eps1 = 0.0500001)
+  expect_s3_class(plot(near), "ggplot")
 })
 
 test_that("the object's point is marked only for its own curve", {
@@ -224,6 +254,10 @@ test_that("overrides uphold the constructor's invariants", {
   expect_error(plot(pw, df = c(0, 100)), class = "efa_power_bad_df")
   # An alternative RMSEA equal to the null leaves nothing to detect.
   expect_error(plot(pw, eps1 = 0.05), class = "efa_power_unreachable")
+  # An alternative on the null's side of a close-fit test is not a power curve.
+  expect_error(plot(pw, eps1 = c(0.03, 0.08)), class = "efa_power_wrong_side")
+  expect_error(plot(efa_power(df = 100, N = 200, type = "notclose"), eps1 = 0.08),
+               class = "efa_power_wrong_side")
 })
 
 test_that("sweeping both df and eps1 is refused", {
@@ -268,10 +302,10 @@ test_that("simulation mode is reproducible at 1 vs 2 workers", {
   skip_on_cran()
   skip_if_not_slow()
   # Each replicate is analysed in its own future, and future.seed = TRUE binds its RNG
-  # stream to its index, so the result must be identical regardless of the number of
-  # workers. The multisession workers are fresh R processes that load the installed
-  # package, so run this under devtools::check() / after devtools::install().
-  # (multicore is unavailable on Windows.)
+  # stream (data-independent criteria and the rotation's random starts alike) to its
+  # index, so the result must be identical regardless of the number of workers. The
+  # multisession workers are fresh R processes that load the installed package, so run
+  # this under devtools::check() / after devtools::install().
   old_plan <- future::plan()
   on.exit(future::plan(old_plan), add = TRUE)
 
@@ -296,6 +330,7 @@ test_that("simulation mode recovers a clean population", {
                    n_datasets = 20, criteria = c("EKC", "MAP"), seed = 42)
   expect_s3_class(sim, "efa_power")
   expect_identical(sim$settings$mode, "simulation")
+  expect_identical(sim$settings$rotation, "oblimin")
   expect_equal(sim$k_true, 3L)
   expect_named(sim, c("hit_rate", "hits", "recovery", "convergence", "replicates",
                       "k_true", "model_error", "settings"))
@@ -311,9 +346,16 @@ test_that("simulation mode recovers a clean population", {
   expect_true(all(sim$replicates$fit_ok))
   expect_true(all(is.na(sim$replicates$fit_error)))
 
-  # hits data frame is consistent with the hit_rate vector.
+  # The hits data frame agrees with the hit_rate vector, over all replicates.
   expect_equal(sim$hits$hit_rate, unname(sim$hit_rate))
-  expect_true(all(sim$hits$hits <= sim$hits$n_valid))
+  expect_equal(sim$hits$hit_rate, sim$hits$hits / 20)
+  expect_equal(sim$hits$mcse, sqrt(sim$hits$hit_rate * (1 - sim$hits$hit_rate) / 20))
+})
+
+test_that("a population without `mode` selects simulation mode", {
+  sim <- efa_power(Lambda = sim_Lambda, Phi = sim_Phi, N = 120, n_datasets = 2,
+                   criteria = "EKC", seed = 1)
+  expect_identical(sim$settings$mode, "simulation")
 })
 
 test_that("simulation mode muffles the per-replicate fit messages", {
@@ -322,27 +364,40 @@ test_that("simulation mode muffles the per-replicate fit messages", {
               n_datasets = 3, criteria = "EKC", seed = 1))
 })
 
-test_that("a criterion that fails on every replicate is reported, not dropped", {
-  # N < p makes each replicate's correlation matrix singular, so MAP errors on every
-  # replicate. The criterion must still appear in the results -- with no valid replicates
-  # and an NA hit-rate -- and be named in a classed warning, rather than vanishing while
-  # the settings still record the request.
-  # The singular matrix also stops the recovery fit, which warns in its own right.
+test_that("a criterion that fails on every replicate is reported with a hit-rate of 0", {
+  # The criterion must still appear in the results -- with no valid replicates and a
+  # hit-rate of 0, because a failure is a miss -- and be named in a classed warning.
+  testthat::local_mocked_bindings(
+    efa_map = function(...) cli::cli_abort("Mocked MAP failure.", class = "efa_mock_map"))
   expect_warning(
-    expect_warning(
-      sim <- efa_power("simulation", Lambda = sim_Lambda, N = 6, n_datasets = 3,
-                       criteria = "MAP", seed = 1),
-      class = "efa_power_criterion_failed"),
-    class = "efa_power_fit_failed")
+    sim <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 120,
+                     n_datasets = 3, criteria = "MAP", seed = 1),
+    class = "efa_power_criterion_failed")
   expect_s3_class(sim, "efa_power")
   expect_named(sim$hit_rate, "MAP")
-  expect_true(is.na(sim$hit_rate[["MAP"]]))
-  expect_equal(sim$hits$n_valid, 0L, ignore_attr = TRUE)
+  expect_equal(sim$hit_rate[["MAP"]], 0)
+  expect_equal(sim$hits$n_valid, 0, ignore_attr = TRUE)
   expect_equal(sim$hits$hits, 0, ignore_attr = TRUE)
   expect_identical(sim$settings$criteria, "MAP")
-  # The formatter reports the missing rate rather than dropping the line or erroring.
   local_reproducible_output()
-  expect_snapshot(print(sim))
+  expect_snapshot(print(sim), transform = scrub_num)
+})
+
+test_that("a criterion that fails on some replicates counts them as misses", {
+  # MAP fails on the replicates whose first sample correlation is above its population value.
+  real_map <- efa_map
+  pop_r12 <- (sim_Lambda %*% sim_Phi %*% t(sim_Lambda))[1, 2]
+  testthat::local_mocked_bindings(
+    efa_map = function(x, ...) {
+      if (x[1, 2] > pop_r12) cli::cli_abort("Mocked MAP failure.", class = "efa_mock_map")
+      real_map(x, ...)
+    })
+  sim <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 150,
+                   n_datasets = 8, criteria = "MAP", seed = 3)
+  n_valid <- sim$hits$n_valid
+  expect_true(all(n_valid > 0 & n_valid < 8))
+  expect_equal(sim$hits$hit_rate, sim$hits$hits / 8)
+  expect_true(all(sim$hits$hit_rate <= n_valid / 8))
 })
 
 test_that("a criterion that decides on every replicate raises no failure warning", {
@@ -353,10 +408,10 @@ test_that("a criterion that decides on every replicate raises no failure warning
 
 test_that("a recovery fit that fails everywhere is reported, not thrown away", {
   # The recovery fit fails on every replicate while the retention criteria are
-  # unaffected: the completed retention results must still be returned, with a warning,
-  # rather than the whole (expensive) run being discarded.
+  # unaffected: the completed retention results must still be returned, with a warning.
+  # The mock carries a `rotation` formal, which efa_power() validates against.
   testthat::local_mocked_bindings(
-    efa_fit = function(x, ...) {
+    efa_fit = function(x, ..., rotation = "oblimin") {
       cli::cli_abort("Mocked recovery failure.", class = "efa_mock_fit_failure")
     })
 
@@ -365,13 +420,13 @@ test_that("a recovery fit that fails everywhere is reported, not thrown away", {
                      n_datasets = 3, criteria = "EKC", seed = 1),
     class = "efa_power_fit_failed")
   expect_s3_class(sim, "efa_power")
-  expect_equal(sim$hits$n_valid, 3L, ignore_attr = TRUE)
+  expect_equal(sim$hits$n_valid, 3, ignore_attr = TRUE)
   expect_true(is.finite(sim$hit_rate[["EKC_BvA2017"]]))
 
-  # The fit half is missing, and every replicate keeps the reason it failed.
+  # No replicate is recovered, and every replicate keeps the reason its fit failed.
   expect_equal(sim$convergence$fit_rate, 0)
   expect_true(is.na(sim$convergence$convergence_rate))
-  expect_true(is.na(sim$recovery$min_rate))
+  expect_equal(sim$recovery$min_rate, 0)
   expect_equal(sim$recovery$n_valid, 0L)
   expect_false(any(sim$replicates$fit_ok))
   expect_length(sim$replicates$fit_error, 3L)
@@ -384,11 +439,11 @@ test_that("a partly failing recovery fit keeps the replicates that did fit", {
   # so the run has both kinds of replicate under a fixed seed.
   real_fit <- efa_fit
   testthat::local_mocked_bindings(
-    efa_fit = function(x, ...) {
+    efa_fit = function(x, ..., rotation = "oblimin") {
       if (x[1, 1] > 0) {
         cli::cli_abort("Mocked recovery failure.", class = "efa_mock_fit_failure")
       }
-      real_fit(x, ...)
+      real_fit(x, ..., rotation = rotation)
     })
 
   expect_warning(
@@ -399,11 +454,14 @@ test_that("a partly failing recovery fit keeps the replicates that did fit", {
   expect_true(any(failed))
   expect_false(all(failed))
 
-  # The rates are over the completed fits, and each failure keeps its parent cause at
-  # its own replicate index.
+  # Convergence is over the completed fits; recovery is over all replicates, with a
+  # failed fit as not recovered.
   expect_equal(sim$convergence$n_fit_ok, sum(!failed))
   expect_equal(sim$convergence$fit_rate, mean(!failed))
   expect_equal(sim$recovery$n_valid, sum(!failed))
+  expect_equal(sim$recovery$min_rate,
+               sum(sim$replicates$rec_min >= 0.95, na.rm = TRUE) / 6)
+  expect_lte(sim$recovery$min_rate, mean(!failed))
   expect_true(all(grepl("Mocked recovery failure",
                         sim$replicates$fit_error[failed], fixed = TRUE)))
   expect_true(all(is.na(sim$replicates$fit_error[!failed])))
@@ -411,7 +469,7 @@ test_that("a partly failing recovery fit keeps the replicates that did fit", {
 
 test_that("an unusable recovery rotation aborts before any data is drawn", {
   # `rotation` is resolved against efa_fit()'s own choices, so a value it would reject
-  # costs no simulation time and is reported instead of silently emptying the report.
+  # costs no simulation time.
   expect_error(
     efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 200,
               n_datasets = 500, criteria = "EKC", rotation = "nonesuch"),
@@ -430,12 +488,15 @@ test_that("an unusable recovery rotation aborts before any data is drawn", {
 
 test_that("simulation mode: R-only population turns recovery off but keeps the hit-rate", {
   R_pop <- efa_simulate(Lambda = sim_Lambda, Phi = sim_Phi, return_pop = TRUE)$population
-  rr <- efa_power("simulation", R = R_pop, k = 3, N = 200, n_datasets = 6,
+  rr <- efa_power("simulation", R = R_pop, n_factors = 3, N = 200, n_datasets = 6,
                   criteria = "EKC", seed = 42)
   expect_null(rr$recovery)
-  expect_false(rr$settings$has_recovery)
   expect_equal(rr$k_true, 3L)
   expect_true(is.finite(rr$hit_rate[["EKC_BvA2017"]]))
+  # Neither the exact-population note nor a recovery section applies to R.
+  local_reproducible_output()
+  out <- format(rr)
+  expect_false(any(grepl("Model error|Structure recovery", out)))
 })
 
 test_that("model error follows each function's own documented default", {
@@ -468,29 +529,32 @@ test_that("simulation-mode classed conditions fire as expected", {
                class = "efa_power_input")
   expect_error(efa_power("simulation", Lambda = sim_Lambda, R = R_pop, N = 200,
                          n_datasets = 2), class = "efa_power_input")
-  # k is required with a bare R, and must agree with Lambda otherwise.
+  # n_factors is required with a bare R, and must agree with Lambda otherwise.
   expect_error(efa_power("simulation", R = R_pop, N = 200, n_datasets = 2),
                class = "efa_power_missing_k")
-  expect_error(efa_power("simulation", Lambda = sim_Lambda, k = 2, N = 200,
+  expect_error(efa_power("simulation", Lambda = sim_Lambda, n_factors = 2, N = 200,
                          n_datasets = 2), class = "efa_power_bad_k")
-  # p is read off the population, like k: a conflicting value is an error on both
+  # n_vars is read off the population: a conflicting value is an error on both
   # population routes rather than being silently replaced.
-  expect_error(efa_power("simulation", Lambda = sim_Lambda, p = 99, N = 200,
+  expect_error(efa_power("simulation", Lambda = sim_Lambda, n_vars = 99, N = 200,
                          n_datasets = 2), class = "efa_power_bad_p")
-  expect_error(efa_power("simulation", R = R_pop, k = 3, p = 99, N = 200,
+  expect_error(efa_power("simulation", R = R_pop, n_factors = 3, n_vars = 99, N = 200,
                          n_datasets = 2), class = "efa_power_bad_p")
-  # A matching p is accepted and recorded.
+  # A matching n_vars is accepted and recorded.
   expect_identical(
-    efa_power("simulation", Lambda = sim_Lambda, p = nrow(sim_Lambda), N = 120,
-              n_datasets = 2, criteria = "EKC", seed = 1)$settings$p,
+    efa_power("simulation", Lambda = sim_Lambda, n_vars = nrow(sim_Lambda), N = 120,
+              n_datasets = 2, criteria = "EKC", seed = 1)$settings$n_vars,
     nrow(sim_Lambda))
   # N is required in simulation mode (it is optional in RMSEA mode, where it is solved
-  # for), and both N and n_datasets must be positive whole numbers.
+  # for), both N and n_datasets must be positive whole numbers, and N must exceed the
+  # number of variables before anything is drawn.
   expect_error(efa_power("simulation", Lambda = sim_Lambda), class = "efa_power_input")
   expect_error(efa_power("simulation", Lambda = sim_Lambda, N = -5, n_datasets = 2),
                class = "efa_power_input")
   expect_error(efa_power("simulation", Lambda = sim_Lambda, N = 200, n_datasets = 0),
                class = "efa_power_input")
+  expect_error(efa_power("simulation", Lambda = sim_Lambda, N = nrow(sim_Lambda),
+                         n_datasets = 500), class = "efa_power_input")
   # Out-of-range recovery threshold.
   expect_error(efa_power("simulation", Lambda = sim_Lambda, N = 200, n_datasets = 2,
                          recovery_threshold = 0), class = "efa_power_bad_threshold")
@@ -519,10 +583,8 @@ test_that("simulation-mode printed output is stable", {
   local_reproducible_output()
   sim <- efa_power("simulation", Lambda = sim_Lambda, Phi = sim_Phi, N = 200,
                    n_datasets = 10, criteria = c("EKC", "MAP"), seed = 42)
-  # Every decimal here -- the retention hit rates and the median minimum congruence alike --
-  # is averaged over ten simulated fits and moves with the BLAS, so all of them are masked.
-  # What this snapshot holds fixed is the layout, the section order, the criterion labels and
-  # the integer replicate counts. The rates themselves are pinned numerically instead, by the
-  # expect_gte() bounds at lines 268 and 361.
+  # The rates move with the BLAS, so every decimal is masked; the snapshot holds the
+  # layout, the section order, and the criterion labels. The rates are pinned by the
+  # expect_gte() bounds in "simulation mode recovers a clean population".
   expect_snapshot(print(sim), transform = scrub_num)
 })

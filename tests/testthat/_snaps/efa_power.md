@@ -10,7 +10,6 @@
       alpha = .050 · df = 100
       
       Power = .955 at N = 200.
-      Critical value χ²(100) = 183.967 · noncentrality H0 = 49.750, H1 = 127.360.
 
 ---
 
@@ -24,7 +23,6 @@
       alpha = .050 · df = 100
       
       Required N = 132 for a power of .800 (achieved .802).
-      Critical value χ²(100) = 163.977 · noncentrality H0 = 32.750, H1 = 83.840.
 
 ---
 
@@ -37,10 +35,9 @@
       Test of not-close fit: H0 RMSEA ≥ .050 vs. H1 RMSEA = .010.
       alpha = .050 · df = 100 · groups = 2
       
-      Power = .429 at N = 200 (total; 100 per group).
-      Critical value χ²(100) = 97.795 · noncentrality H0 = 24.875, H1 = .995.
+      Power = .426 at N = 200 (total; 100 per group).
 
-# a criterion that fails on every replicate is reported, not dropped
+# a criterion that fails on every replicate is reported with a hit-rate of 0
 
     Code
       print(sim)
@@ -48,23 +45,21 @@
       
       -- EFA power simulation --------------------------------------------------------
       
-      18 variables · 3 factors · N = 6 · 3 datasets
-      Estimation: PAF · rotation: varimax
-      Model error: none. The population is exact, so the hit-rate and recovery are
-      optimistic; set `target_rmsea` for realism.
+      18 variables · 3 factors · N = 120 · 3 datasets
+      Estimation: PAF · rotation: oblimin
+      Model error: none (an exact population gives optimistic rates).
       
       Retention hit-rate P(k-hat = 3)
-      * MAP: NA (n = 0)
+      * MAP: <num> (no suggestion in 3)
       
-      Structure recovery (Tucker congruence ≥ .950)
-      * recovery rate (min congruence): NA (n = 0)
-      * recovery rate (mean congruence): NA (n = 0)
-      * median min congruence: NA
+      Structure recovery (Tucker congruence ≥ <num>)
+      * recovery rate (min congruence): <num>
+      * recovery rate (mean congruence): <num>
+      * median min congruence: <num>
       
-      Convergence
-      * fits completed: .000 (0/3)
-      * converged (of completed): NA
-      * Heywood cases (of completed): NA
+      Convergence: all 3 fits converged, without Heywood cases.
+      
+      Monte Carlo standard error of each rate: <num> or less.
 
 # simulation-mode printed output is stable
 
@@ -75,22 +70,20 @@
       -- EFA power simulation --------------------------------------------------------
       
       18 variables · 3 factors · N = 200 · 10 datasets
-      Estimation: PAF · rotation: promax
-      Model error: none. The population is exact, so the hit-rate and recovery are
-      optimistic; set `target_rmsea` for realism.
+      Estimation: PAF · rotation: oblimin
+      Model error: none (an exact population gives optimistic rates).
       
       Retention hit-rate P(k-hat = 3)
-      * EKC_BvA2017: <num> (n = 10)
-      * MAP_TR2: <num> (n = 10)
-      * MAP_TR4: <num> (n = 10)
+      * EKC_BvA2017: <num>
+      * MAP_TR2: <num>
+      * MAP_TR4: <num>
       
       Structure recovery (Tucker congruence ≥ <num>)
-      * recovery rate (min congruence): <num> (n = 10)
-      * recovery rate (mean congruence): <num> (n = 10)
+      * recovery rate (min congruence): <num>
+      * recovery rate (mean congruence): <num>
       * median min congruence: <num>
       
-      Convergence
-      * fits completed: <num> (10/10)
-      * converged (of completed): <num>
-      * Heywood cases (of completed): <num>
+      Convergence: all 10 fits converged, without Heywood cases.
+      
+      Monte Carlo standard error of each rate: <num> or less.
 

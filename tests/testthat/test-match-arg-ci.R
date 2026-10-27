@@ -154,11 +154,11 @@ test_that("efa_simulate matches the threshold-matching rule case-insensitively",
 
 test_that("efa_power matches mode and type case-insensitively", {
   # the analytic path resolves both without any simulation
-  pw <- efa_power(mode = "RMSEA", type = "NotClose", p = 18, k = 3, N = 200)
+  pw <- efa_power(mode = "RMSEA", type = "NotClose", n_vars = 18, n_factors = 3, N = 200)
   expect_identical(pw$settings$mode, "rmsea")
   expect_identical(pw$settings$type, "notclose")
   expect_error(efa_power(mode = "bogus"), class = "efa_bad_choice")
-  expect_error(efa_power(type = "bogus", p = 18, k = 3, N = 200),
+  expect_error(efa_power(type = "bogus", n_vars = 18, n_factors = 3, N = 200),
                class = "efa_bad_choice")
 })
 
@@ -233,9 +233,9 @@ test_that("efa_scores matches the factor-score method case-insensitively", {
     case("efa_mi", list(list(cmat, cmat), n_factors = 3, N = 500),
          "target_method", "align_unrotated", "fit_pool_method"),
     case("efa_scores", list(cmat, f = fit), "method"),
-    case("efa_power", list(p = 18, k = 3, N = 200), "mode", "type"),
+    case("efa_power", list(n_vars = 18, n_factors = 3, N = 200), "mode", "type"),
     # the simulation branch validates its own choices before it draws anything
-    case("efa_power", list("simulation"), "criteria", "estimator", "model_error"),
+    case("efa_power", list("simulation"), "criteria", "estimator", "model_error", "rotation"),
     case("estimate_control", list(),
          "type", "init_comm", "criterion_type", "start_method",
          class = "efa_control_input"),

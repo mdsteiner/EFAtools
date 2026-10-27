@@ -9,15 +9,16 @@
 \arguments{
 \item{x}{An object of class \code{efa_power} (output from \code{\link[=efa_power]{efa_power()}}).}
 
-\item{n}{numeric. The total sample sizes to evaluate. If \code{NULL} (the default) a
-sequence bracketing the object's sample size is chosen automatically.}
+\item{n}{numeric. The total sample sizes to evaluate, each at least the number of groups. If
+\code{NULL} (the default) a sequence bracketing the object's sample size is chosen automatically.}
 
 \item{df}{numeric. The model degrees of freedom (must be positive). Defaults to the
 object's \code{df}; a vector of length greater than one draws one curve per value.}
 
-\item{eps1}{numeric. The alternative-hypothesis RMSEA (must differ from the null
-\code{eps0}). Defaults to the object's \code{eps1}; a vector of length greater than one draws
-one curve per value. At most one of \code{df} and \code{eps1} may be a vector.}
+\item{eps1}{numeric. The alternative-hypothesis RMSEA: larger than the null \code{eps0} for a
+close-fit test, smaller for a not-close-fit test. Defaults to the object's \code{eps1}; a vector
+of length greater than one draws one curve per value. At most one of \code{df} and \code{eps1} may be
+a vector.}
 
 \item{...}{Not used; for consistency with the generic.}
 }
