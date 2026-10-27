@@ -1,9 +1,9 @@
 # Print and format an efa_power object
 
-[`print()`](https://rdrr.io/r/base/print.html) turns an
+[`print()`](https://rdrr.io/r/base/print.html) shows an
 [`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
-result into a short report, and
-[`format()`](https://rdrr.io/r/base/format.html) builds the same report
+result as a short report, and
+[`format()`](https://rdrr.io/r/base/format.html) gives the same report
 as a character vector ([`print()`](https://rdrr.io/r/base/print.html) is
 `cat(format(x), sep = "\n")`).
 
@@ -26,8 +26,7 @@ format(x, digits = 3, ...)
 
 - digits:
 
-  Integer. The number of decimal places the reported values are rounded
-  to. Default is 3.
+  Integer. The number of decimal places. Default is 3.
 
 - ...:
 
@@ -35,25 +34,23 @@ format(x, digits = 3, ...)
 
 ## Value
 
-[`print()`](https://rdrr.io/r/base/print.html) returns its argument `x`
-invisibly. [`format()`](https://rdrr.io/r/base/format.html) returns a
-character vector with the report lines.
+[`print()`](https://rdrr.io/r/base/print.html) returns `x` invisibly.
+[`format()`](https://rdrr.io/r/base/format.html) returns a character
+vector with the report lines.
 
 ## Details
 
-For an RMSEA-mode object, the report has a header naming the test, the
-null and alternative hypotheses with the significance level and degrees
-of freedom, the headline result (the power at the sample size, or the
-required sample size for the target power), and the critical value and
-noncentrality parameters.
+For an RMSEA-mode object, the report shows the test, the hypotheses, the
+significance level, the degrees of freedom, and the power at the sample
+size or the required sample size.
 
-For a simulation-mode object, the report instead has the population and
-design, the retention hit-rate per criterion, the structure-recovery
-rate, and the convergence and Heywood-case rate.
+For a simulation-mode object, the report shows the population and
+design, the hit-rate per criterion, the structure recovery, the
+convergence, and an upper bound for the Monte Carlo standard error of
+the rates.
 
-The lines follow the active console theme, so they print as plain text
-when colours are disabled – for example when captured into a file, or
-stripped with
+The lines follow the active console theme, so they are plain text when
+colours are off, for example in a file, or after
 [`cli::ansi_strip()`](https://cli.r-lib.org/reference/ansi_strip.html).
 
 ## See also
@@ -74,7 +71,6 @@ pw
 #> alpha = .050 · df = 100
 #> 
 #> Power = .955 at N = 200.
-#> Critical value χ²(100) = 183.967 · noncentrality H0 = 49.750, H1 = 127.360.
 
 # format() returns the same lines as a character vector:
 writeLines(format(pw))
@@ -85,5 +81,4 @@ writeLines(format(pw))
 #> alpha = .050 · df = 100
 #> 
 #> Power = .955 at N = 200.
-#> Critical value χ²(100) = 183.967 · noncentrality H0 = 49.750, H1 = 127.360.
 ```

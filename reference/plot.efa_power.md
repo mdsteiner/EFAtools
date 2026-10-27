@@ -29,8 +29,9 @@ plot(x, n = NULL, df = NULL, eps1 = NULL, ...)
 
 - n:
 
-  numeric. The total sample sizes to evaluate. If `NULL` (the default) a
-  sequence bracketing the object's sample size is chosen automatically.
+  numeric. The total sample sizes to evaluate, each at least the number
+  of groups. If `NULL` (the default) a sequence bracketing the object's
+  sample size is chosen automatically.
 
 - df:
 
@@ -40,10 +41,10 @@ plot(x, n = NULL, df = NULL, eps1 = NULL, ...)
 
 - eps1:
 
-  numeric. The alternative-hypothesis RMSEA (must differ from the null
-  `eps0`). Defaults to the object's `eps1`; a vector of length greater
-  than one draws one curve per value. At most one of `df` and `eps1` may
-  be a vector.
+  numeric. The alternative-hypothesis RMSEA: larger than the null `eps0`
+  for a close-fit test, smaller for a not-close-fit test. Defaults to
+  the object's `eps1`; a vector of length greater than one draws one
+  curve per value. At most one of `df` and `eps1` may be a vector.
 
 - ...:
 

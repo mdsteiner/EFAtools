@@ -371,7 +371,7 @@ our 18-indicator, three-factor model:
 
 ``` r
 
-efa_power(p = 18, k = 3, N = 200)
+efa_power(n_vars = 18, n_factors = 3, N = 200)
 #> 
 #> ── RMSEA power analysis ────────────────────────────────────────────────────────
 #> 
@@ -379,7 +379,6 @@ efa_power(p = 18, k = 3, N = 200)
 #> alpha = .050 · df = 102
 #> 
 #> Power = .958 at N = 200.
-#> Critical value χ²(102) = 187.289 · noncentrality H0 = 50.745, H1 = 129.907.
 ```
 
 Leave `N` unset and give a target `power` instead to solve for the
@@ -387,7 +386,7 @@ smallest sample size that reaches it:
 
 ``` r
 
-efa_power(p = 18, k = 3, power = 0.80)
+efa_power(n_vars = 18, n_factors = 3, power = 0.80)
 #> 
 #> ── RMSEA power analysis ────────────────────────────────────────────────────────
 #> 
@@ -395,15 +394,22 @@ efa_power(p = 18, k = 3, power = 0.80)
 #> alpha = .050 · df = 102
 #> 
 #> Required N = 130 for a power of .800 (achieved .801).
-#> Critical value χ²(102) = 166.326 · noncentrality H0 = 32.895, H1 = 84.211.
 ```
 
-The test of not-close fit is selected with `type` (never by the ordering
-of `eps0`/`eps1`):
+This sample size concerns the RMSEA test only. It does not make sure
+that the loadings are precise. With many variables, it can be smaller
+than the number of variables, where the sample correlation matrix is
+singular.
+[`efa_power()`](https://mdsteiner.github.io/EFAtools/reference/efa_power.md)
+then gives a warning. The simulation below answers the question for the
+factor analysis itself.
+
+`type` selects the test of not-close fit; `eps0` must then be larger
+than `eps1`:
 
 ``` r
 
-efa_power(p = 18, k = 3, N = 200, type = "notclose")
+efa_power(n_vars = 18, n_factors = 3, N = 200, type = "notclose")
 #> 
 #> ── RMSEA power analysis ────────────────────────────────────────────────────────
 #> 
@@ -411,30 +417,28 @@ efa_power(p = 18, k = 3, N = 200, type = "notclose")
 #> alpha = .050 · df = 102
 #> 
 #> Power = .876 at N = 200.
-#> Critical value χ²(102) = 121.042 · noncentrality H0 = 50.745, H1 = 2.030.
 ```
 
-For a multiple-group model, `group` divides the sample size evenly
-across groups, so power is computed as though a fixed total `N` were
-spread thinner the more groups there are. The reported `N` is the
-*total* across groups – 260 in all, 130 per group – and `N_per_group`
-carries that per-group figure. All groups have the same size, so a
-required total is rounded up to the next multiple of `group`:
+For a multiple-group model, `N` is the total of `group` groups of equal
+size, and power uses the multiple-group RMSEA of Steiger (1998). From
+`n_vars` and `n_factors`, the degrees of freedom are those of a separate
+EFA in each group, that is, `group` times the single-group value. The
+two groups together thus need fewer cases per group than one group alone
+– here 168 in all, 84 per group, which `N_per_group` carries:
 
 ``` r
 
-pw_2g <- efa_power(p = 18, k = 3, power = 0.80, group = 2)
+pw_2g <- efa_power(n_vars = 18, n_factors = 3, power = 0.80, group = 2)
 pw_2g
 #> 
 #> ── RMSEA power analysis ────────────────────────────────────────────────────────
 #> 
 #> Test of close fit: H0 RMSEA ≤ .050 vs. H1 RMSEA = .080.
-#> alpha = .050 · df = 102 · groups = 2
+#> alpha = .050 · df = 204 · groups = 2
 #> 
-#> Required N = 260 (total; 130 per group) for a power of .800 (achieved .803).
-#> Critical value χ²(102) = 166.477 · noncentrality H0 = 33.023, H1 = 84.538.
+#> Required N = 168 (total; 84 per group) for a power of .800 (achieved .806).
 pw_2g$N_per_group
-#> [1] 130
+#> [1] 84
 ```
 
 The [`plot()`](https://rdrr.io/r/graphics/plot.default.html) method
@@ -444,7 +448,7 @@ sample size was solved for, it marks the target power and the required
 
 ``` r
 
-pw <- efa_power(p = 18, k = 3, power = 0.80)
+pw <- efa_power(n_vars = 18, n_factors = 3, power = 0.80)
 plot(pw)
 ```
 
@@ -491,24 +495,22 @@ efa_power("simulation", Lambda = Lambda, Phi = Phi, N = 300,
 #> ── EFA power simulation ────────────────────────────────────────────────────────
 #> 
 #> 18 variables · 3 factors · N = 300 · 200 datasets
-#> Estimation: PAF · rotation: promax
-#> Model error: none. The population is exact, so the hit-rate and recovery are
-#> optimistic; set `target_rmsea` for realism.
+#> Estimation: PAF · rotation: oblimin
+#> Model error: none (an exact population gives optimistic rates).
 #> 
 #> Retention hit-rate P(k-hat = 3)
-#> • EKC_BvA2017: .995 (n = 200)
-#> • MAP_TR2: 1.000 (n = 200)
-#> • MAP_TR4: 1.000 (n = 200)
+#> • EKC_BvA2017: .995
+#> • MAP_TR2: 1.000
+#> • MAP_TR4: 1.000
 #> 
 #> Structure recovery (Tucker congruence ≥ .950)
-#> • recovery rate (min congruence): 1.000 (n = 200)
-#> • recovery rate (mean congruence): 1.000 (n = 200)
+#> • recovery rate (min congruence): 1.000
+#> • recovery rate (mean congruence): 1.000
 #> • median min congruence: .986
 #> 
-#> Convergence
-#> • fits completed: 1.000 (200/200)
-#> • converged (of completed): 1.000
-#> • Heywood cases (of completed): .000
+#> Convergence: all 200 fits converged, without Heywood cases.
+#> 
+#> Monte Carlo standard error of each rate: .035 or less.
 ```
 
 Supplying a misfit target makes the study realistic. In simulation mode
@@ -525,34 +527,35 @@ efa_power("simulation", Lambda = Lambda, Phi = Phi, N = 300,
 #> ── EFA power simulation ────────────────────────────────────────────────────────
 #> 
 #> 18 variables · 3 factors · N = 300 · 200 datasets
-#> Estimation: PAF · rotation: promax
+#> Estimation: PAF · rotation: oblimin
 #> Model error (TKL): RMSEA = .050 · CFI = .936
 #> 
 #> Retention hit-rate P(k-hat = 3)
-#> • EKC_BvA2017: .385 (n = 200)
-#> • MAP_TR2: 1.000 (n = 200)
-#> • MAP_TR4: .970 (n = 200)
+#> • EKC_BvA2017: .385
+#> • MAP_TR2: 1.000
+#> • MAP_TR4: .970
 #> 
 #> Structure recovery (Tucker congruence ≥ .950)
-#> • recovery rate (min congruence): .995 (n = 200)
-#> • recovery rate (mean congruence): 1.000 (n = 200)
+#> • recovery rate (min congruence): .995
+#> • recovery rate (mean congruence): 1.000
 #> • median min congruence: .982
 #> 
-#> Convergence
-#> • fits completed: 1.000 (200/200)
-#> • converged (of completed): 1.000
-#> • Heywood cases (of completed): .000
+#> Convergence: all 200 fits converged, without Heywood cases.
+#> 
+#> Monte Carlo standard error of each rate: .035 or less.
 ```
 
 A few things to read off the output. The hit-rate is reported per
 criterion, and per *variant* where a criterion has several (the
 minimum-average-partial test reports its squared and fourth-power
-variants, for example). Its denominator is the number of replicates on
-which the criterion returned a definite count. A criterion that errored
-or was undecided on some replicates is therefore not silently penalised.
-Structure recovery is available only for a factor-model population (a
-bare `R` carries no loadings to recover); a replicate counts as
-recovered when its matched-factor Tucker congruence reaches
+variants, for example). The hit-rate is a proportion of all replicates.
+A replicate where a criterion fails or gives no count is a miss, as in a
+real study, and the printout shows how often this occurred. The footer
+gives an upper bound for the Monte Carlo standard error of the rates
+(Morris, White, & Crowther, 2019), which tells you if `n_datasets` is
+large enough. Structure recovery is available only for a factor-model
+population (a bare `R` carries no loadings to recover); a replicate
+counts as recovered when its matched-factor Tucker congruence reaches
 `recovery_threshold`, which defaults to the `.95` that Lorenzo-Seva and
 ten Berge (2006) read as factors that can be considered equal. Here the
 strong `.6` loadings make recovery near-perfect even under model error,
@@ -616,8 +619,15 @@ MacCallum, R. C., Browne, M. W., & Sugawara, H. M. (1996). Power
 analysis and determination of sample size for covariance structure
 modeling. *Psychological Methods*, 1, 130-149.
 
+Morris, T. P., White, I. R., & Crowther, M. J. (2019). Using simulation
+studies to evaluate statistical methods. *Statistics in Medicine*, 38,
+2074-2102.
+
 Rubin, D. B. (1976). Inference and missing data. *Biometrika*, 63,
 581-592.
+
+Steiger, J. H. (1998). A note on multiple sample extensions of the RMSEA
+fit index. *Structural Equation Modeling*, 5, 411-419.
 
 Tucker, L. R., Koopman, R. F., & Linn, R. L. (1969). Evaluation of
 factor analytic research procedures by means of simulated correlation
